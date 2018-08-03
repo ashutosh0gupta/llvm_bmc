@@ -1,4 +1,22 @@
-#include "include/options.h"
+// #include "include/options.h"
+#include "include/bmc.h"
+#include "lib/utils/llvmUtils.h"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+// pragam'ed to aviod warnings due to llvm included files
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IRReader/IRReader.h"
+#include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/TargetRegistry.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Target/TargetOptions.h"
+#include "llvm/Analysis/CFGPrinter.h"
+#include "llvm/Bitcode/BitcodeWriter.h"
+#include "llvm/Transforms/Utils/Cloning.h"
+#pragma GCC diagnostic pop
 
 // void run_bmc( std::unique_ptr<llvm::Module>& module,
 //               std::vector< comment >&,
@@ -40,7 +58,7 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
               std::vector<comment>& comments,
               options& o, z3::context& z3_ctx,
               value_expr_map& def_map_,
-              std::map<llvm::Loop*, loopdata*>& ld_map,
+              // std::map<llvm::Loop*, loopdata*>& ld_map,
               name_map& lMap,
               std::map<std::string, llvm::Value*>& evMap)
 {
@@ -48,22 +66,35 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
            std::pair<std::vector<std::string>,std::vector<std::string> > >
     bb_cmt_map;
   prepare_module( o, module, comments, bb_cmt_map);
-  bmc b(module, bb_cmt_map, o, z3_ctx, def_map_, ld_map, lMap, evMap);
+  bmc b(module, bb_cmt_map, o, z3_ctx, def_map_,
+        // ld_map,
+        lMap, evMap);
   b.init_glb();
   b.run_bmc_pass();
 }
 
 int main(int argc, char** argv) {
-  print("hello!");
-
+  options o;
+  z3::context z3_ctx;
+  
   std::unique_ptr<llvm::Module> module;
   std::vector< comment > comments;
-  parse_cpp_file(module, o, comments );
+
+  // todo: why these maps here
+  value_expr_map def_map(z3_ctx);
+  name_map local_name_map;
+  // std::map<llvm::Loop*, loopdata*> ld_map;
+  std::map<std::string, llvm::Value*> expr_val_map;
+
+  module = c2ir( o.filePath, o.globalContext, comments);
+
   if( o.verbosity > 8 ) {
     module->print( llvm::outs(), nullptr );
   }
 
-  run_bmc( module, comments, o, z3_ctx, def_map, ld_map, local_name_map,
+  run_bmc( module, comments, o, z3_ctx, def_map,
+           // ld_map,
+           local_name_map,
            expr_val_map);
 
 }

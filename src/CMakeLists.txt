@@ -99,7 +99,7 @@ LINK_DIRECTORIES(${LLVM_LIBRARY_DIRS})
 
 # SET(SOURCES daikon-inst/cinput.cpp  daikon-inst/comments.cpp daikon-inst/transform.cpp daikon-inst/insert_main.cpp daikon-inst/slicedpost_check.cpp daikon-inst/loopdata.cpp daikon-inst/collect_loopdata.cpp daikon-inst/build_name_map.cpp irtoz3expr/irtoz3expr.cpp irtoz3expr/irtoz3expr_index.cpp irtoz3expr/irtoz3expr_ranges.cpp aggregation/aggregation.cpp main.cpp ${BISON_MyParser_OUTPUTS} ${FLEX_MyScanner_OUTPUTS})
 # lib/bmc/bmc_loop_pass.cpp
-SET(SOURCES lib/utils/llvmUtils.cpp lib/utils/z3Utils.cpp lib/utils/options.cpp  lib/bmc/array_model.cpp lib/bmc/glb_model.cpp lib/bmc/bmc_pass.cpp lib/bmc/bmc_fun_pass.cpp  lib/bmc/witness.cpp lib/bmc/bmc_ds.cpp lib/bmc/bmc.cpp lib/bmc/bmc_utils.cpp main.cpp) 
+SET(SOURCES lib/utils/llvmUtils.cpp lib/utils/z3Utils.cpp lib/utils/options.cpp lib/utils/build_name_map.cpp lib/bmc/array_model.cpp lib/bmc/glb_model.cpp lib/bmc/bmc_pass.cpp lib/bmc/bmc_fun_pass.cpp  lib/bmc/witness.cpp lib/bmc/bmc_ds.cpp lib/bmc/bmc.cpp lib/bmc/bmc_utils.cpp main.cpp) 
 
 add_executable(${LLVMBMC} ${SOURCES})
 

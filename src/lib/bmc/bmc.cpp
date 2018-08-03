@@ -1,5 +1,6 @@
 #include "include/bmc.h"
 #include "lib/bmc/bmc_fun_pass.h"
+#include "lib/utils/build_name_map.h"
 // #include "lib/bmc/bmc_loop_pass.h"
 #include "bmc_utils.h"
 #include "witness.h"
