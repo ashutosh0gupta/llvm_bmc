@@ -18,7 +18,7 @@ std::string get_called_name(const llvm::CallInst* call ) {
       return CE->getOperand(0)->getName();
     }
   }else{
-    tiler_error("bmc", "could not find the name of called function!");
+    llvm_bmc_error("bmc", "could not find the name of called function!");
   }
   return "";
 }

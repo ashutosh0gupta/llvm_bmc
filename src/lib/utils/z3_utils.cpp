@@ -3,7 +3,7 @@
 #include<fstream>
 #include<string>
 #include<list>
-#include "z3Utils.h"
+#include "z3_utils.h"
 
 void expr_set_to_exprs( expr_set& s, exprs& v) {
   for( auto e : s ) {
@@ -512,7 +512,7 @@ z3::expr switch_sort( z3::expr& b, z3::sort& s ) {
       return s.ctx().bool_val(false);
     }
   }
-  tiler_error("z3Utils", "failed to change sort!" );
+  llvm_bmc_error("z3Utils", "failed to change sort!" );
 }
 
 int get_numeral_int(const z3::expr& i) {
@@ -520,7 +520,7 @@ int get_numeral_int(const z3::expr& i) {
   if(Z3_get_numeral_int( i.ctx(), i, &val) ) {
     return val;
   }else{
-    tiler_error("z3Utils", "too large int found!!" );
+    llvm_bmc_error("z3Utils", "too large int found!!" );
   }
 }
 
@@ -773,7 +773,7 @@ pred_to_linear_term( z3::expr pred, exprs& vs, std::vector<int>& l ) {
     for( unsigned i=0; i < l.size(); i++ ) l[i] = -l[i];
     return (-c1-1).simplify();
   }else{
-    tiler_error("","linear term generation failed");
+    llvm_bmc_error("","linear term generation failed");
   }
 }
 
@@ -793,7 +793,7 @@ turn_to_equality( z3::expr pred ) {
     z3::expr c1 = turn_to_equality( pred.arg(0) );
     return c1.arg(0) == c1.arg(1) - 1;
   }else{
-    tiler_error("","linear term generation failed");
+    llvm_bmc_error("","linear term generation failed");
   }
 }
 

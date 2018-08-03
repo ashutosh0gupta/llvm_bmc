@@ -7,7 +7,7 @@ z3::expr glb_model::get_fresh_glb_name( unsigned i ) {
 z3::expr glb_model::get_fresh_glb_name( unsigned i, std::string name_str ) {
   z3::sort glb_sort = glb_sorts[i];
   if( glb_sort.is_array() ) {
-    tiler_error( "bmc", "bad sort is passed!!" );
+    llvm_bmc_error( "bmc", "bad sort is passed!!" );
   }
   auto glb = get_fresh_const(z3_ctx, glb_sort, name_str);
   return glb;
@@ -58,7 +58,7 @@ glb_model::glb_write( unsigned bidx, const llvm::StoreInst* I,
     vec[i] = new_glb;
     return std::make_pair( (new_glb == val), new_glb);
   } else {
-    tiler_error("bmc","Unable to determine the global variable!");
+    llvm_bmc_error("bmc","Unable to determine the global variable!");
   }
 }
 
@@ -72,7 +72,7 @@ z3::expr glb_model::glb_read( unsigned bidx, const llvm::LoadInst* I ) {
     z3::expr glb_name = vec[i];
     return glb_name;
   } else {
-    tiler_error("bmc","Unable to determine the global variable!");
+    llvm_bmc_error("bmc","Unable to determine the global variable!");
   }
 }
 

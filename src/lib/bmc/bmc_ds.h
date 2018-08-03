@@ -2,8 +2,8 @@
 #define TILER_BMC_DS_H
 
 #include <unordered_map>
-#include "lib/utils/z3Utils.h"
-#include "lib/utils/llvmUtils.h"
+#include "lib/utils/z3_utils.h"
+#include "lib/utils/llvm_utils.h"
 #include "lib/bmc/glb_model.h"
 #include "lib/bmc/array_model.h"
 // #include "aggregation/aggregate.h"

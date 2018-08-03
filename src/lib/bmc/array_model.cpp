@@ -38,7 +38,7 @@ z3::expr array_model::join_array_state( std::vector<z3::expr>& conds,
 z3::expr array_model_full::get_fresh_ary_name( unsigned i ) {
   z3::sort ar_sort = ar_sorts.at(i);
   if( !ar_sort.is_array() ) {
-    tiler_error( "bmc", "bad sort is passed!!" );
+    llvm_bmc_error( "bmc", "bad sort is passed!!" );
   }
   auto ar = get_fresh_const( z3_ctx, ar_sort, "arr" );
   return ar;
@@ -133,14 +133,14 @@ array_model_fixed_len::array_write( unsigned bidx,
                                     const llvm::StoreInst* I,
                                     z3::expr& idx,
                                     z3::expr& val ) {
-  tiler_error( "bmc", "stub!!" );
+  llvm_bmc_error( "bmc", "stub!!" );
   return std::make_pair(idx,idx);
 }
 
 z3::expr array_model_fixed_len::array_read( unsigned bidx,
                                             const llvm::LoadInst* I,
                                             z3::expr& idx) {
-  tiler_error( "bmc", "stub!!" );
+  llvm_bmc_error( "bmc", "stub!!" );
   return idx;
 }
 

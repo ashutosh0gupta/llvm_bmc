@@ -1,6 +1,6 @@
 // #include "include/options.h"
 #include "include/bmc.h"
-#include "lib/utils/llvmUtils.h"
+#include "lib/utils/llvm_utils.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"

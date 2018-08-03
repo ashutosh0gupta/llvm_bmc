@@ -89,7 +89,7 @@ glb_state bmc::populate_glb_state() {
         glb_bmc_vec.push_back(new_glb == val);
       } else {} // do nothing
     } else {
-      tiler_error("bmc", (std::string)(glb->getName()) << " not a global pointer!");
+      llvm_bmc_error("bmc", (std::string)(glb->getName()) << " not a global pointer!");
     }
     glbCntr++;
   }
@@ -124,11 +124,11 @@ void bmc::check_all_spec(bmc_ds* bmc_ds_ptr) {
   for(z3::expr e : bmc_ds_ptr->spec_vec) {
     if(run_solver(e, bmc_ds_ptr)) {
       std::cout << "\nSpecification that failed the check : \n" << e;
-      std::cout << "\n\nTILER_BMC_VERIFICATION_FAILED\n\n";
+      std::cout << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
       return;
     } else { } // contine with other specifications
   }
-  std::cout << "\n\nTILER_BMC_VERIFICATION_SUCCESSFUL\n\n";
+  std::cout << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
 }
 
 bool bmc::run_solver(z3::expr &spec, bmc_ds* bmc_ds_ptr) {
@@ -198,7 +198,7 @@ void bmc::produce_witness_call( z3::model mdl, const llvm::CallInst* call ) {
       unsigned call_count = called_fun->get_call_count( call );
       produce_witness( mdl, called_fun, call_count );
     }else{
-      tiler_error( "bmc", "unknown function called" );
+      llvm_bmc_error( "bmc", "unknown function called" );
     }
   }
 }

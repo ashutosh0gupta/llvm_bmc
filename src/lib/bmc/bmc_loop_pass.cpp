@@ -247,7 +247,7 @@ void bmc_loop_pass::update_names(bmc_loop* bmc_loop_ptr, bool is_init) {
       if( auto a = llvm::dyn_cast<const llvm::Instruction>( v ) ) {
         arrays_updated.push_back(a);
       } else {
-        tiler_error("bmc loop pass", "Unsupported value in array write list");        // error
+        llvm_bmc_error("bmc loop pass", "Unsupported value in array write list");        // error
       }
     }
   }
@@ -259,7 +259,7 @@ void bmc_loop_pass::update_names(bmc_loop* bmc_loop_ptr, bool is_init) {
     if( auto g = llvm::dyn_cast<const llvm::GlobalVariable>( iter->first ) ) {
       glbs_updated.push_back(g);
     } else {
-      tiler_error("bmc loop pass", "Unsupported value in glbvar write list");        // error
+      llvm_bmc_error("bmc loop pass", "Unsupported value in glbvar write list");        // error
     }
   }
 

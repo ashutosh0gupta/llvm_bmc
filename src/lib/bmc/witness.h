@@ -2,7 +2,7 @@
 #define TILER_BMC_WITNESS_H
 
 #include "include/options.h"
-#include "lib/utils/llvmUtils.h"
+#include "lib/utils/llvm_utils.h"
 
 // #include "daikon-inst/comments.h" //todo: move to utils
 

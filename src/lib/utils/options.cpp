@@ -5,11 +5,11 @@
 namespace po = boost::program_options;
 
 void options::show_help(po::options_description& desc) {
-      std::cout << "\n\tTiler - Verifying Array Manipulating Programs by Tiling";
-      std::cout << "\n\tSupratik Chakraborty, Ashutosh Gupta, Divyesh Unadkat\n\n";
+      std::cout << "\n\tllvmbmc - BMC library";
+      // std::cout << "\n\tSupratik Chakraborty, Ashutosh Gupta, Divyesh Unadkat\n\n";
       std::cout << "Usage:\n\n";
-      std::cout << "tiler [-h] [--help]\t\t    Show help \n";
-      std::cout << "tiler [Options] file.c ...\n";
+      std::cout << "llvmbmc [-h] [--help]\t\t    Show help \n";
+      std::cout << "llvmbmc [Options] file.c ...\n";
       std::cout << desc << "\n";
 }
 
@@ -19,7 +19,7 @@ void options::get_description_cmd(po::options_description& config,
                                   po::positional_options_description& pd){
 
   po::options_description generic("Generic Options");
-  po::options_description tiler("Tiler Options");
+  po::options_description tiler("llvm_bmc Options");
   po::options_description bmc("BMC Options");
   po::options_description hidden("Hidden Options");
 
@@ -81,7 +81,7 @@ void options::parse_config(boost::filesystem::path filename) {
     po::notify(vm);
     interpret_options(vm);
   } catch ( const boost::program_options::error& e ) {
-    tiler_error("config options", e.what());
+    llvm_bmc_error("config options", e.what());
   }
 }
 
@@ -97,7 +97,7 @@ bool options::parse_cmdline(int argc, char** argv) {
     po::store(po::command_line_parser(argc, argv).options(cmdline).positional(pd).run(), vm);
     po::notify(vm);
     if (vm.count("version")) {
-      std::cout << "\nTiler Version : " << tiler_version << "\n\n";
+      std::cout << "\nTiler Version : " << llvm_bmc_version << "\n\n";
       return false;
     }
     if (vm.count("help")) {
@@ -115,7 +115,7 @@ bool options::parse_cmdline(int argc, char** argv) {
     interpret_options(vm);
 
   } catch ( const boost::program_options::error& e ) {
-    tiler_error("command-line options", e.what());
+    llvm_bmc_error("command-line options", e.what());
     return false;
   }
   return true;

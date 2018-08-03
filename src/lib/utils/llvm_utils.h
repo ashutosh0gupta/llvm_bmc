@@ -4,7 +4,7 @@
 #include <set>
 #include <list>
 #include <map>
-#include "lib/utils/z3Utils.h"
+#include "lib/utils/z3_utils.h"
 // #include "daikon-inst/segment.h"
 
 #pragma GCC diagnostic push
@@ -28,7 +28,7 @@ typedef std::vector<const inst*> inst_vec_t;
 
 #ifndef NDEBUG
 #define LLVM_DUMP( ObjPtr ) { if(ObjPtr) ObjPtr->dump(); \
-                              tiler_warning("", "^^^^^^^^^^^^^^^^^^^^^^^"); }
+                              llvm_bmc_warning("", "^^^^^^^^^^^^^^^^^^^^^^^"); }
 #else
 #define LLVM_DUMP( ObjPtr ) {}
 #endif

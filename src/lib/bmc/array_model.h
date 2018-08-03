@@ -1,8 +1,8 @@
 #ifndef TILER_ARRAY_MODEL_H
 #define TILER_ARRAY_MODEL_H
 
-#include "lib/utils/llvmUtils.h"
-#include "lib/utils/z3Utils.h"
+#include "lib/utils/llvm_utils.h"
+#include "lib/utils/z3_utils.h"
 #include "include/options.h"
 
 // #pragma GCC diagnostic push

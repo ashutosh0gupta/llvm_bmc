@@ -1,5 +1,5 @@
-#ifndef TILER_UTILS_H
-#define TILER_UTILS_H
+#ifndef LLVM_BMC_UTILS_H
+#define LLVM_BMC_UTILS_H
 
 #include <string>
 #include <stdexcept>
@@ -9,12 +9,12 @@
 #include <sstream>
 #include <unordered_set>
 
-namespace tiler {
-class tiler_exception : public std::runtime_error
+namespace llvm_bmc {
+class llvm_bmc_exception : public std::runtime_error
 {
 public:
-  tiler_exception(const char* what) : runtime_error(what) {}
-  tiler_exception(const std::string what) : runtime_error(what.c_str()) {}
+  llvm_bmc_exception(const char* what) : runtime_error(what) {}
+  llvm_bmc_exception(const std::string what) : runtime_error(what.c_str()) {}
 };
 }
 
@@ -32,18 +32,18 @@ public:
 #ifndef NDEBUG
 #define issue_error( ss )  { std::cerr << ss.str() << "\n"; assert( false );}
 #else
-#define issue_error( ss )  { throw tiler::tiler_exception( ss.str() ); }
+#define issue_error( ss )  { throw llvm_bmc::llvm_bmc_exception( ss.str() ); }
 #endif
 
 
-#define tiler_error( M, S ) { std::stringstream ss;                   \
-    ss << "# tiler " << M << " Error - " << S                         \
+#define llvm_bmc_error( M, S ) { std::stringstream ss;                   \
+    ss << "# llvm_bmc " << M << " Error - " << S                         \
        << triggered_at << std::endl;                                  \
     issue_error( ss ); }
 
 
-#define tiler_warning( M, S ) { std::stringstream ss;                   \
-    ss << "# tiler " << M << " Warning - " << S                         \
+#define llvm_bmc_warning( M, S ) { std::stringstream ss;                   \
+    ss << "# llvm_bmc " << M << " Warning - " << S                         \
        << std::endl;                                                    \
     issue_warning( ss );  }
 
@@ -87,4 +87,4 @@ void set_insert( const std::unordered_set<Key, Hash, Pred>& src,
 }
 
 
-#endif // TILER_UTILS_H
+#endif // LLVM_BMC_UTILS_H

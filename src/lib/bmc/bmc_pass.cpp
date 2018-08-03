@@ -1,6 +1,6 @@
 #include "bmc_pass.h"
 #include "witness.h"
-#include "lib/utils/z3Utils.h"
+#include "lib/utils/z3_utils.h"
 
 //todo: remove reference to bmc_obj which is due to global variables
 
@@ -9,7 +9,7 @@
     std::cerr << "Occuring in block:\n";                                \
     LLVM_DUMP( Inst->getParent() )                                      \
     LLVM_DUMP( Inst )                                                   \
-    tiler_error( "bmc", "Unsupported instruction!!");                   \
+    llvm_bmc_error( "bmc", "Unsupported instruction!!");                   \
   }
 
 bmc_pass::bmc_pass( options& o_, z3::context& z3_, bmc& b_)
@@ -59,7 +59,7 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   case llvm::Instruction::FRem:
   default: {
     const char* opName = bop->getOpcodeName();
-    tiler_error("bmc", "unsupported instruction \"" << opName << "\" occurred!!");
+    llvm_bmc_error("bmc", "unsupported instruction \"" << opName << "\" occurred!!");
   }
   }
 }
@@ -81,7 +81,7 @@ void bmc_pass::translateCmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
     }else if( is_const( r ) ) {
       auto s = l.get_sort();
       r = switch_sort(r, s );
-    }else tiler_error("bmc", "mismatched types in cmp instruction!!");
+    }else llvm_bmc_error("bmc", "mismatched types in cmp instruction!!");
   }
   llvm::CmpInst::Predicate pred = cmp->getPredicate();
 
@@ -98,7 +98,7 @@ void bmc_pass::translateCmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
   case llvm::CmpInst::ICMP_SLT : cnd = (l< r); break;
   case llvm::CmpInst::ICMP_SLE : cnd = (l<=r); break;
   default: {
-    tiler_error("bmc", "unsupported predicate in compare " << pred << "!!");
+    llvm_bmc_error("bmc", "unsupported predicate in compare " << pred << "!!");
   }
   }
   bmc_ds_ptr->m.insert_term_map( cmp, bidx, cnd );
@@ -138,7 +138,7 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
 
     bmc_ds_ptr->bmc_vec.push_back( _and(phi_cons, z3_ctx) );
   }else{
-    tiler_error("bmc", "phi nodes with non integers not supported !!");
+    llvm_bmc_error("bmc", "phi nodes with non integers not supported !!");
   }
 }
 
@@ -216,7 +216,7 @@ void bmc_pass::translateNondet(unsigned bidx, const llvm::CallInst* call) {
     z3::expr nondet_bit = get_fresh_bool( z3_ctx, "nondet");
     bmc_ds_ptr->m.insert_term_map( call, bidx, nondet_bit );
   } else {
-    tiler_error("bmc", "Unsupported nondet type!");
+    llvm_bmc_error("bmc", "Unsupported nondet type!");
   }
 }
 
@@ -234,7 +234,7 @@ void bmc_pass::translateDebugInfo( unsigned bidx,
         seen_dbg_val.insert( val );
       }
     }else{
-      tiler_warning( "bmc", " NULL debug value found!!");
+      llvm_bmc_warning( "bmc", " NULL debug value found!!");
     }
   }else if( auto dbg_var = llvm::dyn_cast<llvm::DbgDeclareInst>(dbg) ) {
     std::string name = getVarName( dbg_var );
@@ -272,7 +272,7 @@ void bmc_pass::translateIntrinsicInst( unsigned bidx, const llvm::IntrinsicInst*
     // BMC_UNSUPPORTED_INSTRUCTIONS( InstrProfIncrementInstStep, I);
     BMC_UNSUPPORTED_INSTRUCTIONS( InstrProfValueProfileInst, I);
     I->print( llvm::outs() );
-    tiler_error("bmc", "Unsupported intrinsics!");
+    llvm_bmc_error("bmc", "Unsupported intrinsics!");
   }
 }
 
@@ -292,14 +292,14 @@ void bmc_pass::translateCallInst( unsigned bidx, const llvm::CallInst* call ) {
     } else if ( fp != NULL && fp->getName().startswith("__VERIFIER_assume") ) {
       assume_to_bmc( bidx, call);
     } else { //only error and nondets handled
-      tiler_error("bmc", "Only __VERIFIER_[assert,error,nondet_TY] functions are handled!");
+      llvm_bmc_error("bmc", "Only __VERIFIER_[assert,error,nondet_TY] functions are handled!");
     }
   } else if(is_assert(call)) {
     assert_to_spec(bidx, call);
   } else if (is_assume(call)) {
     assume_to_bmc( bidx, call);
   } else {
-    tiler_error("bmc", "function call is not recognized !!");
+    llvm_bmc_error("bmc", "function call is not recognized !!");
   }
 }
 
@@ -323,7 +323,7 @@ void bmc_pass::translateCastInst( unsigned bidx, const llvm::CastInst* cast ) {
         (v_ty->isIntegerTy(32) && c_ty->isIntegerTy(64)) ) {
       bmc_ds_ptr->m.insert_term_map( cast, bidx, bmc_ds_ptr->m.get_term(v) );
     } else {
-      tiler_error("bmc", "zero extn instruction of unsupported size");
+      llvm_bmc_error("bmc", "zero extn instruction of unsupported size");
     }
   }else if( auto sext = llvm::dyn_cast<llvm::SExtInst>(cast) ) {
     auto v = sext->getOperand(0);
@@ -335,7 +335,7 @@ void bmc_pass::translateCastInst( unsigned bidx, const llvm::CastInst* cast ) {
         (v_ty->isIntegerTy(32) && c_ty->isIntegerTy(64)) ) {
       bmc_ds_ptr->m.insert_term_map( cast, bidx, bmc_ds_ptr->m.get_term(v) );
     } else {
-      tiler_error("bmc", "sign extn instruction of unsupported size");
+      llvm_bmc_error("bmc", "sign extn instruction of unsupported size");
     }
   }else{
     BMC_UNSUPPORTED_INSTRUCTIONS( FPTruncInst,       cast);
@@ -349,7 +349,7 @@ void bmc_pass::translateCastInst( unsigned bidx, const llvm::CastInst* cast ) {
     BMC_UNSUPPORTED_INSTRUCTIONS( BitCastInst,       cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( AddrSpaceCastInst, cast);
     LLVM_DUMP( cast );
-    tiler_error("bmc", "cast instruction is not recognized !!");
+    llvm_bmc_error("bmc", "cast instruction is not recognized !!");
   }
 }
 
@@ -366,12 +366,12 @@ void bmc_pass::translateLoadInst( unsigned bidx, const llvm::LoadInst* load ) {
     auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_expr);
     bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd );
   } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
-    //    tiler_error("bmc", "non array global write/read not supported!");
+    //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto glb_rd = bmc_ds_ptr->g_model.glb_read( bidx, load);
     bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
   } else {
     LLVM_DUMP( load );
-    tiler_error("bmc", "Only array and global write/read supported!");
+    llvm_bmc_error("bmc", "Only array and global write/read supported!");
   }
 }
 
@@ -386,7 +386,7 @@ void bmc_pass::translateUnaryInst( unsigned bidx, const llvm::UnaryInstruction* 
     BMC_UNSUPPORTED_INSTRUCTIONS( VAArgInst,        I );
     BMC_UNSUPPORTED_INSTRUCTIONS( ExtractValueInst, I );
     LLVM_DUMP(I);
-    tiler_error("bmc", "unsupported unary instruction!!");
+    llvm_bmc_error("bmc", "unsupported unary instruction!!");
   }
 }
 
@@ -404,14 +404,14 @@ void bmc_pass::translateStoreInst(unsigned bidx, const llvm::StoreInst* store ) 
     bmc_ds_ptr->bmc_vec.push_back( arr_wrt.first );
     bmc_ds_ptr->m.insert_term_map( store, bidx, arr_wrt.second );
   } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
-    //    tiler_error("bmc", "non array global write/read not supported!");
+    //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto val_expr = bmc_ds_ptr->m.get_term( val );
     auto glb_wrt = bmc_ds_ptr->g_model.glb_write(bidx, store, val_expr);
     bmc_ds_ptr->bmc_vec.push_back( glb_wrt.first );
     bmc_ds_ptr->m.insert_term_map( store, bidx, glb_wrt.second );
   } else {
     LLVM_DUMP( store );
-    tiler_error("bmc", "Only array and global write/read supported!");
+    llvm_bmc_error("bmc", "Only array and global write/read supported!");
   }
 }
 
@@ -446,7 +446,7 @@ void bmc_pass::translateRetInst(const llvm::ReturnInst *ret) {
     bmc_ds_ptr->bmc_vec.push_back( retVal == retTerm );
   } else {
     //todo : handle all cases
-    //tiler_error("bmc", "return instruction without a return value!");
+    //llvm_bmc_error("bmc", "return instruction without a return value!");
   }
 }
 
@@ -491,7 +491,7 @@ void bmc_pass::translateTerminatorInst( unsigned bidx,
     BMC_UNSUPPORTED_INSTRUCTIONS( CatchSwitchInst,   I );
     BMC_UNSUPPORTED_INSTRUCTIONS( CatchReturnInst,   I );
     BMC_UNSUPPORTED_INSTRUCTIONS( CleanupReturnInst, I );
-    tiler_error( "bmc", "unsupported terminator instruction!");
+    llvm_bmc_error( "bmc", "unsupported terminator instruction!");
   }
 }
 
@@ -501,7 +501,7 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
   std::vector<std::string> start_comments = bmc_obj.bb_comment_map.at(b).first;
   std::vector<std::string> end_comments = bmc_obj.bb_comment_map.at(b).second;
   if( start_comments.size() > 0 )
-    tiler_error( "parse comment::", "comment at the start not supported");
+    llvm_bmc_error( "parse comment::", "comment at the start not supported");
   for( std::string cmt : end_comments) {
     bool at_start = false;
     assert( bmc_ds_ptr->bb_vec[0] == bmc_ds_ptr->eb );
@@ -519,7 +519,7 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
           auto el_ty = pty->getElementType();
           z3::sort z_sort = llvm_to_z3_sort(z3_ctx, el_ty);
           ty_str = to_string(z_sort);
-        }else{ tiler_error( "parse comment::", "unrecognized type!"); }
+        }else{ llvm_bmc_error( "parse comment::", "unrecognized type!"); }
       }else{
         llvm::Type* ty = v->getType();
         if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
@@ -567,7 +567,7 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
             ssa_names.push_back( bmc_ds_ptr->m.get_term( v ) );
           }
         }else{
-          tiler_error( "parse comment::", "proerty comment refers to unknown " << name);
+          llvm_bmc_error( "parse comment::", "proerty comment refers to unknown " << name);
         }
       }
     }
@@ -611,7 +611,7 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
       BMC_UNSUPPORTED_INSTRUCTIONS( InsertValueInst,    I);
       BMC_UNSUPPORTED_INSTRUCTIONS( LandingPadInst,     I);
       LLVM_DUMP( I );
-      tiler_error("bmc", "unsupported instruction");
+      llvm_bmc_error("bmc", "unsupported instruction");
     }
   }
   translateCommentProperty( bidx, b);

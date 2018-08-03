@@ -1,5 +1,5 @@
 #include "lib/bmc/bmc_ds.h"
-#include "lib/utils/z3Utils.h"
+#include "lib/utils/z3_utils.h"
 
 unsigned bmc_ds::find_block_idx( const bb* b) {
   unsigned bidx = 0;
@@ -229,7 +229,7 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
             ary_access_to_index[load] = ary_to_int.at(addr);
           }else{}// no errors!!
         }else{
-          // tiler_error("bmc", "non array global write/read not supported!");
+          // llvm_bmc_error("bmc", "non array global write/read not supported!");
         }
       }else{} // no errors
       if(auto store = llvm::dyn_cast<const llvm::StoreInst>(I)) {
@@ -240,7 +240,7 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
             ary_access_to_index[store] = ary_to_int.at(addr);
           }else{}// no errors!!
         }else{
-          // tiler_error("bmc", "non array global write/read not supported!");
+          // llvm_bmc_error("bmc", "non array global write/read not supported!");
         }
       }else{} // no errors
     }
@@ -259,7 +259,7 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
     // vaphor like model
     init_partition_array_model(array_num);
   } else {
-    tiler_error("bmc", "array model initialization");
+    llvm_bmc_error("bmc", "array model initialization");
   }
 }
 
@@ -270,7 +270,7 @@ void bmc_ds::init_array_model( array_model_t ar_model_local ) {
 void bmc_ds::init_full_array_model( unsigned array_num,
                                  std::map< const llvm::Instruction*, unsigned >& map ) {
   if( ar_model_init != NONE )
-       tiler_error( "bmc", "array model is already initialized" );
+       llvm_bmc_error( "bmc", "array model is already initialized" );
   ar_model_init = FULL;
   ar_model_full.set_array_num( array_num );
   ar_model_full.set_access_map( map );
@@ -279,7 +279,7 @@ void bmc_ds::init_full_array_model( unsigned array_num,
 void bmc_ds::init_fixed_len_array_model(unsigned part_num,
                                      std::map< const llvm::Instruction*, unsigned >& map) {
   if( ar_model_init != NONE )
-      tiler_error( "bmc", "array model is already initialized" );
+      llvm_bmc_error( "bmc", "array model is already initialized" );
   ar_model_init = FIXED_LEN;
   ar_model_fixed.set_partition_len( part_num );
   ar_model_fixed.set_access_map( map );
@@ -288,10 +288,10 @@ void bmc_ds::init_fixed_len_array_model(unsigned part_num,
 
 void bmc_ds::init_partition_array_model(unsigned part_num) {
   if( ar_model_init != NONE )
-      tiler_error( "bmc", "array model is already initialized" );
+      llvm_bmc_error( "bmc", "array model is already initialized" );
   ar_model_init = PARTITION;
   // ar_model_part.init(part_num);
-  tiler_error( "bmc", "stub!!" );
+  llvm_bmc_error( "bmc", "stub!!" );
 }
 
 
@@ -313,7 +313,7 @@ bmc_ds::array_write( unsigned bidx, const llvm::StoreInst* I,
   case FIXED_LEN: return ar_model_full.array_write( bidx, I, idx, val ); break;
   // case PARTITION: return ar_model_full.array_write( I, val ); break;
   default:
-    tiler_error( "bmc", "incomplete implementation of an array model!!" );
+    llvm_bmc_error( "bmc", "incomplete implementation of an array model!!" );
   }
 }
 
@@ -325,7 +325,7 @@ z3::expr bmc_ds::array_read( unsigned bidx, const llvm::LoadInst* I,
   case FIXED_LEN: return ar_model_full.array_read( bidx, I, idx ); break;
   // case PARTITION: return ar_model_full.array_read( I, val ); break;
   default:
-    tiler_error( "bmc", "incomplete implementation of an array model!!" );
+    llvm_bmc_error( "bmc", "incomplete implementation of an array model!!" );
   }
 }
 
@@ -362,7 +362,7 @@ z3::expr bmc_ds::join_array_state(std::vector<z3::expr>& cs,
   case FULL:      return ar_model_full.join_array_state(cs, prevs, src ); break;
   // case PARTITION: return ar_model_part.join_array_state(cs, prevs, src);break;
   default:
-    tiler_error( "bmc", "incomplete implementation of an array model!!" );
+    llvm_bmc_error( "bmc", "incomplete implementation of an array model!!" );
   }
 }
 
@@ -373,7 +373,7 @@ unsigned bmc_fun::get_call_count( const llvm::CallInst* call ) {
   while( i < call_sites.size() ) {
     if( call_sites[i] == call ) return i;
   }
-  tiler_error( "bmc", "untracked callsite found!!" );
+  llvm_bmc_error( "bmc", "untracked callsite found!!" );
   return 0; // dummy return to avoid warning
 }
 

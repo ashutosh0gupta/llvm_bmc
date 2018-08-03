@@ -45,7 +45,7 @@ public:
   //----------------------------------------
   //generic options
   int verbosity = 0;
-  std::string tiler_version = "1.0";
+  std::string llvm_bmc_version = "1.0";
   int loop_unroll_count = 1;
   bool unwind=false;
   bool llvm_unroll=false; // selects between llvm_unroll or native

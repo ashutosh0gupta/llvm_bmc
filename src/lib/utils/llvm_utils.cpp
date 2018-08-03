@@ -1,6 +1,6 @@
 #include <limits>
-#include "llvmUtils.h"
-#include "lib/utils/graphUtils.h"
+#include "llvm_utils.h"
+#include "lib/utils/graph_utils.h"
 // #include "daikon-inst/comments.h" //todo: move to utils
 #include <boost/algorithm/string.hpp>
 
@@ -442,7 +442,7 @@ void buildNameMap( llvm::Function& f,
         if(llvm::Instruction *inI = llvm::dyn_cast<llvm::Instruction>(v)) {
           if( localNameMap.find(inI) != localNameMap.end() ) {
             if( found && name != localNameMap.at(inI) )
-              tiler_error("build name map::","phi node has multiple names!!");
+              llvm_bmc_error("build name map::","phi node has multiple names!!");
             name = localNameMap.at(inI);
             found = true;
           }
@@ -450,7 +450,7 @@ void buildNameMap( llvm::Function& f,
       }
       if( !found ) {
         // If this function fails, investigate to find the (correct) name
-        tiler_error("build name map::","name of a phi node not found!!");
+        llvm_bmc_error("build name map::","name of a phi node not found!!");
       }
       localNameMap[phi] = name;
     }
@@ -554,7 +554,7 @@ llvm::BasicBlock* getFirstBodyOfLoop(llvm::Loop *CurLoop){
 }
 
 std::string getFuncNameForDaikon(llvm::Loop *L) {
-  std::string fName = "__TILER_Loop_";
+  std::string fName = "__LLVM_BMC_Loop_";
   auto loc = L->getStartLoc();
   fName = fName + std::to_string(loc->getLine());
   return fName;
@@ -702,7 +702,7 @@ llvm::Value* getValueFromZ3Expr(z3::expr e, llvm::IRBuilder<> &irb, llvm::LLVMCo
     res = getValueFromZ3SubExpr(e, irb, c, exprValMap, arrSet);
     assert(res);
   } else if (e.is_quantifier()) {
-    tiler_error("llvmUtils", "encountered a quantifier");
+    llvm_bmc_error("llvm_utils", "encountered a quantifier");
   }
   return res;
 }
@@ -910,7 +910,7 @@ void collectArr( llvm::Function &f, std::set<llvm::Value*>& arrSet) {
       if( auto alloc = llvm::dyn_cast<llvm::AllocaInst>(I) ) {
         if( alloc->isArrayAllocation() &&
             !alloc->getType()->getElementType()->isIntegerTy() ) {
-          tiler_error( "llvmUtils", "only pointers to intergers is allowed!" );
+          llvm_bmc_error( "llvm_utils", "only pointers to intergers is allowed!" );
         }
         arrSet.insert( alloc );
       }
@@ -1150,7 +1150,7 @@ void buildBlockMap(llvm::BasicBlock* bb, std::map<std::string, llvm::Value*>& na
 int readInt( const llvm::ConstantInt* c ) {
   const llvm::APInt& n = c->getUniqueInteger();
   unsigned len = n.getNumWords();
-  if( len > 1 ) tiler_error("llvmUtils", "long integers not supported!!" );
+  if( len > 1 ) llvm_bmc_error("llvm_utils", "long integers not supported!!" );
   const uint64_t *v = n.getRawData();
   return *v;
 }
@@ -1321,7 +1321,7 @@ z3::sort llvm_to_z3_sort( z3::context& c, llvm::Type* t ) {
     z3::sort z_te = llvm_to_z3_sort(c, te);
     return c.array_sort( c.int_sort(), z_te );
   }
-  tiler_error("llvmUtils", "only int and bool sorts are supported");
+  llvm_bmc_error("llvm_utils", "only int and bool sorts are supported");
   // return c.bv_sort(32); // needs to be added
   // return c.bv_sort(16);
   // return c.bv_sort(64);
@@ -1342,9 +1342,9 @@ z3::expr read_const( const llvm::Value* op, z3::context& ctx ) {
       assert( i == 0 || i == 1 );
       if( i == 1 ) return ctx.bool_val(true); else return ctx.bool_val(false);
     }else
-      tiler_error("llvmUtils", "unrecognized constant!" );
+      llvm_bmc_error("llvm_utils", "unrecognized constant!" );
   }else if( llvm::isa<llvm::ConstantPointerNull>(op) ) {
-    tiler_error("llvmUtils", "Constant pointer are not implemented!!" );
+    llvm_bmc_error("llvm_utils", "Constant pointer are not implemented!!" );
     // }else if( LLCAST( llvm::ConstantPointerNull, c, op) ) {
     return ctx.int_val(0);
   }else if( llvm::isa<llvm::UndefValue>(op) ) {
@@ -1355,9 +1355,9 @@ z3::expr read_const( const llvm::Value* op, z3::context& ctx ) {
       }else if(      bw == 1  ) { return get_fresh_bool(ctx);
       }
     }
-    tiler_error("llvmUtils", "unsupported type: "<< ty << "!!");
+    llvm_bmc_error("llvm_utils", "unsupported type: "<< ty << "!!");
   }else if( llvm::isa<llvm::Constant>(op) ) {
-    tiler_error("llvmUtils", "non int constants are not implemented!!" );
+    llvm_bmc_error("llvm_utils", "non int constants are not implemented!!" );
     std::cerr << "un recognized constant!";
     //     // int i = readInt(c);
     //     // return eHandler->mkIntVal( i );
@@ -1365,20 +1365,20 @@ z3::expr read_const( const llvm::Value* op, z3::context& ctx ) {
     // const llvm::APFloat& n = c->getValueAPF();
     // double v = n.convertToDouble();
     //return ctx.real_val(v);
-    tiler_error("llvmUtils", "Floating point constant not implemented!!" );
+    llvm_bmc_error("llvm_utils", "Floating point constant not implemented!!" );
   }else if( llvm::isa<llvm::ConstantExpr>(op) ) {
-    tiler_error("llvmUtils", "case for constant not implemented!!" );
+    llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
   }else if( llvm::isa<llvm::ConstantArray>(op) ) {
     // const llvm::ArrayType* n = c->getType();
     // unsigned len = n->getNumElements();
     //return ctx.arraysort();
-    tiler_error("llvmUtils", "case for constant not implemented!!" );
+    llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
   }else if( llvm::isa<llvm::ConstantStruct>(op) ) {
     // const llvm::StructType* n = c->getType();
-    tiler_error("llvmUtils", "case for constant not implemented!!" );
+    llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
   }else if( llvm::isa<llvm::ConstantVector>(op) ) {
     // const llvm::VectorType* n = c->getType();
-    tiler_error("llvmUtils", "vector constant not implemented!!" );
+    llvm_bmc_error("llvm_utils", "vector constant not implemented!!" );
   }
   z3::expr e(ctx);
   return e; // contains no expression;
@@ -1426,7 +1426,7 @@ z3::expr value_expr_map::get_term( const llvm::Value* op ) {
   if( c ) return c;
   auto it = versions.find(op);
   if( it == versions.end() ) {
-    // tiler_error("bmc", "call insert_new_def instead of get_term !!");
+    // llvm_bmc_error("bmc", "call insert_new_def instead of get_term !!");
     return get_term( op, 0 );
   }else{
     return get_term(op, (it->second).back() );
@@ -1474,7 +1474,7 @@ z3::expr value_expr_map::create_fresh_name( const llvm::Value* op  ) {
     }
   }
   ty->print( llvm::errs() ); llvm::errs() << "\n";
-  tiler_error("llvmUtils", "unsupported type!!");
+  llvm_bmc_error("llvm_utils", "unsupported type!!");
   z3::expr e(ctx);
   return e;
 }
@@ -1498,7 +1498,7 @@ unsigned value_expr_map::get_max_version( const llvm::Value* op ) {
   if( c ) return 0;
   auto it = versions.find(op);
   if( it == versions.end() ) {
-    // tiler_error("bmc", "call insert_new_def instead of get_term !!");
+    // llvm_bmc_error("bmc", "call insert_new_def instead of get_term !!");
     return 0;
   }else{
     return (it->second).back();
@@ -1511,7 +1511,7 @@ value_expr_map::get_versions( const llvm::Value* op ) {
   if( c ) return dummy_empty_versions;
   auto it = versions.find(op);
   if( it == versions.end() ) {
-    // tiler_error("bmc", "call insert_new_def instead of get_term !!");
+    // llvm_bmc_error("bmc", "call insert_new_def instead of get_term !!");
     return dummy_empty_versions;
   }else{
     return (it->second);

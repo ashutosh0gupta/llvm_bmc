@@ -1,7 +1,7 @@
 #ifndef BUILD_NAME_MAP_H
 #define BUILD_NAME_MAP_H
 
-#include "lib/utils/llvmUtils.h"
+#include "lib/utils/llvm_utils.h"
 
 class build_name_map : public llvm::FunctionPass
 {
