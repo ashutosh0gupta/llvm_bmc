@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 2.8.7)
 
-project(${TILER})
+project(${LLVMBMC})
 
-find_package (BISON REQUIRED)
-find_package(FLEX REQUIRED)
+# find_package (BISON REQUIRED)
+# find_package(FLEX REQUIRED)
 
 #set(CMAKE_POSITION_INDEPENDENT_CODE ON) # requires version 2.8.9
 
-BISON_TARGET(MyParser inv2smt/inv2smt.y ${CMAKE_CURRENT_BINARY_DIR}/inv2smt.y.cpp)
-FLEX_TARGET(MyScanner inv2smt/inv2smt.l  ${CMAKE_CURRENT_BINARY_DIR}/inv2smt.l.cpp)
-ADD_FLEX_BISON_DEPENDENCY(MyScanner MyParser)
+# BISON_TARGET(MyParser inv2smt/inv2smt.y ${CMAKE_CURRENT_BINARY_DIR}/inv2smt.y.cpp)
+# FLEX_TARGET(MyScanner inv2smt/inv2smt.l  ${CMAKE_CURRENT_BINARY_DIR}/inv2smt.l.cpp)
+# ADD_FLEX_BISON_DEPENDENCY(MyScanner MyParser)
 
 SET (LLVM_DEBUG FALSE CACHE BOOL "Use Locally compiled and debug enabled LLVM")
 SET (Z3_DEBUG FALSE CACHE BOOL "Link debug verion of Z3")
@@ -97,10 +97,11 @@ SET(clang_libs clangDaemon clangFrontendTool)
 
 LINK_DIRECTORIES(${LLVM_LIBRARY_DIRS})
 
-SET(SOURCES daikon-inst/cinput.cpp utils/llvmUtils.cpp utils/z3Utils.cpp utils/options.cpp daikon-inst/comments.cpp daikon-inst/transform.cpp daikon-inst/insert_main.cpp daikon-inst/slicedpost_check.cpp daikon-inst/loopdata.cpp daikon-inst/collect_loopdata.cpp daikon-inst/build_name_map.cpp irtoz3expr/irtoz3expr.cpp irtoz3expr/irtoz3expr_index.cpp irtoz3expr/irtoz3expr_ranges.cpp bmc/array_model.cpp bmc/glb_model.cpp bmc/bmc_pass.cpp bmc/bmc_fun_pass.cpp bmc/bmc_loop_pass.cpp bmc/bmc_aggr_pass.cpp bmc/witness.cpp bmc/bmc_ds.cpp bmc/bmc.cpp bmc/bmc_utils.cpp aggregation/aggregation.cpp main.cpp ${BISON_MyParser_OUTPUTS} ${FLEX_MyScanner_OUTPUTS}) 
+# SET(SOURCES daikon-inst/cinput.cpp utils/llvmUtils.cpp utils/z3Utils.cpp utils/options.cpp daikon-inst/comments.cpp daikon-inst/transform.cpp daikon-inst/insert_main.cpp daikon-inst/slicedpost_check.cpp daikon-inst/loopdata.cpp daikon-inst/collect_loopdata.cpp daikon-inst/build_name_map.cpp irtoz3expr/irtoz3expr.cpp irtoz3expr/irtoz3expr_index.cpp irtoz3expr/irtoz3expr_ranges.cpp bmc/array_model.cpp bmc/glb_model.cpp bmc/bmc_pass.cpp bmc/bmc_fun_pass.cpp bmc/bmc_loop_pass.cpp bmc/bmc_aggr_pass.cpp bmc/witness.cpp bmc/bmc_ds.cpp bmc/bmc.cpp bmc/bmc_utils.cpp aggregation/aggregation.cpp main.cpp ${BISON_MyParser_OUTPUTS} ${FLEX_MyScanner_OUTPUTS})
+SET(SOURCES main.cpp) 
 
-add_executable(${TILER} ${SOURCES})
+add_executable(${LLVMBMC} ${SOURCES})
 
 SET(LIBZ3 z3)
 
-target_link_libraries (${TILER} ${LIBZ3} ${Boost_LIBRARIES} ${llvm_libs} ${clang_libs})
+target_link_libraries (${LLVMBMC} ${LIBZ3} ${Boost_LIBRARIES} ${llvm_libs} ${clang_libs})

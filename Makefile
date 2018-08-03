@@ -1,6 +1,6 @@
 git = git -c user.name="Auto" -c user.email="auto@auto.com" 
 
-TILER=tiler
+LLVMBMC=llvmbmc
 BUILDDIR = $(PWD)/build
 SRCDIR = $(PWD)/src
 LLVM_VERSION=6.0.0
@@ -13,37 +13,37 @@ all : release
 
 release : $(BUILDDIR)/buildr/Makefile
 	+make -C $(BUILDDIR)/buildr
-	cp -f $(BUILDDIR)/buildr/$(TILER) $(TILER)
+	cp -f $(BUILDDIR)/buildr/$(LLVMBMC) $(LLVMBMC)
 
 debug :  $(BUILDDIR)/buildd/Makefile
 	+make -C $(BUILDDIR)/buildd
-	rm -rf $(TILER)
-	ln -s $(BUILDDIR)/buildd/$(TILER) $(TILER)
+	rm -rf $(LLVMBMC)
+	ln -s $(BUILDDIR)/buildd/$(LLVMBMC) $(LLVMBMC)
 
 llvm-svn: export LLVM_VERSION = svn
 llvm-svn: $(BUILDDIR)/buildl/Makefile
 	echo "$(LLVM_VERSION)"
 	+make -C $(BUILDDIR)/buildl
-	rm $(TILER)
-	ln -s $(BUILDDIR)/buildl/$(TILER) $(TILER)
+	rm $(LLVMBMC)
+	ln -s $(BUILDDIR)/buildl/$(LLVMBMC) $(LLVMBMC)
 
 $(BUILDDIR)/buildr/Makefile: $(BUILDDIR)/z3/buildr/libz3.so
 	mkdir -p $(BUILDDIR)/buildr
-	cd $(BUILDDIR)/buildr; cmake -DCMAKE_BUILD_TYPE=Release -DTILER=$(TILER) $(SRCDIR)
+	cd $(BUILDDIR)/buildr; cmake -DCMAKE_BUILD_TYPE=Release -DLLVMBMC=$(LLVMBMC) $(SRCDIR)
 
 $(BUILDDIR)/buildd/Makefile: $(BUILDDIR)/z3/buildd/libz3.so $(BUILDDIR)/llvm-$(LLVM_VERSION)/lib/libLLVMCore.a
 	mkdir -p $(BUILDDIR)/buildd
-	cd $(BUILDDIR)/buildd; cmake -DCMAKE_BUILD_TYPE=Debug -DLLVM_VERSION=$(LLVM_VERSION) -DTILER=$(TILER) $(SRCDIR)
+	cd $(BUILDDIR)/buildd; cmake -DCMAKE_BUILD_TYPE=Debug -DLLVM_VERSION=$(LLVM_VERSION) -DLLVMBMC=$(LLVMBMC) $(SRCDIR)
 
 $(BUILDDIR)/buildl/Makefile: $(BUILDDIR)/z3/buildd/libz3.so $(BUILDDIR)/llvm-$(LLVM_VERSION)/lib/libLLVMCore.a
 	mkdir -p $(BUILDDIR)/buildl
-	cd $(BUILDDIR)/buildl; cmake -DCMAKE_BUILD_TYPE=Debug -DLLVM_VERSION=$(LLVM_VERSION) -DTILER=$(TILER) $(SRCDIR)
+	cd $(BUILDDIR)/buildl; cmake -DCMAKE_BUILD_TYPE=Debug -DLLVM_VERSION=$(LLVM_VERSION) -DLLVMBMC=$(LLVMBMC) $(SRCDIR)
 
 clean :
 	rm -rf $(BUILDDIR)/buildr
 	rm -rf $(BUILDDIR)/buildd
 	rm -rf $(BUILDDIR)/buildl
-	rm -f tiler
+	rm -f llvmbmc
 	find -name "*~"| xargs rm -rf
 
 # removes all the downloaded llvms and all the installs
@@ -111,29 +111,5 @@ llvm-up:
 
 #---------------------------------------------------------------------------
 
-aggregation:
-	./tiler -a -f cube -o /tmp ../array-bench/test-suite/algebraic/array-cube.c
-
-cm:
-	./tiler -a -f cubemulti -o /tmp ../array-bench/test-suite/algebraic/array-cube-m.c
-
-eqn:
-	./tiler -a -f eqnmulti -o /tmp ../array-bench/test-suite/algebraic/array-eqn-m.c
-
-bubble:
-	./tiler -a -d -f bubblesort -o /tmp ../array-bench/test-suite/sorting/bubblesort.c
-
-bubble2:
-	./tiler -a -d -f bubblesort -o /tmp ../array-bench/test-suite/sorting/bubblesort2.c
-
-runtest:
-	./tiler -f main -o /tmp -m 3 -l 0 -t 1 /tmp/test.c
-
-runperiodic:
-	./tiler -f periodic -o /tmp -m 3 -l 0 -t 1 ../array-bench/test-suite/periodic/periodic-range2.c
-
-dumpcfg:
-	./tiler -a -m 2 -f bubblesort -o /tmp ../array-bench/test-suite/sorting/bubblesort.c
-#	./tiler -a -m 2 -f cubemulti -o /tmp ../array-bench/test-suite/algebraic/array-cube-m.c
 
 test: release runtest
