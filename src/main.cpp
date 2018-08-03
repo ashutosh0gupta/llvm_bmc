@@ -71,10 +71,20 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
         lMap, evMap);
   b.init_glb();
   b.run_bmc_pass();
+  for( auto& it : b.func_formula_map ) {
+    b.check_all_spec( it.second );
+  }
 }
 
 int main(int argc, char** argv) {
   options o;
+  boost::filesystem::path def_config("default.conf");
+  if ( boost::filesystem::exists( def_config ) ) {
+    o.parse_config(def_config);
+  }
+
+  if (!o.parse_cmdline(argc, argv)) return 0; // help was called
+
   z3::context z3_ctx;
   
   std::unique_ptr<llvm::Module> module;
