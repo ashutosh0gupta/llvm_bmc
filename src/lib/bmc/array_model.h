@@ -1,9 +1,9 @@
 #ifndef TILER_ARRAY_MODEL_H
 #define TILER_ARRAY_MODEL_H
 
-#include "utils/llvmUtils.h"
-#include "utils/z3Utils.h"
-#include "utils/options.h"
+#include "lib/utils/llvmUtils.h"
+#include "lib/utils/z3Utils.h"
+#include "include/options.h"
 
 // #pragma GCC diagnostic push
 // #pragma GCC diagnostic ignored "-Wunused-parameter"

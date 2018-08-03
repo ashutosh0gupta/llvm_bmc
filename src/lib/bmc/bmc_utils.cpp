@@ -1,5 +1,5 @@
 #include "bmc_utils.h"
-#include "utils/utils.h"
+#include "lib/utils/utils.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"

@@ -4,7 +4,7 @@
 #include <set>
 #include <list>
 #include <map>
-#include "utils/z3Utils.h"
+#include "lib/utils/z3Utils.h"
 // #include "daikon-inst/segment.h"
 
 #pragma GCC diagnostic push
@@ -12,6 +12,8 @@
 #include "llvm/IR/TypeBuilder.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/IntrinsicInst.h"
+#include "llvm/Analysis/LoopPass.h"
+#include "llvm/LinkAllPasses.h"
 #pragma GCC diagnostic pop
 
 
@@ -31,8 +33,51 @@ typedef std::vector<const inst*> inst_vec_t;
 #define LLVM_DUMP( ObjPtr ) {}
 #endif
 
-class comment;
-class src_loc;
+
+typedef std::map<const llvm::Value*, std::string> name_map;
+typedef std::map<std::string, const llvm::Value*> rev_name_map;
+
+#define COMMENT_PREFIX_LEN 3
+#define COMMENT_PREFIX "//!"
+
+// Enable test of the first token
+// #define COMMENT_FIRST_TOKEN "(assert"
+
+class src_loc {
+public:
+  src_loc( unsigned line_, unsigned col_, std::string file_ ) :
+    line(line_), col(col_), file(file_) {};
+  src_loc() : line(0), col(0), file("") {};
+  unsigned line;
+  unsigned col;
+  std::string file;
+
+  void dump();
+  void print(std::ostream&);
+
+  bool operator==(const src_loc &other) const {
+    return other.line == line && other.col == col && other.file == file;
+  }
+};
+
+class comment{
+public:
+  // comment( std::string text_, src_loc start_, src_loc end_ ) :
+  //   text(text_), start(start_), end(end_) {};
+  std::string text;
+  src_loc start;
+  src_loc end;
+  const bb* b = NULL;
+  z3::expr to_z3_expr( z3::context z3_ctx, rev_name_map& n_map );
+
+  void dump();
+  void print(std::ostream& );
+};
+
+class comments{
+  std::map< const bb*, std::vector< comment > > start_comments;
+  std::map< const bb*, std::vector< comment > > end_comments;
+};
 
 std::unique_ptr<llvm::Module>
 c2ir( std::string, llvm::LLVMContext&, std::vector< comment >& );
@@ -55,15 +100,12 @@ estimate_comment_location(std::unique_ptr<llvm::Module>& module,
 
 void setLLVMConfigViaCommandLineOptions( std::string strs );
 
-void printSegmentInfo(segment& s);
+// void printSegmentInfo(segment& s);
 void printBlockInfo(std::vector<llvm::BasicBlock*>& blockList);
 
   // Get original names of ssa variables from DEBUG information
 std::string getVarName(const llvm::DbgValueInst* dbgVal );
 std::string getVarName(const llvm::DbgDeclareInst* dbgVal );
-
-typedef std::map<const llvm::Value*, std::string> name_map;
-typedef std::map<std::string, const llvm::Value*> rev_name_map;
 
 void buildNameMap( llvm::Function&, name_map&);
 
@@ -146,9 +188,9 @@ void collect_loop_backedges(llvm::Pass *p,
                                       std::set<const llvm::BasicBlock*>>& rev_loop_ignore_edge);
 
 void find_cutpoints(llvm::Pass* P, llvm::Function &f, std::vector< llvm::BasicBlock* >& cutPoints);
-void create_segments(llvm::Function &f,
-                     std::vector< llvm::BasicBlock* >& cutPoints,
-                     std::vector< segment >& segVec);
+// void create_segments(llvm::Function &f,
+//                      std::vector< llvm::BasicBlock* >& cutPoints,
+//                      std::vector< segment >& segVec);
 int readInt( const llvm::ConstantInt* );
 void buildBlockMap(llvm::BasicBlock*, std::map<std::string, llvm::Value*>&);
 bool deleteLoop(llvm::Loop *, llvm::DominatorTree &, llvm::ScalarEvolution &, llvm::LoopInfo &);

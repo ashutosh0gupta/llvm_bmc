@@ -1,6 +1,6 @@
-#include "bmc.h"
-#include "bmc/bmc_fun_pass.h"
-#include "bmc/bmc_loop_pass.h"
+#include "include/bmc.h"
+#include "lib/bmc/bmc_fun_pass.h"
+// #include "lib/bmc/bmc_loop_pass.h"
 #include "bmc_utils.h"
 #include "witness.h"
 
@@ -16,10 +16,10 @@ void bmc::run_bmc_pass() {
   llvm::legacy::PassManager passMan;
   passMan.add( new build_name_map(def_map, localNameMap, revStartLocalNameMap,
                                    revEndLocalNameMap ) );
-  passMan.add( new collect_loopdata(z3_ctx, o, def_map, ld_map, localNameMap, exprValMap, module) );
+  // passMan.add( new collect_loopdata(z3_ctx, o, def_map, ld_map, localNameMap, exprValMap, module) );
 
   if(o.loop_aggr) {
-    passMan.add( new bmc_loop_pass(o,z3_ctx, def_map, *this));
+    // passMan.add( new bmc_loop_pass(o,z3_ctx, def_map, *this));
   } else {
     passMan.add( new bmc_fun_pass(o, z3_ctx,*this));
   }
@@ -27,27 +27,14 @@ void bmc::run_bmc_pass() {
 }
 
 
-void bmc::collect_aggr_pass() {
-  llvm::legacy::PassManager passMan;
-  passMan.add( new build_name_map(def_map, localNameMap, revStartLocalNameMap,
-                                   revEndLocalNameMap ) );
-  passMan.add( new collect_loopdata( z3_ctx, o, def_map, ld_map,
-                                     localNameMap, exprValMap, module) );
-  passMan.add( new bmc_aggr_pass(o, z3_ctx, def_map, *this) );
-  passMan.run( *module.get() );
-}
-
 std::map< const llvm::Function*, bmc_fun*>& bmc::get_func_formula_map() {
   return func_formula_map;
 }
 
-std::map< const llvm::Loop*, bmc_loop*>& bmc::get_loop_formula_map() {
-  return loop_formula_map;
-}
+// std::map< const llvm::Loop*, bmc_loop*>& bmc::get_loop_formula_map() {
+//   return loop_formula_map;
+// }
 
-std::map< const llvm::Loop*, bmc_ds_aggr*>& bmc::get_loop_aggr_map() {
-  return aggr_map;
-}
 
 void bmc::init_glb() {
 

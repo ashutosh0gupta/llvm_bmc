@@ -1,6 +1,6 @@
 #include "bmc_pass.h"
 #include "witness.h"
-#include "utils/z3Utils.h"
+#include "lib/utils/z3Utils.h"
 
 //todo: remove reference to bmc_obj which is due to global variables
 

@@ -1,8 +1,8 @@
 #ifndef TILER_GLB_MODEL_H
 #define TILER_GLB_MODEL_H
 
-#include "utils/llvmUtils.h"
-#include "utils/z3Utils.h"
+#include "lib/utils/llvmUtils.h"
+#include "lib/utils/z3Utils.h"
 
 class glb_state {
 public:

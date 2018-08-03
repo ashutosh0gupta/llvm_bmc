@@ -1,7 +1,7 @@
 #ifndef TILER_BMC_FUN_PASS_H
 #define TILER_BMC_FUN_PASS_H
 
-#include "bmc/bmc_pass.h"
+#include "lib/bmc/bmc_pass.h"
 
 class bmc_fun_pass : public bmc_pass, public llvm::FunctionPass {
 

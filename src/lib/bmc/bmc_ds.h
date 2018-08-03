@@ -2,10 +2,10 @@
 #define TILER_BMC_DS_H
 
 #include <unordered_map>
-#include "utils/z3Utils.h"
-#include "utils/llvmUtils.h"
-#include "bmc/glb_model.h"
-#include "bmc/array_model.h"
+#include "lib/utils/z3Utils.h"
+#include "lib/utils/llvmUtils.h"
+#include "lib/bmc/glb_model.h"
+#include "lib/bmc/array_model.h"
 // #include "aggregation/aggregate.h"
 
 enum aggr_tag {tile, overlap, counter, aggregate, unknown};
@@ -229,101 +229,31 @@ public:
   virtual ~bmc_fun() = default;
 };
 class bmc_ds_aggr;
-class bmc_loop : public bmc_ds {
 
-  loopdata* ld = 0;
-public:
-  bmc_loop( z3::context& z3_ctx_,
-            std::map<const llvm::Instruction*, unsigned>& aim,
-            glb_model& g_model,
-            loopdata* ld_ )
-    : bmc_ds( z3_ctx_, aim, g_model)
-    , ld(ld_) {}
+// class bmc_loop : public bmc_ds {
 
-  inline loopdata* get_loopdata() { return ld; }
+//   loopdata* ld = 0;
+// public:
+//   bmc_loop( z3::context& z3_ctx_,
+//             std::map<const llvm::Instruction*, unsigned>& aim,
+//             glb_model& g_model,
+//             loopdata* ld_ )
+//     : bmc_ds( z3_ctx_, aim, g_model)
+//     , ld(ld_) {}
 
-  void get_written_arrays( std::vector<const llvm::AllocaInst*>& );
-  void get_written_globals( std::vector<const llvm::GlobalVariable*>& );
-  std::vector<const llvm::AllocaInst*>& get_pure_read_arrays();
-  std::vector<const llvm::GlobalVariable*>& get_pure_read_globals();
-  std::vector<llvm::Value*>& get_read_outer_locals();
+//   inline loopdata* get_loopdata() { return ld; }
 
-  void collect_loop_back_edges(llvm::Loop*);
-  virtual ~bmc_loop() = default;
-  friend bmc_ds_aggr;
-};
+//   void get_written_arrays( std::vector<const llvm::AllocaInst*>& );
+//   void get_written_globals( std::vector<const llvm::GlobalVariable*>& );
+//   std::vector<const llvm::AllocaInst*>& get_pure_read_arrays();
+//   std::vector<const llvm::GlobalVariable*>& get_pure_read_globals();
+//   std::vector<llvm::Value*>& get_read_outer_locals();
 
-class aggr_name {
-public:
-  aggr_name(z3::expr i, z3::expr en, z3::expr ex, z3::expr f)
-    : i(i), en(en), ex(ex), f(f), val(NULL) {}
-  aggr_name(z3::expr i, z3::expr en, z3::expr ex, z3::expr f, llvm::Value* v)
-    : i(i), en(en), ex(ex), f(f), val(v) {}
-  z3::expr i;
-  z3::expr en;
-  z3::expr ex;
-  z3::expr f;
-  llvm::Value* val;
-  unsigned bmc_idx = 0; // for backward book keeping
-  inline void setInit(z3::expr e )  { i = e;  }
-  inline void setEntry(z3::expr e ) { en = e; }
-  inline void setExit(z3::expr e )  { ex = e; }
-  inline void setFinal(z3::expr e ) { f = e;  }
-  inline void setVal(llvm::Value* v){ val = v;  }
-  inline llvm::Value* getVal()  { return val; }
+//   void collect_loop_back_edges(llvm::Loop*);
+//   virtual ~bmc_loop() = default;
+//   friend bmc_ds_aggr;
+// };
 
-  inline void dump() { print( std::cout ); }
-  inline void print( std::ostream& o ) {
-    o << "[init: " << i << " entry: "<< en
-      << " exit: "<< ex << " final: "<< f << "]";
-  }
-};
 
-class bmc_ds_aggr : public bmc_loop {
-public:
-  bmc_ds_aggr( z3::context& z3_ctx_,
-               std::map<const llvm::Instruction*, unsigned>& aim,
-               glb_model& g_model,
-               loopdata* ld_ )
-    : bmc_loop( z3_ctx_, aim, g_model, ld_), uf_expr(z3_ctx_) {}
-
-  virtual ~bmc_ds_aggr() = default;
-
-  // pointer to sub loops
-  std::vector<bmc_ds_aggr*> sub_loops;
-  
-  //Scalars: Locals, global
-  std::vector<aggr_name> aggr_scalars;
-  //Arrays: Locals, global
-  std::vector<aggr_name> aggr_arrays;
-  // Reads from previous or outer loops
-  std::vector<z3::expr> aggr_reads;
-
-  // Aggr expr
-  z3::expr uf_expr;
-  bool isPeelLast();
-  bool isPeelFirst();
-  bool hasSubLoops();
-
-  void getInitVars ( std::vector<z3::expr>& );
-  void getEntryVars( std::vector<z3::expr>& );
-  void getExitVars ( std::vector<z3::expr>& );
-  void getFinalVars( std::vector<z3::expr>& );
-
-  void getInitVars ( z3::expr_vector& );
-  void getEntryVars( z3::expr_vector& );
-  void getExitVars ( z3::expr_vector& );
-  void getFinalVars( z3::expr_vector& );
-
-  z3::expr getLoopCounter();
-  z3::expr getLastCounterExpr();
-  z3::expr getFirstCounterExpr();
-  int getStepCnt();
-
-  std::map<llvm::Value*, std::list<z3::expr>>& getReadExprMap();
-
-  void dump();
-  void print( std::ostream& );
-};
 
 #endif // TILER_BMC_DS_H

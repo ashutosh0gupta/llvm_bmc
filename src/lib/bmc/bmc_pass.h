@@ -1,13 +1,13 @@
 #ifndef TILER_BMC_PASS_H
 #define TILER_BMC_PASS_H
 
-#include "utils/options.h"
-#include "utils/z3Utils.h"
-#include "utils/llvmUtils.h"
+#include "include/options.h"
+#include "lib/utils/z3Utils.h"
+#include "lib/utils/llvmUtils.h"
 #include "z3++.h"
-#include "bmc/bmc_ds.h"
-#include "bmc/bmc.h"
-#include "bmc/glb_model.h"
+#include "lib/bmc/bmc_ds.h"
+#include "include/bmc.h"
+#include "lib/bmc/glb_model.h"
 #include "array_model.h"
 
 class bmc;       // forward declaration of the bmc class

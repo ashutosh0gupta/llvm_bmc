@@ -1,6 +1,6 @@
 #include <limits>
 #include "llvmUtils.h"
-#include "utils/graphUtils.h"
+#include "lib/utils/graphUtils.h"
 // #include "daikon-inst/comments.h" //todo: move to utils
 #include <boost/algorithm/string.hpp>
 
@@ -345,15 +345,15 @@ void setLLVMConfigViaCommandLineOptions( std::string strs ) {
   llvm::cl::ParseCommandLineOptions( 2, array );
 }
 
-void printSegmentInfo(segment& s) {
-  std::cout << "\nPrinting segment info for segment " << &s;
-  std::cout << "\nPrinting entry blocks\n";
-  printBlockInfo(s.entryCutPoints);
-  std::cout << "\nPrinting exit blocks\n";
-  printBlockInfo(s.exitCutPoints);
-  std::cout << "\nPrinting body blocks\n";
-  printBlockInfo(s.bodyBlocks);
-}
+// void printSegmentInfo(segment& s) {
+//   std::cout << "\nPrinting segment info for segment " << &s;
+//   std::cout << "\nPrinting entry blocks\n";
+//   printBlockInfo(s.entryCutPoints);
+//   std::cout << "\nPrinting exit blocks\n";
+//   printBlockInfo(s.exitCutPoints);
+//   std::cout << "\nPrinting body blocks\n";
+//   printBlockInfo(s.bodyBlocks);
+// }
 
 void printBlockInfo(std::vector<llvm::BasicBlock*>& blockList) {
   for(const llvm::BasicBlock* b : blockList) {
@@ -1049,76 +1049,78 @@ void find_cutpoints(llvm::Pass* P, llvm::Function &f, std::vector< llvm::BasicBl
   }
 }
 
-void create_segments(llvm::Function &f,
-                     std::vector< llvm::BasicBlock* >& cutPoints,
-                     std::vector< segment >& segVec) {
-  segVec.clear();
-  std::map< llvm::BasicBlock*, bool > bbVisited;
-  std::vector< llvm::BasicBlock* > stack;
+//todo : check if we need the following code
 
-  for (auto fi = f.begin(), fe = f.end(); fi != fe; ++fi)  bbVisited[&(*fi)] = false;
+// void create_segments(llvm::Function &f,
+//                      std::vector< llvm::BasicBlock* >& cutPoints,
+//                      std::vector< segment >& segVec) {
+//   segVec.clear();
+//   std::map< llvm::BasicBlock*, bool > bbVisited;
+//   std::vector< llvm::BasicBlock* > stack;
 
-  for(llvm::BasicBlock* bb : cutPoints) {
-    for (llvm::succ_iterator sit = succ_begin(bb), set = succ_end(bb); sit != set; ++sit) {
-      llvm::BasicBlock* b = *sit;
-      segment s;
-      s.entryCutPoints.push_back(bb);
-      bbVisited[bb] = true;
-      std::map<std::string, llvm::Value*> nameValueMap;
-      buildBlockMap(bb, nameValueMap);
-      s.assuMapCPs[bb] = nameValueMap;
-      if(exists(cutPoints, b)) {
-        if(!exists(s.exitCutPoints, b)) {
-          s.exitCutPoints.push_back(b);
-        }
-        std::map<std::string, llvm::Value*> nameValueMap;
-        buildBlockMap(b, nameValueMap);
-        s.assertMapCPs[b] = nameValueMap;
-      } else if(!bbVisited.at(b)) {
-        stack.push_back(b);
-        while(!stack.empty()) {
-          llvm::BasicBlock* sbb = stack.back();
-          if(bbVisited.at(sbb)) {
-            stack.pop_back();
-          } else {
-            s.bodyBlocks.push_back(sbb);
-            bbVisited[sbb] = true;
-            stack.pop_back();
-            for (llvm::succ_iterator sit = succ_begin(sbb), set = succ_end(sbb); sit != set; ++sit) {
-              llvm::BasicBlock* b = *sit;
-              if(exists(cutPoints, b)) {
-                if(!exists(s.exitCutPoints, b)) {
-                  s.exitCutPoints.push_back(b);
-                }
-                std::map<std::string, llvm::Value*> nameValueMap;
-                buildBlockMap(b, nameValueMap);
-                s.assertMapCPs[b] = nameValueMap;
-              } else if(!bbVisited.at(b)) {
-                stack.push_back(b);
-              }
-            }
-            for (llvm::pred_iterator pit = pred_begin(sbb), pet = pred_end(sbb); pit != pet; ++pit) {
-              llvm::BasicBlock* b = *pit;
-              if(exists(cutPoints, b)) {
-                if(!exists(s.entryCutPoints, b)) {
-                  s.entryCutPoints.push_back(b);
-                }
-                std::map<std::string, llvm::Value*> nameValueMap;
-                buildBlockMap(b, nameValueMap);
-                s.assuMapCPs[b] = nameValueMap;
-              } else if(!bbVisited.at(b)) {
-                stack.push_back(b);
-              }
-            }
-          }
-        }
-        if(!s.bodyBlocks.empty()) {
-          segVec.push_back(s);
-        }
-      }
-    }
-  }
-}
+//   for (auto fi = f.begin(), fe = f.end(); fi != fe; ++fi)  bbVisited[&(*fi)] = false;
+
+//   for(llvm::BasicBlock* bb : cutPoints) {
+//     for (llvm::succ_iterator sit = succ_begin(bb), set = succ_end(bb); sit != set; ++sit) {
+//       llvm::BasicBlock* b = *sit;
+//       segment s;
+//       s.entryCutPoints.push_back(bb);
+//       bbVisited[bb] = true;
+//       std::map<std::string, llvm::Value*> nameValueMap;
+//       buildBlockMap(bb, nameValueMap);
+//       s.assuMapCPs[bb] = nameValueMap;
+//       if(exists(cutPoints, b)) {
+//         if(!exists(s.exitCutPoints, b)) {
+//           s.exitCutPoints.push_back(b);
+//         }
+//         std::map<std::string, llvm::Value*> nameValueMap;
+//         buildBlockMap(b, nameValueMap);
+//         s.assertMapCPs[b] = nameValueMap;
+//       } else if(!bbVisited.at(b)) {
+//         stack.push_back(b);
+//         while(!stack.empty()) {
+//           llvm::BasicBlock* sbb = stack.back();
+//           if(bbVisited.at(sbb)) {
+//             stack.pop_back();
+//           } else {
+//             s.bodyBlocks.push_back(sbb);
+//             bbVisited[sbb] = true;
+//             stack.pop_back();
+//             for (llvm::succ_iterator sit = succ_begin(sbb), set = succ_end(sbb); sit != set; ++sit) {
+//               llvm::BasicBlock* b = *sit;
+//               if(exists(cutPoints, b)) {
+//                 if(!exists(s.exitCutPoints, b)) {
+//                   s.exitCutPoints.push_back(b);
+//                 }
+//                 std::map<std::string, llvm::Value*> nameValueMap;
+//                 buildBlockMap(b, nameValueMap);
+//                 s.assertMapCPs[b] = nameValueMap;
+//               } else if(!bbVisited.at(b)) {
+//                 stack.push_back(b);
+//               }
+//             }
+//             for (llvm::pred_iterator pit = pred_begin(sbb), pet = pred_end(sbb); pit != pet; ++pit) {
+//               llvm::BasicBlock* b = *pit;
+//               if(exists(cutPoints, b)) {
+//                 if(!exists(s.entryCutPoints, b)) {
+//                   s.entryCutPoints.push_back(b);
+//                 }
+//                 std::map<std::string, llvm::Value*> nameValueMap;
+//                 buildBlockMap(b, nameValueMap);
+//                 s.assuMapCPs[b] = nameValueMap;
+//               } else if(!bbVisited.at(b)) {
+//                 stack.push_back(b);
+//               }
+//             }
+//           }
+//         }
+//         if(!s.bodyBlocks.empty()) {
+//           segVec.push_back(s);
+//         }
+//       }
+//     }
+//   }
+// }
 
 void buildBlockMap(llvm::BasicBlock* bb, std::map<std::string, llvm::Value*>& nameValueMap) {
   for (llvm::Instruction &II : *bb){

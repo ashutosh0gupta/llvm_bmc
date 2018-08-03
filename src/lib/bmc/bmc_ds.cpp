@@ -1,5 +1,5 @@
-#include "bmc/bmc_ds.h"
-#include "utils/z3Utils.h"
+#include "lib/bmc/bmc_ds.h"
+#include "lib/utils/z3Utils.h"
 
 unsigned bmc_ds::find_block_idx( const bb* b) {
   unsigned bidx = 0;
@@ -379,93 +379,34 @@ unsigned bmc_fun::get_call_count( const llvm::CallInst* call ) {
 
 //---------------------------------------------------------------------
 
-void bmc_loop::collect_loop_back_edges(llvm::Loop* L) {
-  auto h = L->getHeader();
-  llvm::SmallVector<llvm::BasicBlock*,10> LoopLatches;
-  L->getLoopLatches( LoopLatches );
-  for( llvm::BasicBlock* bb : LoopLatches ) {
-    loop_ignore_edges[h].insert( bb );
-  }
-}
+// void bmc_loop::collect_loop_back_edges(llvm::Loop* L) {
+//   auto h = L->getHeader();
+//   llvm::SmallVector<llvm::BasicBlock*,10> LoopLatches;
+//   L->getLoopLatches( LoopLatches );
+//   for( llvm::BasicBlock* bb : LoopLatches ) {
+//     loop_ignore_edges[h].insert( bb );
+//   }
+// }
 
-void bmc_loop::get_written_arrays(
- std::vector<const llvm::AllocaInst*>& arrays_updated ) {
-  ld->getWrittenArrays( arrays_updated );
-}
+// void bmc_loop::get_written_arrays(
+//  std::vector<const llvm::AllocaInst*>& arrays_updated ) {
+//   ld->getWrittenArrays( arrays_updated );
+// }
 
-void bmc_loop::get_written_globals(
-  std::vector<const llvm::GlobalVariable*>& glbs ) {
-  ld->getWrittenGlbs( glbs );
-}
+// void bmc_loop::get_written_globals(
+//   std::vector<const llvm::GlobalVariable*>& glbs ) {
+//   ld->getWrittenGlbs( glbs );
+// }
 
-std::vector<const llvm::AllocaInst*>& bmc_loop::get_pure_read_arrays() {
-  return ld->arrPureRead;
-}
-std::vector<const llvm::GlobalVariable*>& bmc_loop::get_pure_read_globals() {
-  return ld->glbPureRead;
-}
-std::vector<llvm::Value*>& bmc_loop::get_read_outer_locals(){
-  return ld->const_val;
-}
+// std::vector<const llvm::AllocaInst*>& bmc_loop::get_pure_read_arrays() {
+//   return ld->arrPureRead;
+// }
+// std::vector<const llvm::GlobalVariable*>& bmc_loop::get_pure_read_globals() {
+//   return ld->glbPureRead;
+// }
+// std::vector<llvm::Value*>& bmc_loop::get_read_outer_locals(){
+//   return ld->const_val;
+// }
 
 //---------------------------------------------------------------------
 
-bool bmc_ds_aggr::isPeelLast()  { return !ld->peel_direction_first; }
-bool bmc_ds_aggr::isPeelFirst() { return ld->peel_direction_first; }
-
-void bmc_ds_aggr::getInitVars ( z3::expr_vector& names) {
-  for( auto ag_names : aggr_scalars ) names.push_back( ag_names.i );
-  for( auto ag_names : aggr_arrays ) names.push_back( ag_names.i );
-}
-void bmc_ds_aggr::getEntryVars( z3::expr_vector& names) {
-  for( auto ag_names : aggr_scalars ) names.push_back( ag_names.en );
-  for( auto ag_names : aggr_arrays ) names.push_back( ag_names.en );
-}
-void bmc_ds_aggr::getExitVars ( z3::expr_vector& names) {
-  for( auto ag_names : aggr_scalars ) names.push_back( ag_names.ex );
-  for( auto ag_names : aggr_arrays ) names.push_back( ag_names.ex );
-}
-void bmc_ds_aggr::getFinalVars( z3::expr_vector& names) {
-  for( auto ag_names : aggr_scalars ) names.push_back( ag_names.f );
-  for( auto ag_names : aggr_arrays ) names.push_back( ag_names.f );
-}
-
-z3::expr bmc_ds_aggr::getLoopCounter() {
-  return ld->ctrZ3Expr;
-}
-
-z3::expr bmc_ds_aggr::getLastCounterExpr() {
-  return ld->exitBound;
-}
-
-z3::expr bmc_ds_aggr::getFirstCounterExpr() {
-  return ld->initBound;
-}
-
-int bmc_ds_aggr::getStepCnt() {
-  return ld->stepCnt;
-}
-
-std::map<llvm::Value*, std::list<z3::expr>>& bmc_ds_aggr::getReadExprMap() {
-  return ld->arrReadExpr;
-}
-
-bool bmc_ds_aggr::hasSubLoops() {
-  return sub_loops.size() > 0;
-}
-
-void bmc_ds_aggr::dump() { print( std::cout ); }
-
-void bmc_ds_aggr::print( std::ostream& o ) {
-  o << "----------------------\n";
-  o << uf_expr << "\n";
-  o << "Aggragated variables:\n";
-  for( auto a : aggr_scalars) { a.print(o); o << "\n"; }
-  for( auto a : aggr_arrays) { a.print(o); o << "\n"; }
-  o << "Pure variables:\n";
-  for( auto a : aggr_reads) { o << a << "\n"; }
-  o << "bmc:\n";
-  print_exprs( o, bmc_vec );
-  o << "spec:\n";
-  print_exprs( o, spec_vec );
-}

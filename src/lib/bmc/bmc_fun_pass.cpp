@@ -1,4 +1,4 @@
-#include "bmc/bmc_fun_pass.h"
+#include "lib/bmc/bmc_fun_pass.h"
 
 char bmc_fun_pass::ID = 0;
 

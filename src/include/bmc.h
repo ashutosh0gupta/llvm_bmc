@@ -1,12 +1,12 @@
 #ifndef TILER_BMC_H
 #define TILER_BMC_H
 
-#include "utils/options.h"
-#include "utils/z3Utils.h"
-#include "utils/llvmUtils.h"
+#include "include/options.h"
+#include "lib/utils/z3Utils.h"
+#include "lib/utils/llvmUtils.h"
 #include "z3++.h"
-#include "bmc/bmc_ds.h"
-#include "bmc/glb_model.h"
+#include "lib/bmc/bmc_ds.h"
+#include "lib/bmc/glb_model.h"
 // #include "daikon-inst/collect_loopdata.h"
 // #include "daikon-inst/build_name_map.h"
 
@@ -24,11 +24,11 @@ public:
 
   std::map< const llvm::Function*, bmc_fun*> func_formula_map;
   // loop_formula_map[NULL] maps to data for the code that is not in any loop
-  std::map< const llvm::Loop*, bmc_loop*> loop_formula_map;
-  std::map< const llvm::Loop*, bmc_ds_aggr*> aggr_map;
+  // std::map< const llvm::Loop*, bmc_loop*> loop_formula_map;
+
   z3::expr aggr_N; // the parameter for aggregation (should be identified in collect loop data)
 
-  std::map<llvm::Loop*, loopdata*>& ld_map;
+  // std::map<llvm::Loop*, loopdata*>& ld_map;
 
   name_map& localNameMap;
   std::map< const bb*, rev_name_map > revStartLocalNameMap;//todo: likely useless
@@ -40,7 +40,7 @@ public:
    std::map<const bb*,std::pair<std::vector<std::string>,std::vector<std::string> > >& bb_comment_map_,
       options& o_, z3::context& z3_,
       value_expr_map& def_map_,
-      std::map<llvm::Loop*, loopdata*>& ldm,
+      // std::map<llvm::Loop*, loopdata*>& ldm,
       name_map& lMap,
       std::map<std::string, llvm::Value*>& evMap)
     : o(o_)
@@ -49,7 +49,7 @@ public:
     , module(m_)
     , bb_comment_map( bb_comment_map_ )
     , aggr_N(z3_)
-    , ld_map(ldm)
+    // , ld_map(ldm)
     , localNameMap(lMap)
     , exprValMap(evMap)
     , g_model(z3_)
@@ -59,15 +59,12 @@ public:
     for( auto& it: func_formula_map ) {
       delete it.second;
     }
-    for( auto& it: loop_formula_map ) {
-      delete it.second;
-    }
-    for( auto& it: aggr_map ) {
-      delete it.second;
-    }
-    for( auto& it: ld_map ) {
-      delete it.second;
-    }
+    // for( auto& it: loop_formula_map ) {
+    //   delete it.second;
+    // }
+    // for( auto& it: ld_map ) {
+    //   delete it.second;
+    // }
   }
 
   //-------------------------------------------
@@ -95,9 +92,7 @@ public:
   void collect_aggr_pass();
 
   std::map< const llvm::Function*, bmc_fun*>& get_func_formula_map();
-  std::map< const llvm::Loop*, bmc_loop*>& get_loop_formula_map();
-  std::map< const llvm::Loop*, bmc_ds_aggr*>& get_loop_aggr_map();
-  // ValueExprMap& get_value_expr_map();
+  // std::map< const llvm::Loop*, bmc_loop*>& get_loop_formula_map();
 };
 
 #endif // TILER_BMC_H
