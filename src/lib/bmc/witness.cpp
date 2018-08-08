@@ -235,11 +235,13 @@ void witness::generate_html() {
 
     boost::filesystem::path p(file);
     p.replace_extension(".html");
-    std::string nf = o.outDirPath+"/"+p.filename().string();
+    boost::filesystem::path nf = o.outDirPath;
+    nf += "/" + p.filename().string();
+    // std::string nf = o.outDirPath+"/"+p.filename().string();
     std::cout << "dumping fail witness at :" << nf << "\n";
     char ch;
     std::fstream fin(file, std::fstream::in);
-    std::fstream fout( nf, std::fstream::out);
+    std::fstream fout( nf.string(), std::fstream::out);
     unsigned val_idx=0;
     unsigned line = 1;
     unsigned col = 1;

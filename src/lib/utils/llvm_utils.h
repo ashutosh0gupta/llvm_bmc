@@ -14,8 +14,10 @@
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/Analysis/LoopPass.h"
 #include "llvm/LinkAllPasses.h"
+#include "llvm/Analysis/CFGPrinter.h"
 #pragma GCC diagnostic pop
 
+#include <boost/filesystem.hpp>
 
 typedef llvm::BasicBlock bb;
 typedef std::set<const bb*> bb_set_t;
@@ -86,6 +88,8 @@ void c2bc( const std::string&, const std::string& );
 
 std::unique_ptr<llvm::Module> c2ir( std::string, llvm::LLVMContext& );
 
+void dump_dot_module( boost::filesystem::path& dump_path,
+                      std::unique_ptr<llvm::Module>& module );
 
 llvm::Instruction*
 estimate_comment_location( std::unique_ptr<llvm::Module>&, src_loc, src_loc);

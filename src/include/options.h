@@ -32,7 +32,7 @@ public:
   std::string fileName;
   std::string filePath;
   std::string funcName;
-  std::string outDirPath;
+  boost::filesystem::path outDirPath;
   int mode = 0;
   int loopNum = 0;
   int totalLoops = 0;

@@ -22,7 +22,9 @@ void options::get_description_cmd(po::options_description& config,
   po::options_description tiler("llvm_bmc Options");
   po::options_description bmc("BMC Options");
   po::options_description hidden("Hidden Options");
-
+  // todo : check if the systems is windows: find another default outDirPath
+  // /tmp ~/tmp ./tmp ./
+  // todo : in release mode dump in ./
   tiler.add_options()
     ("function,f", po::value(&funcName)->default_value("main"), "Set main function")
     ("output-dir,o", po::value(&outDirPath)->default_value("/tmp/"), "Set output directory")

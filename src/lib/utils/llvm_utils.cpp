@@ -3,6 +3,8 @@
 #include "lib/utils/graph_utils.h"
 // #include "daikon-inst/comments.h" //todo: move to utils
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem/fstream.hpp>
+#include <boost/filesystem.hpp>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -354,6 +356,18 @@ void setLLVMConfigViaCommandLineOptions( std::string strs ) {
 //   std::cout << "\nPrinting body blocks\n";
 //   printBlockInfo(s.bodyBlocks);
 // }
+
+
+void dump_dot_module( boost::filesystem::path& dump_path,
+                              std::unique_ptr<llvm::Module>& module ) {
+  std::cerr << "dumping llvm program files in folder:" << dump_path << "\n";
+  auto c_path = boost::filesystem::current_path();
+  current_path( dump_path );
+  llvm::legacy::PassManager passMan;
+  passMan.add( llvm::createCFGPrinterLegacyPassPass() );
+  passMan.run( *module.get() );
+  current_path( c_path );
+}
 
 void printBlockInfo(std::vector<llvm::BasicBlock*>& blockList) {
   for(const llvm::BasicBlock* b : blockList) {

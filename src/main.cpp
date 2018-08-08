@@ -1,6 +1,5 @@
-// #include "include/options.h"
+#include "include/options.h"
 #include "include/bmc.h"
-#include "lib/utils/llvm_utils.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -45,13 +44,13 @@ void prepare_module( options& o,
     // ============================================================
     passMan.add( llvm::createLoopUnrollPass( 0, 100, o.loop_unroll_count ) );
   }
-  if( o.dump_cfg ){
-    //change current folder
-    passMan.add( llvm::createCFGPrinterLegacyPassPass() );
-  }
   passMan.run( *module.get() );
 
   estimate_comment_location( module, comments, block_comment_map );
+
+  if( o.dump_cfg ) {
+    dump_dot_module( o.outDirPath, module );
+  }
 }
 
 void run_bmc( std::unique_ptr<llvm::Module>& module,

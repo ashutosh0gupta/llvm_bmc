@@ -409,9 +409,11 @@ void bmc_pass::translateStoreInst(unsigned bidx, const llvm::StoreInst* store ) 
     auto glb_wrt = bmc_ds_ptr->g_model.glb_write(bidx, store, val_expr);
     bmc_ds_ptr->bmc_vec.push_back( glb_wrt.first );
     bmc_ds_ptr->m.insert_term_map( store, bidx, glb_wrt.second );
-  } else {
+  } else if( auto gep = llvm::dyn_cast<llvm::Constant>(addr) ) {
+    llvm_bmc_error("bmc", "constant access to the memory!");
+  }else {
     LLVM_DUMP( store );
-    llvm_bmc_error("bmc", "Only array and global write/read supported!");
+    llvm_bmc_error("bmc", "Only local array and global write/read supported!");
   }
 }
 

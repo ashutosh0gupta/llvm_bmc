@@ -2,11 +2,12 @@
 #define TILER_BMC_H
 
 #include "include/options.h"
-#include "lib/utils/z3_utils.h"
-#include "lib/utils/llvm_utils.h"
 #include "z3++.h"
+
+#include "lib/utils/llvm_utils.h"
 #include "lib/bmc/bmc_ds.h"
 #include "lib/bmc/glb_model.h"
+
 // #include "daikon-inst/collect_loopdata.h"
 // #include "daikon-inst/build_name_map.h"
 
