@@ -500,11 +500,11 @@ void bmc_pass::translateTerminatorInst( unsigned bidx,
 void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
   if( bmc_obj.bb_comment_map.find(b) ==  bmc_obj.bb_comment_map.end() )
     return;
-  std::vector<std::string> start_comments = bmc_obj.bb_comment_map.at(b).first;
-  std::vector<std::string> end_comments = bmc_obj.bb_comment_map.at(b).second;
+  auto& start_comments = bmc_obj.bb_comment_map.at(b).start_comments;
+  auto& end_comments = bmc_obj.bb_comment_map.at(b).end_comments;
   if( start_comments.size() > 0 )
     llvm_bmc_error( "parse comment::", "comment at the start not supported");
-  for( std::string cmt : end_comments) {
+  for( comment cmt : end_comments) {
     bool at_start = false;
     assert( bmc_ds_ptr->bb_vec[0] == bmc_ds_ptr->eb );
     rev_name_map& orig_n_map = bmc_obj.revEndLocalNameMap[bmc_ds_ptr->eb];
@@ -533,48 +533,51 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
           ty_str = to_string(z_sort);
         }
       }
-      type_decls = type_decls + "(declare-fun " + name + " () " + ty_str +")\n";
-      type_decls = type_decls + "(declare-fun __pre_" + name + " () " + ty_str +")\n";
+      type_decls += "(declare-fun " + name + " () " + ty_str+")\n";
+      type_decls += "(declare-fun __pre_" + name + " () " + ty_str +")\n";
     }
-    type_decls = type_decls + cmt;
-    z3::expr_vector es = z3_ctx.parse_string( type_decls.c_str() );
-    assert( es.size() == 1 );
-    z3::expr e = es[0];
-    expr_set vars;
-    get_variables( e, vars );
-    z3::expr_vector prog_names(z3_ctx);
-    z3::expr_vector ssa_names(z3_ctx);
-    for( z3::expr v : vars ) {
-      prog_names.push_back(v);
-      std::string name = to_string(v);
-      if( n_map.find(name) != n_map.end() ) {
-        const llvm::Value* v = n_map[name];
-        if( auto alloc = llvm::dyn_cast<llvm::AllocaInst>(v) ) {
-          ssa_names.push_back( bmc_ds_ptr->get_array_state_var(bidx, alloc) );
-        } else if( auto glb = llvm::dyn_cast<llvm::GlobalVariable>(v)) {
-          ssa_names.push_back( bmc_ds_ptr->g_model.get_state_var(bidx, glb) );
-        }else{
-          ssa_names.push_back( bmc_ds_ptr->m.get_term( v ) );
-        }
-      }else{
-        std::string  prefix = name.substr( 0,6 );
-        name = name.substr(6);
-        if( prefix == "__pre_" && orig_n_map.find(name) != orig_n_map.end() ) {
+    for( auto txt : cmt.texts) {
+      auto parse_str = type_decls + txt;
+      z3::expr_vector es = z3_ctx.parse_string( parse_str.c_str() );
+      assert( es.size() == 1 );
+      z3::expr e = es[0];
+      expr_set vars;
+      get_variables( e, vars );
+      z3::expr_vector prog_names(z3_ctx);
+      z3::expr_vector ssa_names(z3_ctx);
+      for( z3::expr v : vars ) {
+        prog_names.push_back(v);
+        std::string name = to_string(v);
+        if( n_map.find(name) != n_map.end() ) {
           const llvm::Value* v = n_map[name];
           if( auto alloc = llvm::dyn_cast<llvm::AllocaInst>(v) ) {
-            ssa_names.push_back(bmc_ds_ptr->get_array_state_var(0, alloc) );
+            ssa_names.push_back( bmc_ds_ptr->get_array_state_var(bidx, alloc));
           } else if( auto glb = llvm::dyn_cast<llvm::GlobalVariable>(v)) {
-            ssa_names.push_back(bmc_ds_ptr->g_model.get_state_var(0, glb) );
+            ssa_names.push_back( bmc_ds_ptr->g_model.get_state_var(bidx, glb));
           }else{
             ssa_names.push_back( bmc_ds_ptr->m.get_term( v ) );
           }
         }else{
-          llvm_bmc_error( "parse comment::", "proerty comment refers to unknown " << name);
+          std::string  prefix = name.substr( 0,6 );
+          name = name.substr(6);
+          if( prefix == "__pre_" && orig_n_map.find(name) != orig_n_map.end()){
+            const llvm::Value* v = n_map[name];
+            if( auto alloc = llvm::dyn_cast<llvm::AllocaInst>(v) ) {
+              ssa_names.push_back(bmc_ds_ptr->get_array_state_var(0, alloc) );
+            } else if( auto glb = llvm::dyn_cast<llvm::GlobalVariable>(v)) {
+              ssa_names.push_back(bmc_ds_ptr->g_model.get_state_var(0, glb) );
+            }else{
+              ssa_names.push_back( bmc_ds_ptr->m.get_term( v ) );
+            }
+          }else{
+            llvm_bmc_error( "parse comment::",
+                            "proerty comment refers to unknown " << name );
+          }
         }
       }
+      z3::expr prop = e.substitute( prog_names, ssa_names);
+      bmc_ds_ptr->spec_vec.push_back( prop );
     }
-    z3::expr prop = e.substitute( prog_names, ssa_names);
-    bmc_ds_ptr->spec_vec.push_back( prop );
   }
 }
 

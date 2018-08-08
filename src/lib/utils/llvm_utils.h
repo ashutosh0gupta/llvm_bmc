@@ -66,19 +66,23 @@ class comment{
 public:
   // comment( std::string text_, src_loc start_, src_loc end_ ) :
   //   text(text_), start(start_), end(end_) {};
-  std::string text;
+  std::vector<std::string> texts;
   src_loc start;
   src_loc end;
   const bb* b = NULL;
+  void add_comments( const std::vector<std::string>& cmts ) {
+    vec_insert( texts, cmts );
+  }
   z3::expr to_z3_expr( z3::context z3_ctx, rev_name_map& n_map );
 
   void dump();
   void print(std::ostream& );
 };
 
-class comments{
-  std::map< const bb*, std::vector< comment > > start_comments;
-  std::map< const bb*, std::vector< comment > > end_comments;
+class comments {
+public:
+  std::vector< comment > start_comments;
+  std::vector< comment > end_comments;
 };
 
 std::unique_ptr<llvm::Module>
@@ -96,10 +100,10 @@ estimate_comment_location( std::unique_ptr<llvm::Module>&, src_loc, src_loc);
 
 void
 estimate_comment_location(std::unique_ptr<llvm::Module>& module,
-                          std::vector< comment >& comments,
-                          std::map< const bb*,
-                          std::pair< std::vector<std::string>,
-                                     std::vector<std::string> >  >&
+                          std::vector< comment >&,
+                          std::map< const bb*,comments >&
+                          // std::pair< std::vector<std::string>,
+                          //            std::vector<std::string> >  >&
 );
 
 void setLLVMConfigViaCommandLineOptions( std::string strs );

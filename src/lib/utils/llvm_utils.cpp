@@ -151,24 +151,26 @@ estimate_comment_location( std::unique_ptr<llvm::Module>& module,
 
 void
 estimate_comment_location(std::unique_ptr<llvm::Module>& module,
-                          std::vector< comment >& comments,
-                          std::map< const bb*,
-          std::pair< std::vector<std::string>, std::vector<std::string> > >&
+                          std::vector< comment >& cmts,
+                          std::map< const bb*, comments>&
+          // std::pair< std::vector<comment>, std::vector<comment> > >&
+          // std::pair< std::vector<std::string>, std::vector<std::string> > >&
                           bb_comment_map ) {
   // collect all the comments that are written at the same program point
-  std::map< llvm::Instruction*, std::vector<std::string> > comment_map;
+  // std::map< llvm::Instruction*, std::vector<std::string> > comment_map;
+  std::map< llvm::Instruction*, std::vector<comment> > comment_map;
   std::vector< std::vector< llvm::Instruction* > > Is;
-  for( auto comment : comments ) {
+  for( auto& comment : cmts ) {
     auto start = comment.start;
     auto end = comment.end;
-    auto comment_text = comment.text;
     llvm::Instruction* I =
       estimate_comment_location( module, start, end );
     if( comment_map.find(I) != comment_map.end() ) {
       auto& c_vec = comment_map.at(I);
-      c_vec.push_back(comment_text);
+      c_vec.push_back(comment);
     }else{
-      comment_map[I].push_back(comment_text);
+      comment_map[I].push_back(comment);
+      // maintain ordered instructions in a same block
       bool done = false;
       for( auto& B_Is : Is ) {
         if( B_Is[0]->getParent() == I->getParent() ) {
@@ -192,11 +194,11 @@ estimate_comment_location(std::unique_ptr<llvm::Module>& module,
       auto& pair = bb_comment_map[bb];
       llvm::Instruction* first = &(*(bb->getInstList().begin()));
       if( bb->getTerminator() == I ) {
-        pair.second = comment_map[I];
+        pair.end_comments = comment_map[I];
       }else if( first == I ) {
-        pair.first = comment_map[I];
+        pair.start_comments = comment_map[I];
       }else{
-        pair.second = comment_map[I];
+        pair.end_comments = comment_map[I];
         bb->splitBasicBlock(I);
       }
     }
@@ -255,7 +257,9 @@ bool ExecuteAction( clang::CompilerInstance& CI,
           comment c;
           boost::algorithm::trim(cmt);
           if(COMMENT_PREFIX == cmt.substr(0, COMMENT_PREFIX_LEN) ) {
-            c.text = cmt.substr(COMMENT_PREFIX_LEN, cmt.size()-COMMENT_PREFIX_LEN );
+            auto txt =
+              cmt.substr(COMMENT_PREFIX_LEN, cmt.size()-COMMENT_PREFIX_LEN );
+            c.texts.push_back( txt );
             c.start = getLocFromClangSource(cmnt->getSourceRange().getBegin(), sm);
             c.end = getLocFromClangSource( cmnt->getSourceRange().getEnd(), sm);
             comments_found.push_back(c);

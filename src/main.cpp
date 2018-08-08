@@ -17,20 +17,11 @@
 #include "llvm/Transforms/Utils/Cloning.h"
 #pragma GCC diagnostic pop
 
-// void run_bmc( std::unique_ptr<llvm::Module>& module,
-//               std::vector< comment >&,
-//               options& o, z3::context& z3_ctx,
-//               value_expr_map& m_,
-//               std::map<llvm::Loop*, loopdata*>& ld_map,
-//               name_map& lMap,
-//               std::map<std::string, llvm::Value*>& evMap);
-
 void prepare_module( options& o,
-                     std::unique_ptr<llvm::Module>& module,
-                     std::vector<comment>& comments,
+                       std::unique_ptr<llvm::Module>& module,
+                       std::vector<comment>& cmts,
                      // std::map<llvm::Value*, std::string>& lMap,
-                     std::map< const bb*,
-                     std::pair< std::vector<std::string>,std::vector<std::string> > >& block_comment_map
+                       std::map< const bb*, comments> & block_comment_map
                      ) {
   llvm::legacy::PassManager passMan;
   passMan.add( llvm::createPromoteMemoryToRegisterPass() );
@@ -46,7 +37,7 @@ void prepare_module( options& o,
   }
   passMan.run( *module.get() );
 
-  estimate_comment_location( module, comments, block_comment_map );
+  estimate_comment_location( module, cmts, block_comment_map );
 
   if( o.dump_cfg ) {
     dump_dot_module( o.outDirPath, module );
@@ -54,20 +45,21 @@ void prepare_module( options& o,
 }
 
 void run_bmc( std::unique_ptr<llvm::Module>& module,
-              std::vector<comment>& comments,
-              options& o, z3::context& z3_ctx,
-              value_expr_map& def_map_,
-              // std::map<llvm::Loop*, loopdata*>& ld_map,
-              name_map& lMap,
-              std::map<std::string, llvm::Value*>& evMap)
+              std::vector<comment>& cmts,
+              options& o, z3::context& z3_ctx )
 {
-  std::map<const bb*,
-           std::pair<std::vector<std::string>,std::vector<std::string> > >
-    bb_cmt_map;
-  prepare_module( o, module, comments, bb_cmt_map);
-  bmc b(module, bb_cmt_map, o, z3_ctx, def_map_,
+
+  // todo: why these maps here
+  value_expr_map def_map(z3_ctx);
+  name_map local_name_map;
+  // std::map<llvm::Loop*, loopdata*> ld_map;
+  std::map<std::string, llvm::Value*> expr_val_map;
+
+  std::map<const bb*, comments > bb_cmt_map;
+  prepare_module( o, module, cmts, bb_cmt_map);
+  bmc b(module, bb_cmt_map, o, z3_ctx, def_map,
         // ld_map,
-        lMap, evMap);
+        local_name_map, expr_val_map);
   b.init_glb();
   b.run_bmc_pass();
   for( auto& it : b.func_formula_map ) {
@@ -85,15 +77,8 @@ int main(int argc, char** argv) {
   if (!o.parse_cmdline(argc, argv)) return 0; // help was called
 
   z3::context z3_ctx;
-  
   std::unique_ptr<llvm::Module> module;
   std::vector< comment > comments;
-
-  // todo: why these maps here
-  value_expr_map def_map(z3_ctx);
-  name_map local_name_map;
-  // std::map<llvm::Loop*, loopdata*> ld_map;
-  std::map<std::string, llvm::Value*> expr_val_map;
 
   module = c2ir( o.filePath, o.globalContext, comments);
 
@@ -101,9 +86,5 @@ int main(int argc, char** argv) {
     module->print( llvm::outs(), nullptr );
   }
 
-  run_bmc( module, comments, o, z3_ctx, def_map,
-           // ld_map,
-           local_name_map,
-           expr_val_map);
-
+  run_bmc( module, comments, o, z3_ctx);
 }

@@ -88,5 +88,9 @@ void set_insert( const std::unordered_set<Key, Hash, Pred>& src,
   dst.insert( src.begin(), src.end() );
 }
 
+template< class Key >
+void vec_insert( std::vector<Key>& vector1, const std::vector<Key>& vector2 ) {
+  vector1.insert( vector1.end(), vector2.begin(), vector2.end() );
+}
 
 #endif // LLVM_BMC_UTILS_H

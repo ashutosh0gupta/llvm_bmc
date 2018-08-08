@@ -19,9 +19,7 @@ public:
   z3::context& z3_ctx;
   value_expr_map& def_map;
   std::unique_ptr<llvm::Module>& module;
-  std::map<const bb*,
-           std::pair<std::vector<std::string>,std::vector<std::string> > >&
-  bb_comment_map;
+  std::map< const bb*, comments >& bb_comment_map;
 
   std::map< const llvm::Function*, bmc_fun*> func_formula_map;
   // loop_formula_map[NULL] maps to data for the code that is not in any loop
@@ -38,7 +36,7 @@ public:
   std::map<std::string, llvm::Value*>& exprValMap;
 
   bmc(std::unique_ptr<llvm::Module>& m_,
-   std::map<const bb*,std::pair<std::vector<std::string>,std::vector<std::string> > >& bb_comment_map_,
+      std::map<const bb*, comments >& bb_comment_map_,
       options& o_, z3::context& z3_,
       value_expr_map& def_map_,
       // std::map<llvm::Loop*, loopdata*>& ldm,
