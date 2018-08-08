@@ -7,6 +7,8 @@
 #include <iostream>
 #include <ostream>
 #include <sstream>
+#include <vector>
+#include <map>
 #include <unordered_set>
 
 namespace llvm_bmc {

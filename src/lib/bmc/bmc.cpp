@@ -15,7 +15,7 @@
 
 void bmc::run_bmc_pass() {
   llvm::legacy::PassManager passMan;
-  passMan.add( new build_name_map(def_map, localNameMap, revStartLocalNameMap,
+  passMan.add( new build_name_map( localNameMap, revStartLocalNameMap,
                                    revEndLocalNameMap ) );
   // passMan.add( new collect_loopdata(z3_ctx, o, def_map, ld_map, localNameMap, exprValMap, module) );
 

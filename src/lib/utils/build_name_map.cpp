@@ -2,14 +2,15 @@
 
 char build_name_map::ID = 0;
 
-build_name_map::build_name_map( value_expr_map& def_map_, name_map& lMap,
+build_name_map::build_name_map( //value_expr_map& def_map_,
+                                name_map& lMap,
                        std::map< const bb*, rev_name_map >& revStartLocalNameMap_,
                        std::map< const bb*, rev_name_map >& revEndLocalNameMap_ )
   : llvm::FunctionPass(ID)
   , revStartLocalNameMap( revStartLocalNameMap_ )
   , revEndLocalNameMap( revEndLocalNameMap_ )
   , localNameMap(lMap)
-  , def_map(def_map_)
+  // , def_map(def_map_)
 {}
 
 build_name_map::~build_name_map() {}
@@ -17,7 +18,7 @@ build_name_map::~build_name_map() {}
 bool build_name_map::runOnFunction( llvm::Function &f ) {
   buildNameMap(f, localNameMap);
   buildRevNameMap( f );
-  buildParamExpr( f );
+  // buildParamExpr( f );
   return false;
 }
 
@@ -96,11 +97,11 @@ void build_name_map::buildRevNameMap( llvm::Function &f ) {
   }
 }
 
-void build_name_map::buildParamExpr( llvm::Function &f ) {
-  for( auto ab = f.arg_begin(), ae = f.arg_end(); ab != ae; ab++) {
-    def_map.get_term( &(*ab) );
-  }
-}
+// void build_name_map::buildParamExpr( llvm::Function &f ) {
+//   for( auto ab = f.arg_begin(), ae = f.arg_end(); ab != ae; ab++) {
+//     def_map.get_term( &(*ab) );
+//   }
+// }
 
 llvm::StringRef build_name_map::getPassName() const {
   return "Builds the llvm::Value to name string map for all functions";

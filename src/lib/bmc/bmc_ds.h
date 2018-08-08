@@ -6,6 +6,7 @@
 #include "lib/utils/llvm_utils.h"
 #include "lib/bmc/glb_model.h"
 #include "lib/bmc/array_model.h"
+#include "lib/bmc/value_expr_map.h"
 // #include "aggregation/aggregate.h"
 
 enum aggr_tag {tile, overlap, counter, aggregate, unknown};

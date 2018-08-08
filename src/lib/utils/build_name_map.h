@@ -9,7 +9,9 @@ public:
   static char ID;
 
 
-  build_name_map( value_expr_map&, name_map&,
+  build_name_map(
+                 // value_expr_map&,
+                 name_map&,
                  std::map<const bb*, rev_name_map >&,
                  std::map<const bb*, rev_name_map >&
                  );
@@ -19,7 +21,7 @@ public:
   std::map< const bb*, rev_name_map >& revEndLocalNameMap;
   name_map& localNameMap;
   //  std::map<std::string, llvm::Value*> nameValMap;
-  value_expr_map& def_map;
+  // value_expr_map& def_map;
 
   void buildRevNameMap( llvm::Function &f );
   void buildParamExpr( llvm::Function &f );
