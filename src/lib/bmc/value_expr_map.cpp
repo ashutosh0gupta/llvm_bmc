@@ -5,7 +5,7 @@
 //----------------------------------------------------------------------
 // value_expr_map
 
-void value_expr_map::insert_term_map( const llvm::Value* op, z3::expr e ) {
+void value_expr_map::insert_term_map( const llvm::Value* op, expr e ) {
   auto it = versions.find(op);
   if( it == versions.end() ) {
     insert_term_map( op, 0, e );
@@ -15,7 +15,7 @@ void value_expr_map::insert_term_map( const llvm::Value* op, z3::expr e ) {
 }
 
 void value_expr_map::insert_term_map( const llvm::Value* op, unsigned c_count,
-                                      z3::expr e ) {
+                                      expr e ) {
   auto it = versions.find(op);
   if( it == versions.end() ) {
     // assert( c_count == 0 );
@@ -28,18 +28,18 @@ void value_expr_map::insert_term_map( const llvm::Value* op, unsigned c_count,
 }
 
 //insert_new_def with 2 param is alias of get_term
-z3::expr value_expr_map::insert_new_def( const llvm::Value* op,
+expr value_expr_map::insert_new_def( const llvm::Value* op,
                                          unsigned c_count ) {
   return get_term( op, c_count );
 }
 
-z3::expr value_expr_map::insert_new_def( const llvm::Value* op ) {
+expr value_expr_map::insert_new_def( const llvm::Value* op ) {
   unsigned count = versions.find(op) == versions.end() ? 0 : versions[op].back() + 1;
   return insert_new_def( op, count );
 }
 
-z3::expr value_expr_map::get_term( const llvm::Value* op ) {
-  z3::expr c = read_constant( op );
+expr value_expr_map::get_term( const llvm::Value* op ) {
+  expr c = read_constant( op );
   if( c ) return c;
   auto it = versions.find(op);
   if( it == versions.end() ) {
@@ -50,18 +50,18 @@ z3::expr value_expr_map::get_term( const llvm::Value* op ) {
   }
 }
 
-z3::expr value_expr_map::get_term( const llvm::Value* op, unsigned c_count ) {
-  z3::expr e = read_term( op, c_count );
+expr value_expr_map::get_term( const llvm::Value* op, unsigned c_count ) {
+  expr e = read_term( op, c_count );
   if( e ) return e;
   // create new name
-  z3::expr name = create_fresh_name( op );
+  expr name = create_fresh_name( op );
   insert_term_map( op, c_count, name );
   return name;
 }
 
-z3::expr
+expr
 value_expr_map::get_earlier_term( const llvm::Value* op, unsigned c_count ) {
-  z3::expr c = read_constant( op );
+  expr c = read_constant( op );
   if( c ) return c;
   auto it = versions.find(op);
   if( it != versions.end() ) {
@@ -78,40 +78,40 @@ value_expr_map::get_earlier_term( const llvm::Value* op, unsigned c_count ) {
   }
 }
 
-z3::expr value_expr_map::create_fresh_name( const llvm::Value* op  ) {
+expr value_expr_map::create_fresh_name( const llvm::Value* op  ) {
   llvm::Type* ty = op->getType();
   if( auto i_ty = llvm::dyn_cast<llvm::IntegerType>(ty) ) {
     int bw = i_ty->getBitWidth();
     if(bw == 32 || bw == 64 ) {
-      z3::expr i =  get_fresh_int(ctx, op->getName().str());
+      expr i =  get_fresh_int(ctx, op->getName().str());
       return i;
     }else if(bw == 1 || bw == 8) {
-      z3::expr bit =  get_fresh_bool(ctx, op->getName().str());
+      expr bit =  get_fresh_bool(ctx, op->getName().str());
       return bit;
     }
   }
   ty->print( llvm::errs() ); llvm::errs() << "\n";
   llvm_bmc_error("llvm_utils", "unsupported type!!");
-  z3::expr e(ctx);
+  expr e(ctx);
   return e;
 }
 
-z3::expr value_expr_map::read_term( const llvm::Value* op, unsigned c_count ) {
+expr value_expr_map::read_term( const llvm::Value* op, unsigned c_count ) {
   auto it = vmap.find( {op,c_count} );
   if( it != vmap.end() ) {
     return it->second;
   }else{
-    z3::expr e(ctx);
+    expr e(ctx);
     return e; // contains no expression;
   }
 }
 
-z3::expr value_expr_map::read_constant( const llvm::Value* op ) {
+expr value_expr_map::read_constant( const llvm::Value* op ) {
   return read_const(op, ctx);
 }
 
 unsigned value_expr_map::get_max_version( const llvm::Value* op ) {
-  z3::expr c = read_constant( op );
+  expr c = read_constant( op );
   if( c ) return 0;
   auto it = versions.find(op);
   if( it == versions.end() ) {
@@ -124,7 +124,7 @@ unsigned value_expr_map::get_max_version( const llvm::Value* op ) {
 
 const std::vector<unsigned>&
 value_expr_map::get_versions( const llvm::Value* op ) {
-  z3::expr c = read_constant( op );
+  expr c = read_constant( op );
   if( c ) return dummy_empty_versions;
   auto it = versions.find(op);
   if( it == versions.end() ) {
@@ -146,7 +146,7 @@ void value_expr_map::print( std::ostream& o ) {
   for(auto it = vmap.begin(); it != vmap.end(); ++it) {
     const llvm::Value* I = it->first.first;
     unsigned version = it->first.second;
-    z3::expr val = it->second;
+    expr val = it->second;
     //    I->dump();
     o << I << " " << version << "~~>" << val << "\n";
   }

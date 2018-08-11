@@ -48,7 +48,7 @@ public:
   std::string llvm_bmc_version = "1.0";
   int loop_unroll_count = 1;
   bool unwind=false;
-  bool llvm_unroll=false; // selects between llvm_unroll or native
+  bool llvm_unroll=true; // selects between llvm_unroll or native
 
   //----------------------------------------
   //bmc options

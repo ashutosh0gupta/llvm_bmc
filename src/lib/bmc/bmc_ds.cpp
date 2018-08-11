@@ -165,16 +165,16 @@ void bmc_ds::print_formulas(unsigned print_from, unsigned print_spec_from ) {
 //returns a pair of
 //  - update expr and
 //  - the new that was created
-std::pair<z3::expr,z3::expr>
-bmc_ds::glb_write( unsigned bidx, const llvm::StoreInst* I, z3::expr& val ) {
+std::pair<expr,expr>
+bmc_ds::glb_write( unsigned bidx, const llvm::StoreInst* I, expr& val ) {
   return g_model.glb_write( bidx, I, val );
 }
 
-z3::expr bmc_ds::glb_read( unsigned bidx, const llvm::LoadInst* I) {
+expr bmc_ds::glb_read( unsigned bidx, const llvm::LoadInst* I) {
   return g_model.glb_read( bidx, I );
 }
 
-z3::expr bmc_ds::get_glb_state_var( unsigned bidx,
+expr bmc_ds::get_glb_state_var( unsigned bidx,
                                     const llvm::GlobalVariable* g) {
   return g_model.get_state_var( bidx, g );
 }
@@ -183,7 +183,7 @@ glb_state& bmc_ds::get_glb_state( const bb* b ) {
   unsigned bidx = find_block_idx(b);
   return g_model.get_state( bidx );
 }
-z3::expr bmc_ds::join_glb_state( std::vector<z3::expr>& cs,
+expr bmc_ds::join_glb_state( std::vector<expr>& cs,
                                  std::vector<unsigned>& prevs,
                                   unsigned src ) {
   return g_model.join_glb_state(cs, prevs, src );
@@ -304,9 +304,9 @@ void bmc_ds::refresh_array_state( unsigned bidx,
 //returns a pair of
 //  - update expr and
 //  - the new that was created
-std::pair<z3::expr,z3::expr>
+std::pair<expr,expr>
 bmc_ds::array_write( unsigned bidx, const llvm::StoreInst* I,
-                      z3::expr& idx, z3::expr& val ) {
+                      expr& idx, expr& val ) {
   assert( I );
   switch( ar_model_init ) {
   case FULL     : return ar_model_full.array_write( bidx, I, idx, val ); break;
@@ -317,8 +317,8 @@ bmc_ds::array_write( unsigned bidx, const llvm::StoreInst* I,
   }
 }
 
-z3::expr bmc_ds::array_read( unsigned bidx, const llvm::LoadInst* I,
-                               z3::expr& idx ) {
+expr bmc_ds::array_read( unsigned bidx, const llvm::LoadInst* I,
+                               expr& idx ) {
   assert( I );
   switch( ar_model_init ) {
   case FULL     : return ar_model_full.array_read( bidx, I, idx ); break;
@@ -329,13 +329,13 @@ z3::expr bmc_ds::array_read( unsigned bidx, const llvm::LoadInst* I,
   }
 }
 
-z3::expr bmc_ds::get_array_state_var( unsigned bidx,
+expr bmc_ds::get_array_state_var( unsigned bidx,
                                       const llvm::AllocaInst* alloc ) {
   unsigned ith_ary = ary_to_int.at( alloc );
   return ar_model_full.get_array_state_var( bidx, ith_ary );
 }
 
-z3::expr bmc_ds::get_array_state_var( unsigned bidx,
+expr bmc_ds::get_array_state_var( unsigned bidx,
                                       const llvm::Instruction* alloc ) {
 
   unsigned ith_ary = ary_to_int.at( alloc );
@@ -352,7 +352,7 @@ array_state& bmc_ds::get_array_state( const bb* b ) {
   return ar_model_full.get_state( bidx );
 }
 
-z3::expr bmc_ds::join_array_state(std::vector<z3::expr>& cs,
+expr bmc_ds::join_array_state(std::vector<expr>& cs,
                                   std::vector<unsigned>& prevs,
                                   unsigned src ) {
   assert( src );

@@ -39,8 +39,8 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   assert( bop );
   auto op0 = bop->getOperand( 0 );
   auto op1 = bop->getOperand( 1 );
-  z3::expr a = bmc_ds_ptr->m.get_term( op0 );
-  z3::expr b = bmc_ds_ptr->m.get_term( op1 );
+  expr a = bmc_ds_ptr->m.get_term( op0 );
+  expr b = bmc_ds_ptr->m.get_term( op1 );
   unsigned op = bop->getOpcode();
   switch( op ) {
   case llvm::Instruction::Add : bmc_ds_ptr->m.insert_term_map( bop, bidx, a+b     ); break;
@@ -69,8 +69,8 @@ void bmc_pass::translateCmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
   // todo: two cases of cmp ICmpInst and FCmpInst
   // figure out which one is actually supported
   llvm::Value* lhs = cmp->getOperand( 0 ),* rhs = cmp->getOperand( 1 );
-  // z3::expr l = get_term( z3_ctx, lhs, m ), r = get_term( z3_ctx, rhs, m );
-  z3::expr l = bmc_ds_ptr->m.get_term( lhs ), r = bmc_ds_ptr->m.get_term( rhs );
+  // expr l = get_term( z3_ctx, lhs, m ), r = get_term( z3_ctx, rhs, m );
+  expr l = bmc_ds_ptr->m.get_term( lhs ), r = bmc_ds_ptr->m.get_term( rhs );
   // l and r may have different types, due to llvm does not record clearly
   // if something is bool or int. Our translation may incorrectly identify
   // sort of some constant number. The following code corrects the mismatch
@@ -85,7 +85,7 @@ void bmc_pass::translateCmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
   }
   llvm::CmpInst::Predicate pred = cmp->getPredicate();
 
-  z3::expr cnd(z3_ctx);
+  expr cnd(z3_ctx);
   switch( pred ) {
   case llvm::CmpInst::ICMP_EQ  : cnd = (l==r); break;
   case llvm::CmpInst::ICMP_NE  : cnd = (l!=r); break;
@@ -109,13 +109,13 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
 
   unsigned num = phi->getNumIncomingValues();
   if( phi->getType()->isIntegerTy() ) {
-    z3::expr new_var = o.loop_aggr ? bmc_ds_ptr->m.get_term( phi ) :
+    expr new_var = o.loop_aggr ? bmc_ds_ptr->m.get_term( phi ) :
       bmc_ds_ptr->m.insert_new_def( phi );
     if( std::find(bmc_ds_ptr->quant_elim_val.begin(), bmc_ds_ptr->quant_elim_val.end(), phi) != bmc_ds_ptr->quant_elim_val.end() ) {
       bmc_ds_ptr->quant_elim_vars.push_back(new_var);
     }
 
-    std::vector<z3::expr> phi_cons;
+    std::vector<expr> phi_cons;
     for( unsigned i = 0 ; i < num ; i++ ) {
       const bb* prev = phi->getIncomingBlock(i);
       const llvm::Value* v_ = phi->getIncomingValue(i);
@@ -129,9 +129,9 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
       }
       //todo: check if this works
       for( unsigned pre_bidx : pre_bidxes) {
-        z3::expr prev_var = bmc_ds_ptr->m.get_earlier_term( v_, pre_bidx );
-        // z3::expr prev_var = bmc_ds_ptr->m.get_term( v_ );
-        z3::expr path_cond = extend_path( bidx, pre_bidx );
+        expr prev_var = bmc_ds_ptr->m.get_earlier_term( v_, pre_bidx );
+        // expr prev_var = bmc_ds_ptr->m.get_term( v_ );
+        expr path_cond = extend_path( bidx, pre_bidx );
         phi_cons.push_back( z3::implies(path_cond, new_var == prev_var) );
       }
     }
@@ -144,9 +144,9 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
 
 void bmc_pass::assume_to_bmc(unsigned bidx, const llvm::CallInst* call) {
   assert(call);
-  z3::expr assume_path_bit = bmc_ds_ptr->get_path_bit(bidx);
-  z3::expr assume_term = bmc_ds_ptr->m.get_term( call->getArgOperand(0) );
-  z3::expr assume_bit = get_fresh_bool( z3_ctx, "assume");
+  expr assume_path_bit = bmc_ds_ptr->get_path_bit(bidx);
+  expr assume_term = bmc_ds_ptr->m.get_term( call->getArgOperand(0) );
+  expr assume_bit = get_fresh_bool( z3_ctx, "assume");
   bmc_ds_ptr->set_path_bit( bidx, assume_bit );
   bmc_ds_ptr->bmc_vec.push_back( assume_bit == (assume_path_bit && assume_term) );
 }
@@ -173,8 +173,8 @@ bool bmc_pass::is_assume(const llvm::CallInst* call) {
 
 void bmc_pass::assert_to_spec(unsigned bidx, const llvm::CallInst* call) {
   assert( call );
-  z3::expr assert_path_bit = bmc_ds_ptr->get_path_bit(bidx);
-  z3::expr assert_term = bmc_ds_ptr->m.get_term( call->getArgOperand(0) );
+  expr assert_path_bit = bmc_ds_ptr->get_path_bit(bidx);
+  expr assert_term = bmc_ds_ptr->m.get_term( call->getArgOperand(0) );
   if(assert_term.is_bool()) {
     bmc_ds_ptr->spec_vec.push_back( !assert_path_bit || assert_term );
   } else {
@@ -208,12 +208,12 @@ void bmc_pass::translateNondet(unsigned bidx, const llvm::CallInst* call) {
   if(fp!=NULL &&
      (fp->getReturnType()->isIntegerTy(32) ||
       fp->getReturnType()->isIntegerTy(64))) {
-    z3::expr nondet_int = get_fresh_int( z3_ctx, "nondet");
+    expr nondet_int = get_fresh_int( z3_ctx, "nondet");
     bmc_ds_ptr->m.insert_term_map( call, bidx, nondet_int );
   } else if (fp!=NULL &&
              (fp->getReturnType()->isIntegerTy(1) ||
               fp->getReturnType()->isIntegerTy(8))) {
-    z3::expr nondet_bit = get_fresh_bool( z3_ctx, "nondet");
+    expr nondet_bit = get_fresh_bool( z3_ctx, "nondet");
     bmc_ds_ptr->m.insert_term_map( call, bidx, nondet_bit );
   } else {
     llvm_bmc_error("bmc", "Unsupported nondet type!");
@@ -430,7 +430,7 @@ void bmc_pass::translateBranch( unsigned bidx, const llvm::BranchInst* br ) {
   assert( br );
   auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
   if( !br->isUnconditional() ) {
-    z3::expr cond = bmc_ds_ptr->m.get_term( br->getCondition() );
+    expr cond = bmc_ds_ptr->m.get_term( br->getCondition() );
     bmc_ds_ptr->bmc_vec.push_back( cond == exit_bits[0] );
   }else{
     // for unconditional branch, there is no need of constraints
@@ -443,8 +443,8 @@ void bmc_pass::translateRetInst(const llvm::ReturnInst *ret) {
 
   llvm::Value* v = ret->getReturnValue();
   if( v ) {
-    z3::expr retTerm = bmc_ds_ptr->m.get_term( v );
-    z3::expr retVal = get_fresh_int(z3_ctx, "ret_val");
+    expr retTerm = bmc_ds_ptr->m.get_term( v );
+    expr retVal = get_fresh_int(z3_ctx, "ret_val");
     bmc_ds_ptr->bmc_vec.push_back( retVal == retTerm );
   } else {
     //todo : handle all cases
@@ -457,8 +457,8 @@ void bmc_pass::translateSwitchInst(unsigned bidx,const llvm::SwitchInst *swch){
 
   auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
   auto num_succs = swch->getNumSuccessors();
-  z3::expr cond_val = bmc_ds_ptr->m.get_term( swch->getCondition() );
-  std::vector<z3::expr> neg_disj;
+  expr cond_val = bmc_ds_ptr->m.get_term( swch->getCondition() );
+  std::vector<expr> neg_disj;
   for( unsigned i = 1; i < num_succs; i++ ) {
     auto val = bmc_ds_ptr->m.get_term( swch->getOperand(2*i) );
     auto cs = (val == cond_val);
@@ -470,7 +470,7 @@ void bmc_pass::translateSwitchInst(unsigned bidx,const llvm::SwitchInst *swch){
 
 void bmc_pass::translateUnreachableInst( unsigned bidx,
                                          const llvm::UnreachableInst *I) {
-  z3::expr unreach_path_bit = bmc_ds_ptr->get_path_bit(bidx);
+  expr unreach_path_bit = bmc_ds_ptr->get_path_bit(bidx);
   bmc_ds_ptr->spec_vec.push_back(!unreach_path_bit);
 }
 
@@ -538,14 +538,14 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
     }
     for( auto txt : cmt.texts) {
       auto parse_str = type_decls + txt;
-      z3::expr_vector es = z3_ctx.parse_string( parse_str.c_str() );
+      expr_vector es = z3_ctx.parse_string( parse_str.c_str() );
       assert( es.size() == 1 );
-      z3::expr e = es[0];
+      expr e = es[0];
       expr_set vars;
       get_variables( e, vars );
-      z3::expr_vector prog_names(z3_ctx);
-      z3::expr_vector ssa_names(z3_ctx);
-      for( z3::expr v : vars ) {
+      expr_vector prog_names(z3_ctx);
+      expr_vector ssa_names(z3_ctx);
+      for( expr v : vars ) {
         prog_names.push_back(v);
         std::string name = to_string(v);
         if( n_map.find(name) != n_map.end() ) {
@@ -575,7 +575,7 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
           }
         }
       }
-      z3::expr prop = e.substitute( prog_names, ssa_names);
+      expr prop = e.substitute( prog_names, ssa_names);
       bmc_ds_ptr->spec_vec.push_back( prop );
     }
   }
@@ -629,19 +629,19 @@ void bmc_pass::init_path_exit_bit( bb_vec_t &bb_vec
   for( const bb* src : bb_vec ) {
     if( bidx < bmc_ds_ptr->processed_bidx ) { bidx++; continue;}
     unsigned num_succs = src->getTerminator()->getNumSuccessors();
-    std::vector<z3::expr> exit_bits;
+    std::vector<expr> exit_bits;
     if( num_succs == 0 ) {
       // do nothing; map to empty vector
     }else if( num_succs == 1 ) {
       // always the successor taken
       exit_bits.push_back( z3_ctx.bool_val(true) );
     }else if( num_succs == 2 ) {
-      z3::expr e_b = get_fresh_bool(z3_ctx, "exit");
+      expr e_b = get_fresh_bool(z3_ctx, "exit");
       exit_bits.push_back( e_b );
       exit_bits.push_back( !e_b );
       // bmc_ds_ptr->quant_elim_vars.push_back(e_b);
     }else{
-      std::vector<z3::expr> v;
+      std::vector<expr> v;
       for( unsigned i = 0; i < num_succs; i++ ) {
         auto e_b = get_fresh_bool(z3_ctx, "exit_"+std::to_string(i) );
         exit_bits.push_back( e_b );
@@ -654,7 +654,7 @@ void bmc_pass::init_path_exit_bit( bb_vec_t &bb_vec
     }
 
     bmc_ds_ptr->set_exit_bits( bidx, exit_bits);
-    z3::expr p_b = get_fresh_bool(z3_ctx, "path");
+    expr p_b = get_fresh_bool(z3_ctx, "path");
     bmc_ds_ptr->set_path_bit( bidx, p_b );
     // bmc_ds_ptr->quant_elim_vars.push_back(p_b);
     bidx++;
@@ -677,7 +677,7 @@ void bmc_pass::init_path_exit_bit( bb_vec_t &bb_vec
   //std::cout << to_string( bmc_ds_ptr->quant_elim_vars );
 }
 
-z3::expr bmc_pass::extend_path( unsigned bidx, unsigned pre_bidx ) {
+expr bmc_pass::extend_path( unsigned bidx, unsigned pre_bidx ) {
   auto b = bmc_ds_ptr->bb_vec[bidx];
   unsigned idx_succ = getSuccessorIndex( bmc_ds_ptr->bb_vec[pre_bidx], b );
   return bmc_ds_ptr->get_exit_branch_path( pre_bidx, idx_succ );
@@ -692,14 +692,14 @@ void bmc_pass::do_bmc() {
   for( const bb* src : bmc_ds_ptr->bb_vec ) {
     // support for stacked call. blocks before start_bidx have been processed
     if( bidx < bmc_ds_ptr->processed_bidx) { bidx++; continue; }
-    std::vector<z3::expr> incoming_paths;
+    std::vector<expr> incoming_paths;
     std::vector<const bb*> prevs;
     for( auto& pre_bidx : bmc_ds_ptr->pred_idxs[bidx] ) {
       assert( pre_bidx < bidx );
-      z3::expr p = extend_path( bidx, pre_bidx );
+      expr p = extend_path( bidx, pre_bidx );
       incoming_paths.push_back( p );
     }
-    z3::expr path_bit = bmc_ds_ptr->get_path_bit( bidx );
+    expr path_bit = bmc_ds_ptr->get_path_bit( bidx );
     if( bidx == 0 ) {
       bmc_ds_ptr->bmc_vec.push_back( path_bit );
     }else{

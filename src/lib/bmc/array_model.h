@@ -24,9 +24,9 @@ public:
   array_state() {}
 
   //anything else is needed???
-  std::vector<z3::expr>& get_name_vec() { return array_index_names; };
+  std::vector<expr>& get_name_vec() { return array_index_names; };
 private:
-  std::vector<z3::expr> array_index_names;
+  std::vector<expr> array_index_names;
 };
 
 
@@ -41,16 +41,16 @@ public:
   // need to provide copy operator
 
   // void init_array_state( const bb* );
-  z3::expr join_array_state( std::vector<z3::expr>&,
+  expr join_array_state( std::vector<expr>&,
                              std::vector<unsigned>& prevs,
                              unsigned src
                              // std::vector<const bb*>&,
                              // const bb*
                              );
-  virtual z3::expr get_fresh_ary_name( unsigned ) = 0;
-  // virtual z3::expr array_write( llvm::Instruction* I, z3::expr idx,
-  //                               z3::expr val ) = 0;
-  // virtual z3::expr array_read( llvm::Instruction* I, z3::expr idx ) = 0;
+  virtual expr get_fresh_ary_name( unsigned ) = 0;
+  // virtual expr array_write( llvm::Instruction* I, expr idx,
+  //                               expr val ) = 0;
+  // virtual expr array_read( llvm::Instruction* I, expr idx ) = 0;
 
   // array_state& get_array_state( const bb* b ) { return exit_ary_map.at(b); }
   array_state& get_state( unsigned b ) { return exit_ary_map.at(b); }
@@ -58,7 +58,7 @@ public:
     exit_ary_map[b] = s;
   }
 
-  z3::expr get_array_state_var( unsigned b, unsigned ith_ary ) {
+  expr get_array_state_var( unsigned b, unsigned ith_ary ) {
     return exit_ary_map.at(b).get_name_vec()[ith_ary];
   }
 
@@ -101,14 +101,14 @@ public:
   // void init_state( const bb* );
   void init_state( unsigned );
   void init_state( unsigned eb, array_state& s );
-  virtual z3::expr get_fresh_ary_name( unsigned );
+  virtual expr get_fresh_ary_name( unsigned );
   //virtual
 
-  std::pair<z3::expr,z3::expr>
+  std::pair<expr,expr>
   array_write( unsigned bidx, const llvm::StoreInst* I,
-               z3::expr& idx, z3::expr& val );
+               expr& idx, expr& val );
   //virtual
-  z3::expr array_read( unsigned bidx, const llvm::LoadInst* I, z3::expr& idx );
+  expr array_read( unsigned bidx, const llvm::LoadInst* I, expr& idx );
 
   void update_names( unsigned, std::vector<const llvm::Instruction*>&);
   void update_name( unsigned, unsigned );
@@ -134,12 +134,12 @@ public:
   set_access_map( std::map< const llvm::Instruction*, unsigned >& map ) {
     ary_access_to_patition_map = map;
   }
-  virtual z3::expr get_fresh_ary_name( unsigned );
+  virtual expr get_fresh_ary_name( unsigned );
   //virtual
-  std::pair<z3::expr,z3::expr>
-  array_write( unsigned bidx, const llvm::StoreInst* I, z3::expr& idx, z3::expr& val );
+  std::pair<expr,expr>
+  array_write( unsigned bidx, const llvm::StoreInst* I, expr& idx, expr& val );
   //virtual
-  z3::expr array_read( unsigned bidx, const llvm::LoadInst* I, z3::expr& val );
+  expr array_read( unsigned bidx, const llvm::LoadInst* I, expr& val );
 
 private:
   unsigned num_partition=0;
@@ -153,7 +153,7 @@ public:
   array_model_partition( z3::context& ctx_ ) : array_model(ctx_) {
     model = PARTITION;
   }
-  virtual z3::expr get_fresh_ary_name( unsigned );
+  virtual expr get_fresh_ary_name( unsigned );
 
 };
 

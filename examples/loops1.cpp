@@ -2,7 +2,8 @@ bool assert(bool);
 
 int main() {
   int i = 0,k = 0;
-  for(;i<10;) {
+  int n;
+  for(;i<n;) {
     k=k+1;
     i=i+1;
   }

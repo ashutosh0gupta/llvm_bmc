@@ -7,10 +7,10 @@
 class glb_state {
 public:
   glb_state() {}
-  std::vector<z3::expr>& get_glb_name_vec() { return glb_names; };
+  std::vector<expr>& get_glb_name_vec() { return glb_names; };
 
 private:
-  std::vector<z3::expr> glb_names;
+  std::vector<expr> glb_names;
 };
 
 class glb_model{
@@ -22,7 +22,7 @@ public:
   {}
 
   void update_name(unsigned, std::vector<const llvm::GlobalVariable*>&);
-  z3::expr join_glb_state( std::vector<z3::expr>&,
+  expr join_glb_state( std::vector<expr>&,
                            std::vector<unsigned>&, unsigned
                           // std::vector<const bb*>&, const bb*
                            );
@@ -31,17 +31,17 @@ public:
   //void init_state( const bb* );
   //void set_state( const bb*, glb_state& );
 
-  z3::expr get_fresh_glb_name( unsigned, std::string );
-  z3::expr get_fresh_glb_name( unsigned );
+  expr get_fresh_glb_name( unsigned, std::string );
+  expr get_fresh_glb_name( unsigned );
 
   void insert_glb_sort( z3::sort );
   void insert_glb_to_id( const llvm::GlobalVariable*, unsigned );
   void insert_name_to_glb( std::string, const llvm::GlobalVariable* );
 
-  std::pair<z3::expr,z3::expr> glb_write( unsigned bidx,
+  std::pair<expr,expr> glb_write( unsigned bidx,
                                           const llvm::StoreInst* ,
-                                          z3::expr& );
-  z3::expr glb_read( unsigned bidx, const llvm::LoadInst* );
+                                          expr& );
+  expr glb_read( unsigned bidx, const llvm::LoadInst* );
 
   glb_state& get_state( unsigned b ) { return exit_glb_map.at(b); }
 
@@ -63,14 +63,14 @@ public:
     return;
   }
 
-  inline z3::expr
+  inline expr
   get_state_var( unsigned bidx,
                  const llvm::GlobalVariable* g) {
     unsigned i = glb_to_id[g];
     return exit_glb_map[bidx].get_glb_name_vec().at(i);
   }
 
-  inline z3::expr
+  inline expr
   get_state_var( unsigned bidx, unsigned i) {
     return exit_glb_map[bidx].get_glb_name_vec().at(i);
   }

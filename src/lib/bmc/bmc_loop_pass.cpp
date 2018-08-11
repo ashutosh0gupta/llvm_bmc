@@ -216,7 +216,7 @@ bool bmc_loop_pass::runOnEachLoop(llvm::Loop *L, llvm::Loop *prevL) {
 
   do_bmc();                       // Create the bmc formula
 
-  std::vector<z3::expr> latch_paths;
+  std::vector<expr> latch_paths;
   for( auto& latch : bmc_loop_ptr->latches) {
     latch_paths.push_back(bmc_loop_ptr->block_to_path_bit.at(latch));
   }
@@ -277,7 +277,7 @@ void bmc_loop_pass::update_names(bmc_loop* bmc_loop_ptr, bool is_init) {
 void bmc_loop_pass::add_out_var_defs( llvm::Loop* L, bmc_loop* bmc_loop_ptr ) {
   loopdata* ld = bmc_loop_ptr->get_loopdata();
   // Insert definitions of output variables
-  z3::expr fresh_int = get_fresh_int( z3_ctx );
+  expr fresh_int = get_fresh_int( z3_ctx );
   bmc_loop_ptr->bmc_vec.push_back( fresh_int == bmc_loop_ptr->m.get_term( ld->ctr_out));
   bmc_loop_ptr->subexpr_tags[fresh_int] = counter;
   for ( llvm::Value *v : ld->ov_out ) {
@@ -286,7 +286,7 @@ void bmc_loop_pass::add_out_var_defs( llvm::Loop* L, bmc_loop* bmc_loop_ptr ) {
     } else if( llvm::dyn_cast<llvm::StoreInst>(v) ) {
       continue;
     } else {
-      z3::expr fresh_int = get_fresh_int( z3_ctx );
+      expr fresh_int = get_fresh_int( z3_ctx );
       bmc_loop_ptr->bmc_vec.push_back( fresh_int == bmc_loop_ptr->m.get_term(v) );
       bmc_loop_ptr->subexpr_tags[fresh_int] = overlap;
     }
@@ -310,7 +310,7 @@ void bmc_loop_pass::tag_exprs( llvm::Loop* L, bmc_loop* bmc_loop_ptr ) {
   for(std::map<llvm::Value*,std::list<llvm::Value*>>::iterator iter = arrayRead.begin();
         iter != arrayRead.end(); ++iter) {
     for ( llvm::Value *v : iter->second ) {
-      z3::expr e = bmc_loop_ptr->m.get_term(v);
+      expr e = bmc_loop_ptr->m.get_term(v);
       if(e) {
         bmc_loop_ptr->subexpr_tags[e] = tile;
       } else {} // no error
@@ -321,7 +321,7 @@ void bmc_loop_pass::tag_exprs( llvm::Loop* L, bmc_loop* bmc_loop_ptr ) {
   for(std::map<llvm::Value*,std::list<llvm::Value*>>::iterator iter = arrayWrite.begin();
         iter != arrayWrite.end(); ++iter) {
     for ( llvm::Value *v : iter->second ) {
-      z3::expr e = bmc_loop_ptr->m.get_term(v);
+      expr e = bmc_loop_ptr->m.get_term(v);
       if(e) {
         bmc_loop_ptr->subexpr_tags[e] = tile;
       } else {} // no error
@@ -329,7 +329,7 @@ void bmc_loop_pass::tag_exprs( llvm::Loop* L, bmc_loop* bmc_loop_ptr ) {
   }
 
   for ( llvm::Value *v : ld->ov_inp ) {
-    z3::expr e = bmc_loop_ptr->m.get_term(v);
+    expr e = bmc_loop_ptr->m.get_term(v);
     if(e.is_app() && e.decl().decl_kind() == Z3_OP_SELECT) {
       bmc_loop_ptr->subexpr_tags[e] = overlap;
     } else if(e.is_app() && e.num_args()>0) {
@@ -343,7 +343,7 @@ void bmc_loop_pass::tag_exprs( llvm::Loop* L, bmc_loop* bmc_loop_ptr ) {
   }
 
   for ( llvm::Value *v : ld->ov_out ) {
-    z3::expr e = bmc_loop_ptr->m.get_term(v);
+    expr e = bmc_loop_ptr->m.get_term(v);
     if(e.is_app() && e.decl().decl_kind() == Z3_OP_STORE) {
       bmc_loop_ptr->subexpr_tags[e] = overlap;
     } else if(e.is_app() && e.num_args()>0) {
@@ -357,7 +357,7 @@ void bmc_loop_pass::tag_exprs( llvm::Loop* L, bmc_loop* bmc_loop_ptr ) {
   }
 
   for ( llvm::Value *v : ld->aggr_arr ) {
-    z3::expr e = bmc_loop_ptr->m.get_term(v);
+    expr e = bmc_loop_ptr->m.get_term(v);
     if(e.is_app() && e.num_args()>0) {
       bmc_loop_ptr->subexpr_tags[bmc_loop_ptr->m.get_term(v)] = aggregate;
     }

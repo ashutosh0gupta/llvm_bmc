@@ -63,9 +63,9 @@ private:
   bool is_assert(const llvm::CallInst*);
   void populate_globals_map( std::unique_ptr<llvm::Module>& );
 
-  // z3::expr extend_path( const bb* pre_b, unsigned idx_succ );
-  // z3::expr extend_path( const bb* b, const bb* pre_b );
-  z3::expr extend_path( unsigned bidx, unsigned pre_bidx );
+  // expr extend_path( const bb* pre_b, unsigned idx_succ );
+  // expr extend_path( const bb* b, const bb* pre_b );
+  expr extend_path( unsigned bidx, unsigned pre_bidx );
 
   void print_bb_exprs(const bb*);
   void print_bb_vecs();

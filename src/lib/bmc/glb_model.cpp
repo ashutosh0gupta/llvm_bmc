@@ -1,10 +1,10 @@
 #include "glb_model.h"
 
-z3::expr glb_model::get_fresh_glb_name( unsigned i ) {
+expr glb_model::get_fresh_glb_name( unsigned i ) {
   return get_fresh_glb_name(i, "glb");
 }
 
-z3::expr glb_model::get_fresh_glb_name( unsigned i, std::string name_str ) {
+expr glb_model::get_fresh_glb_name( unsigned i, std::string name_str ) {
   z3::sort glb_sort = glb_sorts[i];
   if( glb_sort.is_array() ) {
     llvm_bmc_error( "bmc", "bad sort is passed!!" );
@@ -45,16 +45,16 @@ void glb_model::insert_name_to_glb( std::string s, const llvm::GlobalVariable* g
   name_to_glb[s] = glb;
 }
 
-std::pair<z3::expr,z3::expr>
+std::pair<expr,expr>
 glb_model::glb_write( unsigned bidx, const llvm::StoreInst* I,
-                      z3::expr& val ) {
+                      expr& val ) {
   // auto b = I->getParent();
   // glb_state& glb_st = get_state( b );
   glb_state& glb_st = get_state( bidx );
   if(auto g_var = llvm::dyn_cast<llvm::GlobalVariable>(I->getPointerOperand())) {
     auto i = glb_to_id[g_var];
     auto& vec = glb_st.get_glb_name_vec();
-    z3::expr new_glb = get_fresh_glb_name(i);
+    expr new_glb = get_fresh_glb_name(i);
     vec[i] = new_glb;
     return std::make_pair( (new_glb == val), new_glb);
   } else {
@@ -62,21 +62,21 @@ glb_model::glb_write( unsigned bidx, const llvm::StoreInst* I,
   }
 }
 
-z3::expr glb_model::glb_read( unsigned bidx, const llvm::LoadInst* I ) {
+expr glb_model::glb_read( unsigned bidx, const llvm::LoadInst* I ) {
   // auto b = I->getParent();
   // glb_state& glb_st = get_state( b );
   glb_state& glb_st = get_state( bidx );
   if(auto g_var = llvm::dyn_cast<llvm::GlobalVariable>(I->getPointerOperand())) {
     auto i = glb_to_id[g_var];
     auto& vec = glb_st.get_glb_name_vec();
-    z3::expr glb_name = vec[i];
+    expr glb_name = vec[i];
     return glb_name;
   } else {
     llvm_bmc_error("bmc","Unable to determine the global variable!");
   }
 }
 
-z3::expr glb_model::join_glb_state( std::vector<z3::expr>& conds,
+expr glb_model::join_glb_state( std::vector<expr>& conds,
                                     std::vector<unsigned>& prevs,
                                     unsigned src
                                     // std::vector<const bb*>& prevs,
@@ -85,7 +85,7 @@ z3::expr glb_model::join_glb_state( std::vector<z3::expr>& conds,
   assert( conds.size() > 0  &&  prevs.size() == conds.size() );
   auto& s_names = exit_glb_map[src].get_glb_name_vec();
   unsigned glb_size = exit_glb_map[prevs[0]].get_glb_name_vec().size();
-  std::vector<z3::expr> vec;
+  std::vector<expr> vec;
   for( unsigned j=0; j < glb_size; j++ ) {
     //check if all equal
     auto& o_name = exit_glb_map[prevs[0]].get_glb_name_vec().at(j);
@@ -101,7 +101,7 @@ z3::expr glb_model::join_glb_state( std::vector<z3::expr>& conds,
       // if all symbols are euqal; no need to join.
       s_names.push_back( o_name );
     }else{
-      z3::expr new_name = get_fresh_glb_name(j);
+      expr new_name = get_fresh_glb_name(j);
       for( unsigned i=0; i < conds.size(); i++ ) {
         auto& p_st = exit_glb_map[prevs[i]].get_glb_name_vec();
         vec.push_back( z3::implies( conds[i], new_name == p_st[j] ) );

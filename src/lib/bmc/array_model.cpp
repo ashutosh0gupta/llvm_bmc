@@ -1,13 +1,13 @@
 #include "array_model.h"
 
-z3::expr array_model::join_array_state( std::vector<z3::expr>& conds,
+expr array_model::join_array_state( std::vector<expr>& conds,
                                         std::vector<unsigned>& prevs,
                                         unsigned src
                                         ) {
   assert( conds.size() > 0  &&  prevs.size() == conds.size() );
   auto& s_names = exit_ary_map[src].get_name_vec(); // fresh state created
   unsigned ar_size = exit_ary_map.at(prevs.at(0)).get_name_vec().size();
-  std::vector<z3::expr> vec;
+  std::vector<expr> vec;
   for( unsigned j=0; j < ar_size; j++ ) {
     //check if all equal
     auto& o_name = exit_ary_map.at(prevs.at(0)).get_name_vec().at(j);
@@ -23,7 +23,7 @@ z3::expr array_model::join_array_state( std::vector<z3::expr>& conds,
       // if all symbols are euqal; no need to join.
       s_names.push_back( o_name );
     }else{
-      z3::expr new_name = get_fresh_ary_name(j);
+      expr new_name = get_fresh_ary_name(j);
       for( unsigned i=0; i < conds.size(); i++ ) {
         auto& p_st = exit_ary_map.at(prevs.at(i)).get_name_vec();
         vec.push_back( z3::implies( conds[i], new_name == p_st.at(j) ) );
@@ -35,7 +35,7 @@ z3::expr array_model::join_array_state( std::vector<z3::expr>& conds,
 }
 
 
-z3::expr array_model_full::get_fresh_ary_name( unsigned i ) {
+expr array_model_full::get_fresh_ary_name( unsigned i ) {
   z3::sort ar_sort = ar_sorts.at(i);
   if( !ar_sort.is_array() ) {
     llvm_bmc_error( "bmc", "bad sort is passed!!" );
@@ -70,25 +70,25 @@ void array_model_full::copy_to_init_state( array_state& in ) {
   }
 }
 
-std::pair<z3::expr,z3::expr>
+std::pair<expr,expr>
 array_model_full::array_write( unsigned bidx, const llvm::StoreInst* I,
-                               z3::expr& idx, z3::expr& val ) {
+                               expr& idx, expr& val ) {
   array_state& ar_st = get_state( bidx );
   auto i = ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
-  z3::expr ar_name = vec.at(i);
-  z3::expr new_ar = get_fresh_ary_name(i);
+  expr ar_name = vec.at(i);
+  expr new_ar = get_fresh_ary_name(i);
   vec[i] = new_ar;
   return std::make_pair( (new_ar == z3::store( ar_name, idx, val )), new_ar);
 }
 
-z3::expr
+expr
 array_model_full::array_read( unsigned bidx, const llvm::LoadInst* I,
-                              z3::expr& idx) {
+                              expr& idx) {
   array_state& ar_st = get_state( bidx );
   auto i = ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
-  z3::expr ar_name = vec.at(i);
+  expr ar_name = vec.at(i);
   return z3::select( ar_name, idx);
 }
 
@@ -99,7 +99,7 @@ update_names( unsigned eb,
   auto& vec = s.get_name_vec();
   for( auto I : arrays_updated) {
     auto i = ary_access_to_index.at(&(*I));
-    z3::expr new_ar = get_fresh_ary_name(i);
+    expr new_ar = get_fresh_ary_name(i);
     vec[i] = new_ar;
     //vec[i] = get_fresh_ary_name(i);
   }
@@ -108,13 +108,13 @@ update_names( unsigned eb,
 void array_model_full::update_name( unsigned eb, unsigned i) {
   array_state& s = exit_ary_map.at(eb);
   auto& vec = s.get_name_vec();
-  z3::expr new_ar = get_fresh_ary_name(i);
+  expr new_ar = get_fresh_ary_name(i);
   vec[i] = new_ar;
 }
 
 //=======================================================================
 
-z3::expr array_model_fixed_len::get_fresh_ary_name( unsigned i ) {
+expr array_model_fixed_len::get_fresh_ary_name( unsigned i ) {
   return get_fresh_int(z3_ctx);
 }
 
@@ -128,18 +128,18 @@ void array_model_fixed_len::init_state( unsigned //const bb*
   }
 }
 
-std::pair<z3::expr,z3::expr>
+std::pair<expr,expr>
 array_model_fixed_len::array_write( unsigned bidx,
                                     const llvm::StoreInst* I,
-                                    z3::expr& idx,
-                                    z3::expr& val ) {
+                                    expr& idx,
+                                    expr& val ) {
   llvm_bmc_error( "bmc", "stub!!" );
   return std::make_pair(idx,idx);
 }
 
-z3::expr array_model_fixed_len::array_read( unsigned bidx,
+expr array_model_fixed_len::array_read( unsigned bidx,
                                             const llvm::LoadInst* I,
-                                            z3::expr& idx) {
+                                            expr& idx) {
   llvm_bmc_error( "bmc", "stub!!" );
   return idx;
 }

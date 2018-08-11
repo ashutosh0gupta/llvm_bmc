@@ -11,6 +11,9 @@
 #include <vector>
 #include <unordered_set>
 
+typedef z3::expr expr;
+typedef z3::expr_vector expr_vector;
+
 struct expr_hash {
   size_t operator () (const z3::expr& a) const {
     Z3_ast ap = a;

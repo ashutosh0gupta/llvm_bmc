@@ -11,7 +11,7 @@
 
 enum aggr_tag {tile, overlap, counter, aggregate, unknown};
 
-typedef std::unordered_map<z3::expr, enum aggr_tag, expr_hash, expr_equal> expr_tag;
+typedef std::unordered_map<expr, enum aggr_tag, expr_hash, expr_equal> expr_tag;
 
 class bmc_ds {
 public:
@@ -33,14 +33,14 @@ public:
 
   glb_model g_model;
 
-  std::pair<z3::expr,z3::expr>
-  glb_write(unsigned, const llvm::StoreInst*, z3::expr& );
-  z3::expr glb_read( unsigned, const llvm::LoadInst*);
-  z3::expr join_glb_state( std::vector<z3::expr>&,
+  std::pair<expr,expr>
+  glb_write(unsigned, const llvm::StoreInst*, expr& );
+  expr glb_read( unsigned, const llvm::LoadInst*);
+  expr join_glb_state( std::vector<expr>&,
                              std::vector<unsigned>&, unsigned );
 
   glb_state& get_glb_state( const bb* b );
-  z3::expr get_glb_state_var( unsigned bidx, const llvm::GlobalVariable*);
+  expr get_glb_state_var( unsigned bidx, const llvm::GlobalVariable*);
   void set_glb_state( unsigned bidx, glb_state& );
   void init_glb_model( glb_state& );
   void init_glb_model();
@@ -57,16 +57,16 @@ public:
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
   std::map< const llvm::Instruction*, unsigned >& ary_to_int;
 
-  std::pair<z3::expr,z3::expr>
-  array_write(unsigned, const llvm::StoreInst*, z3::expr&, z3::expr& );
-  z3::expr array_read( unsigned, const llvm::LoadInst*, z3::expr& idx);
-  z3::expr join_array_state( std::vector<z3::expr>&,
+  std::pair<expr,expr>
+  array_write(unsigned, const llvm::StoreInst*, expr&, expr& );
+  expr array_read( unsigned, const llvm::LoadInst*, expr& idx);
+  expr join_array_state( std::vector<expr>&,
                              std::vector<unsigned>&, unsigned );
 
   array_state& get_array_state( const bb* b );
   void set_array_state( unsigned bidx, array_state& );
-  z3::expr get_array_state_var( unsigned bidx, const llvm::AllocaInst*);
-  z3::expr get_array_state_var( unsigned bidx, const llvm::Instruction*);
+  expr get_array_state_var( unsigned bidx, const llvm::AllocaInst*);
+  expr get_array_state_var( unsigned bidx, const llvm::Instruction*);
 
   //--------------------------------------------------------------------------
   // initialization of array models
@@ -100,8 +100,8 @@ public:
 
   std::map< const bb*, unsigned> block_to_id; // todo: deprecate
 
-  std::map< unsigned, z3::expr > block_to_path_bit;
-  std::map< unsigned, std::vector<z3::expr> > block_to_exit_bits;
+  std::map< unsigned, expr > block_to_path_bit;
+  std::map< unsigned, std::vector<expr> > block_to_exit_bits;
 
   void print_formulas( unsigned print_from = 0, unsigned print_spec_from = 0);
 
@@ -146,20 +146,20 @@ public:
     }
   }
 
-  inline z3::expr get_path_bit( unsigned bidx ) {
+  inline expr get_path_bit( unsigned bidx ) {
     return block_to_path_bit.at(bidx);
   }
 
-  inline void set_path_bit( unsigned bidx, z3::expr b ) {
+  inline void set_path_bit( unsigned bidx, expr b ) {
     auto pair = std::make_pair( bidx, b);
     block_to_path_bit.insert( pair );
   }
 
-  inline std::vector< z3::expr >& get_exit_bits( unsigned bidx ) {
+  inline std::vector< expr >& get_exit_bits( unsigned bidx ) {
     return block_to_exit_bits.at(bidx);
   }
 
-  inline z3::expr get_exit_bit( unsigned bidx, unsigned succ_num ) {
+  inline expr get_exit_bit( unsigned bidx, unsigned succ_num ) {
     auto& vec= get_exit_bits( bidx );
     if( vec.size() == 0 && succ_num == 0 ) {
       return z3_ctx.bool_val(true);
@@ -173,15 +173,15 @@ public:
     }
   }
 
-  inline void set_exit_bits( unsigned bidx, std::vector<z3::expr>& b ) {
+  inline void set_exit_bits( unsigned bidx, std::vector<expr>& b ) {
     block_to_exit_bits[bidx] = b;
   }
 
-  inline z3::expr get_exit_branch_path( unsigned bidx, unsigned succ_num) {
+  inline expr get_exit_branch_path( unsigned bidx, unsigned succ_num) {
     return get_path_bit( bidx ) && get_exit_bit( bidx, succ_num );
   }
 
-  inline void add_bmc_formulas(  std::vector< z3::expr > fs ) {
+  inline void add_bmc_formulas(  std::vector< expr > fs ) {
     bmc_vec.insert( bmc_vec.begin(), fs.begin(), fs.end() );
   }
 
@@ -193,9 +193,9 @@ public:
                                 std::vector< unsigned >& latches,
                                 unsigned times
                                 );
-  std::vector<z3::expr> bmc_vec;  //final result;
-  std::vector<z3::expr> spec_vec; //specs from the code;
-  std::vector<z3::expr> quant_elim_vars;
+  std::vector<expr> bmc_vec;  //final result;
+  std::vector<expr> spec_vec; //specs from the code;
+  std::vector<expr> quant_elim_vars;
   std::vector<llvm::Value*> quant_elim_val;
 
   expr_tag subexpr_tags;

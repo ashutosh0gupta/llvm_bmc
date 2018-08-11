@@ -97,13 +97,13 @@ glb_state bmc::populate_glb_state() {
 }
 
 void bmc::eliminate_vars(bmc_ds* bmc_ds_ptr) {
-  z3::expr bmc_f = _and(bmc_ds_ptr->bmc_vec);
-  z3::expr_vector ev(z3_ctx);
-  for(z3::expr v : bmc_ds_ptr->quant_elim_vars) {
+  expr bmc_f = _and(bmc_ds_ptr->bmc_vec);
+  expr_vector ev(z3_ctx);
+  for(expr v : bmc_ds_ptr->quant_elim_vars) {
     ev.push_back(v);
   }
 
-  z3::expr qe_f = exists(ev, bmc_f);
+  expr qe_f = exists(ev, bmc_f);
   //  std::cout << "\nQuantified formula\n" << qe_f << "\n\n";
 
   z3::tactic qe(z3_ctx, "qe");
@@ -121,7 +121,7 @@ void bmc::eliminate_vars(bmc_ds* bmc_ds_ptr) {
 }
 
 void bmc::check_all_spec(bmc_ds* bmc_ds_ptr) {
-  for(z3::expr e : bmc_ds_ptr->spec_vec) {
+  for(expr e : bmc_ds_ptr->spec_vec) {
     if(run_solver(e, bmc_ds_ptr)) {
       std::cout << "\nSpecification that failed the check : \n" << e;
       std::cout << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
@@ -131,9 +131,9 @@ void bmc::check_all_spec(bmc_ds* bmc_ds_ptr) {
   std::cout << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
 }
 
-bool bmc::run_solver(z3::expr &spec, bmc_ds* bmc_ds_ptr) {
+bool bmc::run_solver(expr &spec, bmc_ds* bmc_ds_ptr) {
   z3::solver s(z3_ctx);
-  for(z3::expr e : bmc_ds_ptr->bmc_vec) {
+  for(expr e : bmc_ds_ptr->bmc_vec) {
     s.add(e);
   }
   s.add(!spec);
@@ -209,8 +209,8 @@ void bmc::produce_witness( z3::model mdl, bmc_ds* bmc_ds_ptr,
   std::map<std::string,std::string> state;
   unsigned bidx =0;
   for( auto b : bmc_ds_ptr->bb_vec ) {
-    z3::expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
-    // z3::expr path_bit = bmc_ds_ptr->block_to_path_bit.at(b);
+    expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+    // expr path_bit = bmc_ds_ptr->block_to_path_bit.at(b);
     if( is_true( path_bit, mdl ) ) {
       if( o.verbosity > 6 ) {
         std::cout << "-------------------------------------------\n";
