@@ -4,7 +4,6 @@
 #include "include/options.h"
 #include "lib/utils/z3_utils.h"
 #include "lib/utils/llvm_utils.h"
-// #include "z3++.h"
 #include "lib/bmc/bmc_ds.h"
 #include "include/bmc.h"
 #include "lib/bmc/glb_model.h"

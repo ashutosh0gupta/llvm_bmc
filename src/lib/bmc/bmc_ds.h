@@ -90,6 +90,8 @@ public:
     m_.copy_values( m );
   }
 
+  expr get_expr( const llvm::Value* v );
+
   const bb* eb; //todo: deprecate
 
   unsigned processed_bidx = 0;

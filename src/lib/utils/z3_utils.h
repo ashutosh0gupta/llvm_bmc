@@ -11,6 +11,7 @@
 #include <vector>
 #include <unordered_set>
 
+typedef z3::sort sort;
 typedef z3::expr expr;
 typedef z3::expr_vector expr_vector;
 
@@ -135,4 +136,11 @@ void propogate_store_eq(exprs& list, z3::context& z3_ctx);
 void propogate_select_eq(exprs& list, z3::context& z3_ctx);
 void simplify_select_store_nest(exprs& list, z3::context& z3_ctx);
 void simplify_select_eq(exprs& list, z3::context& z3_ctx);
+
+z3::expr substitute( z3::expr,
+                     std::vector<z3::expr>&,
+                     std::vector<z3::expr>& );
+
+z3::expr smt2_parse_string( z3::context&, const char* );
+
 #endif  // Z3UTILS_H

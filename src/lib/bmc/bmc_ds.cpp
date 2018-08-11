@@ -1,6 +1,17 @@
 #include "lib/bmc/bmc_ds.h"
 #include "lib/utils/z3_utils.h"
 
+
+expr bmc_ds::get_expr(  const llvm::Value* v ) {
+  if( auto alloc = llvm::dyn_cast<llvm::AllocaInst>(v) ) {
+    return get_array_state_var( 0, alloc );
+  } else if( auto glb = llvm::dyn_cast<llvm::GlobalVariable>(v) ) {
+    return g_model.get_state_var( 0, glb );
+  }else{
+    return m.get_term( v );
+  }
+}
+
 unsigned bmc_ds::find_block_idx( const bb* b) {
   unsigned bidx = 0;
   for( const bb* prev_candidate : bb_vec ) {

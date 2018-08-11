@@ -5,6 +5,13 @@
 #include<list>
 #include "z3_utils.h"
 
+z3::expr smt2_parse_string( z3::context& z3_ctx, const char* str ) {
+  expr_vector es = z3_ctx.parse_string( str );
+  assert( es.size() == 1 );
+  expr e = es[0];
+  return e;
+}
+
 void expr_set_to_exprs( expr_set& s, exprs& v) {
   for( auto e : s ) {
     v.push_back( e );
@@ -556,6 +563,16 @@ inline bool is_false( z3::expr e,  z3::model m ) {
   return ( Z3_get_bool_value( v.ctx(), v)  == Z3_L_FALSE );
 }
 
+z3::expr substitute( z3::expr e,
+                     std::vector<z3::expr>& from,
+                     std::vector<z3::expr>& to ) {
+  z3::context& z3_ctx = e.ctx();
+  z3::expr_vector out_z3_vec(z3_ctx), in_z3_vec(z3_ctx);
+  to_z3_vec( from, out_z3_vec );
+  to_z3_vec( to  ,  in_z3_vec );
+  return e.substitute( out_z3_vec, in_z3_vec );
+}
+
 //NOTE: this function does not collect quantified variables
 // todo: enable quantied variable counting if the call is not
 // started from the outermost quantifier
@@ -820,7 +837,7 @@ void simple_polyhedron_substraction( exprs& dims,
   //     std::cerr << "\n";
   //   }
   // }
-  bool diff_found;
+  bool diff_found = false;
   for( z3::expr& y : ys ) {
     std::vector<int> coeff;
     z3::expr bound = pred_to_linear_term( y, dims, coeff );
