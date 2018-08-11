@@ -15,17 +15,17 @@ typedef std::unordered_map<expr, enum aggr_tag, expr_hash, expr_equal> expr_tag;
 
 class bmc_ds {
 public:
-  z3::context& z3_ctx;
+  solver_context& solver_ctx;
   value_expr_map m;
 
-  bmc_ds( z3::context& z3_ctx_,
+  bmc_ds( solver_context& solver_ctx_,
           std::map<const llvm::Instruction*, unsigned>& aim,
           glb_model& g_model_ )
-    : z3_ctx( z3_ctx_)
-    , m(z3_ctx)
-    , g_model( z3_ctx, g_model_ )
-    , ar_model_full( z3_ctx )
-    , ar_model_fixed( z3_ctx )
+    : solver_ctx( solver_ctx_)
+    , m(solver_ctx)
+    , g_model( solver_ctx, g_model_ )
+    , ar_model_full( solver_ctx )
+    , ar_model_fixed( solver_ctx )
     , ary_to_int(aim)
 {}
   //--------------------------------------------------------------------------
@@ -164,11 +164,11 @@ public:
   inline expr get_exit_bit( unsigned bidx, unsigned succ_num ) {
     auto& vec= get_exit_bits( bidx );
     if( vec.size() == 0 && succ_num == 0 ) {
-      return z3_ctx.bool_val(true);
+      return solver_ctx.bool_val(true);
     }if( vec.size() == 0 && succ_num > 0 ) {
       // special case of artificial wiring; for aggregation module
       // aggregation module interferes with generation of exit and path bits
-      return z3_ctx.bool_val(true);
+      return solver_ctx.bool_val(true);
     }else{
       assert(  succ_num < vec.size() );
       return vec[succ_num];
@@ -220,10 +220,10 @@ public:
 class bmc_fun : public bmc_ds {
 
 public:
-  bmc_fun( z3::context& z3_ctx_,
+  bmc_fun( solver_context& solver_ctx_,
            std::map<const llvm::Instruction*, unsigned>& aim,
            glb_model& g_model)
-    : bmc_ds( z3_ctx_, aim, g_model) {}
+    : bmc_ds( solver_ctx_, aim, g_model) {}
 
   // Call sites
   std::vector<const llvm::CallInst*> call_sites;
@@ -237,11 +237,11 @@ class bmc_ds_aggr;
 
 //   loopdata* ld = 0;
 // public:
-//   bmc_loop( z3::context& z3_ctx_,
+//   bmc_loop( solver_context& solver_ctx_,
 //             std::map<const llvm::Instruction*, unsigned>& aim,
 //             glb_model& g_model,
 //             loopdata* ld_ )
-//     : bmc_ds( z3_ctx_, aim, g_model)
+//     : bmc_ds( solver_ctx_, aim, g_model)
 //     , ld(ld_) {}
 
 //   inline loopdata* get_loopdata() { return ld; }

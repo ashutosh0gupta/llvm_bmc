@@ -9,7 +9,7 @@ expr glb_model::get_fresh_glb_name( unsigned i, std::string name_str ) {
   if( glb_sort.is_array() ) {
     llvm_bmc_error( "bmc", "bad sort is passed!!" );
   }
-  auto glb = get_fresh_const(z3_ctx, glb_sort, name_str);
+  auto glb = get_fresh_const(solver_ctx, glb_sort, name_str);
   return glb;
 }
 
@@ -109,7 +109,7 @@ expr glb_model::join_glb_state( std::vector<expr>& conds,
       s_names.push_back( new_name );
     }
   }
-  return _and( vec, z3_ctx );
+  return _and( vec, solver_ctx );
 }
 
 void glb_model::update_name( unsigned eb, std::vector<const llvm::GlobalVariable*>& glbs_updated ) {

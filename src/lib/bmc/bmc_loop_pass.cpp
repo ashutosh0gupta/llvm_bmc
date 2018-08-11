@@ -3,7 +3,7 @@
 
 char bmc_loop_pass::ID = 0;
 
-bmc_loop_pass::bmc_loop_pass( options& o_, z3::context& z3_,
+bmc_loop_pass::bmc_loop_pass( options& o_, solver_context& z3_,
                               value_expr_map& def_map_, bmc& b_)
   : bmc_pass(o_,z3_,b_), llvm::FunctionPass(ID), def_map(def_map_)
 {}
@@ -187,7 +187,7 @@ bool bmc_loop_pass::runOnFunction( llvm::Function &f ) {
 
 bool bmc_loop_pass::runOnEachLoop(llvm::Loop *L, llvm::Loop *prevL) {
   // local pointer to record bmc
-  bmc_loop* bmc_loop_ptr = new bmc_loop( z3_ctx, ary_to_int,
+  bmc_loop* bmc_loop_ptr = new bmc_loop( solver_ctx, ary_to_int,
                                          bmc_obj.g_model,
                                          bmc_obj.ld_map.at(L) );
   assert( bmc_loop_ptr );
@@ -220,7 +220,7 @@ bool bmc_loop_pass::runOnEachLoop(llvm::Loop *L, llvm::Loop *prevL) {
   for( auto& latch : bmc_loop_ptr->latches) {
     latch_paths.push_back(bmc_loop_ptr->block_to_path_bit.at(latch));
   }
-  bmc_loop_ptr->bmc_vec.push_back( _or( latch_paths, z3_ctx));
+  bmc_loop_ptr->bmc_vec.push_back( _or( latch_paths, solver_ctx));
 
   add_out_var_defs(L, bmc_loop_ptr);
   tag_exprs(L, bmc_loop_ptr);
@@ -277,7 +277,7 @@ void bmc_loop_pass::update_names(bmc_loop* bmc_loop_ptr, bool is_init) {
 void bmc_loop_pass::add_out_var_defs( llvm::Loop* L, bmc_loop* bmc_loop_ptr ) {
   loopdata* ld = bmc_loop_ptr->get_loopdata();
   // Insert definitions of output variables
-  expr fresh_int = get_fresh_int( z3_ctx );
+  expr fresh_int = get_fresh_int( solver_ctx );
   bmc_loop_ptr->bmc_vec.push_back( fresh_int == bmc_loop_ptr->m.get_term( ld->ctr_out));
   bmc_loop_ptr->subexpr_tags[fresh_int] = counter;
   for ( llvm::Value *v : ld->ov_out ) {
@@ -286,7 +286,7 @@ void bmc_loop_pass::add_out_var_defs( llvm::Loop* L, bmc_loop* bmc_loop_ptr ) {
     } else if( llvm::dyn_cast<llvm::StoreInst>(v) ) {
       continue;
     } else {
-      expr fresh_int = get_fresh_int( z3_ctx );
+      expr fresh_int = get_fresh_int( solver_ctx );
       bmc_loop_ptr->bmc_vec.push_back( fresh_int == bmc_loop_ptr->m.get_term(v) );
       bmc_loop_ptr->subexpr_tags[fresh_int] = overlap;
     }

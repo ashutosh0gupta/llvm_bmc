@@ -36,7 +36,7 @@ class array_model_partition;
 
 class array_model{
 public:
-  array_model( z3::context& ctx_ ) : z3_ctx(ctx_) {}
+  array_model( solver_context& ctx_ ) : solver_ctx(ctx_) {}
 
   // need to provide copy operator
 
@@ -63,7 +63,7 @@ public:
   }
 
 private:
-  z3::context& z3_ctx;
+  solver_context& solver_ctx;
   array_model_t model = NONE;
   // std::map< const bb*, array_state > exit_ary_map;
   std::map< unsigned, array_state > exit_ary_map;
@@ -76,15 +76,15 @@ private:
 
 class array_model_full : public array_model {
 public:
-  array_model_full( z3::context& ctx_ ) : array_model(ctx_) {
+  array_model_full( solver_context& ctx_ ) : array_model(ctx_) {
     model = FULL;
   }
 
   inline void set_array_num( unsigned len ) {
     num_arrays = len;
     for( unsigned i = 0; i < num_arrays; i++) {
-      ar_sorts.push_back( z3_ctx.array_sort( z3_ctx.int_sort(),
-                                             z3_ctx.int_sort() ) );
+      ar_sorts.push_back( solver_ctx.array_sort( solver_ctx.int_sort(),
+                                             solver_ctx.int_sort() ) );
     }
   }
 
@@ -122,7 +122,7 @@ private:
 
 class array_model_fixed_len : public array_model {
 public:
-  array_model_fixed_len( z3::context& ctx_ ) : array_model(ctx_) {
+  array_model_fixed_len( solver_context& ctx_ ) : array_model(ctx_) {
     model = FIXED_LEN;
   }
 
@@ -150,7 +150,7 @@ private:
 
 class array_model_partition : public array_model {
 public:
-  array_model_partition( z3::context& ctx_ ) : array_model(ctx_) {
+  array_model_partition( solver_context& ctx_ ) : array_model(ctx_) {
     model = PARTITION;
   }
   virtual expr get_fresh_ary_name( unsigned );

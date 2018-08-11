@@ -31,7 +31,7 @@ expr array_model::join_array_state( std::vector<expr>& conds,
       s_names.push_back( new_name );
     }
   }
-  return _and( vec, z3_ctx );
+  return _and( vec, solver_ctx );
 }
 
 
@@ -40,7 +40,7 @@ expr array_model_full::get_fresh_ary_name( unsigned i ) {
   if( !ar_sort.is_array() ) {
     llvm_bmc_error( "bmc", "bad sort is passed!!" );
   }
-  auto ar = get_fresh_const( z3_ctx, ar_sort, "arr" );
+  auto ar = get_fresh_const( solver_ctx, ar_sort, "arr" );
   return ar;
 }
 
@@ -115,7 +115,7 @@ void array_model_full::update_name( unsigned eb, unsigned i) {
 //=======================================================================
 
 expr array_model_fixed_len::get_fresh_ary_name( unsigned i ) {
-  return get_fresh_int(z3_ctx);
+  return get_fresh_int(solver_ctx);
 }
 
 void array_model_fixed_len::init_state( unsigned //const bb*
@@ -124,7 +124,7 @@ void array_model_fixed_len::init_state( unsigned //const bb*
   auto& vec = s.get_name_vec();
   vec.clear();
   for( unsigned i = 0; i < num_partition; i++) {
-    vec.push_back( get_fresh_int(z3_ctx) );
+    vec.push_back( get_fresh_int(solver_ctx) );
   }
 }
 

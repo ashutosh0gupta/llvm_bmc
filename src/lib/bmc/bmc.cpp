@@ -17,12 +17,12 @@ void bmc::run_bmc_pass() {
   llvm::legacy::PassManager passMan;
   passMan.add( new build_name_map( localNameMap, revStartLocalNameMap,
                                    revEndLocalNameMap ) );
-  // passMan.add( new collect_loopdata(z3_ctx, o, def_map, ld_map, localNameMap, exprValMap, module) );
+  // passMan.add( new collect_loopdata(solver_ctx, o, def_map, ld_map, localNameMap, exprValMap, module) );
 
   if(o.loop_aggr) {
-    // passMan.add( new bmc_loop_pass(o,z3_ctx, def_map, *this));
+    // passMan.add( new bmc_loop_pass(o,solver_ctx, def_map, *this));
   } else {
-    passMan.add( new bmc_fun_pass(o, z3_ctx,*this));
+    passMan.add( new bmc_fun_pass(o, solver_ctx,*this));
   }
   passMan.run( *module.get() );
 }
@@ -76,7 +76,7 @@ glb_state bmc::populate_glb_state() {
       g_model.insert_glb_to_id(glb, glbCntr);
       g_model.insert_name_to_glb(glb->getName().str() ,glb);
 
-      sort z_sort = llvm_to_z3_sort(z3_ctx, el_ty);
+      sort z_sort = llvm_to_sort(solver_ctx, el_ty);
       g_model.insert_glb_sort( z_sort );
 
       auto new_glb = g_model.get_fresh_glb_name(glbCntr, glb->getName());
@@ -84,8 +84,8 @@ glb_state bmc::populate_glb_state() {
 
       if( glb->hasUniqueInitializer() ) {
         auto c = glb->getInitializer();
-        // auto val = get_term( z3_ctx, c, m );
-        auto val = read_const( c, z3_ctx );
+        // auto val = get_term( solver_ctx, c, m );
+        auto val = read_const( c, solver_ctx );
         glb_bmc_vec.push_back(new_glb == val);
       } else {} // do nothing
     } else {
@@ -98,7 +98,7 @@ glb_state bmc::populate_glb_state() {
 
 void bmc::eliminate_vars(bmc_ds* bmc_ds_ptr) {
   expr bmc_f = _and(bmc_ds_ptr->bmc_vec);
-  expr_vector ev(z3_ctx);
+  expr_vector ev(solver_ctx);
   for(expr v : bmc_ds_ptr->quant_elim_vars) {
     ev.push_back(v);
   }
@@ -106,8 +106,8 @@ void bmc::eliminate_vars(bmc_ds* bmc_ds_ptr) {
   expr qe_f = exists(ev, bmc_f);
   //  std::cout << "\nQuantified formula\n" << qe_f << "\n\n";
 
-  z3::tactic qe(z3_ctx, "qe");
-  z3::goal g(z3_ctx);
+  z3::tactic qe(solver_ctx, "qe");
+  z3::goal g(solver_ctx);
   g.add(qe_f);
   z3::apply_result r = qe.apply(g);
   //  std::cout << "\nAfter quantifier elimination\n" << r <<"\n\n";
@@ -132,7 +132,7 @@ void bmc::check_all_spec(bmc_ds* bmc_ds_ptr) {
 }
 
 bool bmc::run_solver(expr &spec, bmc_ds* bmc_ds_ptr) {
-  z3::solver s(z3_ctx);
+  z3::solver s(solver_ctx);
   for(expr e : bmc_ds_ptr->bmc_vec) {
     s.add(e);
   }

@@ -1328,7 +1328,7 @@ std::string getLocRange(const llvm::BasicBlock* b ) {
   return l_name;
 }
 
-z3::sort llvm_to_z3_sort( z3::context& c, llvm::Type* t ) {
+z3::sort llvm_to_sort( z3::context& c, llvm::Type* t ) {
   if( t->isIntegerTy() ) {
     if( t->isIntegerTy( 32 ) ) return c.int_sort();
     if( t->isIntegerTy( 64 ) ) return c.int_sort();
@@ -1336,7 +1336,7 @@ z3::sort llvm_to_z3_sort( z3::context& c, llvm::Type* t ) {
   }
   if( t->isArrayTy() ) {
     llvm::Type* te = t->getArrayElementType();
-    z3::sort z_te = llvm_to_z3_sort(c, te);
+    z3::sort z_te = llvm_to_sort(c, te);
     return c.array_sort( c.int_sort(), z_te );
   }
   llvm_bmc_error("llvm_utils", "only int and bool sorts are supported");

@@ -9,7 +9,7 @@ public:
   static char ID;
 
 public:
-  bmc_fun_pass( options&, z3::context&, bmc&);
+  bmc_fun_pass( options&, solver_context&, bmc&);
   ~bmc_fun_pass();
 
   virtual bool runOnFunction( llvm::Function & );

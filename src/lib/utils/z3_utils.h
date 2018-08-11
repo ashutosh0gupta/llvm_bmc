@@ -11,6 +11,7 @@
 #include <vector>
 #include <unordered_set>
 
+typedef z3::context solver_context;
 typedef z3::sort sort;
 typedef z3::expr expr;
 typedef z3::expr_vector expr_vector;

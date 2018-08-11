@@ -208,7 +208,7 @@ std::string getLocation(const llvm::Instruction* I );
 std::string getLocRange(const llvm::BasicBlock* b );
 
 src_loc getLoc( const llvm::Instruction* I );
-z3::sort llvm_to_z3_sort( z3::context& , llvm::Type* );
+z3::sort llvm_to_sort( z3::context& , llvm::Type* );
 z3::expr read_const( const llvm::Value*, z3::context& );
 
 // typedef std::map< std::pair<const llvm::Value*,unsigned>,

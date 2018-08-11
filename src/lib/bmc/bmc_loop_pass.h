@@ -11,8 +11,8 @@ public:
   value_expr_map& def_map;
 
 public:
-  // bmc_pass( options&, z3::context&, bmc&, ValueExprMap&);
-  bmc_loop_pass( options&, z3::context&, value_expr_map&, bmc&);
+  // bmc_pass( options&, solver_context&, bmc&, ValueExprMap&);
+  bmc_loop_pass( options&, solver_context&, value_expr_map&, bmc&);
   ~bmc_loop_pass();
 
   void populate_bmc_ds( bmc_loop* bmc_loop_ptr );
@@ -37,7 +37,7 @@ public:
   value_expr_map& def_map;
 
 public:
-  bmc_aggr_pass( options&, z3::context&, value_expr_map&, bmc&);
+  bmc_aggr_pass( options&, solver_context&, value_expr_map&, bmc&);
   ~bmc_aggr_pass();
 
   virtual bool runOnFunction( llvm::Function & );

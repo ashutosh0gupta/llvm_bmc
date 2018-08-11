@@ -15,8 +15,8 @@ private:
 
 class glb_model{
 public:
-  glb_model( z3::context& ctx_ ) : z3_ctx(ctx_) {}
-  glb_model( z3::context& ctx_, glb_model& g_m_ ) : z3_ctx(ctx_)
+  glb_model( solver_context& ctx_ ) : solver_ctx(ctx_) {}
+  glb_model( solver_context& ctx_, glb_model& g_m_ ) : solver_ctx(ctx_)
     , glb_sorts( g_m_.get_sorts() )
     , glb_to_id( g_m_.get_glb_to_id() )
   {}
@@ -83,7 +83,7 @@ public:
   }
 
 private:
-  z3::context& z3_ctx;
+  solver_context& solver_ctx;
   // std::map< const bb*, glb_state > exit_glb_map;
   std::map< unsigned, glb_state > exit_glb_map;
   std::vector< sort > glb_sorts;

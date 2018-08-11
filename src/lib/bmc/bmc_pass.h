@@ -15,7 +15,7 @@ class bmc_pass {
 
 public:
   options& o;
-  z3::context& z3_ctx;
+  solver_context& solver_ctx;
   bmc& bmc_obj;
   bmc_ds* bmc_ds_ptr = 0;
 
@@ -73,7 +73,7 @@ protected:
   void populateArrAccMap(llvm::Function*);
 
 public:
-  bmc_pass( options&, z3::context&, bmc&);
+  bmc_pass( options&, solver_context&, bmc&);
   virtual ~bmc_pass();
 
   void translateParams(llvm::Function &);

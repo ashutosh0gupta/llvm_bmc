@@ -4,12 +4,12 @@
 #include "lib/utils/utils.h"
 #include "lib/utils/z3_utils.h"
 
-namespace z3 { class expr; class context; }
+// namespace z3 { class expr; class context; }
 namespace llvm { class Value; }
 
 class value_expr_map {
 public:
-  value_expr_map( z3::context& ctx_ ) : ctx( ctx_ ) {};
+  value_expr_map( solver_context& ctx_ ) : ctx( ctx_ ) {};
   void insert_term_map( const llvm::Value*, unsigned, expr );
   void insert_term_map( const llvm::Value*, expr );
   expr insert_new_def( const llvm::Value* op, unsigned c_count );
@@ -27,7 +27,7 @@ public:
   void dump();
   void print( std::ostream& o );
 private:
-  z3::context& ctx;
+  solver_context& ctx;
   std::map< std::pair<const llvm::Value*,unsigned>, expr > vmap;
   std::map< const llvm::Value*, std::vector<unsigned> > versions;
   std::vector<unsigned> dummy_empty_versions;

@@ -2,7 +2,7 @@
 
 char bmc_fun_pass::ID = 0;
 
-bmc_fun_pass::bmc_fun_pass( options& o_, z3::context& z3_, bmc& b_)
+bmc_fun_pass::bmc_fun_pass( options& o_, solver_context& z3_, bmc& b_)
   : bmc_pass(o_,z3_,b_), llvm::FunctionPass(ID)
 {}
 
@@ -15,7 +15,7 @@ bool bmc_fun_pass::runOnFunction( llvm::Function &f ) {
 
   populateArrAccMap(&f);
 
-  bmc_fun *bmc_fun_ptr = new bmc_fun(z3_ctx, ary_to_int,
+  bmc_fun *bmc_fun_ptr = new bmc_fun(solver_ctx, ary_to_int,
                                      bmc_obj.g_model); // local pointer
   assert(bmc_fun_ptr);
   bmc_ds_ptr = bmc_fun_ptr;                 // set the pointer in base class

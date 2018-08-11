@@ -12,9 +12,9 @@
     llvm_bmc_error( "bmc", "Unsupported instruction!!");                   \
   }
 
-bmc_pass::bmc_pass( options& o_, z3::context& z3_, bmc& b_)
+bmc_pass::bmc_pass( options& o_, solver_context& z3_, bmc& b_)
     : o(o_)
-    , z3_ctx(z3_)
+    , solver_ctx(z3_)
     , bmc_obj(b_)
 {}
 
@@ -69,7 +69,7 @@ void bmc_pass::translateCmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
   // todo: two cases of cmp ICmpInst and FCmpInst
   // figure out which one is actually supported
   llvm::Value* lhs = cmp->getOperand( 0 ),* rhs = cmp->getOperand( 1 );
-  // expr l = get_term( z3_ctx, lhs, m ), r = get_term( z3_ctx, rhs, m );
+  // expr l = get_term( solver_ctx, lhs, m ), r = get_term( solver_ctx, rhs, m );
   expr l = bmc_ds_ptr->m.get_term( lhs ), r = bmc_ds_ptr->m.get_term( rhs );
   // l and r may have different types, due to llvm does not record clearly
   // if something is bool or int. Our translation may incorrectly identify
@@ -85,7 +85,7 @@ void bmc_pass::translateCmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
   }
   llvm::CmpInst::Predicate pred = cmp->getPredicate();
 
-  expr cnd(z3_ctx);
+  expr cnd(solver_ctx);
   switch( pred ) {
   case llvm::CmpInst::ICMP_EQ  : cnd = (l==r); break;
   case llvm::CmpInst::ICMP_NE  : cnd = (l!=r); break;
@@ -136,7 +136,7 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
       }
     }
 
-    bmc_ds_ptr->bmc_vec.push_back( _and(phi_cons, z3_ctx) );
+    bmc_ds_ptr->bmc_vec.push_back( _and(phi_cons, solver_ctx) );
   }else{
     llvm_bmc_error("bmc", "phi nodes with non integers not supported !!");
   }
@@ -146,7 +146,7 @@ void bmc_pass::assume_to_bmc(unsigned bidx, const llvm::CallInst* call) {
   assert(call);
   expr assume_path_bit = bmc_ds_ptr->get_path_bit(bidx);
   expr assume_term = bmc_ds_ptr->m.get_term( call->getArgOperand(0) );
-  expr assume_bit = get_fresh_bool( z3_ctx, "assume");
+  expr assume_bit = get_fresh_bool( solver_ctx, "assume");
   bmc_ds_ptr->set_path_bit( bidx, assume_bit );
   bmc_ds_ptr->bmc_vec.push_back( assume_bit == (assume_path_bit && assume_term) );
 }
@@ -208,12 +208,12 @@ void bmc_pass::translateNondet(unsigned bidx, const llvm::CallInst* call) {
   if(fp!=NULL &&
      (fp->getReturnType()->isIntegerTy(32) ||
       fp->getReturnType()->isIntegerTy(64))) {
-    expr nondet_int = get_fresh_int( z3_ctx, "nondet");
+    expr nondet_int = get_fresh_int( solver_ctx, "nondet");
     bmc_ds_ptr->m.insert_term_map( call, bidx, nondet_int );
   } else if (fp!=NULL &&
              (fp->getReturnType()->isIntegerTy(1) ||
               fp->getReturnType()->isIntegerTy(8))) {
-    expr nondet_bit = get_fresh_bool( z3_ctx, "nondet");
+    expr nondet_bit = get_fresh_bool( solver_ctx, "nondet");
     bmc_ds_ptr->m.insert_term_map( call, bidx, nondet_bit );
   } else {
     llvm_bmc_error("bmc", "Unsupported nondet type!");
@@ -444,7 +444,7 @@ void bmc_pass::translateRetInst(const llvm::ReturnInst *ret) {
   llvm::Value* v = ret->getReturnValue();
   if( v ) {
     expr retTerm = bmc_ds_ptr->m.get_term( v );
-    expr retVal = get_fresh_int(z3_ctx, "ret_val");
+    expr retVal = get_fresh_int(solver_ctx, "ret_val");
     bmc_ds_ptr->bmc_vec.push_back( retVal == retTerm );
   } else {
     //todo : handle all cases
@@ -465,7 +465,7 @@ void bmc_pass::translateSwitchInst(unsigned bidx,const llvm::SwitchInst *swch){
     bmc_ds_ptr->bmc_vec.push_back( cs == exit_bits[i] );
     neg_disj.push_back( !cs );
   }
-  bmc_ds_ptr->bmc_vec.push_back( _and( neg_disj, z3_ctx ) == exit_bits[0] );
+  bmc_ds_ptr->bmc_vec.push_back( _and( neg_disj, solver_ctx ) == exit_bits[0] );
 }
 
 void bmc_pass::translateUnreachableInst( unsigned bidx,
@@ -519,17 +519,17 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
         llvm::Type* ty = glb->getType();
         if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
           auto el_ty = pty->getElementType();
-          sort z_sort = llvm_to_z3_sort(z3_ctx, el_ty);
+          sort z_sort = llvm_to_sort(solver_ctx, el_ty);
           ty_str = to_string(z_sort);
         }else{ llvm_bmc_error( "parse comment::", "unrecognized type!"); }
       }else{
         llvm::Type* ty = v->getType();
         if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
           auto el_ty = pty->getElementType();
-          sort z_sort = llvm_to_z3_sort(z3_ctx, el_ty);
-          ty_str = to_string( z3_ctx.array_sort( z3_ctx.int_sort(), z_sort ) );
+          sort z_sort = llvm_to_sort(solver_ctx, el_ty);
+          ty_str = to_string( solver_ctx.array_sort( solver_ctx.int_sort(), z_sort ) );
         }else{
-          sort z_sort = llvm_to_z3_sort(z3_ctx, ty);
+          sort z_sort = llvm_to_sort(solver_ctx, ty);
           ty_str = to_string(z_sort);
         }
       }
@@ -538,8 +538,8 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
     }
     for( auto txt : cmt.texts) {
       auto parse_str = type_decls + txt;
-      expr e = smt2_parse_string( z3_ctx, parse_str.c_str() );
-      // expr_vector es = z3_ctx.parse_string( parse_str.c_str() );
+      expr e = smt2_parse_string( solver_ctx, parse_str.c_str() );
+      // expr_vector es = solver_ctx.parse_string( parse_str.c_str() );
       // assert( es.size() == 1 );
       // expr e = es[0];
       expr_set vars;
@@ -623,34 +623,34 @@ void bmc_pass::init_path_exit_bit( bb_vec_t &bb_vec
       // do nothing; map to empty vector
     }else if( num_succs == 1 ) {
       // always the successor taken
-      exit_bits.push_back( z3_ctx.bool_val(true) );
+      exit_bits.push_back( solver_ctx.bool_val(true) );
     }else if( num_succs == 2 ) {
-      expr e_b = get_fresh_bool(z3_ctx, "exit");
+      expr e_b = get_fresh_bool(solver_ctx, "exit");
       exit_bits.push_back( e_b );
       exit_bits.push_back( !e_b );
       // bmc_ds_ptr->quant_elim_vars.push_back(e_b);
     }else{
       std::vector<expr> v;
       for( unsigned i = 0; i < num_succs; i++ ) {
-        auto e_b = get_fresh_bool(z3_ctx, "exit_"+std::to_string(i) );
+        auto e_b = get_fresh_bool(solver_ctx, "exit_"+std::to_string(i) );
         exit_bits.push_back( e_b );
         v.push_back( e_b );
         // bmc_ds_ptr->quant_elim_vars.push_back(e_b);
       }
       // add constraints that at least one is true;
       // Note that at most one constraint is not added
-      bmc_ds_ptr->bmc_vec.push_back( _or(v, z3_ctx) );
+      bmc_ds_ptr->bmc_vec.push_back( _or(v, solver_ctx) );
     }
 
     bmc_ds_ptr->set_exit_bits( bidx, exit_bits);
-    expr p_b = get_fresh_bool(z3_ctx, "path");
+    expr p_b = get_fresh_bool(solver_ctx, "path");
     bmc_ds_ptr->set_path_bit( bidx, p_b );
     // bmc_ds_ptr->quant_elim_vars.push_back(p_b);
     bidx++;
   } 
   // Initialize the path bit of the entry block to true
   // TODO Map to the caller when interprocedural support is added
-  bmc_ds_ptr->set_path_bit( 0, z3_ctx.bool_val(true) );
+  bmc_ds_ptr->set_path_bit( 0, solver_ctx.bool_val(true) );
   // todo: also needed to be guarded against processed bit
   for( auto it :  bmc_ds_ptr->block_to_path_bit ) {
     auto e = it.second;
@@ -692,7 +692,7 @@ void bmc_pass::do_bmc() {
     if( bidx == 0 ) {
       bmc_ds_ptr->bmc_vec.push_back( path_bit );
     }else{
-      bmc_ds_ptr->bmc_vec.push_back( z3::implies( path_bit, _or( incoming_paths, z3_ctx) ) );
+      bmc_ds_ptr->bmc_vec.push_back( z3::implies( path_bit, _or( incoming_paths, solver_ctx) ) );
       bmc_ds_ptr->bmc_vec.push_back( bmc_ds_ptr->join_array_state( incoming_paths, bmc_ds_ptr->pred_idxs[bidx], bidx ) );
       bmc_ds_ptr->bmc_vec.push_back( bmc_ds_ptr->g_model.join_glb_state( incoming_paths, bmc_ds_ptr->pred_idxs[bidx], bidx ) );
     }

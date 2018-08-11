@@ -16,7 +16,7 @@
 class bmc {
 public:
   options& o;
-  z3::context& z3_ctx;
+  z3::context& solver_ctx;
   value_expr_map& def_map;
   std::unique_ptr<llvm::Module>& module;
   std::map< const bb*, comments >& bb_comment_map;
@@ -43,7 +43,7 @@ public:
       name_map& lMap,
       std::map<std::string, llvm::Value*>& evMap)
     : o(o_)
-    , z3_ctx(z3_)
+    , solver_ctx(z3_)
     , def_map(def_map_)
     , module(m_)
     , bb_comment_map( bb_comment_map_ )
