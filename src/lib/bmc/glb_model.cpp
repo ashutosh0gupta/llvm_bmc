@@ -5,7 +5,7 @@ expr glb_model::get_fresh_glb_name( unsigned i ) {
 }
 
 expr glb_model::get_fresh_glb_name( unsigned i, std::string name_str ) {
-  z3::sort glb_sort = glb_sorts[i];
+  sort glb_sort = glb_sorts[i];
   if( glb_sort.is_array() ) {
     llvm_bmc_error( "bmc", "bad sort is passed!!" );
   }
@@ -33,7 +33,7 @@ void glb_model::set_state( unsigned //const bb*
   }
 }
 
-void glb_model::insert_glb_sort( z3::sort sort) {
+void glb_model::insert_glb_sort( sort sort) {
   glb_sorts.push_back(sort);
 }
 

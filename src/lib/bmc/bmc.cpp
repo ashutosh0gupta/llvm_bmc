@@ -76,7 +76,7 @@ glb_state bmc::populate_glb_state() {
       g_model.insert_glb_to_id(glb, glbCntr);
       g_model.insert_name_to_glb(glb->getName().str() ,glb);
 
-      z3::sort z_sort = llvm_to_z3_sort(z3_ctx, el_ty);
+      sort z_sort = llvm_to_z3_sort(z3_ctx, el_ty);
       g_model.insert_glb_sort( z_sort );
 
       auto new_glb = g_model.get_fresh_glb_name(glbCntr, glb->getName());

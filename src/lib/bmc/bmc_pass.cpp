@@ -519,17 +519,17 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
         llvm::Type* ty = glb->getType();
         if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
           auto el_ty = pty->getElementType();
-          z3::sort z_sort = llvm_to_z3_sort(z3_ctx, el_ty);
+          sort z_sort = llvm_to_z3_sort(z3_ctx, el_ty);
           ty_str = to_string(z_sort);
         }else{ llvm_bmc_error( "parse comment::", "unrecognized type!"); }
       }else{
         llvm::Type* ty = v->getType();
         if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
           auto el_ty = pty->getElementType();
-          z3::sort z_sort = llvm_to_z3_sort(z3_ctx, el_ty);
+          sort z_sort = llvm_to_z3_sort(z3_ctx, el_ty);
           ty_str = to_string( z3_ctx.array_sort( z3_ctx.int_sort(), z_sort ) );
         }else{
-          z3::sort z_sort = llvm_to_z3_sort(z3_ctx, ty);
+          sort z_sort = llvm_to_z3_sort(z3_ctx, ty);
           ty_str = to_string(z_sort);
         }
       }

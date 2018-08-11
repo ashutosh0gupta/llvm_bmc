@@ -88,7 +88,7 @@ public:
     }
   }
 
-  inline void set_array_num( std::vector<z3::sort>& sorts ) {
+  inline void set_array_num( std::vector<sort>& sorts ) {
     ar_sorts = sorts;
     num_arrays = ar_sorts.size();
   }
@@ -116,7 +116,7 @@ public:
 
 private:
   unsigned num_arrays;
-  std::vector< z3::sort > ar_sorts;
+  std::vector< sort > ar_sorts;
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
 };
 

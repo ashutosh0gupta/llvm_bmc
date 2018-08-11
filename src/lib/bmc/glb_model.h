@@ -34,7 +34,7 @@ public:
   expr get_fresh_glb_name( unsigned, std::string );
   expr get_fresh_glb_name( unsigned );
 
-  void insert_glb_sort( z3::sort );
+  void insert_glb_sort( sort );
   void insert_glb_to_id( const llvm::GlobalVariable*, unsigned );
   void insert_name_to_glb( std::string, const llvm::GlobalVariable* );
 
@@ -78,7 +78,7 @@ public:
     return glb_to_id;
   }
 
-  std::vector< z3::sort >& get_sorts() {
+  std::vector< sort >& get_sorts() {
     return glb_sorts;
   }
 
@@ -86,7 +86,7 @@ private:
   z3::context& z3_ctx;
   // std::map< const bb*, glb_state > exit_glb_map;
   std::map< unsigned, glb_state > exit_glb_map;
-  std::vector< z3::sort > glb_sorts;
+  std::vector< sort > glb_sorts;
   std::map< const llvm::GlobalVariable*, unsigned > glb_to_id;
   std::map< std::string, const llvm::GlobalVariable*> name_to_glb;
 };

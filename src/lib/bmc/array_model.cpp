@@ -36,7 +36,7 @@ expr array_model::join_array_state( std::vector<expr>& conds,
 
 
 expr array_model_full::get_fresh_ary_name( unsigned i ) {
-  z3::sort ar_sort = ar_sorts.at(i);
+  sort ar_sort = ar_sorts.at(i);
   if( !ar_sort.is_array() ) {
     llvm_bmc_error( "bmc", "bad sort is passed!!" );
   }
