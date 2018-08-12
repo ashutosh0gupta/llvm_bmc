@@ -13,6 +13,26 @@
 #include "llvm/Analysis/CFGPrinter.h"
 #pragma GCC diagnostic pop
 
+
+bmc::bmc( std::unique_ptr<llvm::Module>& m_,
+          std::map<const bb*, comments >& bb_comment_map_,
+          options& o_, z3::context& z3_,
+          value_expr_map& def_map_,
+          // std::map<llvm::Loop*, loopdata*>& ldm,
+          name_map& lMap
+          // ,std::map<std::string, llvm::Value*>& evMap
+          )
+    : o(o_)
+    , solver_ctx(z3_)
+    , def_map(def_map_)
+    , module(m_)
+    , bb_comment_map( bb_comment_map_ )
+    // , ld_map(ldm)
+    , localNameMap(lMap)
+    , g_model(z3_)
+{}
+
+
 void bmc::run_bmc_pass() {
   llvm::legacy::PassManager passMan;
   passMan.add( new build_name_map( localNameMap, revStartLocalNameMap,
@@ -96,33 +116,14 @@ glb_state bmc::populate_glb_state() {
   return glb_st;
 }
 
-void bmc::eliminate_vars(bmc_ds* bmc_ds_ptr) {
-  expr bmc_f = _and(bmc_ds_ptr->bmc_vec);
-  expr_vector ev(solver_ctx);
-  for(expr v : bmc_ds_ptr->quant_elim_vars) {
-    ev.push_back(v);
-  }
-
-  expr qe_f = exists(ev, bmc_f);
-  //  std::cout << "\nQuantified formula\n" << qe_f << "\n\n";
-
-  z3::tactic qe(solver_ctx, "qe");
-  z3::goal g(solver_ctx);
-  g.add(qe_f);
-  z3::apply_result r = qe.apply(g);
-  //  std::cout << "\nAfter quantifier elimination\n" << r <<"\n\n";
-
-  bmc_ds_ptr->bmc_vec.clear();
-  z3::goal subgoal = r[0];
-  for (unsigned i = 0; i < subgoal.size(); i++) {
-    // std::cout << i << "th sub goal is \n" << subgoal[i] << "\n";
-    bmc_ds_ptr->bmc_vec.push_back(subgoal[i]);
-  }
-}
+// void bmc::eliminate_vars(bmc_ds* bmc_ds_ptr) {
+//   expr bmc_f = _and(bmc_ds_ptr->bmc_vec);
+//   eliminate_vars( bmc_f, bmc_ds_ptr->quant_elim_vars, bmc_ds_ptr->bmc_vec );
+// }
 
 void bmc::check_all_spec(bmc_ds* bmc_ds_ptr) {
   for(expr e : bmc_ds_ptr->spec_vec) {
-    if(run_solver(e, bmc_ds_ptr)) {
+    if( run_solver(e, bmc_ds_ptr) ) {
       std::cout << "\nSpecification that failed the check : \n" << e;
       std::cout << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
       return;
@@ -138,7 +139,7 @@ bool bmc::run_solver(expr &spec, bmc_ds* bmc_ds_ptr) {
   }
   s.add(!spec);
   if (s.check() == z3::sat) {
-    z3::model m = s.get_model();
+    model m = s.get_model();
     produce_witness(m, bmc_ds_ptr);
     return true;
   } else {
@@ -148,7 +149,7 @@ bool bmc::run_solver(expr &spec, bmc_ds* bmc_ds_ptr) {
 
 
 std::string
-bmc::get_val_for_instruction( const llvm::Instruction* I, z3::model& mdl,
+bmc::get_val_for_instruction( const llvm::Instruction* I, model& mdl,
                               std::map<std::string,std::string>& state,
                               bmc_ds* bmc_ds_ptr, unsigned call_count ) {
   std::string v;
@@ -183,7 +184,7 @@ std::string state_to_string( std::map<std::string,std::string>& state ) {
   return s+"]";
 }
 
-void bmc::produce_witness_call( z3::model mdl, const llvm::CallInst* call ) {
+void bmc::produce_witness_call( model mdl, const llvm::CallInst* call ) {
   assert(call);
   if( ignore_special_functions( call ) ) return;
   if( llvm::cast<llvm::IntrinsicInst>(call) ) {
@@ -203,7 +204,7 @@ void bmc::produce_witness_call( z3::model mdl, const llvm::CallInst* call ) {
   }
 }
 
-void bmc::produce_witness( z3::model mdl, bmc_ds* bmc_ds_ptr,
+void bmc::produce_witness( model mdl, bmc_ds* bmc_ds_ptr,
                            unsigned call_count ) {
   witness w(o);
   std::map<std::string,std::string> state;

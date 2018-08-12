@@ -9,9 +9,9 @@
 #include "lib/bmc/value_expr_map.h"
 // #include "aggregation/aggregate.h"
 
-enum aggr_tag {tile, overlap, counter, aggregate, unknown};
+// enum aggr_tag {tile, overlap, counter, aggregate, unknown};
 
-typedef std::unordered_map<expr, enum aggr_tag, expr_hash, expr_equal> expr_tag;
+// typedef std::unordered_map<expr, enum aggr_tag, expr_hash, expr_equal> expr_tag;
 
 class bmc_ds {
 public:
@@ -200,7 +200,7 @@ public:
   std::vector<expr> quant_elim_vars;
   std::vector<llvm::Value*> quant_elim_val;
 
-  expr_tag subexpr_tags;
+  // expr_tag subexpr_tags;
 
   std::set<std::string> locals;
   std::map< const llvm::Instruction*, std::string > dbg_name_map;

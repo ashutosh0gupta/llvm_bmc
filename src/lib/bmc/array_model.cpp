@@ -14,7 +14,7 @@ expr array_model::join_array_state( std::vector<expr>& conds,
     bool is_all_equal = true;
     for( unsigned i=1; i < conds.size(); i++ ) {
       auto& next_name = exit_ary_map.at(prevs.at(i)).get_name_vec().at(j);
-      if( !z3::eq( o_name, next_name) ) {
+      if( !is_equal( o_name, next_name) ) {
         is_all_equal = false;
         break;
       }
@@ -26,7 +26,7 @@ expr array_model::join_array_state( std::vector<expr>& conds,
       expr new_name = get_fresh_ary_name(j);
       for( unsigned i=0; i < conds.size(); i++ ) {
         auto& p_st = exit_ary_map.at(prevs.at(i)).get_name_vec();
-        vec.push_back( z3::implies( conds[i], new_name == p_st.at(j) ) );
+        vec.push_back( implies( conds[i], new_name == p_st.at(j) ) );
       }
       s_names.push_back( new_name );
     }
@@ -79,7 +79,7 @@ array_model_full::array_write( unsigned bidx, const llvm::StoreInst* I,
   expr ar_name = vec.at(i);
   expr new_ar = get_fresh_ary_name(i);
   vec[i] = new_ar;
-  return std::make_pair( (new_ar == z3::store( ar_name, idx, val )), new_ar);
+  return std::make_pair( (new_ar == store( ar_name, idx, val )), new_ar);
 }
 
 expr
@@ -89,7 +89,7 @@ array_model_full::array_read( unsigned bidx, const llvm::LoadInst* I,
   auto i = ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
   expr ar_name = vec.at(i);
-  return z3::select( ar_name, idx);
+  return select( ar_name, idx);
 }
 
 void array_model_full::

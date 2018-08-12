@@ -1,15 +1,16 @@
-#ifndef TILER_BMC_H
-#define TILER_BMC_H
+#ifndef LLVM_BMC_H
+#define LLVM_BMC_H
 
 #include "include/options.h"
 #include "z3++.h"
 
-#include "lib/utils/llvm_utils.h"
+// #include "lib/utils/llvm_utils.h"
 #include "lib/bmc/bmc_ds.h"
 #include "lib/bmc/glb_model.h"
-
 // #include "daikon-inst/collect_loopdata.h"
 // #include "daikon-inst/build_name_map.h"
+
+class glb_model;
 
 #define OUTSIDE_ANY_LOOP_CODE_PTR NULL
 
@@ -19,40 +20,26 @@ public:
   z3::context& solver_ctx;
   value_expr_map& def_map;
   std::unique_ptr<llvm::Module>& module;
-  std::map< const bb*, comments >& bb_comment_map;
+  std::map< const llvm::BasicBlock*, comments >& bb_comment_map;
 
   std::map< const llvm::Function*, bmc_fun*> func_formula_map;
+
   // loop_formula_map[NULL] maps to data for the code that is not in any loop
   // std::map< const llvm::Loop*, bmc_loop*> loop_formula_map;
-
-  z3::expr aggr_N; // the parameter for aggregation (should be identified in collect loop data)
-
   // std::map<llvm::Loop*, loopdata*>& ld_map;
 
   name_map& localNameMap;
-  std::map< const bb*, rev_name_map > revStartLocalNameMap;//todo: likely useless
-  std::map< const bb*, rev_name_map > revEndLocalNameMap;
-
-  std::map<std::string, llvm::Value*>& exprValMap;
+  std::map< const llvm::BasicBlock*,rev_name_map > revStartLocalNameMap;//todo:likely useless
+  std::map< const llvm::BasicBlock*, rev_name_map > revEndLocalNameMap;
 
   bmc(std::unique_ptr<llvm::Module>& m_,
       std::map<const bb*, comments >& bb_comment_map_,
       options& o_, z3::context& z3_,
       value_expr_map& def_map_,
       // std::map<llvm::Loop*, loopdata*>& ldm,
-      name_map& lMap,
-      std::map<std::string, llvm::Value*>& evMap)
-    : o(o_)
-    , solver_ctx(z3_)
-    , def_map(def_map_)
-    , module(m_)
-    , bb_comment_map( bb_comment_map_ )
-    , aggr_N(z3_)
-    // , ld_map(ldm)
-    , localNameMap(lMap)
-    , exprValMap(evMap)
-    , g_model(z3_)
-  {}
+      name_map& lMap
+      // ,std::map<std::string, llvm::Value*>& evMap
+      );
 
   ~bmc() {
     for( auto& it: func_formula_map ) {
@@ -75,7 +62,7 @@ public:
 
   //-------------------------------------------
   // Checking Specs and Reporting results
-  void eliminate_vars(bmc_ds*);
+  // void eliminate_vars(bmc_ds*);
   void check_all_spec(bmc_ds*);
   bool run_solver(z3::expr &, bmc_ds*);
 
@@ -88,10 +75,10 @@ public:
 
   //-------------------------------------------
   void run_bmc_pass();
-  void collect_aggr_pass();
+  // void collect_aggr_pass();
 
   std::map< const llvm::Function*, bmc_fun*>& get_func_formula_map();
   // std::map< const llvm::Loop*, bmc_loop*>& get_loop_formula_map();
 };
 
-#endif // TILER_BMC_H
+#endif // LLVM_BMC_H

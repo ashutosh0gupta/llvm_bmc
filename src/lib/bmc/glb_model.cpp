@@ -92,7 +92,7 @@ expr glb_model::join_glb_state( std::vector<expr>& conds,
     bool is_all_equal = true;
     for( unsigned i=1; i < conds.size(); i++ ) {
       auto& next_name = exit_glb_map[prevs[i]].get_glb_name_vec().at(j);
-      if( !z3::eq( o_name, next_name) ) {
+      if( !is_equal( o_name, next_name) ) {
         is_all_equal = false;
         break;
       }
@@ -104,7 +104,7 @@ expr glb_model::join_glb_state( std::vector<expr>& conds,
       expr new_name = get_fresh_glb_name(j);
       for( unsigned i=0; i < conds.size(); i++ ) {
         auto& p_st = exit_glb_map[prevs[i]].get_glb_name_vec();
-        vec.push_back( z3::implies( conds[i], new_name == p_st[j] ) );
+        vec.push_back( implies( conds[i], new_name == p_st[j] ) );
       }
       s_names.push_back( new_name );
     }

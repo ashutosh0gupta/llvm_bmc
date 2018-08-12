@@ -3,9 +3,9 @@
 
 char bmc_loop_pass::ID = 0;
 
-bmc_loop_pass::bmc_loop_pass( options& o_, solver_context& z3_,
+bmc_loop_pass::bmc_loop_pass( options& o_, solver_context& solver_ctx_,
                               value_expr_map& def_map_, bmc& b_)
-  : bmc_pass(o_,z3_,b_), llvm::FunctionPass(ID), def_map(def_map_)
+  : bmc_pass(o_,solver_ctx_,b_), llvm::FunctionPass(ID), def_map(def_map_)
 {}
 
 bmc_loop_pass::~bmc_loop_pass() {

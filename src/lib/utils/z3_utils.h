@@ -15,6 +15,7 @@ typedef z3::context solver_context;
 typedef z3::sort sort;
 typedef z3::expr expr;
 typedef z3::expr_vector expr_vector;
+typedef z3::model model;
 
 struct expr_hash {
   size_t operator () (const z3::expr& a) const {
@@ -33,6 +34,10 @@ struct expr_equal :
 
 typedef std::unordered_set<z3::expr,  expr_hash, expr_equal> expr_set;
 typedef std::vector<z3::expr> exprs;
+
+bool inline is_equal( z3::expr& x, z3::expr& y) {
+  return z3::eq( x, y );
+}
 
 void expr_set_to_exprs( expr_set&, exprs&);
 
@@ -96,6 +101,9 @@ z3::expr _xor( z3::expr const &, z3::expr const &);
 z3::expr neg_and( std::vector<z3::expr> &vec, z3::context& z3_ctx );
 z3::expr neg_and( std::vector<z3::expr> &vec);
 z3::expr _forall( z3::expr_vector&, z3::expr& );
+z3::expr implies( z3::expr&, z3::expr& );
+z3::expr select( z3::expr&, z3::expr& );
+z3::expr store( z3::expr&, z3::expr&, z3::expr& );
 
 bool matched_sort( const z3::expr& l, const z3::expr& r );
 z3::expr switch_sort( z3::expr& b, z3::sort& s);
@@ -143,5 +151,8 @@ z3::expr substitute( z3::expr,
                      std::vector<z3::expr>& );
 
 z3::expr smt2_parse_string( z3::context&, const char* );
+
+void eliminate_vars( z3::expr, std::vector<z3::expr>&,
+                     std::vector<z3::expr>& );
 
 #endif  // Z3UTILS_H

@@ -12,9 +12,9 @@
     llvm_bmc_error( "bmc", "Unsupported instruction!!");                   \
   }
 
-bmc_pass::bmc_pass( options& o_, solver_context& z3_, bmc& b_)
+bmc_pass::bmc_pass( options& o_, solver_context& sol_ctx_, bmc& b_)
     : o(o_)
-    , solver_ctx(z3_)
+    , solver_ctx(sol_ctx_)
     , bmc_obj(b_)
 {}
 
@@ -132,7 +132,7 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
         expr prev_var = bmc_ds_ptr->m.get_earlier_term( v_, pre_bidx );
         // expr prev_var = bmc_ds_ptr->m.get_term( v_ );
         expr path_cond = extend_path( bidx, pre_bidx );
-        phi_cons.push_back( z3::implies(path_cond, new_var == prev_var) );
+        phi_cons.push_back( implies(path_cond, new_var == prev_var) );
       }
     }
 
@@ -692,7 +692,7 @@ void bmc_pass::do_bmc() {
     if( bidx == 0 ) {
       bmc_ds_ptr->bmc_vec.push_back( path_bit );
     }else{
-      bmc_ds_ptr->bmc_vec.push_back( z3::implies( path_bit, _or( incoming_paths, solver_ctx) ) );
+      bmc_ds_ptr->bmc_vec.push_back( implies( path_bit, _or( incoming_paths, solver_ctx) ) );
       bmc_ds_ptr->bmc_vec.push_back( bmc_ds_ptr->join_array_state( incoming_paths, bmc_ds_ptr->pred_idxs[bidx], bidx ) );
       bmc_ds_ptr->bmc_vec.push_back( bmc_ds_ptr->g_model.join_glb_state( incoming_paths, bmc_ds_ptr->pred_idxs[bidx], bidx ) );
     }

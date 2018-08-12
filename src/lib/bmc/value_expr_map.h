@@ -4,7 +4,6 @@
 #include "lib/utils/utils.h"
 #include "lib/utils/z3_utils.h"
 
-// namespace z3 { class expr; class context; }
 namespace llvm { class Value; }
 
 class value_expr_map {

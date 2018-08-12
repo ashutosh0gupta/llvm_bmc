@@ -2,8 +2,8 @@
 
 char bmc_fun_pass::ID = 0;
 
-bmc_fun_pass::bmc_fun_pass( options& o_, solver_context& z3_, bmc& b_)
-  : bmc_pass(o_,z3_,b_), llvm::FunctionPass(ID)
+bmc_fun_pass::bmc_fun_pass( options& o_, solver_context& ctx_, bmc& b_)
+  : bmc_pass(o_,ctx_,b_), llvm::FunctionPass(ID)
 {}
 
 bmc_fun_pass::~bmc_fun_pass() {}

@@ -499,6 +499,18 @@ z3::expr _forall( z3::expr_vector& vec, z3::expr& e ) {
   return forall( new_vec, e );
 }
 
+z3::expr implies( z3::expr& e1, z3::expr& e2) {
+  return z3::implies( e1, e2 );
+}
+
+z3::expr select( z3::expr& e1, z3::expr& e2) {
+  return z3::select( e1, e2 );
+}
+
+z3::expr store( z3::expr& e1, z3::expr& e2, z3::expr& e3) {
+  return z3::store( e1, e2, e3 );
+}
+
 bool matched_sort( const z3::expr& l, const z3::expr& r ) {
   return z3::eq(l.get_sort(),r.get_sort());
 }
@@ -1061,3 +1073,29 @@ void simplify_select_eq(exprs& list, z3::context& z3_ctx) {
   }
   list.insert(list.end(), new_list.begin(), new_list.end());
 }
+
+void eliminate_vars( z3::expr f, std::vector<z3::expr>& rm_vars,
+                     std::vector<z3::expr>& results ) {
+  z3::context& solver_ctx = f.ctx();
+  expr_vector ev(solver_ctx);
+  for(expr v : rm_vars) {
+    ev.push_back(v);
+  }
+
+  expr qe_f = exists(ev, f);
+  //  std::cout << "\nQuantified formula\n" << qe_f << "\n\n";
+
+  z3::tactic qe(solver_ctx, "qe");
+  z3::goal g(solver_ctx);
+  g.add(qe_f);
+  z3::apply_result r = qe.apply(g);
+  //  std::cout << "\nAfter quantifier elimination\n" << r <<"\n\n";
+
+  results.clear();
+  z3::goal subgoal = r[0];
+  for (unsigned i = 0; i < subgoal.size(); i++) {
+    // std::cout << i << "th sub goal is \n" << subgoal[i] << "\n";
+    results.push_back(subgoal[i]);
+  }
+}
+
