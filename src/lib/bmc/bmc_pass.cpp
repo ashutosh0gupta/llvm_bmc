@@ -364,6 +364,10 @@ void bmc_pass::translateLoadInst( unsigned bidx, const llvm::LoadInst* load ) {
     auto idx = gep->getOperand(1);
     auto idx_expr = bmc_ds_ptr->m.get_term( idx );
     auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_expr);
+    if( o.include_out_of_bound_specs ) {
+      //todo: fix the interface
+      bmc_ds_ptr->spec_vec.push_back( arr_rd ); // bound guard
+    }
     bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd );
   } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
@@ -402,6 +406,10 @@ void bmc_pass::translateStoreInst(unsigned bidx, const llvm::StoreInst* store ) 
     auto val_expr = bmc_ds_ptr->m.get_term( val );
     auto arr_wrt = bmc_ds_ptr->array_write(bidx, store, idx_expr, val_expr);
     bmc_ds_ptr->bmc_vec.push_back( arr_wrt.first );
+    if( o.include_out_of_bound_specs ) {
+      //todo: fix the interface
+      bmc_ds_ptr->spec_vec.push_back( arr_wrt.second ); // bound guard
+    }
     bmc_ds_ptr->m.insert_term_map( store, bidx, arr_wrt.second );
   } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");

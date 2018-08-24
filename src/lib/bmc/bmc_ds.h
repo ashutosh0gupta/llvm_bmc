@@ -57,8 +57,10 @@ public:
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
   std::map< const llvm::Instruction*, unsigned >& ary_to_int;
 
+  //todo: return triple (update_expr, bound_guard, new_name )
   std::pair<expr,expr>
   array_write(unsigned, const llvm::StoreInst*, expr&, expr& );
+  //todo: return pair (retun_value, bound_guard )
   expr array_read( unsigned, const llvm::LoadInst*, expr& idx);
   expr join_array_state( std::vector<expr>&,
                              std::vector<unsigned>&, unsigned );

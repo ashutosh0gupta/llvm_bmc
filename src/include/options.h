@@ -52,7 +52,7 @@ public:
 
   //----------------------------------------
   //bmc options
-  bool includeOutOfBoundSpecs=false;
+  bool include_out_of_bound_specs=false;
   bool includeOverUnderflowSpecs=false;
   array_model_t ar_model = FULL;
   //----------------------------------------

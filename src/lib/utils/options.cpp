@@ -37,7 +37,7 @@ void options::get_description_cmd(po::options_description& config,
     ;
   bmc.add_options()
     ("unwind,u", po::value<int>(&loop_unroll_count)->default_value(1), "Set loop unroll count")
-    ("bounds-check", po::bool_switch(&includeOutOfBoundSpecs), "Enable array-index-out-of-bounds check")
+    ("bounds-check", po::bool_switch(&include_out_of_bound_specs), "Enable array-index-out-of-bounds check")
     ("overflow-check", po::bool_switch(&includeOverUnderflowSpecs), "Enable over/underflow check")
     ;
   hidden.add_options()

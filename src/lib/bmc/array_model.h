@@ -117,6 +117,7 @@ public:
 private:
   unsigned num_arrays;
   std::vector< sort > ar_sorts;
+  std::vector< expr > lengths;
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
 };
 
