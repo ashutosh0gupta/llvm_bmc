@@ -2,32 +2,24 @@
 #define TILER_COLLECT_LOOPDATA_H
 
 #include "llvm/Analysis/LoopPass.h"
-#include "loopdata.h"
-#include "utils/options.h"
-#include "utils/llvmUtils.h"
-#include "utils/z3Utils.h"
-#include "irtoz3expr/irtoz3expr_index.h"
+#include "include/options.h"
+#include "lib/utils/loopdata.h"
+#include "lib/utils/llvm_utils.h"
+#include "lib/utils/build_name_map.h"
 
 class collect_loopdata : public llvm::LoopPass {
 
 public:
   static char ID;
-  z3::context& z3_ctx;
   options& o;
-  value_expr_map& def_map;
   std::map<llvm::Loop*, loopdata*>& ld_map;
   name_map& localNameMap;
-  std::map<std::string, llvm::Value*>& exprValMap;
-  irtoz3expr_index* ir2e;
   llvm::ScalarEvolution* SE;
   std::unique_ptr<llvm::Module>& module;
 
-  collect_loopdata( z3::context& ,
-                    options&,
-                    value_expr_map&,
+  collect_loopdata( options&,
                     std::map<llvm::Loop*, loopdata*>& ,
                     name_map& ,
-                    std::map<std::string, llvm::Value*>&,
                     std::unique_ptr<llvm::Module>& );
   ~collect_loopdata();
 

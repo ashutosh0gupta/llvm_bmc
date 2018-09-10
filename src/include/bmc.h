@@ -6,6 +6,7 @@
 
 // #include "lib/utils/llvm_utils.h"
 #include "lib/bmc/bmc_ds.h"
+#include "lib/utils/loopdata.h"
 #include "lib/bmc/glb_model.h"
 // #include "daikon-inst/collect_loopdata.h"
 // #include "daikon-inst/build_name_map.h"
@@ -25,8 +26,8 @@ public:
   std::map< const llvm::Function*, bmc_fun*> func_formula_map;
 
   // loop_formula_map[NULL] maps to data for the code that is not in any loop
-  // std::map< const llvm::Loop*, bmc_loop*> loop_formula_map;
-  // std::map<llvm::Loop*, loopdata*>& ld_map;
+  std::map< const llvm::Loop*, bmc_loop*> loop_formula_map;
+  std::map<llvm::Loop*, loopdata*>& ld_map;
 
   name_map& localNameMap;
   std::map< const llvm::BasicBlock*,rev_name_map > revStartLocalNameMap;//todo:likely useless
@@ -36,7 +37,7 @@ public:
       std::map<const bb*, comments >& bb_comment_map_,
       options& o_, z3::context& z3_,
       value_expr_map& def_map_,
-      // std::map<llvm::Loop*, loopdata*>& ldm,
+      std::map<llvm::Loop*, loopdata*>& ldm,
       name_map& lMap
       // ,std::map<std::string, llvm::Value*>& evMap
       );
@@ -45,12 +46,12 @@ public:
     for( auto& it: func_formula_map ) {
       delete it.second;
     }
-    // for( auto& it: loop_formula_map ) {
-    //   delete it.second;
-    // }
-    // for( auto& it: ld_map ) {
-    //   delete it.second;
-    // }
+    for( auto& it: loop_formula_map ) {
+      delete it.second;
+    }
+    for( auto& it: ld_map ) {
+      delete it.second;
+    }
   }
 
   //-------------------------------------------
@@ -78,7 +79,7 @@ public:
   // void collect_aggr_pass();
 
   std::map< const llvm::Function*, bmc_fun*>& get_func_formula_map();
-  // std::map< const llvm::Loop*, bmc_loop*>& get_loop_formula_map();
+  std::map< const llvm::Loop*, bmc_loop*>& get_loop_formula_map();
 };
 
 #endif // LLVM_BMC_H

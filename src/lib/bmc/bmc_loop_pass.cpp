@@ -1,5 +1,6 @@
-#include "bmc/bmc_loop_pass.h"
-#include "bmc/bmc_ds.h"
+#include "lib/bmc/bmc_loop_pass.h"
+#include "lib/bmc/bmc_ds.h"
+#include "lib/utils/loopdata.h"
 
 char bmc_loop_pass::ID = 0;
 
@@ -19,7 +20,8 @@ bmc_loop_pass::~bmc_loop_pass() {
 
 loopdata*
 // bmc_loop_pass::
-is_sub_loop_exit_block( std::vector< loopdata* >& sub_loops, const bb* b ) {
+is_sub_loop_exit_block( const std::vector< loopdata* >& sub_loops,
+                        const bb* b ) {
   for( loopdata* sub_ld : sub_loops ) {
     std::vector< std::pair< const bb*, unsigned > > e_bs;
     sub_ld->getExitingBlocks( e_bs );
@@ -34,7 +36,7 @@ bmc_loop*
 bmc_loop_pass::
 loopdata_to_bmc_ptr( loopdata* ld ) {
   if(ld)
-    return bmc_obj.loop_formula_map[ld->loop];
+    return bmc_obj.loop_formula_map[ld->getLoop()];
   else
     return NULL;
 }
@@ -42,8 +44,8 @@ loopdata_to_bmc_ptr( loopdata* ld ) {
 
 void bmc_loop_pass::populate_bmc_ds(  bmc_loop* bmc_loop_ptr ) {
   loopdata* ld = bmc_loop_ptr->get_loopdata();
-  llvm::Loop *L = ld->loop;
-  std::vector< loopdata* >& sub_loops = ld->childHeads;
+  llvm::Loop *L = ld->getLoop();
+  const std::vector< loopdata* >& sub_loops = ld->getSubLoops();
 
   //Find back edges coming from latches
   collect_loop_backedges(L, bmc_loop_ptr->loop_ignore_edges,
@@ -70,9 +72,9 @@ void bmc_loop_pass::populate_bmc_ds(  bmc_loop* bmc_loop_ptr ) {
   bmc_loop_ptr->eb = L->getHeader();
 
   // Local vals to be eliminated
-  bmc_loop_ptr->quant_elim_val.clear();
-  for ( llvm::Value *v : ld->quant_elim_val )
-    bmc_loop_ptr->quant_elim_val.push_back(v); //Collect vals to be eliminated
+  // bmc_loop_ptr->quant_elim_val.clear();
+  // for ( llvm::Value *v : ld->quant_elim_val )
+  //   bmc_loop_ptr->quant_elim_val.push_back(v);//collect val to be eliminated
 
   // populate latches
   std::vector<const llvm::BasicBlock*> latches;
@@ -224,7 +226,7 @@ bool bmc_loop_pass::runOnEachLoop(llvm::Loop *L, llvm::Loop *prevL) {
   }
   bmc_loop_ptr->bmc_vec.push_back( _or( latch_paths, solver_ctx));
 
-  bmc_obj.eliminate_vars( bmc_loop_ptr );
+  // bmc_obj.eliminate_vars( bmc_loop_ptr );
 
   update_names(bmc_loop_ptr, false);
 
@@ -241,11 +243,8 @@ void bmc_loop_pass::copy_locals_map( bmc_loop* bmc_loop_ptr,
 void bmc_loop_pass::update_names(bmc_loop* bmc_loop_ptr, bool is_init) {
   assert(false);
   loopdata* ld = bmc_loop_ptr->get_loopdata();
-  // std::map<llvm::Value*,std::list<llvm::Value*>>& arrayWrite = ld->arrWrite;
-  // std::map<llvm::Value*,std::list<llvm::Value*>>& glbWrite = ld->glbWrite;
-
-  std::map<llvm::Value*,std::list<llvm::Value*>> arrayWrite;
-  std::map<llvm::Value*,std::list<llvm::Value*>> glbWrite;
+  auto& arrayWrite = ld->getArrWrites();
+  auto& glbWrite = ld->getGlbWrites();
 
   std::vector<const llvm::Instruction*> arrays_updated;
   for(auto iter = arrayWrite.begin(); iter != arrayWrite.end(); ++iter) {

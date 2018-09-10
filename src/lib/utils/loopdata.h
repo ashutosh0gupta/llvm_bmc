@@ -3,6 +3,8 @@
 
 #include "lib/utils/llvm_utils.h"
 
+class collect_loopdata;
+
 class loopdata {
   // z3::context& c;
 
@@ -68,6 +70,7 @@ public:
   inline void addNextToVec(loopdata *n) { next.push_back(n); }
   inline void setCtr(llvm::Value *v) { ctr = v; }
   inline void setCtrName(std::string cn) { ctrName = cn; }
+  inline void addBlock(const bb* b) { blocks.push_back(b); }
   // inline void setStepCnt(int step) { stepCnt = step; }
 
   void setHeadPhiName( llvm::PHINode *, std::string );
@@ -78,6 +81,11 @@ public:
 
   //getters
   inline llvm::Loop* getLoop() { return loop; }
+  inline const std::vector<loopdata*>& getSubLoops() { return childHeads; }
+  inline const std::map<llvm::Value*, std::list<llvm::Value*>>&
+  getArrWrites() { return arrWrite; }
+  inline const std::map<llvm::Value*, std::list<llvm::Value*>>&
+  getGlbWrites() { return glbWrite; }
   //return a list of blocks that only includes block from the current folder
   inline const bb_vec_t& getCurrentBlocks() { return blocks; }
 
@@ -117,6 +125,7 @@ public:
   }
   void print(std::ostream& o);
   void dump();
+  friend collect_loopdata;
 };
 
 #endif

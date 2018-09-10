@@ -52,13 +52,13 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
   // todo: why these maps here
   value_expr_map def_map(z3_ctx);
   name_map local_name_map;
-  // std::map<llvm::Loop*, loopdata*> ld_map;
+  std::map<llvm::Loop*, loopdata*> ld_map;
   // std::map<std::string, llvm::Value*> expr_val_map;
 
   std::map<const bb*, comments > bb_cmt_map;
   prepare_module( o, module, cmts, bb_cmt_map);
   bmc b(module, bb_cmt_map, o, z3_ctx, def_map,
-        // ld_map,
+        ld_map,
         local_name_map);
   b.init_glb();
   b.run_bmc_pass();
