@@ -390,34 +390,4 @@ unsigned bmc_fun::get_call_count( const llvm::CallInst* call ) {
 
 //---------------------------------------------------------------------
 
-// void bmc_loop::collect_loop_back_edges(llvm::Loop* L) {
-//   auto h = L->getHeader();
-//   llvm::SmallVector<llvm::BasicBlock*,10> LoopLatches;
-//   L->getLoopLatches( LoopLatches );
-//   for( llvm::BasicBlock* bb : LoopLatches ) {
-//     loop_ignore_edges[h].insert( bb );
-//   }
-// }
-
-// void bmc_loop::get_written_arrays(
-//  std::vector<const llvm::AllocaInst*>& arrays_updated ) {
-//   ld->getWrittenArrays( arrays_updated );
-// }
-
-// void bmc_loop::get_written_globals(
-//   std::vector<const llvm::GlobalVariable*>& glbs ) {
-//   ld->getWrittenGlbs( glbs );
-// }
-
-// std::vector<const llvm::AllocaInst*>& bmc_loop::get_pure_read_arrays() {
-//   return ld->arrPureRead;
-// }
-// std::vector<const llvm::GlobalVariable*>& bmc_loop::get_pure_read_globals() {
-//   return ld->glbPureRead;
-// }
-// std::vector<llvm::Value*>& bmc_loop::get_read_outer_locals(){
-//   return ld->const_val;
-// }
-
-//---------------------------------------------------------------------
 

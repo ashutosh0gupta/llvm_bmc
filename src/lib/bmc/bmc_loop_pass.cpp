@@ -43,12 +43,14 @@ loopdata_to_bmc_ptr( loopdata* ld ) {
 void bmc_loop_pass::populate_bmc_ds(  bmc_loop* bmc_loop_ptr ) {
   loopdata* ld = bmc_loop_ptr->get_loopdata();
   llvm::Loop *L = ld->loop;
+  std::vector< loopdata* >& sub_loops = ld->childHeads;
+
   //Find back edges coming from latches
-  bmc_loop_ptr->collect_loop_back_edges(L);
+  collect_loop_backedges(L, bmc_loop_ptr->loop_ignore_edges,
+                         bmc_loop_ptr->rev_loop_ignore_edges);
   // Collect blocks to be processed
   bmc_loop_ptr->bb_vec.clear();
   std::vector< std::pair< unsigned, unsigned> > gaps;
-  std::vector< loopdata* >& sub_loops = ld->childHeads;
   unsigned gap_num = 0;
   for ( auto b : ld->getCurrentBlocks() ) {
     if( b == NULL ) {
@@ -222,8 +224,6 @@ bool bmc_loop_pass::runOnEachLoop(llvm::Loop *L, llvm::Loop *prevL) {
   }
   bmc_loop_ptr->bmc_vec.push_back( _or( latch_paths, solver_ctx));
 
-  add_out_var_defs(L, bmc_loop_ptr);
-  tag_exprs(L, bmc_loop_ptr);
   bmc_obj.eliminate_vars( bmc_loop_ptr );
 
   update_names(bmc_loop_ptr, false);
@@ -231,35 +231,37 @@ bool bmc_loop_pass::runOnEachLoop(llvm::Loop *L, llvm::Loop *prevL) {
   return false; // did not modify the loop
 }
 
-void bmc_loop_pass::copy_locals_map(bmc_loop* bmc_loop_ptr, bmc_loop* bmc_prev_loop_ptr) {
+void bmc_loop_pass::copy_locals_map( bmc_loop* bmc_loop_ptr,
+                                     bmc_loop* bmc_prev_loop_ptr ) {
   value_expr_map& prev_m = bmc_prev_loop_ptr->m;
   value_expr_map& curr_m = bmc_loop_ptr->m;
   prev_m.copy_values(curr_m);
 }
 
 void bmc_loop_pass::update_names(bmc_loop* bmc_loop_ptr, bool is_init) {
+  assert(false);
   loopdata* ld = bmc_loop_ptr->get_loopdata();
+  // std::map<llvm::Value*,std::list<llvm::Value*>>& arrayWrite = ld->arrWrite;
+  // std::map<llvm::Value*,std::list<llvm::Value*>>& glbWrite = ld->glbWrite;
+
+  std::map<llvm::Value*,std::list<llvm::Value*>> arrayWrite;
+  std::map<llvm::Value*,std::list<llvm::Value*>> glbWrite;
+
   std::vector<const llvm::Instruction*> arrays_updated;
-  std::map<llvm::Value*,std::list<llvm::Value*>>& arrayWrite = ld->arrWrite;
-  for(std::map<llvm::Value*,std::list<llvm::Value*>>::iterator iter = arrayWrite.begin();
-        iter != arrayWrite.end(); ++iter) {
+  for(auto iter = arrayWrite.begin(); iter != arrayWrite.end(); ++iter) {
     for ( llvm::Value *v : iter->second ) {
       if( auto a = llvm::dyn_cast<const llvm::Instruction>( v ) ) {
         arrays_updated.push_back(a);
       } else {
-        llvm_bmc_error("bmc loop pass", "Unsupported value in array write list");        // error
-      }
+        llvm_bmc_error("bmc loop pass", "Unsupported value in array writes");        }
     }
   }
-
   std::vector<const llvm::GlobalVariable*> glbs_updated;
-  std::map<llvm::Value*,std::list<llvm::Value*>>& glbWrite = ld->glbWrite;
-  for(std::map<llvm::Value*,std::list<llvm::Value*>>::iterator iter = glbWrite.begin();
-        iter != glbWrite.end(); ++iter) {
+  for(auto iter = glbWrite.begin(); iter != glbWrite.end(); ++iter) {
     if( auto g = llvm::dyn_cast<const llvm::GlobalVariable>( iter->first ) ) {
       glbs_updated.push_back(g);
     } else {
-      llvm_bmc_error("bmc loop pass", "Unsupported value in glbvar write list");        // error
+      llvm_bmc_error("bmc loop pass", "Unsupported value in glbvar writes");
     }
   }
 
@@ -271,102 +273,6 @@ void bmc_loop_pass::update_names(bmc_loop* bmc_loop_ptr, bool is_init) {
   } else {
     bmc_loop_ptr->ar_model_full.update_names( 0, arrays_updated );
     //bmc_obj.g_model.update_name( 0, glbs_updated );
-  }
-}
-
-void bmc_loop_pass::add_out_var_defs( llvm::Loop* L, bmc_loop* bmc_loop_ptr ) {
-  loopdata* ld = bmc_loop_ptr->get_loopdata();
-  // Insert definitions of output variables
-  expr fresh_int = get_fresh_int( solver_ctx );
-  bmc_loop_ptr->bmc_vec.push_back( fresh_int == bmc_loop_ptr->m.get_term( ld->ctr_out));
-  bmc_loop_ptr->subexpr_tags[fresh_int] = counter;
-  for ( llvm::Value *v : ld->ov_out ) {
-    if( llvm::dyn_cast<llvm::LoadInst>(v) ) {
-      continue;
-    } else if( llvm::dyn_cast<llvm::StoreInst>(v) ) {
-      continue;
-    } else {
-      expr fresh_int = get_fresh_int( solver_ctx );
-      bmc_loop_ptr->bmc_vec.push_back( fresh_int == bmc_loop_ptr->m.get_term(v) );
-      bmc_loop_ptr->subexpr_tags[fresh_int] = overlap;
-    }
-  }
-}
-
-void bmc_loop_pass::tag_exprs( llvm::Loop* L, bmc_loop* bmc_loop_ptr ) {
-  loopdata* ld = bmc_loop_ptr->get_loopdata();
-
-  llvm::Value *vc = ld->ctr;
-  for( unsigned i : bmc_loop_ptr->m.get_versions(vc)) {
-    bmc_loop_ptr->subexpr_tags[bmc_loop_ptr->m.get_term(vc,i)] = counter;
-  }
-
-  llvm::Value *vco = ld->ctr_out;
-  for( unsigned i : bmc_loop_ptr->m.get_versions(vco)) {
-    bmc_loop_ptr->subexpr_tags[bmc_loop_ptr->m.get_term(vco,i)] = counter;
-  }
-
-  std::map<llvm::Value*,std::list<llvm::Value*>>& arrayRead = ld->arrRead;
-  for(std::map<llvm::Value*,std::list<llvm::Value*>>::iterator iter = arrayRead.begin();
-        iter != arrayRead.end(); ++iter) {
-    for ( llvm::Value *v : iter->second ) {
-      expr e = bmc_loop_ptr->m.get_term(v);
-      if(e) {
-        bmc_loop_ptr->subexpr_tags[e] = tile;
-      } else {} // no error
-    }
-  }
-
-  std::map<llvm::Value*,std::list<llvm::Value*>>& arrayWrite = ld->arrWrite;
-  for(std::map<llvm::Value*,std::list<llvm::Value*>>::iterator iter = arrayWrite.begin();
-        iter != arrayWrite.end(); ++iter) {
-    for ( llvm::Value *v : iter->second ) {
-      expr e = bmc_loop_ptr->m.get_term(v);
-      if(e) {
-        bmc_loop_ptr->subexpr_tags[e] = tile;
-      } else {} // no error
-    }
-  }
-
-  for ( llvm::Value *v : ld->ov_inp ) {
-    expr e = bmc_loop_ptr->m.get_term(v);
-    if(e.is_app() && e.decl().decl_kind() == Z3_OP_SELECT) {
-      bmc_loop_ptr->subexpr_tags[e] = overlap;
-    } else if(e.is_app() && e.num_args()>0) {
-      bmc_loop_ptr->subexpr_tags[bmc_loop_ptr->m.get_term(v)] = aggregate;
-    } else {
-      for( unsigned i : bmc_loop_ptr->m.get_versions(v)) {
-        // for(unsigned i = 0; i <= bmc_loop_ptr->m.get_count(v); i++) {
-        bmc_loop_ptr->subexpr_tags[bmc_loop_ptr->m.get_term(v,i)] = overlap;
-      }
-    }
-  }
-
-  for ( llvm::Value *v : ld->ov_out ) {
-    expr e = bmc_loop_ptr->m.get_term(v);
-    if(e.is_app() && e.decl().decl_kind() == Z3_OP_STORE) {
-      bmc_loop_ptr->subexpr_tags[e] = overlap;
-    } else if(e.is_app() && e.num_args()>0) {
-      bmc_loop_ptr->subexpr_tags[bmc_loop_ptr->m.get_term(v)] = aggregate;
-    } else {
-      for( unsigned i : bmc_loop_ptr->m.get_versions(v)) {
-        // for(unsigned i = 0; i <= bmc_loop_ptr->m.get_count(v); i++) {
-        bmc_loop_ptr->subexpr_tags[bmc_loop_ptr->m.get_term(v,i)] = overlap;
-      }
-    }
-  }
-
-  for ( llvm::Value *v : ld->aggr_arr ) {
-    expr e = bmc_loop_ptr->m.get_term(v);
-    if(e.is_app() && e.num_args()>0) {
-      bmc_loop_ptr->subexpr_tags[bmc_loop_ptr->m.get_term(v)] = aggregate;
-    }
-  }
-
-  std::cout << "\n\n*** Printing tags ***\n\n";
-  for(expr_tag::iterator iter = bmc_loop_ptr->subexpr_tags.begin();
-        iter != bmc_loop_ptr->subexpr_tags.end(); ++iter) {
-    std::cout << iter->first << "  --  " << iter->second << "\n";
   }
 }
 

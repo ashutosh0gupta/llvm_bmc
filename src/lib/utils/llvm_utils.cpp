@@ -1022,11 +1022,21 @@ void computeTopologicalOrder( llvm::Function &F,
   topological_sort<const llvm::BasicBlock*, bb_succ_iter>( h, f, e, bs, o_map );
 }
 
+void collect_loop_backedges(llvm::Loop *L,
+                        std::map< const bb*, bb_set_t>& loop_ignore_edge,
+                        std::map< const bb*, bb_set_t>& rev_loop_ignore_edge) {
+  auto h = L->getHeader();
+  llvm::SmallVector<llvm::BasicBlock*,10> LoopLatches;
+  L->getLoopLatches( LoopLatches );
+  for( llvm::BasicBlock* bb : LoopLatches ) {
+    loop_ignore_edge[h].insert( bb );
+    rev_loop_ignore_edge[bb].insert(h);
+  }
+}
+
 void collect_loop_backedges(llvm::Pass *p,
-                            std::map< const llvm::BasicBlock*,
-                                      std::set<const llvm::BasicBlock*>>& loop_ignore_edge,
-                            std::map< const llvm::BasicBlock*,
-                                      std::set<const llvm::BasicBlock*>>& rev_loop_ignore_edge) {
+                        std::map< const bb*, bb_set_t>& loop_ignore_edge,
+                        std::map< const bb*, bb_set_t>& rev_loop_ignore_edge) {
 
   //todo: llvm::FindFunctionBackedges could have done the job
   auto &LIWP = p->getAnalysis<llvm::LoopInfoWrapperPass>();
@@ -1042,13 +1052,14 @@ void collect_loop_backedges(llvm::Pass *p,
   loop_ignore_edge.clear();
   rev_loop_ignore_edge.clear();
   for( llvm::Loop *L : loops ) {
-    auto h = L->getHeader();
-    llvm::SmallVector<llvm::BasicBlock*,10> LoopLatches;
-    L->getLoopLatches( LoopLatches );
-    for( llvm::BasicBlock* bb : LoopLatches ) {
-      loop_ignore_edge[h].insert( bb );
-      rev_loop_ignore_edge[bb].insert(h);
-    }
+    collect_loop_backedges( L, loop_ignore_edge, rev_loop_ignore_edge );
+    // auto h = L->getHeader();
+    // llvm::SmallVector<llvm::BasicBlock*,10> LoopLatches;
+    // L->getLoopLatches( LoopLatches );
+    // for( llvm::BasicBlock* bb : LoopLatches ) {
+    //   loop_ignore_edge[h].insert( bb );
+    //   rev_loop_ignore_edge[bb].insert(h);
+    // }
   }
 }
 

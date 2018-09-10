@@ -233,31 +233,25 @@ public:
 
   virtual ~bmc_fun() = default;
 };
-class bmc_ds_aggr;
 
-// class bmc_loop : public bmc_ds {
+class loopdata;
 
-//   loopdata* ld = 0;
-// public:
-//   bmc_loop( solver_context& solver_ctx_,
-//             std::map<const llvm::Instruction*, unsigned>& aim,
-//             glb_model& g_model,
-//             loopdata* ld_ )
-//     : bmc_ds( solver_ctx_, aim, g_model)
-//     , ld(ld_) {}
+class bmc_loop : public bmc_ds {
 
-//   inline loopdata* get_loopdata() { return ld; }
+  loopdata* ld = 0;
+public:
+  bmc_loop( solver_context& solver_ctx_,
+            std::map<const llvm::Instruction*, unsigned>& aim,
+            glb_model& g_model,
+            loopdata* ld_ )
+    : bmc_ds( solver_ctx_, aim, g_model)
+    , ld(ld_) {}
 
-//   void get_written_arrays( std::vector<const llvm::AllocaInst*>& );
-//   void get_written_globals( std::vector<const llvm::GlobalVariable*>& );
-//   std::vector<const llvm::AllocaInst*>& get_pure_read_arrays();
-//   std::vector<const llvm::GlobalVariable*>& get_pure_read_globals();
-//   std::vector<llvm::Value*>& get_read_outer_locals();
+  inline loopdata* get_loopdata() { return ld; }
 
-//   void collect_loop_back_edges(llvm::Loop*);
-//   virtual ~bmc_loop() = default;
-//   friend bmc_ds_aggr;
-// };
+  // void collect_loop_back_edges(llvm::Loop*);
+  virtual ~bmc_loop() = default;
+};
 
 
 
