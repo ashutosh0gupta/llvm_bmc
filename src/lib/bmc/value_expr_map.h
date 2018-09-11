@@ -1,10 +1,17 @@
 #ifndef VALUE_EXPR_UTILS_H
 #define VALUE_EXPR_MAP_H
 
-#include "lib/utils/utils.h"
-#include "lib/utils/z3_utils.h"
+#include <vector>
+#include <map>
 
 namespace llvm { class Value; }
+
+namespace z3{
+  class context;
+  class expr;
+}
+typedef z3::context solver_context;
+typedef z3::expr expr;
 
 class value_expr_map {
 public:

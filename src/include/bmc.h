@@ -4,12 +4,9 @@
 #include "include/options.h"
 #include "z3++.h"
 
-// #include "lib/utils/llvm_utils.h"
 #include "lib/bmc/bmc_ds.h"
 #include "lib/utils/loopdata.h"
 #include "lib/bmc/glb_model.h"
-// #include "daikon-inst/collect_loopdata.h"
-// #include "daikon-inst/build_name_map.h"
 
 class glb_model;
 
@@ -39,20 +36,9 @@ public:
       value_expr_map& def_map_,
       std::map<llvm::Loop*, loopdata*>& ldm,
       name_map& lMap
-      // ,std::map<std::string, llvm::Value*>& evMap
       );
 
-  ~bmc() {
-    for( auto& it: func_formula_map ) {
-      delete it.second;
-    }
-    for( auto& it: loop_formula_map ) {
-      delete it.second;
-    }
-    for( auto& it: ld_map ) {
-      delete it.second;
-    }
-  }
+  ~bmc();
 
   //-------------------------------------------
   // Global model

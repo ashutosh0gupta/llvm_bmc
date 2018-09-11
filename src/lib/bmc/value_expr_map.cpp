@@ -1,6 +1,8 @@
 #include "value_expr_map.h"
 
+#include "lib/utils/utils.h"
 #include<lib/utils/llvm_utils.h>
+#include "lib/utils/z3_utils.h"
 
 //----------------------------------------------------------------------
 // value_expr_map

@@ -1,19 +1,26 @@
 #ifndef TILER_ARRAY_MODEL_H
 #define TILER_ARRAY_MODEL_H
 
-#include "lib/utils/llvm_utils.h"
-#include "lib/utils/z3_utils.h"
 #include "include/options.h"
 
-// #pragma GCC diagnostic push
-// #pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 // // #include "llvm/Pass.h"
 // #include "llvm/IR/Value.h"
 // #include "llvm/IR/Constants.h"
 // // #include "llvm/Support/raw_ostream.h"
-// // #include "llvm/IR/Instructions.h"
+#include "llvm/IR/Instructions.h"
 // // #include "llvm/IR/IntrinsicInst.h"
-// #pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
+
+namespace z3{
+  class context;
+  class expr;
+  class sort;
+}
+typedef z3::context solver_context;
+typedef z3::sort sort;
+typedef z3::expr expr;
 
 class array_state{
 public:
@@ -53,14 +60,10 @@ public:
   // virtual expr array_read( llvm::Instruction* I, expr idx ) = 0;
 
   // array_state& get_array_state( const bb* b ) { return exit_ary_map.at(b); }
-  array_state& get_state( unsigned b ) { return exit_ary_map.at(b); }
-  void set_array_state( unsigned b, array_state& s ) {
-    exit_ary_map[b] = s;
-  }
 
-  expr get_array_state_var( unsigned b, unsigned ith_ary ) {
-    return exit_ary_map.at(b).get_name_vec()[ith_ary];
-  }
+  array_state& get_state( unsigned b );
+  void set_array_state( unsigned b, array_state& s );
+  expr get_array_state_var( unsigned b, unsigned ith_ary );
 
 private:
   solver_context& solver_ctx;
@@ -80,13 +83,7 @@ public:
     model = FULL;
   }
 
-  inline void set_array_num( unsigned len ) {
-    num_arrays = len;
-    for( unsigned i = 0; i < num_arrays; i++) {
-      ar_sorts.push_back( solver_ctx.array_sort( solver_ctx.int_sort(),
-                                             solver_ctx.int_sort() ) );
-    }
-  }
+  void set_array_num( unsigned len );
 
   inline void set_array_num( std::vector<sort>& sorts ) {
     ar_sorts = sorts;

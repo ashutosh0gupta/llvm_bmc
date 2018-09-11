@@ -34,6 +34,17 @@ bmc::bmc( std::unique_ptr<llvm::Module>& m_,
     , g_model(z3_)
 {}
 
+bmc::~bmc() {
+  for( auto& it: func_formula_map ) {
+    delete it.second;
+  }
+  for( auto& it: loop_formula_map ) {
+    delete it.second;
+  }
+  for( auto& it: ld_map ) {
+    delete it.second;
+  }
+}
 
 void bmc::run_bmc_pass() {
   llvm::legacy::PassManager passMan;

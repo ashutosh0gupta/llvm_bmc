@@ -1,4 +1,18 @@
 #include "array_model.h"
+#include "lib/utils/llvm_utils.h"
+#include "lib/utils/z3_utils.h"
+
+
+array_state& array_model::get_state( unsigned b ) {
+  return exit_ary_map.at(b);
+}
+void array_model::set_array_state( unsigned b, array_state& s ) {
+  exit_ary_map[b] = s;
+}
+
+expr array_model::get_array_state_var( unsigned b, unsigned ith_ary ) {
+  return exit_ary_map.at(b).get_name_vec()[ith_ary];
+}
 
 expr array_model::join_array_state( std::vector<expr>& conds,
                                         std::vector<unsigned>& prevs,
@@ -34,6 +48,14 @@ expr array_model::join_array_state( std::vector<expr>& conds,
   return _and( vec, solver_ctx );
 }
 
+
+void array_model_full::set_array_num( unsigned len ) {
+  num_arrays = len;
+  for( unsigned i = 0; i < num_arrays; i++) {
+    ar_sorts.push_back( solver_ctx.array_sort( solver_ctx.int_sort(),
+                                               solver_ctx.int_sort() ) );
+  }
+}
 
 expr array_model_full::get_fresh_ary_name( unsigned i ) {
   sort ar_sort = ar_sorts.at(i);

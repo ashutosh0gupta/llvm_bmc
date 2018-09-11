@@ -1,8 +1,21 @@
 #ifndef TILER_GLB_MODEL_H
 #define TILER_GLB_MODEL_H
 
-#include "lib/utils/llvm_utils.h"
-#include "lib/utils/z3_utils.h"
+#include "include/options.h"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#include "llvm/IR/Instructions.h"
+#pragma GCC diagnostic pop
+
+namespace z3{
+  class context;
+  class expr;
+  class sort;
+}
+typedef z3::context solver_context;
+typedef z3::sort sort;
+typedef z3::expr expr;
 
 class glb_state {
 public:
@@ -28,8 +41,6 @@ public:
                            );
   void init_state( unsigned );
   void set_state( unsigned, glb_state& );
-  //void init_state( const bb* );
-  //void set_state( const bb*, glb_state& );
 
   expr get_fresh_glb_name( unsigned, std::string );
   expr get_fresh_glb_name( unsigned );
@@ -45,7 +56,6 @@ public:
 
   glb_state& get_state( unsigned b ) { return exit_glb_map.at(b); }
 
-  // glb_state& get_glb_state( const bb* b ) { return exit_glb_map.at(b); }
 
   inline void set_glb_to_id( std::map< const llvm::GlobalVariable*, unsigned >& g_id_map) {
     glb_to_id = g_id_map;
@@ -55,25 +65,12 @@ public:
     name_to_glb = name_glb_map;
   }
 
-  void refresh_glb_state( unsigned bidx,
-                          const llvm::GlobalVariable* g) {
-    unsigned i = glb_to_id[g];
-    auto& vec =  exit_glb_map[bidx].get_glb_name_vec();
-    vec[i] = get_fresh_glb_name(i);
-    return;
-  }
+  void refresh_glb_state( unsigned bidx, const llvm::GlobalVariable* g);
 
-  inline expr
-  get_state_var( unsigned bidx,
-                 const llvm::GlobalVariable* g) {
-    unsigned i = glb_to_id[g];
-    return exit_glb_map[bidx].get_glb_name_vec().at(i);
-  }
+  expr get_state_var( unsigned bidx, const llvm::GlobalVariable* g);
 
-  inline expr
-  get_state_var( unsigned bidx, unsigned i) {
-    return exit_glb_map[bidx].get_glb_name_vec().at(i);
-  }
+  expr get_state_var( unsigned bidx, unsigned i);
+
   std::map< const llvm::GlobalVariable*, unsigned >& get_glb_to_id() {
     return glb_to_id;
   }
@@ -84,7 +81,6 @@ public:
 
 private:
   solver_context& solver_ctx;
-  // std::map< const bb*, glb_state > exit_glb_map;
   std::map< unsigned, glb_state > exit_glb_map;
   std::vector< sort > glb_sorts;
   std::map< const llvm::GlobalVariable*, unsigned > glb_to_id;

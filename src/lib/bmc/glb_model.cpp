@@ -1,4 +1,6 @@
 #include "glb_model.h"
+#include "lib/utils/llvm_utils.h"
+#include "lib/utils/z3_utils.h"
 
 expr glb_model::get_fresh_glb_name( unsigned i ) {
   return get_fresh_glb_name(i, "glb");
@@ -120,3 +122,22 @@ void glb_model::update_name( unsigned eb, std::vector<const llvm::GlobalVariable
     vec[i] = get_fresh_glb_name(i);
   }
 }
+
+void glb_model::refresh_glb_state( unsigned bidx,
+                        const llvm::GlobalVariable* g) {
+  unsigned i = glb_to_id[g];
+  auto& vec =  exit_glb_map[bidx].get_glb_name_vec();
+  vec[i] = get_fresh_glb_name(i);
+    return;
+}
+
+expr glb_model::get_state_var( unsigned bidx,
+                               const llvm::GlobalVariable* g) {
+  unsigned i = glb_to_id[g];
+  return exit_glb_map[bidx].get_glb_name_vec().at(i);
+}
+
+expr glb_model::get_state_var( unsigned bidx, unsigned i) {
+  return exit_glb_map[bidx].get_glb_name_vec().at(i);
+}
+

@@ -1,6 +1,85 @@
 #include "lib/bmc/bmc_ds.h"
+#include "lib/utils/llvm_utils.h"
 #include "lib/utils/z3_utils.h"
 
+void bmc_ds::add_latch( unsigned lidx  ) {
+  latches.push_back( lidx );
+}
+
+void bmc_ds::add_latch( const bb* latch  ) {
+  auto l_idx = find_block_idx( latch );
+  add_latch( l_idx );
+}
+
+void bmc_ds::add_latches( bb_vec_t latches  ) {
+  for( const bb* latch : latches )
+    add_latch( latch );
+}
+
+void bmc_ds::add_exit( unsigned lidx, unsigned succ_num  ) {
+  exits.push_back( {lidx, succ_num} );
+}
+
+void bmc_ds::add_exit( const bb* exit, unsigned succ_num  ) {
+  auto l_idx = find_block_idx( exit );
+  add_exit( l_idx, succ_num );
+}
+
+void bmc_ds::add_exits( std::vector< std::pair< const bb*, unsigned > > es ) {
+  for( auto& exit : es )
+    add_exit( exit.first, exit.second );
+}
+
+void bmc_ds::get_exit_block_positions( const bb* prev,
+                               std::vector<unsigned>& positions ) {
+  for( auto& bidx : exits) {
+    if( bb_vec[bidx.first] == prev ) positions.push_back( bidx.first );
+  }
+}
+
+
+void bmc_ds::import_expr_map( value_expr_map& m_ ) {
+  m_.copy_values( m );
+}
+
+expr bmc_ds::get_path_bit( unsigned bidx ) {
+  return block_to_path_bit.at(bidx);
+}
+
+void bmc_ds::set_path_bit( unsigned bidx, expr b ) {
+  auto pair = std::make_pair( bidx, b);
+  block_to_path_bit.insert( pair );
+}
+
+std::vector< expr >& bmc_ds::get_exit_bits( unsigned bidx ) {
+  return block_to_exit_bits.at(bidx);
+}
+
+expr bmc_ds::get_exit_bit( unsigned bidx, unsigned succ_num ) {
+  auto& vec= get_exit_bits( bidx );
+  if( vec.size() == 0 && succ_num == 0 ) {
+      return solver_ctx.bool_val(true);
+    }if( vec.size() == 0 && succ_num > 0 ) {
+      // special case of artificial wiring; for aggregation module
+      // aggregation module interferes with generation of exit and path bits
+      return solver_ctx.bool_val(true);
+    }else{
+      assert(  succ_num < vec.size() );
+      return vec[succ_num];
+    }
+}
+
+void bmc_ds::set_exit_bits( unsigned bidx, std::vector<expr>& b ) {
+  block_to_exit_bits[bidx] = b;
+}
+
+expr bmc_ds::get_exit_branch_path( unsigned bidx, unsigned succ_num) {
+  return get_path_bit( bidx ) && get_exit_bit( bidx, succ_num );
+}
+
+void bmc_ds::add_bmc_formulas(  std::vector< expr > fs ) {
+  bmc_vec.insert( bmc_vec.begin(), fs.begin(), fs.end() );
+}
 
 expr bmc_ds::get_expr(  const llvm::Value* v ) {
   if( auto alloc = llvm::dyn_cast<llvm::AllocaInst>(v) ) {
@@ -97,13 +176,19 @@ void bmc_ds::setup_prevs_non_repeating() {
   }
 }
 
+bool bmc_ds::ignore_edge( const bb* cb, const bb* prev) {
+  if( exists( loop_ignore_edges, cb ) )
+    return exists( loop_ignore_edges.at( cb ), prev);
+  return false;
+}
+
 void bmc_ds::
 copy_and_stich_segments( unsigned times ) {
   copy_and_stich_segments( bb_vec, pred_idxs, exits, latches, times);
 }
 
 void bmc_ds::
-copy_and_stich_segments( std::vector<const bb*>& b_vec,
+copy_and_stich_segments( bb_vec_t& b_vec,
                          std::map< unsigned, std::vector<unsigned> >& prevs,
                          std::vector< std::pair<unsigned,unsigned> >& exits,
                          std::vector< unsigned >& latches,
@@ -390,4 +475,5 @@ unsigned bmc_fun::get_call_count( const llvm::CallInst* call ) {
 
 //---------------------------------------------------------------------
 
+loopdata* bmc_loop::get_loopdata() { return ld; }
 
