@@ -3,7 +3,7 @@
 
 #include "llvm/Analysis/LoopPass.h"
 #include "include/options.h"
-#include "lib/utils/loopdata.h"
+#include "include/loopdata.h"
 #include "lib/utils/llvm_utils.h"
 #include "lib/utils/build_name_map.h"
 

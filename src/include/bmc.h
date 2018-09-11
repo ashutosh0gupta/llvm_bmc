@@ -4,8 +4,8 @@
 #include "include/options.h"
 #include "z3++.h"
 
-#include "lib/bmc/bmc_ds.h"
-#include "lib/utils/loopdata.h"
+#include "include/bmc_ds.h"
+#include "include/loopdata.h"
 #include "include/glb_model.h"
 
 class glb_model;

@@ -1,6 +1,6 @@
 #include "lib/bmc/bmc_loop_pass.h"
-#include "lib/bmc/bmc_ds.h"
-#include "lib/utils/loopdata.h"
+#include "include/bmc_ds.h"
+#include "include/loopdata.h"
 
 char bmc_loop_pass::ID = 0;
 

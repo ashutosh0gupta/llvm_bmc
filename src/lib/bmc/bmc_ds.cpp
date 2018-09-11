@@ -1,4 +1,4 @@
-#include "lib/bmc/bmc_ds.h"
+#include "include/bmc_ds.h"
 #include "lib/utils/llvm_utils.h"
 #include "lib/utils/z3_utils.h"
 
