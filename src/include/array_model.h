@@ -5,12 +5,7 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
-// // #include "llvm/Pass.h"
-// #include "llvm/IR/Value.h"
-// #include "llvm/IR/Constants.h"
-// // #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/Instructions.h"
-// // #include "llvm/IR/IntrinsicInst.h"
 #pragma GCC diagnostic pop
 
 namespace z3{

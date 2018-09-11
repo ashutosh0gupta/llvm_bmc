@@ -6,7 +6,7 @@
 
 #include "lib/bmc/bmc_ds.h"
 #include "lib/utils/loopdata.h"
-#include "lib/bmc/glb_model.h"
+#include "include/glb_model.h"
 
 class glb_model;
 

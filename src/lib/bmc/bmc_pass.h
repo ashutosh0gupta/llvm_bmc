@@ -6,8 +6,8 @@
 #include "lib/utils/llvm_utils.h"
 #include "lib/bmc/bmc_ds.h"
 #include "include/bmc.h"
-#include "lib/bmc/glb_model.h"
-#include "array_model.h"
+#include "include/glb_model.h"
+#include "include/array_model.h"
 
 class bmc;       // forward declaration of the bmc class
 

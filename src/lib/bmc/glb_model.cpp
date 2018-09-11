@@ -1,4 +1,4 @@
-#include "glb_model.h"
+#include "include/glb_model.h"
 #include "lib/utils/llvm_utils.h"
 #include "lib/utils/z3_utils.h"
 

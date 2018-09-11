@@ -2,9 +2,9 @@
 #define TILER_BMC_DS_H
 
 #include <unordered_map>
-#include "lib/bmc/glb_model.h"
-#include "lib/bmc/array_model.h"
-#include "lib/bmc/value_expr_map.h"
+#include "include/glb_model.h"
+#include "include/array_model.h"
+#include "include/value_expr_map.h"
 
 class bmc_ds {
 public:
