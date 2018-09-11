@@ -1,5 +1,40 @@
 #include "include/loopdata.h"
 
+#include "lib/utils/llvm_utils.h"
+
+const bb* loopdata::getLoopPredecessor() {
+  if( loop == NULL ) return NULL;
+  auto b = loop->getLoopPredecessor();
+  assert( b );
+  return b;
+}
+
+void loopdata::getLoopPredecessor( bb_vec_t& return_blocks ) {
+  auto b = getLoopPredecessor();
+  assert( b );
+  return_blocks.clear();
+  return_blocks.push_back(b);
+}
+
+void loopdata::getExitingBlocks( std::vector<
+                       std::pair<const bb*, unsigned> >& return_blocks) {
+  if( loop == NULL ) return;
+  llvm::SmallVector< std::pair<const bb*,const bb*>,10> exitEdges;
+  loop->getExitEdges( exitEdges );
+  for( auto e : exitEdges ) {
+    unsigned succ_num = getSuccessorIndex( e.first, e.second );
+    return_blocks.push_back( {e.first, succ_num} );
+  }
+}
+
+void loopdata::getLoopLatches( bb_vec_t& return_blocks ) {
+  if( loop == NULL ) return;
+  llvm::SmallVector<bb*,10> blocks;
+  loop->getLoopLatches( blocks);
+  for( auto b : blocks ) {
+    return_blocks.push_back( b );
+  }
+}
 
 void loopdata::
 getWrittenArrays(std::vector<const llvm::AllocaInst*>& arrays_updated) {

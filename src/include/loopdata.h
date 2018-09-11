@@ -1,7 +1,11 @@
 #ifndef LOOPDATA_H
 #define LOOPDATA_H
 
-#include "lib/utils/llvm_utils.h"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#include "llvm/IR/Instructions.h"
+#include "llvm/Analysis/LoopPass.h"
+#pragma GCC diagnostic pop
 
 class collect_loopdata;
 
@@ -13,8 +17,8 @@ class loopdata {
   loopdata* parent = NULL;     // for travering the loop graph
   std::vector<loopdata*> childHeads;
   std::vector<loopdata*> next; // in case of "if" there can be multiple nexts
-  bb_vec_t to_inner;
-  bb_vec_t blocks;
+  std::vector<const llvm::BasicBlock*> to_inner;
+  std::vector<const llvm::BasicBlock*> blocks;
 
   // counter
   llvm::Value* ctr;     // llvm object for the counter
@@ -70,7 +74,7 @@ public:
   inline void addNextToVec(loopdata *n) { next.push_back(n); }
   inline void setCtr(llvm::Value *v) { ctr = v; }
   inline void setCtrName(std::string cn) { ctrName = cn; }
-  inline void addBlock(const bb* b) { blocks.push_back(b); }
+  inline void addBlock(const llvm::BasicBlock* b) { blocks.push_back(b); }
   // inline void setStepCnt(int step) { stepCnt = step; }
 
   void setHeadPhiName( llvm::PHINode *, std::string );
@@ -87,42 +91,14 @@ public:
   inline const std::map<llvm::Value*, std::list<llvm::Value*>>&
   getGlbWrites() { return glbWrite; }
   //return a list of blocks that only includes block from the current folder
-  inline const bb_vec_t& getCurrentBlocks() { return blocks; }
+  const std::vector<const llvm::BasicBlock*>& getCurrentBlocks() { return blocks; }
 
-  inline const bb* getLoopPredecessor() {
-    if( loop == NULL ) return NULL;
-    auto b = loop->getLoopPredecessor();
-    assert( b );
-    return b;
-  }
+  const llvm::BasicBlock* getLoopPredecessor();
+  void getLoopPredecessor(std::vector<const llvm::BasicBlock*>& return_blocks);
 
-  inline void getLoopPredecessor( bb_vec_t& return_blocks ) {
-    auto b = getLoopPredecessor();
-    assert( b );
-    return_blocks.clear();
-    return_blocks.push_back(b);
-  }
+  void getExitingBlocks( std::vector<std::pair<const llvm::BasicBlock*, unsigned> >& return_blocks);
+  void getLoopLatches( std::vector<const llvm::BasicBlock*>& return_blocks );
 
-  inline
-  void getExitingBlocks( std::vector<
-                         std::pair<const bb*, unsigned> >& return_blocks) {
-    if( loop == NULL ) return;
-    llvm::SmallVector< std::pair<const bb*,const bb*>,10> exitEdges;
-    loop->getExitEdges( exitEdges );
-    for( auto e : exitEdges ) {
-      unsigned succ_num = getSuccessorIndex( e.first, e.second );
-      return_blocks.push_back( {e.first, succ_num} );
-    }
-  }
-
-  inline void getLoopLatches( bb_vec_t& return_blocks ) {
-    if( loop == NULL ) return;
-    llvm::SmallVector<bb*,10> blocks;
-    loop->getLoopLatches( blocks);
-    for( auto b : blocks ) {
-      return_blocks.push_back( b );
-    }
-  }
   void print(std::ostream& o);
   void dump();
   friend collect_loopdata;
