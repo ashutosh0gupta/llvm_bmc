@@ -689,7 +689,7 @@ llvm::Loop* getNextLoop(std::list<llvm::Loop*> lList, llvm::Loop* L) {
   return NULL;
 }
 
-llvm::Value* getArrValueFromZ3Expr(llvm::Value *V, z3::expr e, llvm::IRBuilder<> &irb, llvm::LLVMContext& c, std::map<std::string, llvm::Value*>& exprValMap, std::set<llvm::Value*>& arrSet) {
+llvm::Value* getArrValueFromZ3Expr(llvm::Value *V, expr e, llvm::IRBuilder<> &irb, llvm::LLVMContext& c, std::map<std::string, llvm::Value*>& exprValMap, std::set<llvm::Value*>& arrSet) {
   llvm::Value *res = getValueFromZ3Expr(e, irb, c, exprValMap, arrSet);
   if(V != NULL ) {
     res = irb.CreateGEP(V, res);
@@ -700,7 +700,7 @@ llvm::Value* getArrValueFromZ3Expr(llvm::Value *V, z3::expr e, llvm::IRBuilder<>
   return res;
 }
 
-llvm::Value* getValueFromZ3Expr(z3::expr e, llvm::IRBuilder<> &irb, llvm::LLVMContext& c, std::map<std::string, llvm::Value*>& exprValMap, std::set<llvm::Value*>& arrSet) {
+llvm::Value* getValueFromZ3Expr(expr e, llvm::IRBuilder<> &irb, llvm::LLVMContext& c, std::map<std::string, llvm::Value*>& exprValMap, std::set<llvm::Value*>& arrSet) {
   llvm::Value *res = NULL;
   if(e.is_numeral()) {
     int64_t num;
@@ -725,13 +725,13 @@ llvm::Value* getValueFromZ3Expr(z3::expr e, llvm::IRBuilder<> &irb, llvm::LLVMCo
   return res;
 }
 
-llvm::Value* getValueFromZ3SubExpr(z3::expr e, llvm::IRBuilder<> &irb, llvm::LLVMContext& c, std::map<std::string, llvm::Value*>& exprValMap, std::set<llvm::Value*>& arrSet) {
+llvm::Value* getValueFromZ3SubExpr(expr e, llvm::IRBuilder<> &irb, llvm::LLVMContext& c, std::map<std::string, llvm::Value*>& exprValMap, std::set<llvm::Value*>& arrSet) {
   std::list<llvm::Value*> argValList;
 
   unsigned args = e.num_args();
   for (unsigned i = 0; i<args; i++)
   {
-    z3::expr arg = e.arg(i);
+    expr arg = e.arg(i);
     argValList.push_back(getValueFromZ3Expr(arg, irb, c, exprValMap, arrSet));
   }
 
@@ -1339,7 +1339,7 @@ std::string getLocRange(const llvm::BasicBlock* b ) {
   return l_name;
 }
 
-z3::sort llvm_to_sort( z3::context& c, llvm::Type* t ) {
+sort llvm_to_sort( solver_context& c, llvm::Type* t ) {
   if( t->isIntegerTy() ) {
     if( t->isIntegerTy( 32 ) ) return c.int_sort();
     if( t->isIntegerTy( 64 ) ) return c.int_sort();
@@ -1347,7 +1347,7 @@ z3::sort llvm_to_sort( z3::context& c, llvm::Type* t ) {
   }
   if( t->isArrayTy() ) {
     llvm::Type* te = t->getArrayElementType();
-    z3::sort z_te = llvm_to_sort(c, te);
+    sort z_te = llvm_to_sort(c, te);
     return c.array_sort( c.int_sort(), z_te );
   }
   llvm_bmc_error("llvm_utils", "only int and bool sorts are supported");
@@ -1359,7 +1359,7 @@ z3::sort llvm_to_sort( z3::context& c, llvm::Type* t ) {
   return c.int_sort(); // dummy return
 }
 
-z3::expr read_const( const llvm::Value* op, z3::context& ctx ) {
+expr read_const( const llvm::Value* op, solver_context& ctx ) {
   assert( op );
   if( const llvm::ConstantInt* c = llvm::dyn_cast<llvm::ConstantInt>(op) ) {
     unsigned bw = c->getBitWidth();
@@ -1409,7 +1409,7 @@ z3::expr read_const( const llvm::Value* op, z3::context& ctx ) {
     // const llvm::VectorType* n = c->getType();
     llvm_bmc_error("llvm_utils", "vector constant not implemented!!" );
   }
-  z3::expr e(ctx);
+  expr e(ctx);
   return e; // contains no expression;
 }
 

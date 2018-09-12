@@ -10,7 +10,6 @@
 class collect_loopdata;
 
 class loopdata {
-  // z3::context& c;
 
   llvm::Loop* loop = NULL;     // pointer to the loop
 
@@ -79,9 +78,6 @@ public:
 
   void setHeadPhiName( llvm::PHINode *, std::string );
 
-  // void setCtrZ3Expr(z3::expr ce);
-  // void setInitBound(z3::expr e);
-  // void setExitBound(z3::expr e);
 
   //getters
   inline llvm::Loop* getLoop() { return loop; }

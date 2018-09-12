@@ -123,21 +123,21 @@ void loopdata::print(std::ostream& o) {
   // o << "Printing read index exprs\n";
   // for(auto bit=arrReadExpr.begin(); bit!=arrReadExpr.end(); bit++) {
   //   o << "\nArray pointer : " << bit->first <<"\n";
-  //   for(z3::expr e : bit->second) {
+  //   for(expr e : bit->second) {
   //     o << e << "\n";
   //   }
   // }
   // o << "\nPrinting written index exprs\n";
   // for(auto bit=arrWriteExpr.begin(); bit!=arrWriteExpr.end(); bit++) {
   //   o << "\nArray pointer : " << bit->first <<"\n";
-  //   for(z3::expr e : bit->second) {
+  //   for(expr e : bit->second) {
   //     o << e << "\n";
   //   }
   // }
   // o << "\nPrinting written index min max exprs\n";
   // for(auto bit=writeMinMax.begin(); bit!=writeMinMax.end(); bit++) {
   //   o << "\nArray pointer : " << bit->first <<"\n";
-  //   for(z3::expr e : bit->second) {
+  //   for(expr e : bit->second) {
   //     o << e << "\n";
   //   }
   // }

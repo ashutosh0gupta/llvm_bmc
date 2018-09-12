@@ -29,7 +29,6 @@ public:
   void populate_step_count( llvm::PHINode*, loopdata*);
   void populate_init_bound(llvm::Value*, loopdata*);
   void populate_exit_bound(llvm::Loop*, loopdata*);
-  void compute_exit_list(llvm::Value*, bb*, std::list<z3::expr>&, bool&, bool);
   bool hasPhiNode(llvm::Value*);
   void collect_overlap(llvm::Loop*, loopdata*);
   void collect_arr_n_glb_read_write(llvm::Loop*, loopdata*);
@@ -41,8 +40,6 @@ public:
   void collect_allloop_blocks(loopdata* ld,std::vector<llvm::BasicBlock*>& l);
 
   void collect_tiles(llvm::Loop*, loopdata*);
-  z3::expr getTileExprFromList(llvm::Loop*, std::list<z3::expr>);
-  bool checkOverlap(z3::expr, z3::expr, int);
   void compute_peel_direction(llvm::Loop*, loopdata*);
 
   virtual bool doInitialization(llvm::Loop *, llvm::LPPassManager &);

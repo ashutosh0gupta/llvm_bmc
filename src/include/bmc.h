@@ -2,11 +2,10 @@
 #define LLVM_BMC_H
 
 #include "include/options.h"
-#include "z3++.h"
-
 #include "include/bmc_ds.h"
 #include "include/loopdata.h"
 #include "include/glb_model.h"
+#include "include/solver.h"
 
 //for comments
 #include "lib/utils/llvm_utils.h"
@@ -19,7 +18,7 @@ class comments;
 class bmc {
 public:
   options& o;
-  z3::context& solver_ctx;
+  solver_context& solver_ctx;
   value_expr_map def_map;
   std::unique_ptr<llvm::Module>& module;
   std::map< const llvm::BasicBlock*, comments >& bb_comment_map;
@@ -36,13 +35,13 @@ public:
 
   bmc(std::unique_ptr<llvm::Module>& m_,
       std::map<const bb*, comments >& bb_comment_map_,
-      options& o_, z3::context& z3_ );
+      options& o_, solver_context& );
 
   ~bmc();
 
   //-------------------------------------------
   // Global model
-  std::vector<z3::expr> glb_bmc_vec;
+  std::vector<expr> glb_bmc_vec;
   glb_model g_model;
   glb_state populate_glb_state();
   void init_glb();
@@ -51,12 +50,12 @@ public:
   // Checking Specs and Reporting results
   // void eliminate_vars(bmc_ds*);
   void check_all_spec(bmc_ds*);
-  bool run_solver(z3::expr &, bmc_ds*);
+  bool run_solver(expr &, bmc_ds*);
 
-  void produce_witness_call( z3::model mdl, const llvm::CallInst* call );
-  void produce_witness( z3::model, bmc_ds*, unsigned call_count=0 );
+  void produce_witness_call( model mdl, const llvm::CallInst* call );
+  void produce_witness( model, bmc_ds*, unsigned call_count=0 );
   std::string get_val_for_instruction( const llvm::Instruction* I,
-                                       z3::model& mdl,
+                                       model& mdl,
                                        std::map<std::string, std::string>&,
                                        bmc_ds*,  unsigned call_count );
 

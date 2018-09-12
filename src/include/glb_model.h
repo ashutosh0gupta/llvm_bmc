@@ -9,15 +9,6 @@
 #include "llvm/IR/Instructions.h"
 #pragma GCC diagnostic pop
 
-// namespace z3{
-//   class context;
-//   class expr;
-//   class sort;
-// }
-// typedef z3::context solver_context;
-// typedef z3::sort sort;
-// typedef z3::expr expr;
-
 class glb_state {
 public:
   glb_state() {}

@@ -73,7 +73,7 @@ public:
   void add_comments( const std::vector<std::string>& cmts ) {
     vec_insert( texts, cmts );
   }
-  z3::expr to_z3_expr( z3::context z3_ctx, rev_name_map& n_map );
+  expr to_sol_expr( solver_context sol_ctx, rev_name_map& n_map );
 
   void dump();
   void print(std::ostream& );
@@ -152,11 +152,11 @@ inline unsigned getSuccessorIndex( const bb* b, const bb* succ_b ) {
 }
 
 llvm::Loop* getNextLoop(std::list<llvm::Loop*> lList, llvm::Loop* L);
-llvm::Value* getArrValueFromZ3Expr(llvm::Value*, z3::expr, llvm::IRBuilder<>&, llvm::LLVMContext&,
+llvm::Value* getArrValueFromZ3Expr(llvm::Value*, expr, llvm::IRBuilder<>&, llvm::LLVMContext&,
                                    std::map<std::string, llvm::Value*>&, std::set<llvm::Value*>&);
-llvm::Value* getValueFromZ3Expr(z3::expr, llvm::IRBuilder<>&, llvm::LLVMContext&,
+llvm::Value* getValueFromZ3Expr(expr, llvm::IRBuilder<>&, llvm::LLVMContext&,
                                 std::map<std::string, llvm::Value*>&, std::set<llvm::Value*>&);
-llvm::Value* getValueFromZ3SubExpr(z3::expr, llvm::IRBuilder<>&, llvm::LLVMContext&,
+llvm::Value* getValueFromZ3SubExpr(expr, llvm::IRBuilder<>&, llvm::LLVMContext&,
                                    std::map<std::string, llvm::Value*>&, std::set<llvm::Value*>&);
 void collectArr(llvm::Function &f, std::set<llvm::Value*>&);
 template< class Key >
@@ -210,36 +210,8 @@ std::string getLocation(const llvm::Instruction* I );
 std::string getLocRange(const llvm::BasicBlock* b );
 
 src_loc getLoc( const llvm::Instruction* I );
-z3::sort llvm_to_sort( z3::context& , llvm::Type* );
-z3::expr read_const( const llvm::Value*, z3::context& );
+sort llvm_to_sort( solver_context& , llvm::Type* );
+expr read_const( const llvm::Value*, solver_context& );
 
-// typedef std::map< std::pair<const llvm::Value*,unsigned>,
-//                   z3::expr > ValueExprMap;
-
-// class value_expr_map {
-// public:
-//   value_expr_map( z3::context& ctx_ ) : ctx( ctx_ ) {};
-//   void insert_term_map( const llvm::Value*, unsigned, z3::expr );
-//   void insert_term_map( const llvm::Value*, z3::expr );
-//   z3::expr insert_new_def( const llvm::Value* op, unsigned c_count );
-//   z3::expr insert_new_def( const llvm::Value* );
-//   z3::expr read_constant( const llvm::Value* );
-//   z3::expr read_term( const llvm::Value*, unsigned );
-//   z3::expr get_earlier_term( const llvm::Value*, unsigned );
-//   z3::expr get_term( const llvm::Value*, unsigned );
-//   z3::expr get_term( const llvm::Value* op );
-//   z3::expr get_latest_term( const llvm::Value* );
-//   z3::expr create_fresh_name( const llvm::Value*  );
-//   unsigned get_max_version( const llvm::Value*);
-//   const std::vector<unsigned>& get_versions( const llvm::Value* );
-//   void copy_values(value_expr_map& m);
-//   void dump();
-//   void print( std::ostream& o );
-// private:
-//   z3::context& ctx;
-//   std::map< std::pair<const llvm::Value*,unsigned>, z3::expr > vmap;
-//   std::map< const llvm::Value*, std::vector<unsigned> > versions;
-//   std::vector<unsigned> dummy_empty_versions;
-// };
 
 #endif

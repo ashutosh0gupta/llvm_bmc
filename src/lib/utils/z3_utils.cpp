@@ -5,8 +5,8 @@
 #include<list>
 #include "z3_utils.h"
 
-expr smt2_parse_string( solver_context& z3_ctx, const char* str ) {
-  expr_vector es = z3_ctx.parse_string( str );
+expr smt2_parse_string( solver_context& sol_ctx, const char* str ) {
+  expr_vector es = sol_ctx.parse_string( str );
   assert( es.size() == 1 );
   expr e = es[0];
   return e;
@@ -438,10 +438,10 @@ expr get_fresh_const( solver_context& c, sort sort, std::string suff )
 
 // we need this or, since the default or in c++ interface is over expr_vector
 // and if vec is empty we do not have the z3 context
-expr _or( std::vector<expr> &vec, solver_context& z3_ctx ) {
-  expr_vector z3_vec(z3_ctx);
-  to_z3_vec(vec, z3_vec);
-  return mk_or(z3_vec);
+expr _or( std::vector<expr> &vec, solver_context& sol_ctx ) {
+  expr_vector sol_vec(sol_ctx);
+  to_sol_vec(vec, sol_vec);
+  return mk_or(sol_vec);
 }
 
 // we need this or, since the default or in c++ interface is over expr_vector
@@ -452,10 +452,10 @@ expr _or( std::vector<expr> &vec ) {
 
 // we need this and, since the default and in c++ interface is over expr_vector
 // and if vec is empty we do not have the z3 context
-expr _and( std::vector<expr> &vec, solver_context& z3_ctx ) {
-  expr_vector z3_vec(z3_ctx);
-  to_z3_vec(vec, z3_vec);
-  return mk_and(z3_vec);
+expr _and( std::vector<expr> &vec, solver_context& sol_ctx ) {
+  expr_vector sol_vec(sol_ctx);
+  to_sol_vec(vec, sol_vec);
+  return mk_and(sol_vec);
 }
 
 // we need this and, since the default and in c++ interface is over expr_vector
@@ -471,12 +471,12 @@ expr _xor( expr const &a, expr const &b ) {
   return expr(a.ctx(), r);
 }
 
-expr neg_and( std::vector<expr> &vec, solver_context& z3_ctx ) {
-  expr_vector z3_vec(z3_ctx);
+expr neg_and( std::vector<expr> &vec, solver_context& sol_ctx ) {
+  expr_vector sol_vec(sol_ctx);
   for(auto e : vec) {
-    z3_vec.push_back(!e);
+    sol_vec.push_back(!e);
   }
-  return mk_and(z3_vec);
+  return mk_and(sol_vec);
 }
 
 expr neg_and( std::vector<expr> &vec ) {
@@ -551,14 +551,14 @@ void to_std_vec( expr_vector& vec, std::vector<expr>& o_vec ) {
   }
 }
 
-void to_z3_vec( std::vector<expr>& vec, expr_vector& o_vec ) {
+void to_sol_vec( std::vector<expr>& vec, expr_vector& o_vec ) {
   o_vec.resize(0);
   for( unsigned i = 0; i < vec.size(); i++ ) {
     o_vec.push_back( vec[i] );
   }
 }
 
-void to_z3_vec( expr_set& vec, expr_vector& o_vec ) {
+void to_sol_vec( expr_set& vec, expr_vector& o_vec ) {
   o_vec.resize(0);
   for( expr v : vec ) {
     o_vec.push_back( v );
@@ -578,11 +578,11 @@ inline bool is_false( expr e,  model m ) {
 expr substitute( expr e,
                      std::vector<expr>& from,
                      std::vector<expr>& to ) {
-  solver_context& z3_ctx = e.ctx();
-  expr_vector out_z3_vec(z3_ctx), in_z3_vec(z3_ctx);
-  to_z3_vec( from, out_z3_vec );
-  to_z3_vec( to  ,  in_z3_vec );
-  return e.substitute( out_z3_vec, in_z3_vec );
+  solver_context& sol_ctx = e.ctx();
+  expr_vector out_sol_vec(sol_ctx), in_sol_vec(sol_ctx);
+  to_sol_vec( from, out_sol_vec );
+  to_sol_vec( to  ,  in_sol_vec );
+  return e.substitute( out_sol_vec, in_sol_vec );
 }
 
 //NOTE: this function does not collect quantified variables
@@ -668,8 +668,8 @@ expr get_forall_rhs( expr h ) {
 }
 
 
-bool check_sat(solver_context& z3_ctx, expr e) {
-  z3::solver s(z3_ctx);
+bool check_sat(solver_context& sol_ctx, expr e) {
+  z3::solver s(sol_ctx);
   s.add(e);
   if (s.check() == z3::sat) {
     return true;
@@ -699,9 +699,9 @@ void inplace_substitute( exprs& vec, expr_vector& outgoing,
 
 void inplace_substitute( exprs& vec, expr& outgoing,
                          expr& incoming ) {
-  solver_context& z3_ctx = outgoing.ctx();
-  expr_vector out_vec(z3_ctx);
-  expr_vector in_vec(z3_ctx);
+  solver_context& sol_ctx = outgoing.ctx();
+  expr_vector out_vec(sol_ctx);
+  expr_vector in_vec(sol_ctx);
   out_vec.push_back( outgoing );
   in_vec.push_back( incoming );
   inplace_substitute( vec, out_vec, in_vec );
@@ -914,13 +914,13 @@ subtract_polyhedran( expr_set& dims, expr x, expr y ) {
   return subtract_polyhedran( dims_vec, x, y );
 }
 
-void propogate_store_eq(exprs& list, solver_context& z3_ctx) {
+void propogate_store_eq(exprs& list, solver_context& sol_ctx) {
   bool change = true;
   while(change) {
     unsigned size = list.size();
     bool incr_flag = true;
-    expr_vector outs(z3_ctx);
-    expr_vector ins(z3_ctx);
+    expr_vector outs(sol_ctx);
+    expr_vector ins(sol_ctx);
     auto it = list.begin();
     while( it !=list.end() ) {
       incr_flag = true;
@@ -945,16 +945,16 @@ void propogate_store_eq(exprs& list, solver_context& z3_ctx) {
   }
 }
 
-void propogate_select_eq(exprs& list, solver_context& z3_ctx) {
+void propogate_select_eq(exprs& list, solver_context& sol_ctx) {
   bool incr_flag = true;
-  expr_vector outs(z3_ctx);
-  expr_vector ins(z3_ctx);
+  expr_vector outs(sol_ctx);
+  expr_vector ins(sol_ctx);
   auto it = list.begin();
   while( it !=list.end() ) {
     incr_flag = true;
     expr e = *it;
     if(isEQ(e)) {
-      expr sel(z3_ctx);
+      expr sel(sol_ctx);
       if(isSelect(e.arg(0)) && !isSelect(e.arg(1))) {
         outs.push_back(e.arg(0));
         ins.push_back(e.arg(1));
@@ -972,7 +972,7 @@ void propogate_select_eq(exprs& list, solver_context& z3_ctx) {
   inplace_substitute( list, outs, ins );
 }
 
-void simplify_select_store_nest(exprs& list, solver_context& z3_ctx) {
+void simplify_select_store_nest(exprs& list, solver_context& sol_ctx) {
   exprs new_list;
   bool incr_flag = true;
   auto it = list.begin();
@@ -980,7 +980,7 @@ void simplify_select_store_nest(exprs& list, solver_context& z3_ctx) {
     incr_flag = true;
     expr e = *it;
     if(isEQ(e)) {
-      expr sel(z3_ctx);
+      expr sel(sol_ctx);
       if(isSelect(e.arg(0))) {
         sel = e.arg(0);
       } else if (isSelect(e.arg(1))) {
@@ -1010,11 +1010,11 @@ void simplify_select_store_nest(exprs& list, solver_context& z3_ctx) {
 // (+ (e1) (select ...) ) =  (e2) --> (select ...) = (e2) - (e1)
 // (e2) = (+ (select ...) (e1) ) --> (select ...) = (e2) - (e1)
 // (e2) = (+ (e1) (select ...) ) --> (select ...) = (e2) - (e1)
-void simplify_select_eq(exprs& list, solver_context& z3_ctx) {
+void simplify_select_eq(exprs& list, solver_context& sol_ctx) {
   exprs new_list;
   bool incr_flag = true;
   bool replace = false;
-  expr replace_eq(z3_ctx);
+  expr replace_eq(sol_ctx);
   auto it = list.begin();
   while( it !=list.end() ) {
     incr_flag = true;
@@ -1025,7 +1025,7 @@ void simplify_select_eq(exprs& list, solver_context& z3_ctx) {
         if(isAdd(e.arg(0)) && !isSelect(e.arg(1))) {
           expr rhs_expr = e.arg(1);
           expr add_expr = e.arg(0);
-          expr lhs_expr(z3_ctx);
+          expr lhs_expr(sol_ctx);
           bool sel_found = false;
           unsigned args = add_expr.num_args();
           for (unsigned i = 0; i<args; i++) {
@@ -1046,7 +1046,7 @@ void simplify_select_eq(exprs& list, solver_context& z3_ctx) {
         if (isAdd(e.arg(1)) && !isSelect(e.arg(0))) {
           expr rhs_expr = e.arg(0);
           expr add_expr = e.arg(1);
-          expr lhs_expr(z3_ctx);
+          expr lhs_expr(sol_ctx);
           bool sel_found = false;
           unsigned args = add_expr.num_args();
           for (unsigned i = 0; i<args; i++) {

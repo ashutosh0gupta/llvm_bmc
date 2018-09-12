@@ -85,7 +85,7 @@ expr _or( std::vector<expr> &);
 expr _and( std::vector<expr> &, solver_context& );
 expr _and( std::vector<expr> &);
 expr _xor( expr const &, expr const &);
-expr neg_and( std::vector<expr> &vec, solver_context& z3_ctx );
+expr neg_and( std::vector<expr> &vec, solver_context& sol_ctx );
 expr neg_and( std::vector<expr> &vec);
 expr _forall( expr_vector&, expr& );
 expr implies( expr&, expr& );
@@ -99,8 +99,8 @@ int get_numeral_int(const expr& i);
 bool is_true( expr, model );
 
 void to_std_vec( expr_vector& vec, std::vector<expr>& o_vec );
-void to_z3_vec( std::vector<expr>& vec, expr_vector& o_vec );
-void to_z3_vec( expr_set& set, expr_vector& o_vec );
+void to_sol_vec( std::vector<expr>& vec, expr_vector& o_vec );
+void to_sol_vec( expr_set& set, expr_vector& o_vec );
 
 void get_variables( expr& expr, expr_set& vars );
 void get_variables( exprs& expr, expr_set& vars );
@@ -117,8 +117,8 @@ bool inline are_intersecting( expr_set s1, expr_set s2 ) {
   return false;
 }
 
-// bool run_solver(solver_context z3_ctx, expr e );
-bool check_sat(solver_context& z3_ctx, expr e);
+// bool run_solver(solver_context sol_ctx, expr e );
+bool check_sat(solver_context& sol_ctx, expr e);
 
 expr expr_to_linear_term( expr term, exprs& vs, std::vector<int>& l );
 
@@ -128,10 +128,10 @@ expr subtract_polyhedran( expr_set& dims, expr x, expr y );
 expr get_forall_lhs( expr h );
 expr get_forall_rhs( expr h );
 
-void propogate_store_eq(exprs& list, solver_context& z3_ctx);
-void propogate_select_eq(exprs& list, solver_context& z3_ctx);
-void simplify_select_store_nest(exprs& list, solver_context& z3_ctx);
-void simplify_select_eq(exprs& list, solver_context& z3_ctx);
+void propogate_store_eq(exprs& list, solver_context& sol_ctx);
+void propogate_select_eq(exprs& list, solver_context& sol_ctx);
+void simplify_select_store_nest(exprs& list, solver_context& sol_ctx);
+void simplify_select_eq(exprs& list, solver_context& sol_ctx);
 
 expr substitute( expr,
                      std::vector<expr>&,
