@@ -18,20 +18,13 @@
 
 bmc::bmc( std::unique_ptr<llvm::Module>& m_,
           std::map<const bb*, comments >& bb_comment_map_,
-          options& o_, z3::context& z3_,
-          value_expr_map& def_map_,
-          std::map<llvm::Loop*, loopdata*>& ldm,
-          name_map& lMap
-          // ,std::map<std::string, llvm::Value*>& evMap
-          )
+          options& o_, solver_context& solver_)
     : o(o_)
-    , solver_ctx(z3_)
-    , def_map(def_map_)
+    , solver_ctx(solver_)
+    , def_map(solver_)
     , module(m_)
     , bb_comment_map( bb_comment_map_ )
-    , ld_map(ldm)
-    , localNameMap(lMap)
-    , g_model(z3_)
+    , g_model(solver_)
 {}
 
 bmc::~bmc() {

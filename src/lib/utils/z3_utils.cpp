@@ -5,7 +5,7 @@
 #include<list>
 #include "z3_utils.h"
 
-z3::expr smt2_parse_string( z3::context& z3_ctx, const char* str ) {
+expr smt2_parse_string( solver_context& z3_ctx, const char* str ) {
   expr_vector es = z3_ctx.parse_string( str );
   assert( es.size() == 1 );
   expr e = es[0];
@@ -18,13 +18,13 @@ void expr_set_to_exprs( expr_set& s, exprs& v) {
   }
 }
 
-std::string to_string(z3::sort e) {
+std::string to_string(sort e) {
   std::stringstream ss;
   ss << e;
   return ss.str();
 }
 
-std::string to_string(z3::expr e) {
+std::string to_string(expr e) {
   std::stringstream ss;
   ss << e;
   return ss.str();
@@ -42,7 +42,7 @@ void print_exprs( std::ostream& o, exprs& es) {
     o << e << "\n";
 }
 
-void print_expr_vec( std::ostream& o, z3::expr_vector& es) {
+void print_expr_vec( std::ostream& o, expr_vector& es) {
   for( unsigned i = 0; i < es.size(); i++ ) {
     o << es[i] << "\n";
   }
@@ -53,11 +53,11 @@ void print_expr_set( std::ostream& o, expr_set& es) {
     o << e << "\n";
 }
 
-void print_expr( std::ostream& o, z3::expr e) {
+void print_expr( std::ostream& o, expr e) {
     o << e << "\n";
 }
 
-void dump( z3::expr e ) {
+void dump( expr e ) {
   print_expr( std::cerr, e );
 }
 
@@ -69,11 +69,11 @@ void dump( expr_set es ) {
   print_expr_set( std::cerr, es );
 }
 
-void dump( z3::expr_vector es ) {
+void dump( expr_vector es ) {
   print_expr_vec( std::cerr, es );
 }
 
-std::string display(z3::expr e) {
+std::string display(expr e) {
   if(e.is_numeral()) {
     int64_t num, den;
     if (Z3_get_numeral_small(e.ctx(), e, &num, &den)) {
@@ -89,13 +89,13 @@ std::string display(z3::expr e) {
   }
 }
 
-std::string display_app(z3::expr e) {
+std::string display_app(expr e) {
   std::list<std::string> argStrList;
 
   unsigned args = e.num_args();
   for (unsigned i = 0; i<args; i++) 
   {
-    z3::expr arg = e.arg(i);
+    expr arg = e.arg(i);
     argStrList.push_back(display(arg));
   }
 
@@ -208,7 +208,7 @@ bool has_quantified_formula(exprs es)
   return false;
 }
 
-bool isQuant(z3::expr e, std::string s, bool th)
+bool isQuant(expr e, std::string s, bool th)
 {
   if (!e.is_quantifier()) {
     reportErrNThrow(s, th);
@@ -217,7 +217,7 @@ bool isQuant(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isForall(z3::expr e, std::string s, bool th)
+bool isForall(expr e, std::string s, bool th)
 {
   if(!Z3_is_quantifier_forall(e.ctx(), e)) {
     reportErrNThrow(s, th);
@@ -226,7 +226,7 @@ bool isForall(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isSelect(z3::expr e, std::string s, bool th)
+bool isSelect(expr e, std::string s, bool th)
 {
   if( !isApp( e, s , th ) ) return false;
   Z3_decl_kind dk = e.decl().decl_kind();
@@ -237,7 +237,7 @@ bool isSelect(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isStore(z3::expr e, std::string s, bool th)
+bool isStore(expr e, std::string s, bool th)
 {
   if( !isApp( e, s , th ) ) return false;
   Z3_decl_kind dk = e.decl().decl_kind();
@@ -248,7 +248,7 @@ bool isStore(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isApp(z3::expr e, std::string s, bool th)
+bool isApp(expr e, std::string s, bool th)
 {
   if (!e.is_app()) {
     reportErrNThrow(s,th);
@@ -257,7 +257,7 @@ bool isApp(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isImplies(z3::expr e, std::string s, bool th)
+bool isImplies(expr e, std::string s, bool th)
 {
   if( !isApp( e, s , th ) ) return false;
   Z3_decl_kind dk = e.decl().decl_kind();
@@ -268,7 +268,7 @@ bool isImplies(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isAnd(z3::expr e, std::string s, bool th)
+bool isAnd(expr e, std::string s, bool th)
 {
   if( !isApp( e, s , th ) ) return false;
   Z3_decl_kind dk = e.decl().decl_kind();
@@ -279,7 +279,7 @@ bool isAnd(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isLE(z3::expr e, std::string s, bool th)
+bool isLE(expr e, std::string s, bool th)
 {
   if( !isApp( e, s , th ) ) return false;
   Z3_decl_kind dk = e.decl().decl_kind();
@@ -290,7 +290,7 @@ bool isLE(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isLT(z3::expr e, std::string s, bool th)
+bool isLT(expr e, std::string s, bool th)
 {
   if( !isApp( e, s , th ) ) return false;
   Z3_decl_kind dk = e.decl().decl_kind();
@@ -301,7 +301,7 @@ bool isLT(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isGE(z3::expr e, std::string s, bool th)
+bool isGE(expr e, std::string s, bool th)
 {
   if( !isApp( e, s , th ) ) return false;
   Z3_decl_kind dk = e.decl().decl_kind();
@@ -312,7 +312,7 @@ bool isGE(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isGT(z3::expr e, std::string s, bool th)
+bool isGT(expr e, std::string s, bool th)
 {
   if( !isApp( e, s , th ) ) return false;
   Z3_decl_kind dk = e.decl().decl_kind();
@@ -323,7 +323,7 @@ bool isGT(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isEQ(z3::expr e, std::string s, bool th)
+bool isEQ(expr e, std::string s, bool th)
 {
   if( !isApp( e, s , th ) ) return false;
   Z3_decl_kind dk = e.decl().decl_kind();
@@ -334,7 +334,7 @@ bool isEQ(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isNot(z3::expr e, std::string s, bool th)
+bool isNot(expr e, std::string s, bool th)
 {
   if( !isApp( e, s , th ) ) return false;
   Z3_decl_kind dk = e.decl().decl_kind();
@@ -345,7 +345,7 @@ bool isNot(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isAdd(z3::expr e, std::string s, bool th)
+bool isAdd(expr e, std::string s, bool th)
 {
   if( !isApp( e, s , th ) ) return false;
   Z3_decl_kind dk = e.decl().decl_kind();
@@ -356,7 +356,7 @@ bool isAdd(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isSub(z3::expr e, std::string s, bool th)
+bool isSub(expr e, std::string s, bool th)
 {
   if( !isApp( e, s , th ) ) return false;
   Z3_decl_kind dk = e.decl().decl_kind();
@@ -367,7 +367,7 @@ bool isSub(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isUMinus(z3::expr e, std::string s, bool th)
+bool isUMinus(expr e, std::string s, bool th)
 {
   if( !isApp( e, s , th ) ) return false;
   Z3_decl_kind dk = e.decl().decl_kind();
@@ -378,7 +378,7 @@ bool isUMinus(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isMul(z3::expr e, std::string s, bool th)
+bool isMul(expr e, std::string s, bool th)
 {
   if( !isApp( e, s , th ) ) return false;
   Z3_decl_kind dk = e.decl().decl_kind();
@@ -389,107 +389,107 @@ bool isMul(z3::expr e, std::string s, bool th)
   return true;
 }
 
-bool isRel(z3::expr e, std::string s, bool th)
+bool isRel(expr e, std::string s, bool th)
 {
   return isGE(e,s,th) || isGT(e,s,th) || isLE(e,s,th) || isLT(e,s,th) || isEQ(e,s,th) || isNot(e,s,th) ;
 }
 
-bool is_const( z3::expr &b ) {
+bool is_const( expr &b ) {
   if( b.kind() == Z3_NUMERAL_AST ) return true;
   return false;
 }
 
-bool is_false( z3::expr f ) {
-  return z3::eq( f, f.ctx().bool_val(false) );
+bool is_false( expr f ) {
+  return eq( f, f.ctx().bool_val(false) );
 }
 
-bool is_true( z3::expr f ) {
-  return z3::eq( f, f.ctx().bool_val(true) );
+bool is_true( expr f ) {
+  return eq( f, f.ctx().bool_val(true) );
 }
 
-z3::expr get_fresh_bool( z3::context& c, std::string suff )
+expr get_fresh_bool( solver_context& c, std::string suff )
 {
   static unsigned count = 0;
   std::stringstream b_name;
   b_name << "b_" << count << "_"<< suff;
-  z3::expr b = c.bool_const(b_name.str().c_str());
+  expr b = c.bool_const(b_name.str().c_str());
   count++;
   return b;
 }
 
-z3::expr get_fresh_int( z3::context& c, std::string suff )
+expr get_fresh_int( solver_context& c, std::string suff )
 {
   static unsigned count = 0;
   count++;
   std::string loc_name = "i_" + std::to_string(count) + "_" + suff;
-  z3::expr loc_expr = c.int_const(loc_name.c_str());
+  expr loc_expr = c.int_const(loc_name.c_str());
   return loc_expr;
 }
 
 // creates fresh FOL constants of any sort
-z3::expr get_fresh_const( z3::context& c, z3::sort sort, std::string suff )
+expr get_fresh_const( solver_context& c, sort sort, std::string suff )
 {
   static unsigned count = 0;
   count++;
   std::string loc_name = "c_" + std::to_string(count) + "_" + suff;
-  z3::expr loc_expr = c.constant( loc_name.c_str(), sort );
+  expr loc_expr = c.constant( loc_name.c_str(), sort );
   return loc_expr;
 }
 
-// we need this or, since the default or in c++ interface is over z3::expr_vector
+// we need this or, since the default or in c++ interface is over expr_vector
 // and if vec is empty we do not have the z3 context
-z3::expr _or( std::vector<z3::expr> &vec, z3::context& z3_ctx ) {
-  z3::expr_vector z3_vec(z3_ctx);
+expr _or( std::vector<expr> &vec, solver_context& z3_ctx ) {
+  expr_vector z3_vec(z3_ctx);
   to_z3_vec(vec, z3_vec);
-  return z3::mk_or(z3_vec);
+  return mk_or(z3_vec);
 }
 
-// we need this or, since the default or in c++ interface is over z3::expr_vector
-z3::expr _or( std::vector<z3::expr> &vec ) {
+// we need this or, since the default or in c++ interface is over expr_vector
+expr _or( std::vector<expr> &vec ) {
   assert(!vec.empty());
   return _or( vec, vec.at(0).ctx());
 }
 
-// we need this and, since the default and in c++ interface is over z3::expr_vector
+// we need this and, since the default and in c++ interface is over expr_vector
 // and if vec is empty we do not have the z3 context
-z3::expr _and( std::vector<z3::expr> &vec, z3::context& z3_ctx ) {
-  z3::expr_vector z3_vec(z3_ctx);
+expr _and( std::vector<expr> &vec, solver_context& z3_ctx ) {
+  expr_vector z3_vec(z3_ctx);
   to_z3_vec(vec, z3_vec);
-  return z3::mk_and(z3_vec);
+  return mk_and(z3_vec);
 }
 
-// we need this and, since the default and in c++ interface is over z3::expr_vector
-z3::expr _and( std::vector<z3::expr> &vec ) {
+// we need this and, since the default and in c++ interface is over expr_vector
+expr _and( std::vector<expr> &vec ) {
   assert(!vec.empty());
   return _and( vec, vec.at(0).ctx());
 }
 
 // we need this xor, since the default xor in c++ interface is for bvxor
-z3::expr _xor( z3::expr const &a, z3::expr const &b ) {
-  z3::check_context(a, b);
+expr _xor( expr const &a, expr const &b ) {
+  check_context(a, b);
   Z3_ast r = Z3_mk_xor(a.ctx(), a, b);
-  return z3::expr(a.ctx(), r);
+  return expr(a.ctx(), r);
 }
 
-z3::expr neg_and( std::vector<z3::expr> &vec, z3::context& z3_ctx ) {
-  z3::expr_vector z3_vec(z3_ctx);
+expr neg_and( std::vector<expr> &vec, solver_context& z3_ctx ) {
+  expr_vector z3_vec(z3_ctx);
   for(auto e : vec) {
     z3_vec.push_back(!e);
   }
-  return z3::mk_and(z3_vec);
+  return mk_and(z3_vec);
 }
 
-z3::expr neg_and( std::vector<z3::expr> &vec ) {
+expr neg_and( std::vector<expr> &vec ) {
   assert(!vec.empty());
   return neg_and( vec, vec.at(0).ctx());
 }
 
-z3::expr _forall( z3::expr_vector& vec, z3::expr& e ) {
-  z3::expr_vector new_vec(vec.ctx());
+expr _forall( expr_vector& vec, expr& e ) {
+  expr_vector new_vec(vec.ctx());
   for(unsigned i = 0; i <  vec.size(); i++ ) {
-    z3::expr v = vec[i];
+    expr v = vec[i];
     if( v.is_var() ) {
-      z3::expr new_v = get_fresh_const( e.ctx(), v.get_sort(), "");
+      expr new_v = get_fresh_const( e.ctx(), v.get_sort(), "");
       new_vec.push_back( new_v );
       inplace_substitute( e, v, new_v );
     }else{
@@ -499,24 +499,24 @@ z3::expr _forall( z3::expr_vector& vec, z3::expr& e ) {
   return forall( new_vec, e );
 }
 
-z3::expr implies( z3::expr& e1, z3::expr& e2) {
-  return z3::implies( e1, e2 );
+expr implies( expr& e1, expr& e2) {
+  return implies( e1, e2 );
 }
 
-z3::expr select( z3::expr& e1, z3::expr& e2) {
-  return z3::select( e1, e2 );
+expr select( expr& e1, expr& e2) {
+  return select( e1, e2 );
 }
 
-z3::expr store( z3::expr& e1, z3::expr& e2, z3::expr& e3) {
-  return z3::store( e1, e2, e3 );
+expr store( expr& e1, expr& e2, expr& e3) {
+  return store( e1, e2, e3 );
 }
 
-bool matched_sort( const z3::expr& l, const z3::expr& r ) {
-  return z3::eq(l.get_sort(),r.get_sort());
+bool matched_sort( const expr& l, const expr& r ) {
+  return eq(l.get_sort(),r.get_sort());
 }
 
-z3::expr switch_sort( z3::expr& b, z3::sort& s ) {
-  z3::sort bs = b.get_sort();
+expr switch_sort( expr& b, sort& s ) {
+  sort bs = b.get_sort();
   if( bs.is_bool() && s.is_int() ) {
     if( is_false( b) ) {
       return b.ctx().int_val(0);
@@ -534,7 +534,7 @@ z3::expr switch_sort( z3::expr& b, z3::sort& s ) {
   llvm_bmc_error("z3Utils", "failed to change sort!" );
 }
 
-int get_numeral_int(const z3::expr& i) {
+int get_numeral_int(const expr& i) {
   int val;
   if(Z3_get_numeral_int( i.ctx(), i, &val) ) {
     return val;
@@ -544,42 +544,42 @@ int get_numeral_int(const z3::expr& i) {
 }
 
 
-void to_std_vec( z3::expr_vector& vec, std::vector<z3::expr>& o_vec ) {
+void to_std_vec( expr_vector& vec, std::vector<expr>& o_vec ) {
   o_vec.clear();
   for( unsigned i = 0; i < vec.size(); i++ ) {
     o_vec.push_back( vec[i] );
   }
 }
 
-void to_z3_vec( std::vector<z3::expr>& vec, z3::expr_vector& o_vec ) {
+void to_z3_vec( std::vector<expr>& vec, expr_vector& o_vec ) {
   o_vec.resize(0);
   for( unsigned i = 0; i < vec.size(); i++ ) {
     o_vec.push_back( vec[i] );
   }
 }
 
-void to_z3_vec( expr_set& vec, z3::expr_vector& o_vec ) {
+void to_z3_vec( expr_set& vec, expr_vector& o_vec ) {
   o_vec.resize(0);
-  for( z3::expr v : vec ) {
+  for( expr v : vec ) {
     o_vec.push_back( v );
   }
 }
 
-bool is_true( z3::expr e,  z3::model m ) {
-  z3::expr v = m.eval( e );
+bool is_true( expr e,  model m ) {
+  expr v = m.eval( e );
   return ( Z3_get_bool_value( v.ctx(), v)  == Z3_L_TRUE );
 }
 
-inline bool is_false( z3::expr e,  z3::model m ) {
-  z3::expr v = m.eval( e );
+inline bool is_false( expr e,  model m ) {
+  expr v = m.eval( e );
   return ( Z3_get_bool_value( v.ctx(), v)  == Z3_L_FALSE );
 }
 
-z3::expr substitute( z3::expr e,
-                     std::vector<z3::expr>& from,
-                     std::vector<z3::expr>& to ) {
-  z3::context& z3_ctx = e.ctx();
-  z3::expr_vector out_z3_vec(z3_ctx), in_z3_vec(z3_ctx);
+expr substitute( expr e,
+                     std::vector<expr>& from,
+                     std::vector<expr>& to ) {
+  solver_context& z3_ctx = e.ctx();
+  expr_vector out_z3_vec(z3_ctx), in_z3_vec(z3_ctx);
   to_z3_vec( from, out_z3_vec );
   to_z3_vec( to  ,  in_z3_vec );
   return e.substitute( out_z3_vec, in_z3_vec );
@@ -591,21 +591,22 @@ z3::expr substitute( z3::expr e,
 void get_variables( exprs& es, expr_set& vars ) {
   for( auto& e : es ) get_variables( e, vars);
 }
-void get_variables( z3::expr& expr, expr_set& vars ) {
-  switch(expr.kind()) {
+
+void get_variables( expr& e, expr_set& vars ) {
+  switch(e.kind()) {
   case Z3_APP_AST: {
-    z3::func_decl d = expr.decl();
+    z3::func_decl d = e.decl();
     Z3_decl_kind dk = d.decl_kind();
     switch(dk) {
     case Z3_OP_UNINTERPRETED : {
-      vars.insert(expr);
+      vars.insert(e);
     } break;
     default: {
       } break;
     }
-    unsigned args = expr.num_args();
+    unsigned args = e.num_args();
     for(unsigned i = 0; i<args; i++) {
-      z3::expr arg = expr.arg(i);
+      expr arg = e.arg(i);
       get_variables(arg, vars);
     }
   } break;
@@ -614,8 +615,8 @@ void get_variables( z3::expr& expr, expr_set& vars ) {
   case Z3_QUANTIFIER_AST: {
     // unsigned idx = Z3_get_index_value(expr.ctx(), expr);
     // Z3_symbol sym = Z3_get_quantifier_bound_name(expr.ctx(), expr, idx);
-    // vars.insert(z3::expr(expr.ctx(), Z3_mk_const(expr.ctx(), sym, Z3_mk_int_sort(expr.ctx()))));
-    z3::expr body = expr.body();
+    // vars.insert(expr(expr.ctx(), Z3_mk_const(expr.ctx(), sym, Z3_mk_int_sort(expr.ctx()))));
+    expr body = e.body();
     get_variables( body, vars);
   } break;
   default: throw "unsupported"; break;
@@ -623,17 +624,17 @@ void get_variables( z3::expr& expr, expr_set& vars ) {
 }
 
 // does not expect any quantified subformulas
-void get_annon_variables( z3::expr& expr, expr_set& vars ) {
-  switch(expr.kind()) {
+void get_annon_variables( expr& e, expr_set& vars ) {
+  switch(e.kind()) {
   case Z3_APP_AST: {
-    unsigned args = expr.num_args();
+    unsigned args = e.num_args();
     for(unsigned i = 0; i<args; i++) {
-      z3::expr arg = expr.arg(i);
+      expr arg = e.arg(i);
       get_annon_variables(arg, vars);
     }
   } break;
   case Z3_VAR_AST:
-    vars.insert(expr);
+    vars.insert(e);
     break; // does not collect quantified variables
   case Z3_NUMERAL_AST:break;
   case Z3_QUANTIFIER_AST: { assert( false ); } break;
@@ -643,31 +644,31 @@ void get_annon_variables( z3::expr& expr, expr_set& vars ) {
 
 
 // z3::expr_vector
-// get_quantified_variables( z3::expr h ) {
+// get_quantified_variables( expr h ) {
 // }
 
-z3::expr get_forall_lhs( z3::expr h ) {
+expr get_forall_lhs( expr h ) {
   if( isForall(h) ) {
     auto b = h.body();
     if( isImplies(b) )
       return b.arg(0);
   }
-  z3::expr dummy(h.ctx());
+  expr dummy(h.ctx());
   return dummy;
 }
 
-z3::expr get_forall_rhs( z3::expr h ) {
+expr get_forall_rhs( expr h ) {
   if( isForall(h) ) {
     auto b = h.body();
     if( isImplies(b) )
       return b.arg(1);
   }
-  z3::expr dummy(h.ctx());
+  expr dummy(h.ctx());
   return dummy;
 }
 
 
-bool check_sat(z3::context& z3_ctx, z3::expr e) {
+bool check_sat(solver_context& z3_ctx, expr e) {
   z3::solver s(z3_ctx);
   s.add(e);
   if (s.check() == z3::sat) {
@@ -677,30 +678,30 @@ bool check_sat(z3::context& z3_ctx, z3::expr e) {
   }
 }
 
-void inplace_substitute( z3::expr& v, z3::expr& outgoing, z3::expr& incoming ) {
-  z3::expr_vector outs(v.ctx()), ins(v.ctx());
+void inplace_substitute( expr& v, expr& outgoing, expr& incoming ) {
+  expr_vector outs(v.ctx()), ins(v.ctx());
   outs.push_back( outgoing );
   ins.push_back( incoming );
   v = v.substitute( outs, ins );
 }
 
-void inplace_substitute( z3::expr& v, z3::expr_vector& outgoing,
-                         z3::expr_vector& incoming ) {
+void inplace_substitute( expr& v, expr_vector& outgoing,
+                         expr_vector& incoming ) {
   v = v.substitute( outgoing, incoming );
 }
 
-void inplace_substitute( exprs& vec, z3::expr_vector& outgoing,
-                         z3::expr_vector& incoming ) {
-  for( z3::expr& v : vec ) {
+void inplace_substitute( exprs& vec, expr_vector& outgoing,
+                         expr_vector& incoming ) {
+  for( expr& v : vec ) {
     v = v.substitute( outgoing, incoming );
   }
 }
 
-void inplace_substitute( exprs& vec, z3::expr& outgoing,
-                         z3::expr& incoming ) {
-  z3::context& z3_ctx = outgoing.ctx();
-  z3::expr_vector out_vec(z3_ctx);
-  z3::expr_vector in_vec(z3_ctx);
+void inplace_substitute( exprs& vec, expr& outgoing,
+                         expr& incoming ) {
+  solver_context& z3_ctx = outgoing.ctx();
+  expr_vector out_vec(z3_ctx);
+  expr_vector in_vec(z3_ctx);
   out_vec.push_back( outgoing );
   in_vec.push_back( incoming );
   inplace_substitute( vec, out_vec, in_vec );
@@ -716,13 +717,13 @@ inline bool all_zero( std::vector<int>& l ) {
 
 // turns a term into liner coeffcients over given variables
 // other terms are lumped into constants
-z3::expr
-expr_to_linear_term( z3::expr term, exprs& vs, std::vector<int>& l ) {
+expr
+expr_to_linear_term( expr term, exprs& vs, std::vector<int>& l ) {
   if( isAdd( term ) ) {
-    z3::expr c1 = expr_to_linear_term( term.arg(0), vs, l );
+    expr c1 = expr_to_linear_term( term.arg(0), vs, l );
     for( unsigned j = 1; j < term.num_args(); j++ ) {
       std::vector<int> u;
-      z3::expr c2 = expr_to_linear_term( term.arg(j), vs, u );
+      expr c2 = expr_to_linear_term( term.arg(j), vs, u );
       for( unsigned i=0; i < l.size(); i++ ) {
         l[i] = l[i]+u[i];
       }
@@ -749,7 +750,7 @@ expr_to_linear_term( z3::expr term, exprs& vs, std::vector<int>& l ) {
     bool l_zero = all_zero( l );
     for( unsigned j = 1; j < term.num_args(); j++ ) {
       std::vector<int> u;
-      z3::expr c2 = expr_to_linear_term( term.arg(j), vs, u );
+      expr c2 = expr_to_linear_term( term.arg(j), vs, u );
       if( !all_zero(u) ) {
         if( !l_zero || !c1.is_numeral() ) throw;
         int c = c1.get_numeral_int();
@@ -768,7 +769,7 @@ expr_to_linear_term( z3::expr term, exprs& vs, std::vector<int>& l ) {
   }else{
     bool found = false;
     for( unsigned i =0; i < vs.size(); i++ ) {
-      if( z3::eq(vs[i],term) ) {
+      if( eq(vs[i],term) ) {
         l.push_back(1);
         found = true;
       }else{
@@ -784,8 +785,8 @@ expr_to_linear_term( z3::expr term, exprs& vs, std::vector<int>& l ) {
 }
 
 // term  => 0
-z3::expr
-pred_to_linear_term( z3::expr pred, exprs& vs, std::vector<int>& l ) {
+expr
+pred_to_linear_term( expr pred, exprs& vs, std::vector<int>& l ) {
   if( isGE(pred) ) { // >= a b   ---> (>= a-b 0)
     return expr_to_linear_term( pred.arg(0)-pred.arg(1), vs, l ).simplify();
   }else  if( isGT(pred) ) { // > a b   ---> (>= a-b-1 0)
@@ -798,7 +799,7 @@ pred_to_linear_term( z3::expr pred, exprs& vs, std::vector<int>& l ) {
     assert(false);
     return expr_to_linear_term( pred.arg(0)-pred.arg(1), vs, l ).simplify();
   }else  if( isNot(pred) ) { // not t >= 0    -> (>= -t-1 0)
-    z3::expr c1 = pred_to_linear_term( pred.arg(0), vs, l );
+    expr c1 = pred_to_linear_term( pred.arg(0), vs, l );
     for( unsigned i=0; i < l.size(); i++ ) l[i] = -l[i];
     return (-c1-1).simplify();
   }else{
@@ -806,8 +807,8 @@ pred_to_linear_term( z3::expr pred, exprs& vs, std::vector<int>& l ) {
   }
 }
 
-z3::expr
-turn_to_equality( z3::expr pred ) {
+expr
+turn_to_equality( expr pred ) {
   if( isGE(pred) ) {
     return pred.arg(0) == pred.arg(1);
   }else  if( isGT(pred) ) { // > a b   ---> (>= a-b-1 0)
@@ -819,7 +820,7 @@ turn_to_equality( z3::expr pred ) {
   }else  if( isEQ(pred) ) {
     return pred;
   }else  if( isNot(pred) ) { // not a <= b  -> b = a -> b + 1 = a
-    z3::expr c1 = turn_to_equality( pred.arg(0) );
+    expr c1 = turn_to_equality( pred.arg(0) );
     return c1.arg(0) == c1.arg(1) - 1;
   }else{
     llvm_bmc_error("","linear term generation failed");
@@ -833,9 +834,9 @@ void simple_polyhedron_substraction( exprs& dims,
   std::vector< std::vector<int> > coeffs;
   exprs x_bounds;
   unsigned i =0;
-  for( z3::expr x : xs  ) {
+  for( expr x : xs  ) {
     std::vector<int> coeff;
-    z3::expr bound = pred_to_linear_term( x, dims, coeff );
+    expr bound = pred_to_linear_term( x, dims, coeff );
     coeffs.push_back(coeff);
     x_bounds.push_back( bound );
     i++;
@@ -850,9 +851,9 @@ void simple_polyhedron_substraction( exprs& dims,
   //   }
   // }
   bool diff_found = false;
-  for( z3::expr& y : ys ) {
+  for( expr& y : ys ) {
     std::vector<int> coeff;
-    z3::expr bound = pred_to_linear_term( y, dims, coeff );
+    expr bound = pred_to_linear_term( y, dims, coeff );
     unsigned i = 0;
     bool found = false;
     for( auto& x_coeff : coeffs) {
@@ -863,11 +864,11 @@ void simple_polyhedron_substraction( exprs& dims,
       i++;
     }
     if( found ) {
-      z3::expr x_bound = x_bounds.at(i);
-      if( !z3::eq(x_bound,bound) ) {
+      expr x_bound = x_bounds.at(i);
+      if( !eq(x_bound,bound) ) {
         assert( !diff_found );
         diff_found = true;
-        z3::expr gap = (x_bound-bound).simplify();
+        expr gap = (x_bound-bound).simplify();
         if( gap.is_numeral() ) {
           int c = gap.get_numeral_int();
           if( c == 1 ) {
@@ -881,8 +882,8 @@ void simple_polyhedron_substraction( exprs& dims,
   }
 }
 
-z3::expr
-subtract_polyhedran( exprs& dims, z3::expr x, z3::expr y ) {
+expr
+subtract_polyhedran( exprs& dims, expr x, expr y ) {
   // exprs dims;
   // expr_set_to_exprs( dims_set, dims);
   exprs xs,ys;
@@ -906,24 +907,24 @@ subtract_polyhedran( exprs& dims, z3::expr x, z3::expr y ) {
   return _and(xs,x.ctx());
 }
 
-z3::expr
-subtract_polyhedran( expr_set& dims, z3::expr x, z3::expr y ) {
+expr
+subtract_polyhedran( expr_set& dims, expr x, expr y ) {
   exprs dims_vec;
   expr_set_to_exprs( dims, dims_vec );
   return subtract_polyhedran( dims_vec, x, y );
 }
 
-void propogate_store_eq(exprs& list, z3::context& z3_ctx) {
+void propogate_store_eq(exprs& list, solver_context& z3_ctx) {
   bool change = true;
   while(change) {
     unsigned size = list.size();
     bool incr_flag = true;
-    z3::expr_vector outs(z3_ctx);
-    z3::expr_vector ins(z3_ctx);
+    expr_vector outs(z3_ctx);
+    expr_vector ins(z3_ctx);
     auto it = list.begin();
     while( it !=list.end() ) {
       incr_flag = true;
-      z3::expr e = *it;
+      expr e = *it;
       if(isEQ(e)) {
         if(e.arg(0).is_array() && isStore(e.arg(1)) && !isStore(e.arg(0)) ) {
           outs.push_back(e.arg(0));
@@ -944,16 +945,16 @@ void propogate_store_eq(exprs& list, z3::context& z3_ctx) {
   }
 }
 
-void propogate_select_eq(exprs& list, z3::context& z3_ctx) {
+void propogate_select_eq(exprs& list, solver_context& z3_ctx) {
   bool incr_flag = true;
-  z3::expr_vector outs(z3_ctx);
-  z3::expr_vector ins(z3_ctx);
+  expr_vector outs(z3_ctx);
+  expr_vector ins(z3_ctx);
   auto it = list.begin();
   while( it !=list.end() ) {
     incr_flag = true;
-    z3::expr e = *it;
+    expr e = *it;
     if(isEQ(e)) {
-      z3::expr sel(z3_ctx);
+      expr sel(z3_ctx);
       if(isSelect(e.arg(0)) && !isSelect(e.arg(1))) {
         outs.push_back(e.arg(0));
         ins.push_back(e.arg(1));
@@ -971,15 +972,15 @@ void propogate_select_eq(exprs& list, z3::context& z3_ctx) {
   inplace_substitute( list, outs, ins );
 }
 
-void simplify_select_store_nest(exprs& list, z3::context& z3_ctx) {
+void simplify_select_store_nest(exprs& list, solver_context& z3_ctx) {
   exprs new_list;
   bool incr_flag = true;
   auto it = list.begin();
   while( it !=list.end() ) {
     incr_flag = true;
-    z3::expr e = *it;
+    expr e = *it;
     if(isEQ(e)) {
-      z3::expr sel(z3_ctx);
+      expr sel(z3_ctx);
       if(isSelect(e.arg(0))) {
         sel = e.arg(0);
       } else if (isSelect(e.arg(1))) {
@@ -989,9 +990,9 @@ void simplify_select_store_nest(exprs& list, z3::context& z3_ctx) {
         continue;
       }
       if(isStore(sel.arg(0))) {
-        z3::expr stor = sel.arg(0);
+        expr stor = sel.arg(0);
         if(z3::eq(sel.arg(1).simplify(), stor.arg(1).simplify())) {
-          z3::expr new_eq = e.arg(1) == stor.arg(2);
+          expr new_eq = e.arg(1) == stor.arg(2);
           new_list.push_back(new_eq.simplify());
           list.erase(it);
           incr_flag=false;
@@ -1009,22 +1010,22 @@ void simplify_select_store_nest(exprs& list, z3::context& z3_ctx) {
 // (+ (e1) (select ...) ) =  (e2) --> (select ...) = (e2) - (e1)
 // (e2) = (+ (select ...) (e1) ) --> (select ...) = (e2) - (e1)
 // (e2) = (+ (e1) (select ...) ) --> (select ...) = (e2) - (e1)
-void simplify_select_eq(exprs& list, z3::context& z3_ctx) {
+void simplify_select_eq(exprs& list, solver_context& z3_ctx) {
   exprs new_list;
   bool incr_flag = true;
   bool replace = false;
-  z3::expr replace_eq(z3_ctx);
+  expr replace_eq(z3_ctx);
   auto it = list.begin();
   while( it !=list.end() ) {
     incr_flag = true;
     replace = false;
-    z3::expr e = *it;
+    expr e = *it;
     if(isEQ(e)) {
       if(!replace) {
         if(isAdd(e.arg(0)) && !isSelect(e.arg(1))) {
-          z3::expr rhs_expr = e.arg(1);
-          z3::expr add_expr = e.arg(0);
-          z3::expr lhs_expr(z3_ctx);
+          expr rhs_expr = e.arg(1);
+          expr add_expr = e.arg(0);
+          expr lhs_expr(z3_ctx);
           bool sel_found = false;
           unsigned args = add_expr.num_args();
           for (unsigned i = 0; i<args; i++) {
@@ -1043,9 +1044,9 @@ void simplify_select_eq(exprs& list, z3::context& z3_ctx) {
       }
       if(!replace) {
         if (isAdd(e.arg(1)) && !isSelect(e.arg(0))) {
-          z3::expr rhs_expr = e.arg(0);
-          z3::expr add_expr = e.arg(1);
-          z3::expr lhs_expr(z3_ctx);
+          expr rhs_expr = e.arg(0);
+          expr add_expr = e.arg(1);
+          expr lhs_expr(z3_ctx);
           bool sel_found = false;
           unsigned args = add_expr.num_args();
           for (unsigned i = 0; i<args; i++) {
@@ -1074,9 +1075,9 @@ void simplify_select_eq(exprs& list, z3::context& z3_ctx) {
   list.insert(list.end(), new_list.begin(), new_list.end());
 }
 
-void eliminate_vars( z3::expr f, std::vector<z3::expr>& rm_vars,
-                     std::vector<z3::expr>& results ) {
-  z3::context& solver_ctx = f.ctx();
+void eliminate_vars( expr f, std::vector<expr>& rm_vars,
+                     std::vector<expr>& results ) {
+  solver_context& solver_ctx = f.ctx();
   expr_vector ev(solver_ctx);
   for(expr v : rm_vars) {
     ev.push_back(v);

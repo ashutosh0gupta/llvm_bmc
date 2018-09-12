@@ -20,7 +20,6 @@
 void prepare_module( options& o,
                        std::unique_ptr<llvm::Module>& module,
                        std::vector<comment>& cmts,
-                     // std::map<llvm::Value*, std::string>& lMap,
                        std::map< const bb*, comments> & block_comment_map
                      ) {
   llvm::legacy::PassManager passMan;
@@ -49,17 +48,9 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
               options& o, z3::context& z3_ctx )
 {
 
-  // todo: why these maps here
-  value_expr_map def_map(z3_ctx);
-  name_map local_name_map;
-  std::map<llvm::Loop*, loopdata*> ld_map;
-  // std::map<std::string, llvm::Value*> expr_val_map;
-
   std::map<const bb*, comments > bb_cmt_map;
   prepare_module( o, module, cmts, bb_cmt_map);
-  bmc b(module, bb_cmt_map, o, z3_ctx, def_map,
-        ld_map,
-        local_name_map);
+  bmc b( module, bb_cmt_map, o, z3_ctx );
   b.init_glb();
   b.run_bmc_pass();
   for( auto& it : b.func_formula_map ) {

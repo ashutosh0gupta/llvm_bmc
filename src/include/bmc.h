@@ -20,7 +20,7 @@ class bmc {
 public:
   options& o;
   z3::context& solver_ctx;
-  value_expr_map& def_map;
+  value_expr_map def_map;
   std::unique_ptr<llvm::Module>& module;
   std::map< const llvm::BasicBlock*, comments >& bb_comment_map;
 
@@ -28,19 +28,15 @@ public:
 
   // loop_formula_map[NULL] maps to data for the code that is not in any loop
   std::map< const llvm::Loop*, bmc_loop*> loop_formula_map;
-  std::map<llvm::Loop*, loopdata*>& ld_map;
+  std::map<llvm::Loop*, loopdata*> ld_map;
 
-  name_map& localNameMap;
+  name_map localNameMap;
   std::map< const llvm::BasicBlock*,rev_name_map > revStartLocalNameMap;//todo:likely useless
   std::map< const llvm::BasicBlock*, rev_name_map > revEndLocalNameMap;
 
   bmc(std::unique_ptr<llvm::Module>& m_,
       std::map<const bb*, comments >& bb_comment_map_,
-      options& o_, z3::context& z3_,
-      value_expr_map& def_map_,
-      std::map<llvm::Loop*, loopdata*>& ldm,
-      name_map& lMap
-      );
+      options& o_, z3::context& z3_ );
 
   ~bmc();
 

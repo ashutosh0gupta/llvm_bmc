@@ -2,20 +2,21 @@
 #define TILER_ARRAY_MODEL_H
 
 #include "include/options.h"
+#include "include/solver.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "llvm/IR/Instructions.h"
 #pragma GCC diagnostic pop
 
-namespace z3{
-  class context;
-  class expr;
-  class sort;
-}
-typedef z3::context solver_context;
-typedef z3::sort sort;
-typedef z3::expr expr;
+// namespace z3{
+//   class context;
+//   class expr;
+//   class sort;
+// }
+// typedef z3::context solver_context;
+// typedef z3::sort sort;
+// typedef z3::expr expr;
 
 class array_state{
 public:

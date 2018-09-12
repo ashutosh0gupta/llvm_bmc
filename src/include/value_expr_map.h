@@ -3,15 +3,9 @@
 
 #include <vector>
 #include <map>
+#include "include/solver.h"
 
 namespace llvm { class Value; }
-
-namespace z3{
-  class context;
-  class expr;
-}
-typedef z3::context solver_context;
-typedef z3::expr expr;
 
 class value_expr_map {
 public:
