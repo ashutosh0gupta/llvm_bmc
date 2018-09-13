@@ -2,8 +2,7 @@
 #define TILER_BMC_DS_H
 
 #include <unordered_map>
-#include "include/glb_model.h"
-#include "include/array_model.h"
+#include "include/heap_model.h"
 #include "include/value_expr_map.h"
 
 class bmc_ds {

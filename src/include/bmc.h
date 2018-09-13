@@ -4,7 +4,7 @@
 #include "include/options.h"
 #include "include/bmc_ds.h"
 #include "include/loopdata.h"
-#include "include/glb_model.h"
+#include "include/heap_model.h"
 #include "include/solver.h"
 
 //for comments
