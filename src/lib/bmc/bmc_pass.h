@@ -2,7 +2,7 @@
 #define TILER_BMC_PASS_H
 
 #include "include/options.h"
-#include "lib/utils/z3_utils.h"
+#include "lib/utils/solver_utils.h"
 #include "lib/utils/llvm_utils.h"
 #include "include/bmc_ds.h"
 #include "include/bmc.h"

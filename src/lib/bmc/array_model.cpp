@@ -1,6 +1,6 @@
 #include "include/array_model.h"
 #include "lib/utils/llvm_utils.h"
-#include "lib/utils/z3_utils.h"
+#include "lib/utils/solver_utils.h"
 
 
 array_state& array_model::get_state( unsigned b ) {

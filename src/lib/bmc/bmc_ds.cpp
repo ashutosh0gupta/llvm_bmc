@@ -1,6 +1,6 @@
 #include "include/bmc_ds.h"
 #include "lib/utils/llvm_utils.h"
-#include "lib/utils/z3_utils.h"
+#include "lib/utils/solver_utils.h"
 
 void bmc_ds::add_latch( unsigned lidx  ) {
   latches.push_back( lidx );

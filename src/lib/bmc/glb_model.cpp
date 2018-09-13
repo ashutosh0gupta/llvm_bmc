@@ -1,6 +1,6 @@
 #include "include/glb_model.h"
 #include "lib/utils/llvm_utils.h"
-#include "lib/utils/z3_utils.h"
+#include "lib/utils/solver_utils.h"
 
 expr glb_model::get_fresh_glb_name( unsigned i ) {
   return get_fresh_glb_name(i, "glb");

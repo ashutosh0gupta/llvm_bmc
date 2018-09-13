@@ -4,8 +4,7 @@
 #include <set>
 #include <list>
 #include <map>
-#include "lib/utils/z3_utils.h"
-// #include "daikon-inst/segment.h"
+#include "lib/utils/solver_utils.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
