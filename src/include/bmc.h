@@ -18,7 +18,7 @@ class comments;
 class bmc {
 public:
   options& o;
-  solver_context& solver_ctx;
+  // solver_context& solver_ctx;
   value_expr_map def_map;
   std::unique_ptr<llvm::Module>& module;
   std::map< const llvm::BasicBlock*, comments >& bb_comment_map;
@@ -35,7 +35,7 @@ public:
 
   bmc(std::unique_ptr<llvm::Module>& m_,
       std::map<const bb*, comments >& bb_comment_map_,
-      options& o_, solver_context& );
+      options& o_ );
 
   ~bmc();
 

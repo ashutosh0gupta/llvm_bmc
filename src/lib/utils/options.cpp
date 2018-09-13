@@ -4,6 +4,8 @@
 
 namespace po = boost::program_options;
 
+options::options( solver_context& sol_ctx_ ) : solver_ctx(sol_ctx_) {};
+
 void options::show_help(po::options_description& desc) {
       std::cout << "\n\tllvmbmc - BMC library";
       // std::cout << "\n\tSupratik Chakraborty, Ashutosh Gupta, Divyesh Unadkat\n\n";

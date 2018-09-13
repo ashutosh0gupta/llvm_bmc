@@ -45,12 +45,12 @@ void prepare_module( options& o,
 
 void run_bmc( std::unique_ptr<llvm::Module>& module,
               std::vector<comment>& cmts,
-              options& o, z3::context& z3_ctx )
+              options& o )
 {
 
   std::map<const bb*, comments > bb_cmt_map;
   prepare_module( o, module, cmts, bb_cmt_map);
-  bmc b( module, bb_cmt_map, o, z3_ctx );
+  bmc b( module, bb_cmt_map, o );
   b.init_glb();
   b.run_bmc_pass();
   for( auto& it : b.func_formula_map ) {
@@ -59,7 +59,8 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
 }
 
 int main(int argc, char** argv) {
-  options o;
+  z3::context solver_ctx;
+  options o(solver_ctx);
   boost::filesystem::path def_config("default.conf");
   if ( boost::filesystem::exists( def_config ) ) {
     o.parse_config(def_config);
@@ -67,7 +68,6 @@ int main(int argc, char** argv) {
 
   if (!o.parse_cmdline(argc, argv)) return 0; // help was called
 
-  z3::context z3_ctx;
   std::unique_ptr<llvm::Module> module;
   std::vector< comment > comments;
 
@@ -77,5 +77,5 @@ int main(int argc, char** argv) {
     module->print( llvm::outs(), nullptr );
   }
 
-  run_bmc( module, comments, o, z3_ctx);
+  run_bmc( module, comments, o);
 }

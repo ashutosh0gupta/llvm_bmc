@@ -18,13 +18,13 @@
 
 bmc::bmc( std::unique_ptr<llvm::Module>& m_,
           std::map<const bb*, comments >& bb_comment_map_,
-          options& o_, solver_context& solver_)
+          options& o_)
     : o(o_)
-    , solver_ctx(solver_)
-    , def_map(solver_)
+    // , solver_ctx(o_.solver_ctx)
+    , def_map(o_.solver_ctx)
     , module(m_)
     , bb_comment_map( bb_comment_map_ )
-    , g_model(solver_)
+    , g_model(o_.solver_ctx)
 {}
 
 bmc::~bmc() {
@@ -46,9 +46,9 @@ void bmc::run_bmc_pass() {
   passMan.add( new collect_loopdata(o, ld_map, localNameMap, module) );
 
   if(o.loop_aggr) {
-    passMan.add( new bmc_loop_pass(o,solver_ctx, def_map, *this));
+    passMan.add( new bmc_loop_pass(o,o.solver_ctx, def_map, *this));
   } else {
-    passMan.add( new bmc_fun_pass(o, solver_ctx,*this));
+    passMan.add( new bmc_fun_pass(o, o.solver_ctx,*this));
   }
   passMan.run( *module.get() );
 }
@@ -102,7 +102,7 @@ glb_state bmc::populate_glb_state() {
       g_model.insert_glb_to_id(glb, glbCntr);
       g_model.insert_name_to_glb(glb->getName().str() ,glb);
 
-      sort z_sort = llvm_to_sort(solver_ctx, el_ty);
+      sort z_sort = llvm_to_sort(o.solver_ctx, el_ty);
       g_model.insert_glb_sort( z_sort );
 
       auto new_glb = g_model.get_fresh_glb_name(glbCntr, glb->getName());
@@ -111,7 +111,7 @@ glb_state bmc::populate_glb_state() {
       if( glb->hasUniqueInitializer() ) {
         auto c = glb->getInitializer();
         // auto val = get_term( solver_ctx, c, m );
-        auto val = read_const( c, solver_ctx );
+        auto val = read_const( c, o.solver_ctx );
         glb_bmc_vec.push_back(new_glb == val);
       } else {} // do nothing
     } else {
@@ -139,7 +139,7 @@ void bmc::check_all_spec(bmc_ds* bmc_ds_ptr) {
 }
 
 bool bmc::run_solver(expr &spec, bmc_ds* bmc_ds_ptr) {
-  z3::solver s(solver_ctx);
+  z3::solver s(o.solver_ctx);
   for(expr e : bmc_ds_ptr->bmc_vec) {
     s.add(e);
   }

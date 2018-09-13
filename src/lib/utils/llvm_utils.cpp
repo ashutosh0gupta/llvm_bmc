@@ -1359,6 +1359,25 @@ sort llvm_to_sort( solver_context& c, llvm::Type* t ) {
   return c.int_sort(); // dummy return
 }
 
+#define DEFAULT_INDEX_SORT 64
+
+sort llvm_to_bv_sort( solver_context& c, llvm::Type* t ) {
+  if( t->isIntegerTy() ) {
+    if( t->isIntegerTy( 32 ) ) return c.bv_sort(32);
+    if( t->isIntegerTy( 64 ) ) return c.bv_sort(64);
+    if( t->isIntegerTy( 8 ) ) return c.bv_sort(8);
+  }
+  if( t->isArrayTy() ) {
+    llvm::Type* te = t->getArrayElementType();
+    sort z_te = llvm_to_bv_sort(c, te);
+    return c.array_sort( c.bv_sort(DEFAULT_INDEX_SORT), z_te );
+  }
+  llvm_bmc_error("llvm_utils", "only int and bool sorts are supported");
+  // return c.bool_sort();
+  // return c.real_sort();
+  return c.int_sort(); // dummy return
+}
+
 expr read_const( const llvm::Value* op, solver_context& ctx ) {
   assert( op );
   if( const llvm::ConstantInt* c = llvm::dyn_cast<llvm::ConstantInt>(op) ) {

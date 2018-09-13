@@ -2,6 +2,7 @@
 #define OPTIONS_H
 
 #include<iostream>
+#include<include/solver.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -27,6 +28,11 @@ enum array_model_t{
 class options
 {
 public:
+  options( solver_context& sol_ctx_ );
+public:
+  //todo: some of following show become private
+  //---------------------------------------
+  solver_context& solver_ctx;
   //---------------------------------------
   //tiler options
   std::string fileName;

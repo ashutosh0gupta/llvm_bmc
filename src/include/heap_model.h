@@ -210,5 +210,31 @@ public:
 
 };
 
+//update heap model
+
+// class heap_state {
+// public:
+//   glb_state() {}
+//   std::vector<expr>& get_glb_name_vec() { return glb_names; };
+
+// private:
+//   std::vector<expr> heap_names;
+// };
+
+// class heap_model{
+// private:
+//   solver_context& solver_ctx;
+//   std::map< unsigned, glb_state > exit_heap_map;
+//   unsigned num_heaps;
+//   std::vector< sort > heap_sorts;
+//   std::map< const llvm::GlobalVariable*, unsigned > glb_to_id;
+//   std::map< std::string, const llvm::GlobalVariable*> name_to_glb;
+
+//   std::vector< expr > lengths;
+//   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
+
+//   array_model_t model = NONE;
+
+// }
 
 #endif // TILER_GLB_MODEL_H

@@ -210,6 +210,7 @@ std::string getLocRange(const llvm::BasicBlock* b );
 
 src_loc getLoc( const llvm::Instruction* I );
 sort llvm_to_sort( solver_context& , llvm::Type* );
+sort llvm_to_bv_sort( solver_context& , llvm::Type* );
 expr read_const( const llvm::Value*, solver_context& );
 
 
