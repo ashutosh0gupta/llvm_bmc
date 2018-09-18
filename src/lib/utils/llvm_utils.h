@@ -4,6 +4,7 @@
 #include <set>
 #include <list>
 #include <map>
+#include "include/options.h"
 #include "lib/utils/solver_utils.h"
 #include "include/llvm_decls.h"
 
@@ -160,6 +161,7 @@ std::string getLocRange(const llvm::BasicBlock* b );
 src_loc getLoc( const llvm::Instruction* I );
 sort llvm_to_sort( solver_context& , llvm::Type* );
 sort llvm_to_bv_sort( solver_context& , llvm::Type* );
+sort llvm_to_sort( options& , llvm::Type* );
 expr read_const( const llvm::Value*, solver_context& );
 
 

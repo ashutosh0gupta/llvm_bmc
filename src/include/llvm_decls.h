@@ -2,11 +2,7 @@
 #define LLVM_DECLS_H
 
 #include <map>
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "llvm/IR/Instructions.h"
-#pragma GCC diagnostic pop
 
 #include <boost/filesystem.hpp>
 

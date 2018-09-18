@@ -1370,6 +1370,7 @@ sort llvm_to_bv_sort( solver_context& c, llvm::Type* t ) {
     if( t->isIntegerTy( 32 ) ) return c.bv_sort(32);
     if( t->isIntegerTy( 64 ) ) return c.bv_sort(64);
     if( t->isIntegerTy( 8 ) ) return c.bv_sort(8);
+    if( t->isIntegerTy( 1 ) ) return c.bv_sort(1);
   }
   if( t->isArrayTy() ) {
     llvm::Type* te = t->getArrayElementType();
@@ -1377,10 +1378,17 @@ sort llvm_to_bv_sort( solver_context& c, llvm::Type* t ) {
     return c.array_sort( c.bv_sort(DEFAULT_INDEX_SORT), z_te );
   }
   llvm_bmc_error("llvm_utils", "only int and bool sorts are supported");
-  // return c.bool_sort();
-  // return c.real_sort();
-  return c.int_sort(); // dummy return
+  return c.bv_sort(32); // dummy return
 }
+
+sort llvm_to_sort( options& o, llvm::Type* t) {
+  if( o.bit_precise == true ) {
+    return llvm_to_bv_sort( o.solver_ctx, t );
+  }else{
+    return llvm_to_sort( o.solver_ctx, t );
+  }
+}
+
 
 expr read_const( const llvm::Value* op, solver_context& ctx ) {
   assert( op );
