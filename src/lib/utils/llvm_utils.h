@@ -5,6 +5,7 @@
 #include <list>
 #include <map>
 #include "lib/utils/solver_utils.h"
+#include "include/llvm_decls.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -35,8 +36,6 @@ typedef std::vector<const inst*> inst_vec_t;
 #endif
 
 
-typedef std::map<const llvm::Value*, std::string> name_map;
-typedef std::map<std::string, const llvm::Value*> rev_name_map;
 
 #define COMMENT_PREFIX_LEN 3
 #define COMMENT_PREFIX "//!"
@@ -44,68 +43,18 @@ typedef std::map<std::string, const llvm::Value*> rev_name_map;
 // Enable test of the first token
 // #define COMMENT_FIRST_TOKEN "(assert"
 
-class src_loc {
-public:
-  src_loc( unsigned line_, unsigned col_, std::string file_ ) :
-    line(line_), col(col_), file(file_) {};
-  src_loc() : line(0), col(0), file("") {};
-  unsigned line;
-  unsigned col;
-  std::string file;
-
-  void dump();
-  void print(std::ostream&);
-
-  bool operator==(const src_loc &other) const {
-    return other.line == line && other.col == col && other.file == file;
-  }
-};
-
-class comment{
-public:
-  // comment( std::string text_, src_loc start_, src_loc end_ ) :
-  //   text(text_), start(start_), end(end_) {};
-  std::vector<std::string> texts;
-  src_loc start;
-  src_loc end;
-  const bb* b = NULL;
-  void add_comments( const std::vector<std::string>& cmts ) {
-    vec_insert( texts, cmts );
-  }
-  expr to_sol_expr( solver_context sol_ctx, rev_name_map& n_map );
-
-  void dump();
-  void print(std::ostream& );
-};
-
-class comments {
-public:
-  std::vector< comment > start_comments;
-  std::vector< comment > end_comments;
-};
-
-std::unique_ptr<llvm::Module>
-c2ir( std::string, llvm::LLVMContext&, std::vector< comment >& );
-
-void c2bc( const std::string&, const std::string& );
-
-std::unique_ptr<llvm::Module> c2ir( std::string, llvm::LLVMContext& );
-
-void dump_dot_module( boost::filesystem::path& dump_path,
-                      std::unique_ptr<llvm::Module>& module );
 
 llvm::Instruction*
 estimate_comment_location( std::unique_ptr<llvm::Module>&, src_loc, src_loc);
 
 void
 estimate_comment_location(std::unique_ptr<llvm::Module>& module,
-                          std::vector< comment >&,
+                          comments&,
                           std::map< const bb*,comments >&
                           // std::pair< std::vector<std::string>,
                           //            std::vector<std::string> >  >&
 );
 
-void setLLVMConfigViaCommandLineOptions( std::string strs );
 
 // void printSegmentInfo(segment& s);
 void printBlockInfo(std::vector<llvm::BasicBlock*>& blockList);

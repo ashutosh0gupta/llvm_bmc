@@ -151,7 +151,7 @@ estimate_comment_location( std::unique_ptr<llvm::Module>& module,
 
 void
 estimate_comment_location(std::unique_ptr<llvm::Module>& module,
-                          std::vector< comment >& cmts,
+                          comments& cmts,
                           std::map< const bb*, comments>&
           // std::pair< std::vector<comment>, std::vector<comment> > >&
           // std::pair< std::vector<std::string>, std::vector<std::string> > >&
@@ -160,7 +160,7 @@ estimate_comment_location(std::unique_ptr<llvm::Module>& module,
   // std::map< llvm::Instruction*, std::vector<std::string> > comment_map;
   std::map< llvm::Instruction*, std::vector<comment> > comment_map;
   std::vector< std::vector< llvm::Instruction* > > Is;
-  for( auto& comment : cmts ) {
+  for( auto& comment : cmts.start_comments ) {
     auto start = comment.start;
     auto end = comment.end;
     llvm::Instruction* I =
@@ -205,6 +205,10 @@ estimate_comment_location(std::unique_ptr<llvm::Module>& module,
   }
 }
 
+
+void comment::add_comments( const std::vector<std::string>& cmts ) {
+  vec_insert( texts, cmts );
+}
 
 //
 // clange source to llvm soruce location
@@ -294,7 +298,7 @@ bool ExecuteAction( clang::CompilerInstance& CI,
 //Direct translation via API clang
 std::unique_ptr<llvm::Module> c2ir( std::string filename,
                                     llvm::LLVMContext& llvm_ctx,
-                                    std::vector< comment >& comments ) {
+                                    comments& cmts ) {
 
   // return nullptr;
 
@@ -323,7 +327,7 @@ std::unique_ptr<llvm::Module> c2ir( std::string filename,
   Clang.setInvocation(CI);
   clang::CodeGenAction *Act = new clang::EmitLLVMOnlyAction(&llvm_ctx);
 
-  if (!ExecuteAction(Clang, *Act, comments))
+  if (!ExecuteAction(Clang, *Act, cmts.start_comments))
   // if (!Clang.ExecuteAction(*Act))
     return nullptr;
 
@@ -337,7 +341,7 @@ std::unique_ptr<llvm::Module> c2ir( std::string filename,
 
 std::unique_ptr<llvm::Module> c2ir( std::string filename,
                                     llvm::LLVMContext& llvm_ctx ) {
-  std::vector< comment > comments_found;
+  comments comments_found;
   return move( c2ir( filename, llvm_ctx, comments_found ) );
 }
 

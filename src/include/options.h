@@ -14,6 +14,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <string>
+#include <map>
 
 
 namespace po = boost::program_options;

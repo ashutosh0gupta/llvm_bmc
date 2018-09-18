@@ -3,6 +3,7 @@
 #include "lib/bmc/bmc_loop_pass.h"
 #include "lib/utils/build_name_map.h"
 #include "lib/utils/collect_loopdata.h"
+ #include "lib/utils/llvm_utils.h"
 // #include "lib/bmc/bmc_loop_pass.h"
 #include "bmc_utils.h"
 #include "witness.h"
