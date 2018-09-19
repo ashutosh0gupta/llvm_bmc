@@ -22,8 +22,10 @@ class glb_model{
 public:
   glb_model( solver_context& ctx_ ) : solver_ctx(ctx_) {}
   glb_model( solver_context& ctx_, glb_model& g_m_ ) : solver_ctx(ctx_)
+    , exit_glb_map( g_m_.get_exit_glb_map() )
     , glb_sorts( g_m_.get_sorts() )
     , glb_to_id( g_m_.get_glb_to_id() )
+    , name_to_glb( g_m_.get_name_to_glb() )
   {}
 
   void update_name(unsigned, std::vector<const llvm::GlobalVariable*>&);
@@ -69,6 +71,14 @@ public:
 
   std::vector< sort >& get_sorts() {
     return glb_sorts;
+  }
+
+  std::map< unsigned, glb_state >& get_exit_glb_map() {
+    return exit_glb_map;
+  }
+
+  std::map< std::string, const llvm::GlobalVariable*>& get_name_to_glb() {
+    return name_to_glb;
   }
 
 private:
