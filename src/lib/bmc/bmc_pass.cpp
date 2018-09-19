@@ -313,17 +313,23 @@ void bmc_pass::translateCastInst( unsigned bidx, const llvm::CastInst* cast ) {
     if( v->getType()->isIntegerTy(8) && cast->getType()->isIntegerTy(1) ) {
       bmc_ds_ptr->m.insert_term_map( cast, bidx, bmc_ds_ptr->m.get_term(v) );
     }
-  }else if( auto zext = llvm::dyn_cast<llvm::ZExtInst>(cast) ) {
-    auto v = zext->getOperand(0);
+  }else if( auto z_ext = llvm::dyn_cast<llvm::ZExtInst>(cast) ) {
+    auto v = z_ext->getOperand(0);
     auto v_ty = v->getType();
     auto c_ty = cast->getType();
-    // Current policy allow extensions [ 1 -> 8, 1->32, 32->64]
-    if( (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(8)) ||
-        (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(32)) ||
-        (v_ty->isIntegerTy(32) && c_ty->isIntegerTy(64)) ) {
-      bmc_ds_ptr->m.insert_term_map( cast, bidx, bmc_ds_ptr->m.get_term(v) );
-    } else {
-      llvm_bmc_error("bmc", "zero extn instruction of unsupported size");
+    expr ex_v = bmc_ds_ptr->m.get_term(v);
+    if( o.bit_precise ) {
+      unsigned new_size = c_ty->getIntegerBitWidth();
+      bmc_ds_ptr->m.insert_term_map( cast, bidx, zext( ex_v, new_size ) );
+    }else{
+      // Current policy allow extensions [ 1 -> 8, 1->32, 32->64]
+      if( (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(8)) ||
+          (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(32)) ||
+          (v_ty->isIntegerTy(32) && c_ty->isIntegerTy(64)) ) {
+        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v );
+      } else {
+        llvm_bmc_error("bmc", "zero extn instruction of unsupported size");
+      }
     }
   }else if( auto sext = llvm::dyn_cast<llvm::SExtInst>(cast) ) {
     auto v = sext->getOperand(0);
