@@ -30,17 +30,18 @@ void value_expr_map::insert_term_map( const llvm::Value* op, unsigned c_count,
 }
 
 //insert_new_def with 2 param is alias of get_term
-expr value_expr_map::insert_new_def( const llvm::Value* op,
-                                         unsigned c_count ) {
-  return get_term( op, c_count );
+expr value_expr_map::insert_new_def( const llvm::Value* op, unsigned cnt ) {
+  return get_term( op, cnt );
 }
 
 expr value_expr_map::insert_new_def( const llvm::Value* op ) {
-  unsigned count = versions.find(op) == versions.end() ? 0 : versions[op].back() + 1;
+  auto it = versions.find(op);
+  unsigned count = ( it == versions.end() ) ? 0 : versions[op].back() + 1;
   return insert_new_def( op, count );
 }
 
 expr value_expr_map::get_term( const llvm::Value* op ) {
+  assert( op );
   expr c = read_constant( op );
   if( c ) return c;
   auto it = versions.find(op);
