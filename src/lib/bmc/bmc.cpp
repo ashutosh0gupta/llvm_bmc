@@ -3,6 +3,7 @@
 #include "lib/bmc/bmc_loop_pass.h"
 #include "lib/utils/build_name_map.h"
 #include "lib/utils/collect_loopdata.h"
+ #include "lib/utils/llvm_utils.h"
 // #include "lib/bmc/bmc_loop_pass.h"
 #include "bmc_utils.h"
 #include "witness.h"
@@ -21,7 +22,7 @@ bmc::bmc( std::unique_ptr<llvm::Module>& m_,
           options& o_)
     : o(o_)
     // , solver_ctx(o_.solver_ctx)
-    , def_map(o_.solver_ctx)
+    , def_map(o_)
     , module(m_)
     , bb_comment_map( bb_comment_map_ )
     , g_model(o_.solver_ctx)
@@ -102,7 +103,7 @@ glb_state bmc::populate_glb_state() {
       g_model.insert_glb_to_id(glb, glbCntr);
       g_model.insert_name_to_glb(glb->getName().str() ,glb);
 
-      sort z_sort = llvm_to_sort(o.solver_ctx, el_ty);
+      sort z_sort = llvm_to_sort( o, el_ty);
       g_model.insert_glb_sort( z_sort );
 
       auto new_glb = g_model.get_fresh_glb_name(glbCntr, glb->getName());

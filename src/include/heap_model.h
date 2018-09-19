@@ -3,11 +3,7 @@
 
 #include "include/options.h"
 #include "include/solver.h"
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#include "llvm/IR/Instructions.h"
-#pragma GCC diagnostic pop
+#include "include/llvm_decls.h"
 
 class glb_state {
 public:

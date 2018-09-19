@@ -6,11 +6,12 @@
 #include "include/loopdata.h"
 #include "include/heap_model.h"
 #include "include/solver.h"
+#include "include/llvm_decls.h"
 
 //for comments
-#include "lib/utils/llvm_utils.h"
+// #include "lib/utils/llvm_utils.h"
 
-class glb_model;
+// class glb_model;
 class comments;
 
 #define OUTSIDE_ANY_LOOP_CODE_PTR NULL
@@ -34,7 +35,7 @@ public:
   std::map< const llvm::BasicBlock*, rev_name_map > revEndLocalNameMap;
 
   bmc(std::unique_ptr<llvm::Module>& m_,
-      std::map<const bb*, comments >& bb_comment_map_,
+      std::map<const llvm::BasicBlock*, comments >& bb_comment_map_,
       options& o_ );
 
   ~bmc();

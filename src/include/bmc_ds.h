@@ -7,17 +7,19 @@
 
 class bmc_ds {
 public:
+  options& o;
   solver_context& solver_ctx;
   value_expr_map m;
 
-  bmc_ds( solver_context& solver_ctx_,
+  bmc_ds( options& o_, //solver_context& solver_ctx_,
           std::map<const llvm::Instruction*, unsigned>& aim,
           glb_model& g_model_ )
-    : solver_ctx( solver_ctx_)
-    , m(solver_ctx)
+    : o(o_)
+    , solver_ctx( o.solver_ctx )
+    , m(o)
     , g_model( solver_ctx, g_model_ )
-    , ar_model_full( solver_ctx )
-    , ar_model_fixed( solver_ctx )
+    , ar_model_full( o.solver_ctx )
+    , ar_model_fixed( o.solver_ctx )
     , ary_to_int(aim)
 {}
   //--------------------------------------------------------------------------
@@ -159,10 +161,10 @@ public:
 class bmc_fun : public bmc_ds {
 
 public:
-  bmc_fun( solver_context& solver_ctx_,
+  bmc_fun( options& o,
            std::map<const llvm::Instruction*, unsigned>& aim,
            glb_model& g_model)
-    : bmc_ds( solver_ctx_, aim, g_model) {}
+    : bmc_ds( o, aim, g_model) {}
 
   // Call sites
   std::vector<const llvm::CallInst*> call_sites;
@@ -177,11 +179,11 @@ class bmc_loop : public bmc_ds {
 
   loopdata* ld = 0;
 public:
-  bmc_loop( solver_context& solver_ctx_,
+  bmc_loop( options& o,
             std::map<const llvm::Instruction*, unsigned>& aim,
             glb_model& g_model,
             loopdata* ld_ )
-    : bmc_ds( solver_ctx_, aim, g_model)
+    : bmc_ds( o, aim, g_model)
     , ld(ld_) {}
 
   loopdata* get_loopdata();

@@ -15,8 +15,7 @@ bool bmc_fun_pass::runOnFunction( llvm::Function &f ) {
 
   populateArrAccMap(&f);
 
-  bmc_fun *bmc_fun_ptr = new bmc_fun(solver_ctx, ary_to_int,
-                                     bmc_obj.g_model); // local pointer
+  bmc_fun *bmc_fun_ptr = new bmc_fun(o, ary_to_int, bmc_obj.g_model); // local
   assert(bmc_fun_ptr);
   bmc_ds_ptr = bmc_fun_ptr;                 // set the pointer in base class
   bmc_ds_ptr->init_array_model( o.ar_model );

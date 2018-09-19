@@ -14,6 +14,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <string>
+#include <map>
 
 
 namespace po = boost::program_options;
@@ -61,6 +62,7 @@ public:
   bool include_out_of_bound_specs=false;
   bool includeOverUnderflowSpecs=false;
   array_model_t ar_model = FULL;
+  bool bit_precise = false;
   //----------------------------------------
 
   llvm::LLVMContext globalContext;

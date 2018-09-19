@@ -1,27 +1,14 @@
 #include "include/options.h"
 #include "include/bmc.h"
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-// pragam'ed to aviod warnings due to llvm included files
 #include "llvm/IR/LegacyPassManager.h"
-#include "llvm/IRReader/IRReader.h"
-#include "llvm/Support/SourceMgr.h"
-#include "llvm/Support/FileSystem.h"
-#include "llvm/Support/TargetRegistry.h"
-#include "llvm/Support/TargetSelect.h"
-#include "llvm/Target/TargetMachine.h"
-#include "llvm/Target/TargetOptions.h"
-#include "llvm/Analysis/CFGPrinter.h"
-#include "llvm/Bitcode/BitcodeWriter.h"
-#include "llvm/Transforms/Utils/Cloning.h"
-#pragma GCC diagnostic pop
+#include "llvm/LinkAllPasses.h"
 
 void prepare_module( options& o,
-                       std::unique_ptr<llvm::Module>& module,
-                       std::vector<comment>& cmts,
-                       std::map< const bb*, comments> & block_comment_map
-                     ) {
+                     std::unique_ptr<llvm::Module>& module,
+                     comments& cmts,
+                     std::map< const llvm::BasicBlock*, comments>&
+                     block_comment_map ) {
   llvm::legacy::PassManager passMan;
   passMan.add( llvm::createPromoteMemoryToRegisterPass() );
   passMan.add( llvm::createLoopRotatePass() ); // some params
@@ -44,11 +31,11 @@ void prepare_module( options& o,
 }
 
 void run_bmc( std::unique_ptr<llvm::Module>& module,
-              std::vector<comment>& cmts,
+              comments& cmts,
               options& o )
 {
 
-  std::map<const bb*, comments > bb_cmt_map;
+  std::map<const llvm::BasicBlock*, comments > bb_cmt_map;
   prepare_module( o, module, cmts, bb_cmt_map);
   bmc b( module, bb_cmt_map, o );
   b.init_glb();
@@ -69,13 +56,13 @@ int main(int argc, char** argv) {
   if (!o.parse_cmdline(argc, argv)) return 0; // help was called
 
   std::unique_ptr<llvm::Module> module;
-  std::vector< comment > comments;
+  comments cmts;
 
-  module = c2ir( o.filePath, o.globalContext, comments);
+  module = c2ir( o.filePath, o.globalContext, cmts);
 
   if( o.verbosity > 8 ) {
     module->print( llvm::outs(), nullptr );
   }
 
-  run_bmc( module, comments, o);
+  run_bmc( module, cmts, o);
 }
