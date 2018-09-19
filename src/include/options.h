@@ -62,7 +62,7 @@ public:
   bool include_out_of_bound_specs=false;
   bool includeOverUnderflowSpecs=false;
   array_model_t ar_model = FULL;
-  bool bit_precise = false;
+  bool bit_precise = false; // model integers as true "int" or bit vectors
   //----------------------------------------
 
   llvm::LLVMContext globalContext;
@@ -71,8 +71,10 @@ public:
   bool parse_cmdline(int, char**);
 
 private:
-  void get_description_cmd(po::options_description& , po::options_description& ,
-                           po::options_description& , po::positional_options_description&);
+  void get_description_cmd(po::options_description& ,
+                           po::options_description& ,
+                           po::options_description& ,
+                           po::positional_options_description&);
   void interpret_options(po::variables_map&);
   void show_help(po::options_description&);
 };

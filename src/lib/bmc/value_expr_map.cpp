@@ -83,13 +83,23 @@ value_expr_map::get_earlier_term( const llvm::Value* op, unsigned c_count ) {
 expr value_expr_map::create_fresh_name( const llvm::Value* op  ) {
   llvm::Type* ty = op->getType();
   if( auto i_ty = llvm::dyn_cast<llvm::IntegerType>(ty) ) {
-    int bw = i_ty->getBitWidth();
-    if(bw == 32 || bw == 64 ) {
-      expr i =  get_fresh_int(ctx, op->getName().str());
-      return i;
-    }else if(bw == 1 || bw == 8) {
-      expr bit =  get_fresh_bool(ctx, op->getName().str());
-      return bit;
+    if( o.bit_precise ) {
+      unsigned bw = (unsigned)i_ty->getBitWidth();
+      return get_fresh_bv( ctx, bw, op->getName().str() );
+    }else{
+      int bw = i_ty->getBitWidth();
+      if(bw == 32 || bw == 64 ) {
+        expr i =  get_fresh_int(ctx, op->getName().str());
+        return i;
+      }else if(bw == 1 || bw == 8) {
+        expr bit =  get_fresh_bool(ctx, op->getName().str());
+        return bit;
+      }
+    }
+  }else{
+    if( o.bit_precise ) {
+      sort s = llvm_to_sort( o, op->getType() );
+      return get_fresh_const( ctx, s, op->getName().str() );
     }
   }
   ty->print( llvm::errs() ); llvm::errs() << "\n";
@@ -109,7 +119,7 @@ expr value_expr_map::read_term( const llvm::Value* op, unsigned c_count ) {
 }
 
 expr value_expr_map::read_constant( const llvm::Value* op ) {
-  return read_const(op, ctx);
+  return read_const(o, op);
 }
 
 unsigned value_expr_map::get_max_version( const llvm::Value* op ) {

@@ -82,6 +82,7 @@ public:
   //getters
   inline llvm::Loop* getLoop() { return loop; }
   inline const std::vector<loopdata*>& getSubLoops() { return childHeads; }
+  inline unsigned getSubLoopsNum() { return childHeads.size(); }
   inline const std::map<llvm::Value*, std::list<llvm::Value*>>&
   getArrWrites() { return arrWrite; }
   inline const std::map<llvm::Value*, std::list<llvm::Value*>>&

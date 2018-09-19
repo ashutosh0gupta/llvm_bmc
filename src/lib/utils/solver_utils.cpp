@@ -1,3 +1,5 @@
+//todo: handle static count variables gracefully
+
 #include<stdio.h>
 #include<iostream>
 #include<fstream>
@@ -426,13 +428,28 @@ expr get_fresh_int( solver_context& c, std::string suff )
   return loc_expr;
 }
 
-// creates fresh FOL constants of any sort
-expr get_fresh_const( solver_context& c, sort sort, std::string suff )
+expr get_fresh_bv( solver_context& c, unsigned size, std::string suff )
 {
   static unsigned count = 0;
   count++;
+  std::string loc_name = "bv_" + std::to_string(count) + "_" + suff;
+  expr loc_expr = c.bv_const(loc_name.c_str(), size);
+  return loc_expr;
+}
+
+// creates fresh FOL constants of any sort
+expr get_fresh_const( solver_context& c, sort s, std::string suff )
+{
+  if( s.is_bv()   ) return get_fresh_bv ( c, s.bv_size(), suff );
+  if( s.is_int()  ) return get_fresh_int( c, suff );
+  if( s.is_bool() ) return get_fresh_bool( c, suff );
+  //
+  // functions types, array types etc
+  //
+  static unsigned count = 0;
+  count++;
   std::string loc_name = "c_" + std::to_string(count) + "_" + suff;
-  expr loc_expr = c.constant( loc_name.c_str(), sort );
+  expr loc_expr = c.constant( loc_name.c_str(), s );
   return loc_expr;
 }
 

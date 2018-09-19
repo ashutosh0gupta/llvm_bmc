@@ -8,11 +8,6 @@
 #include "include/solver.h"
 #include "include/llvm_decls.h"
 
-//for comments
-// #include "lib/utils/llvm_utils.h"
-
-// class glb_model;
-class comments;
 
 #define OUTSIDE_ANY_LOOP_CODE_PTR NULL
 

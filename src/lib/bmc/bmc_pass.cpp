@@ -451,9 +451,9 @@ void bmc_pass::translateRetInst(const llvm::ReturnInst *ret) {
 
   llvm::Value* v = ret->getReturnValue();
   if( v ) {
-    expr retTerm = bmc_ds_ptr->m.get_term( v );
-    expr retVal = get_fresh_int(solver_ctx, "ret_val");
-    bmc_ds_ptr->bmc_vec.push_back( retVal == retTerm );
+    expr ret_term = bmc_ds_ptr->m.get_term( v );
+    expr ret_val = get_fresh_const(solver_ctx, ret_term.get_sort(), "ret_val");
+    bmc_ds_ptr->bmc_vec.push_back( ret_val == ret_term );
   } else {
     //todo : handle all cases
     //llvm_bmc_error("bmc", "return instruction without a return value!");

@@ -112,7 +112,7 @@ glb_state bmc::populate_glb_state() {
       if( glb->hasUniqueInitializer() ) {
         auto c = glb->getInitializer();
         // auto val = get_term( solver_ctx, c, m );
-        auto val = read_const( c, o.solver_ctx );
+        auto val = read_const( o, c );
         glb_bmc_vec.push_back(new_glb == val);
       } else {} // do nothing
     } else {

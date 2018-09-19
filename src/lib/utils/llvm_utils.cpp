@@ -1371,38 +1371,61 @@ sort llvm_to_bv_sort( solver_context& c, llvm::Type* t ) {
     if( t->isIntegerTy( 64 ) ) return c.bv_sort(64);
     if( t->isIntegerTy( 8 ) ) return c.bv_sort(8);
     if( t->isIntegerTy( 1 ) ) return c.bv_sort(1);
-  }
-  if( t->isArrayTy() ) {
+  }else if( t->isFunctionTy() ) {
+    llvm_bmc_error("llvm_utils", "function sorts are not supported");
+  }else if( t->isStructTy()   ) {
+    llvm_bmc_error("llvm_utils", "struct sorts are not supported");
+  }else if( t->isPointerTy()  ) {
+    llvm_bmc_error("llvm_utils", "pointer sorts are not supported");
+  }else if( t->isArrayTy() || t->isVectorTy() ) {
     llvm::Type* te = t->getArrayElementType();
     sort z_te = llvm_to_bv_sort(c, te);
     return c.array_sort( c.bv_sort(DEFAULT_INDEX_SORT), z_te );
+  }else if( t->isFloatingPointTy() ) {
+    llvm_bmc_error("llvm_utils", "float sorts are not supported");
+  }else if( t->isLabelTy() ) {
+    llvm_bmc_error("llvm_utils", "label sorts are not supported");
+  }else if( t->isMetadataTy() ) {
+    llvm_bmc_error("llvm_utils", "metadata sorts are not supported");
+  }else if( t->isTokenTy() ) {
+    llvm_bmc_error("llvm_utils", "token sorts are not supported");
+  }else if( t->isX86_MMXTy() ) {
+    llvm_bmc_error("llvm_utils", "X86_MMX sorts are supported");
   }
-  llvm_bmc_error("llvm_utils", "only int and bool sorts are supported");
+  llvm_bmc_error("llvm_utils", "unknown sorts seen!!");
   return c.bv_sort(32); // dummy return
 }
 
 sort llvm_to_sort( options& o, llvm::Type* t) {
-  if( o.bit_precise == true ) {
+  if( o.bit_precise ) {
     return llvm_to_bv_sort( o.solver_ctx, t );
   }else{
     return llvm_to_sort( o.solver_ctx, t );
   }
 }
 
-
-expr read_const( const llvm::Value* op, solver_context& ctx ) {
+expr read_const( options& o, const llvm::Value* op ) {
+// expr read_const( const llvm::Value* op, solver_context& ctx ) {
+  solver_context& ctx = o.solver_ctx;
   assert( op );
   if( const llvm::ConstantInt* c = llvm::dyn_cast<llvm::ConstantInt>(op) ) {
+    int i = readInt( c );
     unsigned bw = c->getBitWidth();
-    if( bw == 32 || bw == 64 ) {
-      int i = readInt( c );
-      return ctx.int_val(i);
-    }else if(bw == 1 || bw == 8) {
-      int i = readInt( c );
-      assert( i == 0 || i == 1 );
-      if( i == 1 ) return ctx.bool_val(true); else return ctx.bool_val(false);
-    }else
-      llvm_bmc_error("llvm_utils", "unrecognized constant!" );
+
+    if( o.bit_precise ){
+      return ctx.bv_val( i, bw );
+    }else {
+      if( bw == 32 || bw == 64 ) {
+        return ctx.int_val(i);
+      }else if(bw == 1 || bw == 8) {
+        assert( i == 0 || i == 1 );
+        if( i == 1 )
+          return ctx.bool_val(true);
+        else
+          return ctx.bool_val(false);
+      }else
+        llvm_bmc_error("llvm_utils", "unrecognized constant!" );
+    }
   }else if( llvm::isa<llvm::ConstantPointerNull>(op) ) {
     llvm_bmc_error("llvm_utils", "Constant pointer are not implemented!!" );
     // }else if( LLCAST( llvm::ConstantPointerNull, c, op) ) {

@@ -162,7 +162,7 @@ src_loc getLoc( const llvm::Instruction* I );
 sort llvm_to_sort( solver_context& , llvm::Type* );
 sort llvm_to_bv_sort( solver_context& , llvm::Type* );
 sort llvm_to_sort( options& , llvm::Type* );
-expr read_const( const llvm::Value*, solver_context& );
-
+// expr read_const( const llvm::Value*, solver_context& );
+expr read_const( options&, const llvm::Value*);
 
 #endif

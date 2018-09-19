@@ -21,24 +21,23 @@ void options::get_description_cmd(po::options_description& config,
                                   po::positional_options_description& pd){
 
   po::options_description generic("Generic Options");
-  po::options_description tiler("llvm_bmc Options");
-  po::options_description bmc("BMC Options");
+  // po::options_description tiler("llvm_bmc Options");
+  po::options_description bmc("LLVM BMC Options");
   po::options_description hidden("Hidden Options");
   // todo : check if the systems is windows: find another default outDirPath
   // /tmp ~/tmp ./tmp ./
   // todo : in release mode dump in ./
-  tiler.add_options()
+  bmc.add_options()
     ("function,f", po::value(&funcName)->default_value("main"), "Set main function")
-    ("output-dir,o", po::value(&outDirPath)->default_value("/tmp/"), "Set output directory")
     ("mode,m", po::value<int>(&mode)->default_value(3), "Set mode")
-    ("loop,l", po::value<int>(&loopNum)->default_value(1), "Set loop")
-    ("total-loops,t", po::value<int>(&totalLoops)->default_value(1), "Set total number of loops")
-    ("aggregation,a", po::bool_switch(&loop_aggr), "Run aggregation algorithm on loop")
+    ("output-dir,o", po::value(&outDirPath)->default_value("/tmp/"), "Set output directory")
+    // ("loop,l", po::value<int>(&loopNum)->default_value(1), "Set loop")
+    // ("total-loops,t", po::value<int>(&totalLoops)->default_value(1), "Set total number of loops")
+    // ("aggregation,a", po::bool_switch(&loop_aggr), "Run aggregation algorithm on loop")
     ("dump-cfg,d", po::bool_switch(&dump_cfg), "Dump the llvm control flow graph")
     ("config,c", po::value<std::string>(), "Set config file")
-    ;
-  bmc.add_options()
     ("unwind,u", po::value<int>(&loop_unroll_count)->default_value(1), "Set loop unroll count")
+    ("use-bv,b", po::bool_switch(&bit_precise), "Use bit-vectors to represent numbers!")
     ("bounds-check", po::bool_switch(&include_out_of_bound_specs), "Enable array-index-out-of-bounds check")
     ("overflow-check", po::bool_switch(&includeOverUnderflowSpecs), "Enable over/underflow check")
     ;
@@ -52,9 +51,9 @@ void options::get_description_cmd(po::options_description& config,
     ;
   pd.add("input", -1);
 
-  config.add(tiler).add(bmc).add(hidden);
+  config.add(bmc).add(hidden);
   cmdline.add(config).add(generic);
-  hlp.add(tiler).add(bmc).add(generic);
+  hlp.add(bmc).add(generic);
 }
 
 void options::interpret_options(po::variables_map& vm) {

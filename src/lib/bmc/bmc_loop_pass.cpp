@@ -95,7 +95,7 @@ void bmc_loop_pass::populate_bmc_ds(  bmc_loop* bmc_loop_ptr ) {
   //   // }
   //   bmc_loop_ptr->latches.push_back( lidx );
   // }
-  assert( gaps.size() == ld->childHeads.size() );
+  assert( gaps.size() == ld->getSubLoopsNum() );
   
   // add_latch_join_path(L, bmc_loop_ptr);
 
