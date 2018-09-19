@@ -159,6 +159,7 @@ std::string
 bmc::get_val_for_instruction( const llvm::Instruction* I, model& mdl,
                               std::map<std::string,std::string>& state,
                               bmc_ds* bmc_ds_ptr, unsigned call_count ) {
+  assert(bmc_ds_ptr);
   std::string v;
   unsigned copy_count = 0;
   auto val = bmc_ds_ptr->m.read_term( I, copy_count );
@@ -213,6 +214,8 @@ void bmc::produce_witness_call( model mdl, const llvm::CallInst* call ) {
 
 void bmc::produce_witness( model mdl, bmc_ds* bmc_ds_ptr,
                            unsigned call_count ) {
+  assert( bmc_ds_ptr );
+
   witness w(o);
   std::map<std::string,std::string> state;
   unsigned bidx =0;

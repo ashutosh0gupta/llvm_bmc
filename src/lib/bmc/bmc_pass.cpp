@@ -222,6 +222,7 @@ void bmc_pass::translateNondet(unsigned bidx, const llvm::CallInst* call) {
 
 void bmc_pass::translateDebugInfo( unsigned bidx,
                                    const llvm::DbgInfoIntrinsic* dbg ) {
+  assert( dbg );
   if( auto dbg_val = llvm::dyn_cast<llvm::DbgValueInst>(dbg) ) {
     std::string name = getVarName( dbg_val );
     bmc_ds_ptr->locals.insert( name );
@@ -244,8 +245,9 @@ void bmc_pass::translateDebugInfo( unsigned bidx,
   }else{ assert(false); } // not possible
 }
 
-void bmc_pass::translateIntrinsicInst( unsigned bidx, const llvm::IntrinsicInst* I ) {
-
+void bmc_pass::translateIntrinsicInst( unsigned bidx,
+                                       const llvm::IntrinsicInst* I ) {
+  assert( I );
   if( auto dbg = llvm::dyn_cast<llvm::DbgInfoIntrinsic>(I) ) {
     translateDebugInfo( bidx, dbg );
   }else if( I->getIntrinsicID() == llvm::Intrinsic::stacksave ) {
@@ -276,7 +278,8 @@ void bmc_pass::translateIntrinsicInst( unsigned bidx, const llvm::IntrinsicInst*
   }
 }
 
-void bmc_pass::translateCallInst( unsigned bidx, const llvm::CallInst* call ) {
+void bmc_pass::translateCallInst( unsigned bidx,
+                                  const llvm::CallInst* call ) {
   assert(call);
   llvm::Function* fp = call->getCalledFunction();
 
@@ -306,7 +309,8 @@ void bmc_pass::translateCallInst( unsigned bidx, const llvm::CallInst* call ) {
 //--------------------------------------
 // translate unary instructions
 
-void bmc_pass::translateCastInst( unsigned bidx, const llvm::CastInst* cast ) {
+void bmc_pass::translateCastInst( unsigned bidx,
+                                  const llvm::CastInst* cast ) {
   assert( cast );
   auto v = cast->getOperand(0);
   auto c_ty = cast->getType();
@@ -363,11 +367,12 @@ void bmc_pass::translateCastInst( unsigned bidx, const llvm::CastInst* cast ) {
   }
 }
 
-void bmc_pass::translateAllocaInst(const llvm::AllocaInst* alloca) {
+void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
   assert( alloca );
 }
 
-void bmc_pass::translateLoadInst( unsigned bidx, const llvm::LoadInst* load ) {
+void bmc_pass::translateLoadInst( unsigned bidx,
+                                  const llvm::LoadInst* load ) {
   assert( load );
   auto addr = load->getOperand(0);
   if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
@@ -389,7 +394,9 @@ void bmc_pass::translateLoadInst( unsigned bidx, const llvm::LoadInst* load ) {
   }
 }
 
-void bmc_pass::translateUnaryInst( unsigned bidx, const llvm::UnaryInstruction*  I) {
+void bmc_pass::translateUnaryInst( unsigned bidx,
+                                   const llvm::UnaryInstruction* I ) {
+  assert( I );
   if( auto cast = llvm::dyn_cast<llvm::CastInst>(I) ) {
     translateCastInst( bidx, cast );
   } else if( auto alloca = llvm::dyn_cast<llvm::AllocaInst>(I) ) {
@@ -406,7 +413,8 @@ void bmc_pass::translateUnaryInst( unsigned bidx, const llvm::UnaryInstruction* 
 
 //--------------------------------------
 
-void bmc_pass::translateStoreInst(unsigned bidx, const llvm::StoreInst* store ) {
+void bmc_pass::translateStoreInst( unsigned bidx,
+                                   const llvm::StoreInst* store ) {
   assert( store );
   auto val = store->getOperand(0);
   auto addr = store->getOperand(1);
@@ -444,7 +452,8 @@ void bmc_pass::translateGetElementPtrInst(const llvm::GetElementPtrInst* gep) {
 //--------------------------------------
 // Terminator instructions
 
-void bmc_pass::translateBranch( unsigned bidx, const llvm::BranchInst* br ) {
+void bmc_pass::translateBranch( unsigned bidx,
+                                const llvm::BranchInst* br ) {
   assert( br );
   auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
   if( !br->isUnconditional() ) {
@@ -456,7 +465,7 @@ void bmc_pass::translateBranch( unsigned bidx, const llvm::BranchInst* br ) {
   }
 }
 
-void bmc_pass::translateRetInst(const llvm::ReturnInst *ret) {
+void bmc_pass::translateRetInst(const llvm::ReturnInst *ret ) {
   assert( ret );
 
   llvm::Value* v = ret->getReturnValue();
@@ -470,7 +479,8 @@ void bmc_pass::translateRetInst(const llvm::ReturnInst *ret) {
   }
 }
 
-void bmc_pass::translateSwitchInst(unsigned bidx,const llvm::SwitchInst *swch){
+void bmc_pass::translateSwitchInst( unsigned bidx,
+                                    const llvm::SwitchInst *swch ) {
   assert( swch );
 
   auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
@@ -483,7 +493,8 @@ void bmc_pass::translateSwitchInst(unsigned bidx,const llvm::SwitchInst *swch){
     bmc_ds_ptr->bmc_vec.push_back( cs == exit_bits[i] );
     neg_disj.push_back( !cs );
   }
-  bmc_ds_ptr->bmc_vec.push_back( _and( neg_disj, solver_ctx ) == exit_bits[0] );
+  expr exit_cond = ( _and( neg_disj, solver_ctx ) == exit_bits[0] );
+  bmc_ds_ptr->bmc_vec.push_back( exit_cond );
 }
 
 void bmc_pass::translateUnreachableInst( unsigned bidx,
@@ -516,6 +527,7 @@ void bmc_pass::translateTerminatorInst( unsigned bidx,
 }
 
 void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
+  assert( b );
   if( bmc_obj.bb_comment_map.find(b) ==  bmc_obj.bb_comment_map.end() )
     return;
   auto& start_comments = bmc_obj.bb_comment_map.at(b).start_comments;
@@ -760,6 +772,7 @@ void bmc_pass::print_bb_vecs() {
 }
 
 void bmc_pass::populateArrAccMap(llvm::Function* f) {
+  assert(f);
   int arrCntr = 0;
   ary_to_int.clear();
   for( auto bbit = f->begin(), end = f->end(); bbit != end; bbit++ ) {

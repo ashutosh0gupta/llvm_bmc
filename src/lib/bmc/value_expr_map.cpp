@@ -8,6 +8,7 @@
 // value_expr_map
 
 void value_expr_map::insert_term_map( const llvm::Value* op, expr e ) {
+  assert( op );
   auto it = versions.find(op);
   if( it == versions.end() ) {
     insert_term_map( op, 0, e );
@@ -18,6 +19,7 @@ void value_expr_map::insert_term_map( const llvm::Value* op, expr e ) {
 
 void value_expr_map::insert_term_map( const llvm::Value* op, unsigned c_count,
                                       expr e ) {
+  assert( op );
   auto it = versions.find(op);
   if( it == versions.end() ) {
     // assert( c_count == 0 );
@@ -31,10 +33,12 @@ void value_expr_map::insert_term_map( const llvm::Value* op, unsigned c_count,
 
 //insert_new_def with 2 param is alias of get_term
 expr value_expr_map::insert_new_def( const llvm::Value* op, unsigned cnt ) {
+  assert( op );
   return get_term( op, cnt );
 }
 
 expr value_expr_map::insert_new_def( const llvm::Value* op ) {
+  assert( op );
   auto it = versions.find(op);
   unsigned count = ( it == versions.end() ) ? 0 : versions[op].back() + 1;
   return insert_new_def( op, count );
@@ -54,6 +58,7 @@ expr value_expr_map::get_term( const llvm::Value* op ) {
 }
 
 expr value_expr_map::get_term( const llvm::Value* op, unsigned c_count ) {
+  assert( op );
   expr e = read_term( op, c_count );
   if( e ) return e;
   // create new name
@@ -64,6 +69,7 @@ expr value_expr_map::get_term( const llvm::Value* op, unsigned c_count ) {
 
 expr
 value_expr_map::get_earlier_term( const llvm::Value* op, unsigned c_count ) {
+  assert( op );
   expr c = read_constant( op );
   if( c ) return c;
   auto it = versions.find(op);
@@ -82,6 +88,7 @@ value_expr_map::get_earlier_term( const llvm::Value* op, unsigned c_count ) {
 }
 
 expr value_expr_map::create_fresh_name( const llvm::Value* op  ) {
+  assert( op );
   llvm::Type* ty = op->getType();
   if( auto i_ty = llvm::dyn_cast<llvm::IntegerType>(ty) ) {
     if( o.bit_precise ) {
@@ -110,6 +117,7 @@ expr value_expr_map::create_fresh_name( const llvm::Value* op  ) {
 }
 
 expr value_expr_map::read_term( const llvm::Value* op, unsigned c_count ) {
+  assert( op );
   auto it = vmap.find( {op,c_count} );
   if( it != vmap.end() ) {
     return it->second;
@@ -120,10 +128,12 @@ expr value_expr_map::read_term( const llvm::Value* op, unsigned c_count ) {
 }
 
 expr value_expr_map::read_constant( const llvm::Value* op ) {
+  assert( op );
   return read_const(o, op);
 }
 
 unsigned value_expr_map::get_max_version( const llvm::Value* op ) {
+  assert( op );
   expr c = read_constant( op );
   if( c ) return 0;
   auto it = versions.find(op);
@@ -137,6 +147,7 @@ unsigned value_expr_map::get_max_version( const llvm::Value* op ) {
 
 const std::vector<unsigned>&
 value_expr_map::get_versions( const llvm::Value* op ) {
+  assert( op );
   expr c = read_constant( op );
   if( c ) return dummy_empty_versions;
   auto it = versions.find(op);
