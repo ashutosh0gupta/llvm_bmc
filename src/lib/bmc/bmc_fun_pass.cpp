@@ -12,14 +12,12 @@ bool bmc_fun_pass::runOnFunction( llvm::Function &f ) {
   if(f.getName() != o.funcName) {
     return false;
   }
-
   populateArrAccMap(&f);
 
   bmc_fun *bmc_fun_ptr = new bmc_fun(o, ary_to_int, bmc_obj.g_model); // local
   assert(bmc_fun_ptr);
   bmc_ds_ptr = bmc_fun_ptr;                 // set the pointer in base class
-  bmc_ds_ptr->init_array_model( o.ar_model );
-
+  
   auto pair = std::make_pair( &f, bmc_fun_ptr);
   bmc_obj.get_func_formula_map().insert( pair );
 
@@ -29,7 +27,7 @@ bool bmc_fun_pass::runOnFunction( llvm::Function &f ) {
   computeTopologicalOrder(f, bmc_fun_ptr->rev_loop_ignore_edges,
                           bmc_fun_ptr->bb_vec, bmc_fun_ptr->block_to_id);
   bmc_fun_ptr->eb = &f.getEntryBlock();
-
+  bmc_ds_ptr->init_array_model( o.ar_model );
   // unsigned bidx = 0;
   // for( const bb* src : bmc_ds_ptr->bb_vec ) {
   //   for(auto PI = llvm::pred_begin(src),E = llvm::pred_end(src);PI != E;++PI) {

@@ -521,11 +521,11 @@ expr implies( expr& e1, expr& e2) {
 }
 
 expr select( expr& e1, expr& e2) {
-  return select( e1, e2 );
+  return z3::select( e1, e2 );
 }
 
 expr store( expr& e1, expr& e2, expr& e3) {
-  return store( e1, e2, e3 );
+  return z3::store( e1, e2, e3 );
 }
 
 bool matched_sort( const expr& l, const expr& r ) {

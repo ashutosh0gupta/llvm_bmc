@@ -254,6 +254,10 @@ void bmc_pass::translateIntrinsicInst( unsigned bidx,
     // do nothing
   }else if( I->getIntrinsicID() == llvm::Intrinsic::stackrestore ) {
     // do nothing
+  }else if( I->getIntrinsicID() == llvm::Intrinsic::lifetime_start ) {
+    // do nothing
+  }else if( I->getIntrinsicID() == llvm::Intrinsic::lifetime_end ) {
+    // do nothing
   }else{
     BMC_UNSUPPORTED_INSTRUCTIONS( ConstrainedFPIntrinsic, I);
 #ifndef LLVM_SVN
@@ -316,7 +320,6 @@ void bmc_pass::translateCastInst( unsigned bidx,
   auto c_ty = cast->getType();
   assert( v );
   auto v_ty = v->getType();
-  expr ex_v = bmc_ds_ptr->m.get_term(v);
   if( llvm::isa<llvm::TruncInst>(cast) ) {
     if( v_ty->isIntegerTy(8) && c_ty->isIntegerTy(1) ) {
       bmc_ds_ptr->m.insert_term_map( cast, bidx, bmc_ds_ptr->m.get_term(v) );
@@ -324,6 +327,7 @@ void bmc_pass::translateCastInst( unsigned bidx,
       llvm_bmc_error("bmc", "unexpected sized TruncInst found!");
     }
   }else if( llvm::isa<llvm::ZExtInst>(cast) ) {
+    expr ex_v = bmc_ds_ptr->m.get_term(v);
     if( o.bit_precise ) {
       unsigned new_size = c_ty->getIntegerBitWidth();
       bmc_ds_ptr->m.insert_term_map( cast, bidx, zext( ex_v, new_size ) );
@@ -338,6 +342,7 @@ void bmc_pass::translateCastInst( unsigned bidx,
       }
     }
   }else if( llvm::isa<llvm::SExtInst>(cast) ) {
+    expr ex_v = bmc_ds_ptr->m.get_term(v);
     if( o.bit_precise ) {
       unsigned new_size = c_ty->getIntegerBitWidth();
       bmc_ds_ptr->m.insert_term_map( cast, bidx, sext( ex_v, new_size ) );
@@ -346,11 +351,13 @@ void bmc_pass::translateCastInst( unsigned bidx,
       if( (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(8)) ||
           (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(32)) ||
           (v_ty->isIntegerTy(32) && c_ty->isIntegerTy(64)) ) {
-        bmc_ds_ptr->m.insert_term_map( cast, bidx, bmc_ds_ptr->m.get_term(v) );
+        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v );
       } else {
         llvm_bmc_error("bmc", "sign extn instruction of unsupported size");
       }
     }
+  }else if( auto bitCast = llvm::dyn_cast<llvm::BitCastInst>(cast) ) {
+      
   }else{
     BMC_UNSUPPORTED_INSTRUCTIONS( FPTruncInst,       cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( FPExtInst,         cast);
@@ -360,7 +367,6 @@ void bmc_pass::translateCastInst( unsigned bidx,
     BMC_UNSUPPORTED_INSTRUCTIONS( FPToSIInst,        cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( IntToPtrInst,      cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( PtrToIntInst,      cast);
-    BMC_UNSUPPORTED_INSTRUCTIONS( BitCastInst,       cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( AddrSpaceCastInst, cast);
     LLVM_DUMP( cast );
     llvm_bmc_error("bmc", "cast instruction is not recognized !!");
