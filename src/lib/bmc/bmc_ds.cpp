@@ -2,6 +2,25 @@
 #include "lib/utils/llvm_utils.h"
 #include "lib/utils/solver_utils.h"
 
+void spec::print(std::ostream& os) {
+  os << e << " % [";
+  switch( reason ) {
+  case UNKNOWN : os << "unknown "; break;
+  case COMMENT : os << "comment at "; break;
+  case ASSERT : os << "assert at "; break;
+  case OUT_OF_BOUND : os << "array out of bound at "; break;
+  case OUT_OF_RANGE : os << "(under/over)flow at "; break;
+  default:
+    llvm_bmc_error("spec", "unsupported reason found!!");
+  }
+  loc.print_short( os );
+  os << "]\n";
+}
+
+void spec::dump() {
+  print( std::cout );
+}
+
 void bmc_ds::add_latch( unsigned lidx  ) {
   latches.push_back( lidx );
 }
@@ -79,6 +98,20 @@ expr bmc_ds::get_exit_branch_path( unsigned bidx, unsigned succ_num) {
 
 void bmc_ds::add_bmc_formulas(  std::vector< expr > fs ) {
   bmc_vec.insert( bmc_vec.begin(), fs.begin(), fs.end() );
+}
+
+void bmc_ds::add_spec(  expr e, spec_reason_t reason, src_loc& loc ) {
+  spec s( e, reason, loc );
+  spec_vec.push_back( s );
+}
+
+void bmc_ds::add_spec(  expr e, spec_reason_t reason ) {
+  src_loc loc;
+  add_spec( e, reason, loc );
+}
+
+void bmc_ds::add_spec( expr e ) {
+  add_spec( e, spec_reason_t::UNKNOWN );
 }
 
 expr bmc_ds::get_expr(  const llvm::Value* v ) {
@@ -251,7 +284,8 @@ void bmc_ds::print_formulas(unsigned print_from, unsigned print_spec_from ) {
   }
   std::cout << "Printing the specifications found from the code\n";
   for( unsigned i=print_spec_from; i < spec_vec.size(); i++ ) {
-    std::cout << spec_vec[i] << "\n";
+    spec_vec[i].print( std::cout );
+    std::cout << "\n";
   }
 }
 

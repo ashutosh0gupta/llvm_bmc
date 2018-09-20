@@ -20,6 +20,7 @@ public:
 
   void dump();
   void print(std::ostream&);
+  void print_short(std::ostream&);
 
   bool operator==(const src_loc &other) const {
     return other.line == line && other.col == col && other.file == file;
