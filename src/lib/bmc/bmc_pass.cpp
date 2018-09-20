@@ -173,17 +173,21 @@ bool bmc_pass::is_assume(const llvm::CallInst* call) {
 
 void bmc_pass::assert_to_spec(unsigned bidx, const llvm::CallInst* call) {
   assert( call );
+
   expr assert_path_bit = bmc_ds_ptr->get_path_bit(bidx);
   expr assert_term = bmc_ds_ptr->m.get_term( call->getArgOperand(0) );
+  spec_reason_t reason = spec_reason_t::ASSERT;
+  src_loc loc = getLoc( call );
   if(assert_term.is_bool()) {
-    bmc_ds_ptr->spec_vec.push_back( !assert_path_bit || assert_term );
+    bmc_ds_ptr->add_spec( !assert_path_bit || assert_term, reason, loc);
   } else {
-    bmc_ds_ptr->spec_vec.push_back( !assert_path_bit || (assert_term != 0));
+    bmc_ds_ptr->add_spec( !assert_path_bit || (assert_term != 0), reason, loc);
   }
 }
 
 bool bmc_pass::is_assert(const llvm::CallInst* call ) {
   assert( call );
+
   llvm::Function* fp = call->getCalledFunction();
   if( fp != NULL &&
       (fp->getName() == "_Z6assertb" || fp->getName() == "assert" ) ) {
@@ -204,6 +208,7 @@ bool bmc_pass::is_assert(const llvm::CallInst* call ) {
 
 void bmc_pass::translateNondet(unsigned bidx, const llvm::CallInst* call) {
   assert(call);
+
   llvm::Function* fp = call->getCalledFunction();
   if(fp!=NULL &&
      (fp->getReturnType()->isIntegerTy(32) ||
@@ -223,6 +228,7 @@ void bmc_pass::translateNondet(unsigned bidx, const llvm::CallInst* call) {
 void bmc_pass::translateDebugInfo( unsigned bidx,
                                    const llvm::DbgInfoIntrinsic* dbg ) {
   assert( dbg );
+
   if( auto dbg_val = llvm::dyn_cast<llvm::DbgValueInst>(dbg) ) {
     std::string name = getVarName( dbg_val );
     bmc_ds_ptr->locals.insert( name );
@@ -248,6 +254,7 @@ void bmc_pass::translateDebugInfo( unsigned bidx,
 void bmc_pass::translateIntrinsicInst( unsigned bidx,
                                        const llvm::IntrinsicInst* I ) {
   assert( I );
+
   if( auto dbg = llvm::dyn_cast<llvm::DbgInfoIntrinsic>(I) ) {
     translateDebugInfo( bidx, dbg );
   }else if( I->getIntrinsicID() == llvm::Intrinsic::stacksave ) {
@@ -281,6 +288,7 @@ void bmc_pass::translateIntrinsicInst( unsigned bidx,
 void bmc_pass::translateCallInst( unsigned bidx,
                                   const llvm::CallInst* call ) {
   assert(call);
+
   llvm::Function* fp = call->getCalledFunction();
 
   if( auto dbg_val = llvm::dyn_cast<llvm::IntrinsicInst>(call) ) {
@@ -312,6 +320,7 @@ void bmc_pass::translateCallInst( unsigned bidx,
 void bmc_pass::translateCastInst( unsigned bidx,
                                   const llvm::CastInst* cast ) {
   assert( cast );
+
   auto v = cast->getOperand(0);
   auto c_ty = cast->getType();
   assert( v );
@@ -319,7 +328,14 @@ void bmc_pass::translateCastInst( unsigned bidx,
   expr ex_v = bmc_ds_ptr->m.get_term(v);
   if( llvm::isa<llvm::TruncInst>(cast) ) {
     if( v_ty->isIntegerTy(8) && c_ty->isIntegerTy(1) ) {
-      bmc_ds_ptr->m.insert_term_map( cast, bidx, bmc_ds_ptr->m.get_term(v) );
+      if( o.bit_precise ) {
+        llvm_bmc_error("bmc", "not yet implemented!");
+      }else{
+        // need to say that the integer was less than 1;
+        bmc_ds_ptr->add_spec( ex_v <= 1 && ex_v >= 0,
+                              spec_reason_t::OUT_OF_RANGE );
+        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v );
+      }
     }else{
       llvm_bmc_error("bmc", "unexpected sized TruncInst found!");
     }
@@ -374,6 +390,7 @@ void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
 void bmc_pass::translateLoadInst( unsigned bidx,
                                   const llvm::LoadInst* load ) {
   assert( load );
+
   auto addr = load->getOperand(0);
   if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
     auto idx = gep->getOperand(1);
@@ -381,7 +398,7 @@ void bmc_pass::translateLoadInst( unsigned bidx,
     auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_expr);
     if( o.include_out_of_bound_specs ) {
       //todo: fix the interface
-      bmc_ds_ptr->spec_vec.push_back( arr_rd ); // bound guard
+      bmc_ds_ptr->add_spec( arr_rd, spec_reason_t::OUT_OF_BOUND );
     }
     bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd );
   } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
@@ -397,6 +414,7 @@ void bmc_pass::translateLoadInst( unsigned bidx,
 void bmc_pass::translateUnaryInst( unsigned bidx,
                                    const llvm::UnaryInstruction* I ) {
   assert( I );
+
   if( auto cast = llvm::dyn_cast<llvm::CastInst>(I) ) {
     translateCastInst( bidx, cast );
   } else if( auto alloca = llvm::dyn_cast<llvm::AllocaInst>(I) ) {
@@ -416,6 +434,7 @@ void bmc_pass::translateUnaryInst( unsigned bidx,
 void bmc_pass::translateStoreInst( unsigned bidx,
                                    const llvm::StoreInst* store ) {
   assert( store );
+
   auto val = store->getOperand(0);
   auto addr = store->getOperand(1);
   if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
@@ -426,7 +445,7 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     bmc_ds_ptr->bmc_vec.push_back( arr_wrt.first );
     if( o.include_out_of_bound_specs ) {
       //todo: fix the interface
-      bmc_ds_ptr->spec_vec.push_back( arr_wrt.second ); // bound guard
+      bmc_ds_ptr->add_spec( arr_wrt.second, spec_reason_t::OUT_OF_BOUND ); // bound guard
     }
     bmc_ds_ptr->m.insert_term_map( store, bidx, arr_wrt.second );
   } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
@@ -455,6 +474,7 @@ void bmc_pass::translateGetElementPtrInst(const llvm::GetElementPtrInst* gep) {
 void bmc_pass::translateBranch( unsigned bidx,
                                 const llvm::BranchInst* br ) {
   assert( br );
+
   auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
   if( !br->isUnconditional() ) {
     expr cond = bmc_ds_ptr->m.get_term( br->getCondition() );
@@ -500,7 +520,7 @@ void bmc_pass::translateSwitchInst( unsigned bidx,
 void bmc_pass::translateUnreachableInst( unsigned bidx,
                                          const llvm::UnreachableInst *I) {
   expr unreach_path_bit = bmc_ds_ptr->get_path_bit(bidx);
-  bmc_ds_ptr->spec_vec.push_back(!unreach_path_bit);
+  bmc_ds_ptr->add_spec(!unreach_path_bit);
 }
 
 void bmc_pass::translateTerminatorInst( unsigned bidx,
@@ -528,6 +548,7 @@ void bmc_pass::translateTerminatorInst( unsigned bidx,
 
 void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
   assert( b );
+
   if( bmc_obj.bb_comment_map.find(b) ==  bmc_obj.bb_comment_map.end() )
     return;
   auto& start_comments = bmc_obj.bb_comment_map.at(b).start_comments;
@@ -595,7 +616,7 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
         }
       }
       expr prop = substitute( e, prog_names, ssa_names);
-      bmc_ds_ptr->spec_vec.push_back( prop );
+      bmc_ds_ptr->add_spec( prop, spec_reason_t::COMMENT, cmt.start );
     }
   }
 }

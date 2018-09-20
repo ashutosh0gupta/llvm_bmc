@@ -34,6 +34,25 @@ void c2bc( const std::string& fileName, const std::string& outName )
   if( system( cmd.str().c_str() ) != 0 ) exit(1);
 }
 
+// --------------------------------------------------------------------------
+
+void src_loc::print( std::ostream& os ) {
+  if( file == "" )
+    os << "l" << line << "_c" << col << "_"<< file;
+  else
+    os << "loc_dummy";
+}
+
+void src_loc::print_short( std::ostream& os ) {
+  if( file.length() > 15 ) {
+    std::string short_file = file.substr( file.length() - 15 );
+    os << "l" << line << "_c" << col << "_.."<< short_file;
+  }else{
+    print(os);
+  }
+}
+
+// --------------------------------------------------------------------------
 
 // best guess of location
 class estimate_loc_pass : public llvm::BasicBlockPass {

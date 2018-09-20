@@ -176,6 +176,6 @@ void value_expr_map::print( std::ostream& o ) {
   }
 }
 
-inline void value_expr_map::dump() {
+void value_expr_map::dump() {
   print( std::cout );
 }

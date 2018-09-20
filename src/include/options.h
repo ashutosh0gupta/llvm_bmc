@@ -60,7 +60,7 @@ public:
   //----------------------------------------
   //bmc options
   bool include_out_of_bound_specs=false;
-  bool includeOverUnderflowSpecs=false;
+  bool include_overflow_specs=false;
   array_model_t ar_model = FULL;
   bool bit_precise = false; // model integers as true "int" or bit vectors
   //----------------------------------------

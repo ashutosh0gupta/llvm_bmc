@@ -39,7 +39,7 @@ void options::get_description_cmd(po::options_description& config,
     ("unwind,u", po::value<int>(&loop_unroll_count)->default_value(1), "Set loop unroll count")
     ("use-bv,b", po::bool_switch(&bit_precise), "Use bit-vectors to represent numbers!")
     ("bounds-check", po::bool_switch(&include_out_of_bound_specs), "Enable array-index-out-of-bounds check")
-    ("overflow-check", po::bool_switch(&includeOverUnderflowSpecs), "Enable over/underflow check")
+    ("overflow-check", po::bool_switch(&include_overflow_specs), "Enable over/underflow check")
     ;
   hidden.add_options()
     ("input,i", po::value(&filePath), "Set source files")

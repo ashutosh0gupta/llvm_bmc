@@ -5,6 +5,32 @@
 #include "include/heap_model.h"
 #include "include/value_expr_map.h"
 
+enum spec_reason_t{
+  UNKNOWN,      // unspecified
+  COMMENT,      // property found in a comment
+  ASSERT,       // property occured in code
+  OUT_OF_BOUND, // out of range access to arrays
+  OUT_OF_RANGE // overflow/underflow
+};
+
+
+class spec{
+  expr e;
+  spec_reason_t reason;
+  src_loc loc;
+public:
+  spec( expr e_, spec_reason_t reason_, src_loc& loc_ ) :
+    e(e_), reason(reason_), loc(loc_) {}
+
+  //getters
+  expr get_formula() {return e; }
+  src_loc get_location() {return loc; }
+
+  //printers
+  void dump();
+  void print(std::ostream& os);
+};
+
 class bmc_ds {
 public:
   options& o;
@@ -132,6 +158,10 @@ public:
 
   void add_bmc_formulas(  std::vector< expr > fs );
 
+  void add_spec( expr e, spec_reason_t reason, src_loc& );
+  void add_spec( expr e, spec_reason_t reason );
+  void add_spec( expr e );
+
   void setup_prevs_non_repeating();
   void copy_and_stich_segments( unsigned times );
   void copy_and_stich_segments( std::vector<const llvm::BasicBlock*>&,
@@ -141,7 +171,7 @@ public:
                                 unsigned times
                                 );
   std::vector<expr> bmc_vec;  //final result;
-  std::vector<expr> spec_vec; //specs from the code;
+  std::vector<spec> spec_vec; //specs from the code;
   std::vector<expr> quant_elim_vars;
   std::vector<llvm::Value*> quant_elim_val;
 

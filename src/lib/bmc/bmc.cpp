@@ -128,15 +128,18 @@ glb_state bmc::populate_glb_state() {
 //   eliminate_vars( bmc_f, bmc_ds_ptr->quant_elim_vars, bmc_ds_ptr->bmc_vec );
 // }
 
-void bmc::check_all_spec(bmc_ds* bmc_ds_ptr) {
-  for(expr e : bmc_ds_ptr->spec_vec) {
-    if( run_solver(e, bmc_ds_ptr) ) {
-      std::cout << "\nSpecification that failed the check : \n" << e;
-      std::cout << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
+void bmc::check_all_spec( bmc_ds* bmc_ds_ptr ) {
+  std::ostream& os = std::cout;
+  for(spec s : bmc_ds_ptr->spec_vec) {
+    expr prop = s.get_formula();
+    if( run_solver( prop, bmc_ds_ptr) ) {
+      os << "\nSpecification that failed the check : \n";
+      s.print( os );
+      os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
       return;
     } else { } // contine with other specifications
   }
-  std::cout << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
+  os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
 }
 
 bool bmc::run_solver(expr &spec, bmc_ds* bmc_ds_ptr) {
