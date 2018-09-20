@@ -334,6 +334,7 @@ void bmc_pass::translateCastInst( unsigned bidx,
       if( o.bit_precise ) {
         llvm_bmc_error("bmc", "not yet implemented!");
       }else{
+        expr ex_v = bmc_ds_ptr->m.get_term(v);
         // need to say that the integer was less than 1;
         bmc_ds_ptr->add_spec( ex_v <= 1 && ex_v >= 0,
                               spec_reason_t::OUT_OF_RANGE );
