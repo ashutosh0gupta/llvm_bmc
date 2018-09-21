@@ -261,6 +261,10 @@ void bmc_pass::translateIntrinsicInst( unsigned bidx,
     // do nothing
   }else if( I->getIntrinsicID() == llvm::Intrinsic::stackrestore ) {
     // do nothing
+  }else if( I->getIntrinsicID() == llvm::Intrinsic::lifetime_start ) {
+    // do nothing
+  }else if( I->getIntrinsicID() == llvm::Intrinsic::lifetime_end ) {
+    // do nothing
   }else{
     BMC_UNSUPPORTED_INSTRUCTIONS( ConstrainedFPIntrinsic, I);
 #ifndef LLVM_SVN
@@ -333,13 +337,14 @@ void bmc_pass::translateCastInst( unsigned bidx,
   auto c_ty = cast->getType();
   assert( v );
   auto v_ty = v->getType();
-  expr ex_v = bmc_ds_ptr->m.get_term(v);
   if( llvm::isa<llvm::TruncInst>(cast) ) {
+    expr ex_v = bmc_ds_ptr->m.get_term(v);
     if( ok_cast( c_ty, v_ty, 1, 8 ) ) {
     // if( v_ty->isIntegerTy(8) && c_ty->isIntegerTy(1) ) {
       if( o.bit_precise ) {
         bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v.extract(0,0) );
       }else{
+        expr ex_v = bmc_ds_ptr->m.get_term(v);
         // need to say that the integer was less than 1;
         bmc_ds_ptr->add_spec( ex_v <= 1 && ex_v >= 0,
                               spec_reason_t::OUT_OF_RANGE );
@@ -349,6 +354,7 @@ void bmc_pass::translateCastInst( unsigned bidx,
       llvm_bmc_error("bmc", "unexpected sized TruncInst found!");
     }
   }else if( llvm::isa<llvm::ZExtInst>(cast) ) {
+    expr ex_v = bmc_ds_ptr->m.get_term(v);
     if( o.bit_precise ) {
       unsigned new_size = c_ty->getIntegerBitWidth();
       bmc_ds_ptr->m.insert_term_map( cast, bidx, zext( ex_v, new_size ) );
@@ -365,6 +371,7 @@ void bmc_pass::translateCastInst( unsigned bidx,
       }
     }
   }else if( llvm::isa<llvm::SExtInst>(cast) ) {
+    expr ex_v = bmc_ds_ptr->m.get_term(v);
     if( o.bit_precise ) {
       unsigned new_size = c_ty->getIntegerBitWidth();
       bmc_ds_ptr->m.insert_term_map( cast, bidx, sext( ex_v, new_size ) );
@@ -375,11 +382,13 @@ void bmc_pass::translateCastInst( unsigned bidx,
       // if( (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(8)) ||
       //     (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(32)) ||
       //     (v_ty->isIntegerTy(32) && c_ty->isIntegerTy(64)) ) {
-        bmc_ds_ptr->m.insert_term_map( cast, bidx, bmc_ds_ptr->m.get_term(v) );
+        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v );
       } else {
         llvm_bmc_error("bmc", "sign extn instruction of unsupported size");
       }
     }
+  }else if( auto bitCast = llvm::dyn_cast<llvm::BitCastInst>(cast) ) {
+      
   }else{
     BMC_UNSUPPORTED_INSTRUCTIONS( FPTruncInst,       cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( FPExtInst,         cast);
@@ -389,7 +398,6 @@ void bmc_pass::translateCastInst( unsigned bidx,
     BMC_UNSUPPORTED_INSTRUCTIONS( FPToSIInst,        cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( IntToPtrInst,      cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( PtrToIntInst,      cast);
-    BMC_UNSUPPORTED_INSTRUCTIONS( BitCastInst,       cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( AddrSpaceCastInst, cast);
     LLVM_DUMP( cast );
     llvm_bmc_error("bmc", "cast instruction is not recognized !!");
@@ -406,7 +414,9 @@ void bmc_pass::translateLoadInst( unsigned bidx,
 
   auto addr = load->getOperand(0);
   if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
-    auto idx = gep->getOperand(1);
+    // TODO : Add more general support to parse gep instruction when supporting 
+    // objects (struct's) and multidimensional arrays
+    auto idx = gep->getOperand(2);
     auto idx_expr = bmc_ds_ptr->m.get_term( idx );
     auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_expr);
     if( o.include_out_of_bound_specs ) {
@@ -451,7 +461,7 @@ void bmc_pass::translateStoreInst( unsigned bidx,
   auto val = store->getOperand(0);
   auto addr = store->getOperand(1);
   if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
-    auto idx = gep->getOperand(1);
+    auto idx = gep->getOperand(2);
     auto idx_expr = bmc_ds_ptr->m.get_term( idx );
     auto val_expr = bmc_ds_ptr->m.get_term( val );
     auto arr_wrt = bmc_ds_ptr->array_write(bidx, store, idx_expr, val_expr);
