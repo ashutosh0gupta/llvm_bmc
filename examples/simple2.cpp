@@ -10,5 +10,5 @@ int main() {
 		assert(temp != 2);
 	}
 	int temp = a[0] + a[1];
-	assert(temp != 2);
+	assert(temp != 1);
 }

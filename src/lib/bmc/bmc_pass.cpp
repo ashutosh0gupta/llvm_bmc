@@ -400,7 +400,9 @@ void bmc_pass::translateLoadInst( unsigned bidx,
 
   auto addr = load->getOperand(0);
   if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
-    auto idx = gep->getOperand(1);
+    // TODO : Add more general support to parse gep instruction when supporting 
+    // objects (struct's) and multidimensional arrays
+    auto idx = gep->getOperand(2);
     auto idx_expr = bmc_ds_ptr->m.get_term( idx );
     auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_expr);
     if( o.include_out_of_bound_specs ) {
@@ -445,7 +447,7 @@ void bmc_pass::translateStoreInst( unsigned bidx,
   auto val = store->getOperand(0);
   auto addr = store->getOperand(1);
   if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
-    auto idx = gep->getOperand(1);
+    auto idx = gep->getOperand(2);
     auto idx_expr = bmc_ds_ptr->m.get_term( idx );
     auto val_expr = bmc_ds_ptr->m.get_term( val );
     auto arr_wrt = bmc_ds_ptr->array_write(bidx, store, idx_expr, val_expr);
