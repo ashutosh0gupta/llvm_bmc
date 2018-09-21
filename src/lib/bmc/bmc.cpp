@@ -244,7 +244,7 @@ void bmc::produce_witness( model mdl, bmc_ds* bmc_ds_ptr,
         if( o.verbosity > 6 ) {
           I->print( llvm::outs() );
           if( val != "" ) std::cout << "~~~~~~>" << val << "|";
-          std::cout << getLocation(I);
+          loc.print( std::cout );
           std::cout << "\n";
         }
       }

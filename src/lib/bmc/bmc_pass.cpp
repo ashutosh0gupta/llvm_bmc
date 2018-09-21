@@ -294,16 +294,17 @@ void bmc_pass::translateCallInst( unsigned bidx,
   if( auto dbg_val = llvm::dyn_cast<llvm::IntrinsicInst>(call) ) {
     translateIntrinsicInst( bidx, dbg_val );
   } else if( fp != NULL && fp->getName().startswith("__VERIFIER") ) {
-    if( fp != NULL && fp->getName().startswith("__VERIFIER_nondet_") ) {
+    if( fp->getName().startswith("__VERIFIER_nondet_") ) {
       translateNondet( bidx, call);
-    } else if ( fp != NULL && fp->getName().startswith("__VERIFIER_error") ) {
+    } else if ( fp->getName().startswith("__VERIFIER_error") ) {
       //VERIFIER_error always has an unreachable instruction which is handled
-    } else if ( fp != NULL && fp->getName().startswith("__VERIFIER_assert") ) {
+    } else if ( fp->getName().startswith("__VERIFIER_assert") ) {
       assert_to_spec( bidx, call);
-    } else if ( fp != NULL && fp->getName().startswith("__VERIFIER_assume") ) {
+    } else if ( fp->getName().startswith("__VERIFIER_assume") ) {
       assume_to_bmc( bidx, call);
     } else { //only error and nondets handled
-      llvm_bmc_error("bmc", "Only __VERIFIER_[assert,error,nondet_TY] functions are handled!");
+      llvm_bmc_error("bmc",
+          "Only __VERIFIER_[assert,error,nondet_TY] functions are handled!");
     }
   } else if(is_assert(call)) {
     assert_to_spec(bidx, call);
@@ -317,6 +318,13 @@ void bmc_pass::translateCallInst( unsigned bidx,
 //--------------------------------------
 // translate unary instructions
 
+inline bool ok_cast( llvm::Type* n_ty, llvm::Type* o_ty,
+                     unsigned n_w, unsigned o_w ) {
+  unsigned new_width = n_ty->getIntegerBitWidth();
+  unsigned old_width = o_ty->getIntegerBitWidth();
+  return n_w == new_width && o_w == old_width;
+}
+
 void bmc_pass::translateCastInst( unsigned bidx,
                                   const llvm::CastInst* cast ) {
   assert( cast );
@@ -327,9 +335,10 @@ void bmc_pass::translateCastInst( unsigned bidx,
   auto v_ty = v->getType();
   expr ex_v = bmc_ds_ptr->m.get_term(v);
   if( llvm::isa<llvm::TruncInst>(cast) ) {
-    if( v_ty->isIntegerTy(8) && c_ty->isIntegerTy(1) ) {
+    if( ok_cast( c_ty, v_ty, 1, 8 ) ) {
+    // if( v_ty->isIntegerTy(8) && c_ty->isIntegerTy(1) ) {
       if( o.bit_precise ) {
-        llvm_bmc_error("bmc", "not yet implemented!");
+        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v.extract(0,0) );
       }else{
         // need to say that the integer was less than 1;
         bmc_ds_ptr->add_spec( ex_v <= 1 && ex_v >= 0,
@@ -345,9 +354,11 @@ void bmc_pass::translateCastInst( unsigned bidx,
       bmc_ds_ptr->m.insert_term_map( cast, bidx, zext( ex_v, new_size ) );
     }else{
       // Current policy allow extensions [ 1 -> 8, 1->32, 32->64]
-      if( (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(8)) ||
-          (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(32)) ||
-          (v_ty->isIntegerTy(32) && c_ty->isIntegerTy(64)) ) {
+      if( ok_cast( c_ty, v_ty, 8, 1 ) || ok_cast( c_ty, v_ty, 32, 1 ) ||
+          ok_cast( c_ty, v_ty, 64, 32 ) ) {
+      // if( (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(8)) ||
+      //     (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(32)) ||
+      //     (v_ty->isIntegerTy(32) && c_ty->isIntegerTy(64)) ) {
         bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v );
       } else {
         llvm_bmc_error("bmc", "zero extn instruction of unsupported size");
@@ -359,9 +370,11 @@ void bmc_pass::translateCastInst( unsigned bidx,
       bmc_ds_ptr->m.insert_term_map( cast, bidx, sext( ex_v, new_size ) );
     }else{
       // Current policy allow extensions [ 1 -> 8, 1->32, 32->64]
-      if( (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(8)) ||
-          (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(32)) ||
-          (v_ty->isIntegerTy(32) && c_ty->isIntegerTy(64)) ) {
+      if( ok_cast( c_ty, v_ty, 8, 1 ) || ok_cast( c_ty, v_ty, 32, 1 ) ||
+          ok_cast( c_ty, v_ty, 64, 32 ) ) {
+      // if( (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(8)) ||
+      //     (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(32)) ||
+      //     (v_ty->isIntegerTy(32) && c_ty->isIntegerTy(64)) ) {
         bmc_ds_ptr->m.insert_term_map( cast, bidx, bmc_ds_ptr->m.get_term(v) );
       } else {
         llvm_bmc_error("bmc", "sign extn instruction of unsupported size");
@@ -698,7 +711,7 @@ void bmc_pass::init_path_exit_bit( bb_vec_t &bb_vec
     bmc_ds_ptr->set_path_bit( bidx, p_b );
     // bmc_ds_ptr->quant_elim_vars.push_back(p_b);
     bidx++;
-  } 
+  }
   // Initialize the path bit of the entry block to true
   // TODO Map to the caller when interprocedural support is added
   bmc_ds_ptr->set_path_bit( 0, solver_ctx.bool_val(true) );

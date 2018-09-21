@@ -38,7 +38,8 @@ void c2bc( const std::string& fileName, const std::string& outName )
 
 void src_loc::print( std::ostream& os ) {
   if( file == "" )
-    os << "l" << line << "_c" << col << "_"<< file;
+    os << file << ":" << line << ":" << col;
+    // os << "l" << line << "_c" << col << "_"<< file;
   else
     os << "loc_dummy";
 }
@@ -46,7 +47,7 @@ void src_loc::print( std::ostream& os ) {
 void src_loc::print_short( std::ostream& os ) {
   if( file.length() > 15 ) {
     std::string short_file = file.substr( file.length() - 15 );
-    os << "l" << line << "_c" << col << "_.."<< short_file;
+    os << ".." << short_file << ":" << line << ":" << col;
   }else{
     print(os);
   }
@@ -1305,24 +1306,24 @@ getLoc( const llvm::Instruction* I ) {
   return src_loc();
 }
 
-std::string getLocation(const llvm::Instruction* I ) {
-  const llvm::DebugLoc d = I->getDebugLoc();
-  if( d ) {
-    unsigned line = d.getLine();
-    unsigned col  = d.getCol();
-    auto *Scope = llvm::cast<llvm::DIScope>(d.getScope());
-    std::string fname = Scope->getFilename();
-    std::string l_name =  fname + ":" + std::to_string(line) + ":" + std::to_string(col);
-    return l_name;
-  }else{
-    return "";
-  }
-}
+// std::string getLocation(const llvm::Instruction* I ) {
+//   const llvm::DebugLoc d = I->getDebugLoc();
+//   if( d ) {
+//     unsigned line = d.getLine();
+//     unsigned col  = d.getCol();
+//     auto *Scope = llvm::cast<llvm::DIScope>(d.getScope());
+//     std::string fname = Scope->getFilename();
+//     std::string l_name =  fname + ":" + std::to_string(line) + ":" + std::to_string(col);
+//     return l_name;
+//   }else{
+//     return "";
+//   }
+// }
 
-std::string getLocation(const llvm::BasicBlock* b ) {
-  auto I = b->getFirstNonPHIOrDbg();
-  return getLocation(I);
-}
+// std::string getLocation(const llvm::BasicBlock* b ) {
+//   auto I = b->getFirstNonPHIOrDbg();
+//   return getLocation(I);
+// }
 
 
 std::string getLocRange(const llvm::BasicBlock* b ) {
@@ -1332,26 +1333,28 @@ std::string getLocRange(const llvm::BasicBlock* b ) {
   unsigned maxCol  = 0;
   std::string fname = "";
   for( const llvm::Instruction& Iobj : b->getInstList() ) {
-    const llvm::Instruction* I = &(Iobj);
-    const llvm::DebugLoc d = I->getDebugLoc();
-    if( d ) {
-      unsigned line = d.getLine();
-      unsigned col  = d.getCol();
-      auto *Scope = llvm::cast<llvm::DIScope>(d.getScope());
-      if( fname.empty() ) fname = Scope->getFilename();
-      if( line < minLine ) {
-        minLine = line;
-        minCol = col;
-      }else if( line == minLine ) {
-        if( col < minCol )
-          minCol = col;
+    src_loc loc = getLoc( &(Iobj) );
+    if( loc.file != "" ) {
+      if( fname.empty() )
+        fname = loc.file;
+      else {
+        if( fname != loc.file ) {
+          llvm_bmc_error( "llvm_utils","a block is spanning accross files!!");
+        }
       }
-      if( line > maxLine ) {
-        maxLine = line;
-        maxCol = col;
-      }else if( line == maxLine ) {
-        if( col > maxCol )
-          maxCol = col;
+      if( loc.line < minLine ) {
+        minLine = loc.line;
+        minCol = loc.col;
+      }else if( loc.line == minLine ) {
+        if( loc.col < minCol )
+          minCol = loc.col;
+      }
+      if( loc.line > maxLine ) {
+        maxLine = loc.line;
+        maxCol = loc.col;
+      }else if( loc.line == maxLine ) {
+        if( loc.col > maxCol )
+          maxCol = loc.col;
       }
     }
   }

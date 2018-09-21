@@ -154,8 +154,8 @@ int readInt( const llvm::ConstantInt* );
 void buildBlockMap(llvm::BasicBlock*, std::map<std::string, llvm::Value*>&);
 bool deleteLoop(llvm::Loop *, llvm::DominatorTree &, llvm::ScalarEvolution &, llvm::LoopInfo &);
 
-std::string getLocation(const llvm::BasicBlock* b );
-std::string getLocation(const llvm::Instruction* I );
+// std::string getLocation(const llvm::BasicBlock* b );
+// std::string getLocation(const llvm::Instruction* I );
 std::string getLocRange(const llvm::BasicBlock* b );
 
 src_loc getLoc( const llvm::Instruction* I );
