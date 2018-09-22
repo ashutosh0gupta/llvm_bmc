@@ -53,6 +53,8 @@ private:
   void translateUnreachableInst(unsigned, const llvm::UnreachableInst *);
   void init_path_exit_bit(bb_vec_t & //, const bb*
                           );
+  void loadFromArrayHelper(unsigned, const llvm::LoadInst*, expr);
+  void storeToArrayHelper(unsigned, const llvm::StoreInst*, const llvm::Value*, expr);
 
   void translateNondet(unsigned, const llvm::CallInst*);
   void assume_to_bmc(unsigned bidx, const llvm::CallInst*);

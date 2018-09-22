@@ -408,6 +408,17 @@ void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
   assert( alloca );
 }
 
+void bmc_pass::loadFromArrayHelper( unsigned bidx,
+                          const llvm::LoadInst* load,
+                          expr idx_expr ) {
+  auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_expr);
+  if( o.include_out_of_bound_specs ) {
+    //todo: fix the interface
+    bmc_ds_ptr->add_spec( arr_rd, spec_reason_t::OUT_OF_BOUND );
+  }
+  bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd );
+}
+
 void bmc_pass::translateLoadInst( unsigned bidx,
                                   const llvm::LoadInst* load ) {
   assert( load );
@@ -416,18 +427,20 @@ void bmc_pass::translateLoadInst( unsigned bidx,
   if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
     // TODO : Add more general support to parse gep instruction when supporting 
     // objects (struct's) and multidimensional arrays
-    auto idx = gep->getOperand(2);
+    llvm::Value * idx = NULL;
+    // added cases to distinguish between constant or dynamic sized 1d arrays 
+    if(gep->getNumOperands() == 2) idx = gep->getOperand(1);
+    else if(gep->getNumOperands() == 3) idx = gep->getOperand(2);
     auto idx_expr = bmc_ds_ptr->m.get_term( idx );
-    auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_expr);
-    if( o.include_out_of_bound_specs ) {
-      //todo: fix the interface
-      bmc_ds_ptr->add_spec( arr_rd, spec_reason_t::OUT_OF_BOUND );
-    }
-    bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd );
+    loadFromArrayHelper(bidx, load, idx_expr);   
   } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto glb_rd = bmc_ds_ptr->g_model.glb_read( bidx, load);
     bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
+  } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
+    // To handle a[0] when a is dynamic sized array
+    expr idx_expr = get_expr_const(solver_ctx,0);
+    loadFromArrayHelper(bidx, load, idx_expr);
   } else {
     LLVM_DUMP( load );
     llvm_bmc_error("bmc", "Only array and global write/read supported!");
@@ -454,6 +467,20 @@ void bmc_pass::translateUnaryInst( unsigned bidx,
 
 //--------------------------------------
 
+void bmc_pass::storeToArrayHelper( unsigned bidx,
+                         const llvm::StoreInst* store,
+                         const llvm::Value* val,
+                         expr idx_expr ) {
+  auto val_expr = bmc_ds_ptr->m.get_term( val );
+  auto arr_wrt = bmc_ds_ptr->array_write(bidx, store, idx_expr, val_expr);
+  bmc_ds_ptr->bmc_vec.push_back( arr_wrt.first );
+  if( o.include_out_of_bound_specs ) {
+    //todo: fix the interface
+    bmc_ds_ptr->add_spec( arr_wrt.second, spec_reason_t::OUT_OF_BOUND ); // bound guard
+  }
+  bmc_ds_ptr->m.insert_term_map( store, bidx, arr_wrt.second );
+}
+
 void bmc_pass::translateStoreInst( unsigned bidx,
                                    const llvm::StoreInst* store ) {
   assert( store );
@@ -461,23 +488,22 @@ void bmc_pass::translateStoreInst( unsigned bidx,
   auto val = store->getOperand(0);
   auto addr = store->getOperand(1);
   if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
-    auto idx = gep->getOperand(2);
+    llvm::Value * idx = NULL;
+    if(gep->getNumOperands() == 2) idx = gep->getOperand(1);
+    else if(gep->getNumOperands() == 3) idx = gep->getOperand(2); 
     auto idx_expr = bmc_ds_ptr->m.get_term( idx );
-    auto val_expr = bmc_ds_ptr->m.get_term( val );
-    auto arr_wrt = bmc_ds_ptr->array_write(bidx, store, idx_expr, val_expr);
-    bmc_ds_ptr->bmc_vec.push_back( arr_wrt.first );
-    if( o.include_out_of_bound_specs ) {
-      //todo: fix the interface
-      bmc_ds_ptr->add_spec( arr_wrt.second, spec_reason_t::OUT_OF_BOUND ); // bound guard
-    }
-    bmc_ds_ptr->m.insert_term_map( store, bidx, arr_wrt.second );
+    storeToArrayHelper(bidx, store, val, idx_expr);  
   } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto val_expr = bmc_ds_ptr->m.get_term( val );
     auto glb_wrt = bmc_ds_ptr->g_model.glb_write(bidx, store, val_expr);
     bmc_ds_ptr->bmc_vec.push_back( glb_wrt.first );
     bmc_ds_ptr->m.insert_term_map( store, bidx, glb_wrt.second );
-  } else if( auto gep = llvm::dyn_cast<llvm::Constant>(addr) ) {
+  } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
+    // To handle a[0] when a is dynamic sized array
+    expr idx_expr = get_expr_const(solver_ctx,0);
+    storeToArrayHelper(bidx, store, val, idx_expr);
+  } else if( auto cons = llvm::dyn_cast<llvm::Constant>(addr) ) {
     llvm_bmc_error("bmc", "constant access to the memory!");
   }else {
     LLVM_DUMP( store );

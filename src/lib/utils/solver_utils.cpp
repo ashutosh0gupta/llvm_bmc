@@ -409,6 +409,10 @@ bool is_true( expr f ) {
   return eq( f, f.ctx().bool_val(true) );
 }
 
+expr get_expr_const( solver_context& c, int num ) {
+  return c.int_val(num);
+}
+
 expr get_fresh_bool( solver_context& c, std::string suff )
 {
   static unsigned count = 0;
