@@ -92,7 +92,7 @@ void array_model_full::copy_to_init_state( array_state& in ) {
   }
 }
 
-std::pair<expr,expr>
+arr_write_expr
 array_model_full::array_write( unsigned bidx, const llvm::StoreInst* I,
                                expr& idx, expr& val ) {
   array_state& ar_st = get_state( bidx );
@@ -101,17 +101,29 @@ array_model_full::array_write( unsigned bidx, const llvm::StoreInst* I,
   expr ar_name = vec.at(i);
   expr new_ar = get_fresh_ary_name(i);
   vec[i] = new_ar;
-  return std::make_pair( (new_ar == store( ar_name, idx, val )), new_ar);
+  expr lower_bound_arr(idx >= 0);
+  expr upper_bound_arr(idx <= (get_lengths_vec().at(i) - 1));
+  std::vector<expr> temp_vec;
+  temp_vec.push_back(lower_bound_arr);
+  temp_vec.push_back(upper_bound_arr);
+  expr bound_guard = _and(temp_vec);
+  return arr_write_expr( (new_ar == store( ar_name, idx, val )), bound_guard, new_ar );
 }
 
-expr
+arr_read_expr
 array_model_full::array_read( unsigned bidx, const llvm::LoadInst* I,
-                              expr& idx) {
+                              expr& idx ) {
   array_state& ar_st = get_state( bidx );
   auto i = ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
   expr ar_name = vec.at(i);
-  return select( ar_name, idx);
+  expr lower_bound_arr(idx >= 0);
+  expr upper_bound_arr(idx <= (get_lengths_vec().at(i) - 1));
+  std::vector<expr> temp_vec;
+  temp_vec.push_back(lower_bound_arr);
+  temp_vec.push_back(upper_bound_arr);
+  expr bound_guard = _and(temp_vec);
+  return arr_read_expr( select( ar_name, idx), bound_guard );
 }
 
 void array_model_full::
@@ -150,20 +162,21 @@ void array_model_fixed_len::init_state( unsigned //const bb*
   }
 }
 
-std::pair<expr,expr>
-array_model_fixed_len::array_write( unsigned bidx,
+arr_write_expr array_model_fixed_len::array_write( unsigned bidx,
                                     const llvm::StoreInst* I,
                                     expr& idx,
                                     expr& val ) {
   llvm_bmc_error( "bmc", "stub!!" );
-  return std::make_pair(idx,idx);
+  arr_write_expr ret;
+  return ret;
 }
 
-expr array_model_fixed_len::array_read( unsigned bidx,
+arr_read_expr array_model_fixed_len::array_read( unsigned bidx,
                                             const llvm::LoadInst* I,
                                             expr& idx) {
   llvm_bmc_error( "bmc", "stub!!" );
-  return idx;
+  arr_read_expr ret;
+  return ret;
 }
 
 // array_state&

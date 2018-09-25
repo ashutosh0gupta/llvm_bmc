@@ -39,6 +39,7 @@ public:
 
   bmc_ds( options& o_, //solver_context& solver_ctx_,
           std::map<const llvm::Instruction*, unsigned>& aim,
+          std::vector<expr>& alv,
           glb_model& g_model_ )
     : o(o_)
     , solver_ctx( o.solver_ctx )
@@ -47,6 +48,7 @@ public:
     , ar_model_full( o.solver_ctx )
     , ar_model_fixed( o.solver_ctx )
     , ary_to_int(aim)
+    , array_lengths(alv)
 {}
   //--------------------------------------------------------------------------
   //interface to global model
@@ -75,12 +77,10 @@ public:
 
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
   std::map< const llvm::Instruction*, unsigned >& ary_to_int;
+  std::vector<expr>& array_lengths;
 
-  //todo: return triple (update_expr, bound_guard, new_name )
-  std::pair<expr,expr>
-  array_write(unsigned, const llvm::StoreInst*, expr&, expr& );
-  //todo: return pair (retun_value, bound_guard )
-  expr array_read( unsigned, const llvm::LoadInst*, expr& idx);
+  arr_write_expr array_write( unsigned, const llvm::StoreInst*, expr&, expr& );
+  arr_read_expr array_read( unsigned, const llvm::LoadInst*, expr& );
   expr join_array_state( std::vector<expr>&,
                              std::vector<unsigned>&, unsigned );
 
@@ -96,7 +96,8 @@ public:
   // error.
   void init_partition_array_model(unsigned part_num);
   void init_full_array_model( unsigned,
-                              std::map<const llvm::Instruction*,unsigned>&);
+                              std::map<const llvm::Instruction*,unsigned>&,
+                              std::vector<expr>& );
   void init_fixed_len_array_model( unsigned,
                                    std::map<const llvm::Instruction*,unsigned>&);
   void init_array_model( array_model_t );
@@ -193,8 +194,9 @@ class bmc_fun : public bmc_ds {
 public:
   bmc_fun( options& o,
            std::map<const llvm::Instruction*, unsigned>& aim,
+           std::vector<expr>& alv,
            glb_model& g_model)
-    : bmc_ds( o, aim, g_model) {}
+    : bmc_ds( o, aim, alv, g_model) {}
 
   // Call sites
   std::vector<const llvm::CallInst*> call_sites;
@@ -211,9 +213,10 @@ class bmc_loop : public bmc_ds {
 public:
   bmc_loop( options& o,
             std::map<const llvm::Instruction*, unsigned>& aim,
+            std::vector<expr>& alv,
             glb_model& g_model,
             loopdata* ld_ )
-    : bmc_ds( o, aim, g_model)
+    : bmc_ds( o, aim, alv, g_model)
     , ld(ld_) {}
 
   loopdata* get_loopdata();

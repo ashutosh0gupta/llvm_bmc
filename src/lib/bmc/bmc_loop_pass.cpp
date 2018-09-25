@@ -191,7 +191,7 @@ bool bmc_loop_pass::runOnFunction( llvm::Function &f ) {
 
 bool bmc_loop_pass::runOnEachLoop(llvm::Loop *L, llvm::Loop *prevL) {
   // local pointer to record bmc
-  bmc_loop* bmc_loop_ptr = new bmc_loop( o, ary_to_int, bmc_obj.g_model,
+  bmc_loop* bmc_loop_ptr = new bmc_loop( o, ary_to_int, array_lengths, bmc_obj.g_model,
                                          bmc_obj.ld_map.at(L) );
   assert( bmc_loop_ptr );
 

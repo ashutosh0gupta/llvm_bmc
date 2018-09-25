@@ -21,6 +21,7 @@ public:
   // Permanent facts accross do_run calls. the facts may be extended
   // accross run calls but infomration does not go stale.
   std::map< const llvm::Instruction*, unsigned > ary_to_int;
+  std::vector<expr> array_lengths;
 
 private:
   //--------------------------------------------------------------------------

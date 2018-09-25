@@ -85,6 +85,29 @@ private:
   std::map< std::string, const llvm::GlobalVariable*> name_to_glb;
 };
 
+class arr_write_expr {
+public:
+  arr_write_expr();
+  arr_write_expr( expr updated_expr_, expr size_bound_guard_, expr new_name_ ) : 
+  updated_expr(updated_expr_), size_bound_guard(size_bound_guard_), new_name(new_name_) {
+
+  }
+  expr updated_expr;
+  expr size_bound_guard;
+  expr new_name; 
+};
+
+class arr_read_expr {
+public:
+  arr_read_expr();
+  arr_read_expr( expr return_val_, expr size_bound_guard_ ) : 
+  return_val(return_val_), size_bound_guard(size_bound_guard_) {
+
+  }
+  expr return_val;
+  expr size_bound_guard;
+};
+
 class array_state{
 public:
 
@@ -157,17 +180,26 @@ public:
     ary_access_to_index = map;
   }
 
+  inline void
+  set_lengths_vec( std::vector< expr >& array_lengths ) {
+    lengths = array_lengths;
+  }
+
+  inline  std::vector<expr> 
+  get_lengths_vec() {
+    return lengths;
+  }
+
   // void init_state( const bb* );
   void init_state( unsigned );
   void init_state( unsigned eb, array_state& s );
   virtual expr get_fresh_ary_name( unsigned );
   //virtual
 
-  std::pair<expr,expr>
+  arr_write_expr
   array_write( unsigned bidx, const llvm::StoreInst* I,
                expr& idx, expr& val );
-  //virtual
-  expr array_read( unsigned bidx, const llvm::LoadInst* I, expr& idx );
+  arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, expr& idx );
 
   void update_names( unsigned, std::vector<const llvm::Instruction*>&);
   void update_name( unsigned, unsigned );
@@ -195,11 +227,10 @@ public:
     ary_access_to_patition_map = map;
   }
   virtual expr get_fresh_ary_name( unsigned );
-  //virtual
-  std::pair<expr,expr>
+  
+  arr_write_expr
   array_write( unsigned bidx, const llvm::StoreInst* I, expr& idx, expr& val );
-  //virtual
-  expr array_read( unsigned bidx, const llvm::LoadInst* I, expr& val );
+  arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, expr& val );
 
 private:
   unsigned num_partition=0;

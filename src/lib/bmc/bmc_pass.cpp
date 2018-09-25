@@ -1,6 +1,8 @@
 #include "bmc_pass.h"
 #include "witness.h"
 #include "lib/utils/solver_utils.h"
+// TODO : remove reference to heap model and access of public class variables
+#include "include/heap_model.h"
 
 //todo: remove reference to bmc_obj which is due to global variables
 
@@ -329,6 +331,7 @@ inline bool ok_cast( llvm::Type* n_ty, llvm::Type* o_ty,
   return n_w == new_width && o_w == old_width;
 }
 
+// TODO : Try to remove warnings for empty bodies
 void bmc_pass::translateCastInst( unsigned bidx,
                                   const llvm::CastInst* cast ) {
   assert( cast );
@@ -408,15 +411,16 @@ void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
   assert( alloca );
 }
 
+// TODO : Add src_loc for instructions in add_spec 
 void bmc_pass::loadFromArrayHelper( unsigned bidx,
                           const llvm::LoadInst* load,
                           expr idx_expr ) {
   auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_expr);
   if( o.include_out_of_bound_specs ) {
-    //todo: fix the interface
-    bmc_ds_ptr->add_spec( arr_rd, spec_reason_t::OUT_OF_BOUND );
+    expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+    bmc_ds_ptr->add_spec( !path_bit || arr_rd.size_bound_guard, spec_reason_t::OUT_OF_BOUND );
   }
-  bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd );
+  bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd.return_val );
 }
 
 void bmc_pass::translateLoadInst( unsigned bidx,
@@ -473,12 +477,12 @@ void bmc_pass::storeToArrayHelper( unsigned bidx,
                          expr idx_expr ) {
   auto val_expr = bmc_ds_ptr->m.get_term( val );
   auto arr_wrt = bmc_ds_ptr->array_write(bidx, store, idx_expr, val_expr);
-  bmc_ds_ptr->bmc_vec.push_back( arr_wrt.first );
+  bmc_ds_ptr->bmc_vec.push_back( arr_wrt.updated_expr );
   if( o.include_out_of_bound_specs ) {
-    //todo: fix the interface
-    bmc_ds_ptr->add_spec( arr_wrt.second, spec_reason_t::OUT_OF_BOUND ); // bound guard
+    expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+    bmc_ds_ptr->add_spec( !path_bit || arr_wrt.size_bound_guard, spec_reason_t::OUT_OF_BOUND );
   }
-  bmc_ds_ptr->m.insert_term_map( store, bidx, arr_wrt.second );
+  bmc_ds_ptr->m.insert_term_map( store, bidx, arr_wrt.new_name );
 }
 
 void bmc_pass::translateStoreInst( unsigned bidx,
@@ -845,12 +849,36 @@ void bmc_pass::populateArrAccMap(llvm::Function* f) {
   assert(f);
   int arrCntr = 0;
   ary_to_int.clear();
+  array_lengths.clear();
   for( auto bbit = f->begin(), end = f->end(); bbit != end; bbit++ ) {
     auto bb = &(*bbit);
     for( auto it = bb->begin(), e = bb->end(); it != e; ++it) {
       auto I = &(*it);
       if( llvm::isa<const llvm::AllocaInst>(I) ) {
         ary_to_int[I] = arrCntr++;
+        if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(I) ) {
+          auto typ = alloc->getAllocatedType();
+          if( llvm::isa<const llvm::IntegerType>(typ) ) {          
+            auto val = alloc->getArraySize();
+            if( auto constInt = llvm::dyn_cast<const llvm::ConstantInt>(val) ) {          
+                int constIntValue = (int)constInt->getSExtValue();
+                expr const_expr = get_expr_const(solver_ctx,constIntValue);
+                array_lengths.push_back(const_expr);
+            }
+            else {
+              // TODO : support array length expressions for variable sized arrays 
+              llvm_bmc_error("bmc", "Variable sized array not supported");
+            }    
+          }
+          else if( llvm::isa<const llvm::ArrayType>(typ) ) {
+            int siz = (int)typ->getArrayNumElements();
+            expr const_expr = get_expr_const(solver_ctx,siz);
+            array_lengths.push_back(const_expr);
+          }
+          else {
+
+          }  
+        }
       } else {} // no errors needed!!
     }
   }
