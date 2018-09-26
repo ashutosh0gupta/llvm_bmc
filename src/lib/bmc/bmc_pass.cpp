@@ -409,6 +409,28 @@ void bmc_pass::translateCastInst( unsigned bidx,
 
 void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
   assert( alloca );
+  auto typ = alloca->getAllocatedType();
+  if( llvm::isa<const llvm::IntegerType>(typ) ) {          
+    auto val = alloca->getArraySize();
+    if( auto constInt = llvm::dyn_cast<const llvm::ConstantInt>(val) ) {          
+        int constIntValue = (int)constInt->getSExtValue();
+        expr const_expr = get_expr_const(solver_ctx,constIntValue);
+        array_lengths.push_back(const_expr);
+    }
+    else {
+      auto val = alloca->getOperand(0);
+      auto val_expr = bmc_ds_ptr->m.get_term( val );
+      array_lengths.push_back(val_expr);
+    }
+  }
+  else if( llvm::isa<const llvm::ArrayType>(typ) ) {
+    int siz = (int)typ->getArrayNumElements();
+    expr const_expr = get_expr_const(solver_ctx,siz);
+    array_lengths.push_back(const_expr);
+  }
+  else {
+
+  }
 }
 
 // TODO : Add src_loc for instructions in add_spec 
@@ -856,29 +878,6 @@ void bmc_pass::populateArrAccMap(llvm::Function* f) {
       auto I = &(*it);
       if( llvm::isa<const llvm::AllocaInst>(I) ) {
         ary_to_int[I] = arrCntr++;
-        if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(I) ) {
-          auto typ = alloc->getAllocatedType();
-          if( llvm::isa<const llvm::IntegerType>(typ) ) {          
-            auto val = alloc->getArraySize();
-            if( auto constInt = llvm::dyn_cast<const llvm::ConstantInt>(val) ) {          
-                int constIntValue = (int)constInt->getSExtValue();
-                expr const_expr = get_expr_const(solver_ctx,constIntValue);
-                array_lengths.push_back(const_expr);
-            }
-            else {
-              // TODO : support array length expressions for variable sized arrays 
-              llvm_bmc_error("bmc", "Variable sized array not supported");
-            }    
-          }
-          else if( llvm::isa<const llvm::ArrayType>(typ) ) {
-            int siz = (int)typ->getArrayNumElements();
-            expr const_expr = get_expr_const(solver_ctx,siz);
-            array_lengths.push_back(const_expr);
-          }
-          else {
-
-          }  
-        }
       } else {} // no errors needed!!
     }
   }

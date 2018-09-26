@@ -181,13 +181,13 @@ public:
   }
 
   inline void
-  set_lengths_vec( std::vector< expr >& array_lengths ) {
+  set_lengths_vec( std::vector< expr >* array_lengths ) {
     lengths = array_lengths;
   }
 
   inline  std::vector<expr> 
   get_lengths_vec() {
-    return lengths;
+    return *lengths;
   }
 
   // void init_state( const bb* );
@@ -208,7 +208,7 @@ public:
 private:
   unsigned num_arrays;
   std::vector< sort > ar_sorts;
-  std::vector< expr > lengths;
+  std::vector< expr >* lengths;
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
 };
 

@@ -415,7 +415,7 @@ void bmc_ds::init_full_array_model( unsigned array_num,
   ar_model_init = FULL;
   ar_model_full.set_array_num( array_num );
   ar_model_full.set_access_map( map );
-  ar_model_full.set_lengths_vec( array_lengths );
+  ar_model_full.set_lengths_vec( &array_lengths );
 }
 
 void bmc_ds::init_fixed_len_array_model(unsigned part_num,
