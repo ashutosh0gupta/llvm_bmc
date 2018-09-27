@@ -1,5 +1,6 @@
 #include "include/options.h"
 #include "include/bmc.h"
+#include "lib/utils/llvm_utils.h"
 
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/LinkAllPasses.h"
@@ -23,7 +24,7 @@ void prepare_module( options& o,
   }
 
   for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
-    llvm::StringRef fname = fit->getName();
+    std::string fname = demangle(fit->getName().str()); 
     if(fname == o.funcName) {
       // Do nothing
     }else{

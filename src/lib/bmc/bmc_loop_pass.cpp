@@ -170,7 +170,8 @@ void bmc_loop_pass::populate_bmc_ds(  bmc_loop* bmc_loop_ptr ) {
 
 
 bool bmc_loop_pass::runOnFunction( llvm::Function &f ) {
-  if(f.getName() != o.funcName) {
+  std::string fname = demangle(f.getName().str());
+  if(fname != o.funcName) {
     return false;
   }
 

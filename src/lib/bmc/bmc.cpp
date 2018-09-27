@@ -3,7 +3,7 @@
 #include "lib/bmc/bmc_loop_pass.h"
 #include "lib/utils/build_name_map.h"
 #include "lib/utils/collect_loopdata.h"
- #include "lib/utils/llvm_utils.h"
+#include "lib/utils/llvm_utils.h"
 // #include "lib/bmc/bmc_loop_pass.h"
 #include "bmc_utils.h"
 #include "witness.h"
@@ -69,7 +69,7 @@ void bmc::init_glb() {
   glb_state glb_st = populate_glb_state();
 
   for (auto fit=module->begin(), endit=module->end(); fit!=endit; ++fit) {
-    llvm::StringRef fname = fit->getName();
+    std::string fname = demangle(fit->getName().str());
     if(fname == o.funcName) {
       // g_model.set_state( &fit->getEntryBlock(), glb_st );
       g_model.set_state( 0, glb_st );

@@ -218,7 +218,7 @@ void collect_loopdata::collect_nonloop_blocks() {
   collect_allloop_blocks( ld, all_blocks );
 
   for (auto fit=module->begin(), endit=module->end(); fit!=endit; ++fit) {
-    llvm::StringRef fname = fit->getName();
+    std::string fname = demangle(fit->getName().str());
     if(fname != o.funcName) {
       continue;
     } else {
