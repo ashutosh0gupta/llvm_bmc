@@ -74,9 +74,7 @@ void bmc::init_glb() {
       // g_model.set_state( &fit->getEntryBlock(), glb_st );
       g_model.set_state( 0, glb_st );
     }else{
-      // declare all non entry functions can be inlined
-      if( !fit->isDeclaration() ) // function have a body available
-        fit->addFnAttr(llvm::Attribute::AlwaysInline);
+      // all non entry functions are already inlined
     }
   }
 }
