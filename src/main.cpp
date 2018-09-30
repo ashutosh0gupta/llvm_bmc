@@ -1,5 +1,6 @@
 #include "include/options.h"
 #include "include/bmc.h"
+#include "lib/utils/llvm_utils.h"
 
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/LinkAllPasses.h"
@@ -21,6 +22,20 @@ void prepare_module( options& o,
     // ============================================================
     passMan.add( llvm::createLoopUnrollPass( 0, 100, o.loop_unroll_count ) );
   }
+
+  for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
+    std::string fname = demangle(fit->getName().str()); 
+    if(fname == o.funcName) {
+      // Do nothing
+    }else{
+      // declare all non entry functions can be inlined
+      if( !fit->isDeclaration() ) {
+        // function has a body available
+        fit->addFnAttr(llvm::Attribute::AlwaysInline);
+      }
+    }
+  }
+
   passMan.run( *module.get() );
 
   estimate_comment_location( module, cmts, block_comment_map );

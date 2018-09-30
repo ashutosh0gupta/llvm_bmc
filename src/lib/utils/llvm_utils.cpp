@@ -1295,6 +1295,20 @@ bool deleteLoop(llvm::Loop *L, llvm::DominatorTree &DT, llvm::ScalarEvolution &S
   return true;
 }
 
+std::string demangle( std::string mangled_name ) {
+  std::string mainStr("main");
+  if(mangled_name == mainStr) return mainStr;
+  int status;
+  char * res = abi::__cxa_demangle( mangled_name.c_str(), NULL, NULL, &status );
+  assert(status == 0);
+  if(res == NULL) return std::string();
+  std::string demangled_name(res);
+  free(res);
+  std::size_t ind = demangled_name.find('(');
+  assert(ind != std::string::npos);
+  std::string demangled_fn_name = demangled_name.substr(0,ind);
+  return demangled_fn_name;
+}
 
 //todo: streamline getLoc and getLocation
 src_loc

@@ -1,4 +1,3 @@
-// function call not recognized
 bool assert(bool);
 
 // int f(int a);

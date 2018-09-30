@@ -9,7 +9,8 @@ bmc_fun_pass::bmc_fun_pass( options& o_, solver_context& ctx_, bmc& b_)
 bmc_fun_pass::~bmc_fun_pass() {}
 
 bool bmc_fun_pass::runOnFunction( llvm::Function &f ) {
-  if(f.getName() != o.funcName) {
+  std::string fname = demangle(f.getName().str());
+  if(fname != o.funcName) {
     return false;
   }
   populateArrAccMap(&f);
