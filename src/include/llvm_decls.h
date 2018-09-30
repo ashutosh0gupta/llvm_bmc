@@ -49,8 +49,7 @@ public:
   std::vector< comment > end_comments;
 };
 
-std::unique_ptr<llvm::Module>
-c2ir( std::string, llvm::LLVMContext&, comments& );
+std::unique_ptr<llvm::Module> c2ir( options&,  comments& );
 
 void c2bc( const std::string&, const std::string& );
 

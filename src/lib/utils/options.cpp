@@ -40,6 +40,7 @@ void options::get_description_cmd(po::options_description& config,
     ("use-bv,b", po::bool_switch(&bit_precise), "Use bit-vectors to represent numbers!")
     ("bounds-check", po::bool_switch(&include_out_of_bound_specs), "Enable array-index-out-of-bounds check")
     ("overflow-check", po::bool_switch(&include_overflow_specs), "Enable over/underflow check")
+    ("include-dirs,I", po::value< std::vector<std::string> >(&include_dirs), "Location of include files")
     ;
   hidden.add_options()
     ("input,i", po::value(&filePath), "Set source files")

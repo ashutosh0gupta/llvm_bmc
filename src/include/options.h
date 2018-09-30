@@ -15,6 +15,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include <string>
 #include <map>
+#include <vector>
 
 
 namespace po = boost::program_options;
@@ -30,6 +31,11 @@ class options
 {
 public:
   options( solver_context& sol_ctx_ );
+  std::string get_input_file() { return filePath; }
+  const std::vector<std::string>& get_include_dirs() { return include_dirs; }
+  llvm::LLVMContext& get_llvm_context() { return globalContext; }
+  solver_context& get_solver_context() { return solver_ctx; }
+
 public:
   //todo: some of following show become private
   //---------------------------------------
@@ -39,6 +45,7 @@ public:
   std::string fileName;
   std::string filePath;
   std::string funcName;
+  std::vector<std::string> include_dirs;
   boost::filesystem::path outDirPath;
   int mode = 0;
   int loopNum = 0;

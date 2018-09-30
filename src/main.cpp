@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
   std::unique_ptr<llvm::Module> module;
   comments cmts;
 
-  module = c2ir( o.filePath, o.globalContext, cmts);
+  module = c2ir( o, cmts);
 
   if( o.verbosity > 8 ) {
     module->print( llvm::outs(), nullptr );

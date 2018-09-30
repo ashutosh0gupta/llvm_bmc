@@ -316,10 +316,18 @@ bool ExecuteAction( clang::CompilerInstance& CI,
 
 
 //Direct translation via API clang
-std::unique_ptr<llvm::Module> c2ir( std::string filename,
-                                    llvm::LLVMContext& llvm_ctx,
-                                    comments& cmts ) {
+std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
+  const std::string filename = o.get_input_file();
+  llvm::LLVMContext& llvm_ctx = o.get_llvm_context();
 
+  std::vector<std::string> include_dirs;
+  //standard include directories
+  // include_dirs.push_back( "/usr/include/");
+  // include_dirs.push_back( "/usr/include/linux");
+  // additional include directories
+  for( auto& dir : o.get_include_dirs() ) {
+    include_dirs.push_back( dir );
+  }
   // return nullptr;
 
   // look in clang/include/clang/Driver/CC1Options.td
@@ -335,6 +343,10 @@ std::unique_ptr<llvm::Module> c2ir( std::string filename,
   args.push_back( "-femit-all-decls" );
   args.push_back( "-O1" );
   args.push_back( "-disable-O0-optnone" );
+  for( std::string& i_dir : include_dirs ) {
+    i_dir = "-I" + i_dir;
+    args.push_back( i_dir.c_str() );
+  }
   args.push_back( filename.c_str() );
 
   clang::CompilerInstance Clang;
@@ -359,10 +371,9 @@ std::unique_ptr<llvm::Module> c2ir( std::string filename,
 }
 
 
-std::unique_ptr<llvm::Module> c2ir( std::string filename,
-                                    llvm::LLVMContext& llvm_ctx ) {
+std::unique_ptr<llvm::Module> c2ir( options& o ) {
   comments comments_found;
-  return move( c2ir( filename, llvm_ctx, comments_found ) );
+  return move( c2ir( o, comments_found ) );
 }
 
 

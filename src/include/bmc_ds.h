@@ -53,7 +53,7 @@ public:
   //--------------------------------------------------------------------------
   //interface to global model
 
-  glb_model g_model;
+  glb_model g_model; // todo: reference or copy???
 
   std::pair<expr,expr>
   glb_write(unsigned, const llvm::StoreInst*, expr& );
