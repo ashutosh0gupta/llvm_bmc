@@ -461,7 +461,7 @@ void bmc_pass::translateLoadInst( unsigned bidx,
     loadFromArrayHelper(bidx, load, idx_expr);   
   } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
-    auto glb_rd = bmc_ds_ptr->g_model.glb_read( bidx, load);
+    auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
     bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
   } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
     // To handle a[0] when a is dynamic sized array
@@ -522,7 +522,7 @@ void bmc_pass::translateStoreInst( unsigned bidx,
   } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto val_expr = bmc_ds_ptr->m.get_term( val );
-    auto glb_wrt = bmc_ds_ptr->g_model.glb_write(bidx, store, val_expr);
+    auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
     bmc_ds_ptr->bmc_vec.push_back( glb_wrt.first );
     bmc_ds_ptr->m.insert_term_map( store, bidx, glb_wrt.second );
   } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
@@ -820,7 +820,7 @@ void bmc_pass::do_bmc() {
     }else{
       bmc_ds_ptr->bmc_vec.push_back( implies( path_bit, _or( incoming_paths, solver_ctx) ) );
       bmc_ds_ptr->bmc_vec.push_back( bmc_ds_ptr->join_array_state( incoming_paths, bmc_ds_ptr->pred_idxs[bidx], bidx ) );
-      bmc_ds_ptr->bmc_vec.push_back( bmc_ds_ptr->g_model.join_glb_state( incoming_paths, bmc_ds_ptr->pred_idxs[bidx], bidx ) );
+      bmc_ds_ptr->bmc_vec.push_back( bmc_ds_ptr->m_model.join_state( incoming_paths, bmc_ds_ptr->pred_idxs[bidx], bidx ) );
     }
 
     translateBlock( bidx, src );

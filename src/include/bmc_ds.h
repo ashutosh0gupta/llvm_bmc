@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 #include "include/heap_model.h"
+#include "include/memory_model.h"
 #include "include/value_expr_map.h"
 
 enum spec_reason_t{
@@ -40,32 +41,24 @@ public:
   bmc_ds( options& o_, //solver_context& solver_ctx_,
           std::map<const llvm::Instruction*, unsigned>& aim,
           std::vector<expr>& alv,
-          glb_model& g_model_ )
+          memory_model& m_model_ )
     : o(o_)
     , solver_ctx( o.solver_ctx )
     , m(o)
-    , g_model( solver_ctx, g_model_ )
+    , m_model( m_model_ )
     , ar_model_full( o.solver_ctx )
     , ar_model_fixed( o.solver_ctx )
     , ary_to_int(aim)
     , array_lengths(alv)
 {}
   //--------------------------------------------------------------------------
-  //interface to global model
+  //interface to memory model
 
-  glb_model g_model; // todo: reference or copy???
+  memory_model& m_model; // TODO: reference or copy?
 
-  std::pair<expr,expr>
-  glb_write(unsigned, const llvm::StoreInst*, expr& );
-  expr glb_read( unsigned, const llvm::LoadInst*);
-  expr join_glb_state( std::vector<expr>&, std::vector<unsigned>&, unsigned );
-
-  glb_state& get_glb_state( const llvm::BasicBlock* b );
-  expr get_glb_state_var( unsigned bidx, const llvm::GlobalVariable*);
-  void set_glb_state( unsigned bidx, glb_state& );
-  void init_glb_model( glb_state& );
-  void init_glb_model();
-  void refresh_glb_state( unsigned, const llvm::GlobalVariable* );
+  std::pair<expr,expr> write(unsigned, const llvm::StoreInst*, expr& );
+  expr read( unsigned, const llvm::LoadInst*);
+  expr join_state( std::vector<expr>&, std::vector<unsigned>&, unsigned );
 
   //--------------------------------------------------------------------------
   //interface to array model
@@ -195,8 +188,8 @@ public:
   bmc_fun( options& o,
            std::map<const llvm::Instruction*, unsigned>& aim,
            std::vector<expr>& alv,
-           glb_model& g_model)
-    : bmc_ds( o, aim, alv, g_model) {}
+           memory_model& m_model)
+    : bmc_ds( o, aim, alv, m_model) {}
 
   // Call sites
   std::vector<const llvm::CallInst*> call_sites;
@@ -214,9 +207,9 @@ public:
   bmc_loop( options& o,
             std::map<const llvm::Instruction*, unsigned>& aim,
             std::vector<expr>& alv,
-            glb_model& g_model,
+            memory_model& m_model,
             loopdata* ld_ )
-    : bmc_ds( o, aim, alv, g_model)
+    : bmc_ds( o, aim, alv, m_model)
     , ld(ld_) {}
 
   loopdata* get_loopdata();

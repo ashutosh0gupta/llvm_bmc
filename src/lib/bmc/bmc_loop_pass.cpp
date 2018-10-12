@@ -192,7 +192,7 @@ bool bmc_loop_pass::runOnFunction( llvm::Function &f ) {
 
 bool bmc_loop_pass::runOnEachLoop(llvm::Loop *L, llvm::Loop *prevL) {
   // local pointer to record bmc
-  bmc_loop* bmc_loop_ptr = new bmc_loop( o, ary_to_int, array_lengths, bmc_obj.g_model,
+  bmc_loop* bmc_loop_ptr = new bmc_loop( o, ary_to_int, array_lengths, bmc_obj.m_model,
                                          bmc_obj.ld_map.at(L) );
   assert( bmc_loop_ptr );
 
@@ -267,7 +267,7 @@ void bmc_loop_pass::update_names(bmc_loop* bmc_loop_ptr, bool is_init) {
   if(!is_init) {
     for( auto& exit : bmc_loop_ptr->exits ) {
       bmc_loop_ptr->ar_model_full.update_names( exit.first, arrays_updated );
-      bmc_obj.g_model.update_name( exit.first, glbs_updated );
+      bmc_obj.m_model.update_name( exit.first, glbs_updated );
     }
   } else {
     bmc_loop_ptr->ar_model_full.update_names( 0, arrays_updated );

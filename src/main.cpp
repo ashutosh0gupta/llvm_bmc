@@ -53,7 +53,7 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
   std::map<const llvm::BasicBlock*, comments > bb_cmt_map;
   prepare_module( o, module, cmts, bb_cmt_map);
   bmc b( module, bb_cmt_map, o );
-  b.init_glb();
+  b.init();
   b.run_bmc_pass();
   for( auto& it : b.func_formula_map ) {
     b.check_all_spec( it.second );

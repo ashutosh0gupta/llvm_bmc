@@ -36,11 +36,11 @@ public:
   ~bmc();
 
   //-------------------------------------------
-  // Global model
+  // Memory model
   std::vector<expr> glb_bmc_vec;
-  glb_model g_model;
-  glb_state populate_glb_state();
-  void init_glb();
+  memory_model m_model;
+  memory_state populate_mem_state();
+  void init();
 
   //-------------------------------------------
   // Checking Specs and Reporting results

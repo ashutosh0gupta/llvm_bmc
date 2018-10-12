@@ -25,7 +25,7 @@ bmc::bmc( std::unique_ptr<llvm::Module>& m_,
     , def_map(o_)
     , module(m_)
     , bb_comment_map( bb_comment_map_ )
-    , g_model(o_.solver_ctx)
+    , m_model(o_.solver_ctx)
 {}
 
 bmc::~bmc() {
@@ -64,24 +64,24 @@ std::map< const llvm::Loop*, bmc_loop*>& bmc::get_loop_formula_map() {
 }
 
 
-void bmc::init_glb() {
-
-  glb_state glb_st = populate_glb_state();
+void bmc::init() {
+  memory_state mem_st = populate_mem_state();
 
   for (auto fit=module->begin(), endit=module->end(); fit!=endit; ++fit) {
     std::string fname = demangle(fit->getName().str());
     if(fname == o.funcName) {
-      // g_model.set_state( &fit->getEntryBlock(), glb_st );
-      g_model.set_state( 0, glb_st );
+      // TODO : Is 0 the correct block number?
+      m_model.store_state_map[0] = mem_st;
     }else{
       // all non entry functions are already inlined
     }
   }
 }
 
-glb_state bmc::populate_glb_state() {
-  glb_state glb_st;
-  auto& vec = glb_st.get_glb_name_vec();
+memory_state bmc::populate_mem_state() {
+  memory_state mem_st;
+  // TODO : Add setter and getters
+  auto& vec = mem_st.mem_state_vec;
 
   int glbCntr = 0;
   for( auto iter_glb= module->global_begin(),end_glb = module->global_end();
@@ -98,14 +98,15 @@ glb_state bmc::populate_glb_state() {
 
       if(el_ty->isArrayTy()) continue;
 
-      g_model.insert_glb_to_id(glb, glbCntr);
-      g_model.insert_name_to_glb(glb->getName().str() ,glb);
+      m_model.ind_in_mem_state[glb] = glbCntr;
 
       sort z_sort = llvm_to_sort( o, el_ty);
-      g_model.insert_glb_sort( z_sort );
 
-      auto new_glb = g_model.get_fresh_glb_name(glbCntr, glb->getName());
-      vec.push_back(new_glb);
+      auto new_glb = m_model.get_fresh_name(z_sort, glb->getName());
+
+      datatype ty(z_sort);
+      state_obj tem_state_obj(new_glb,ty);
+      vec.push_back(tem_state_obj);
 
       if( glb->hasUniqueInitializer() ) {
         auto c = glb->getInitializer();
@@ -118,7 +119,7 @@ glb_state bmc::populate_glb_state() {
     }
     glbCntr++;
   }
-  return glb_st;
+  return mem_st;
 }
 
 // void bmc::eliminate_vars(bmc_ds* bmc_ds_ptr) {

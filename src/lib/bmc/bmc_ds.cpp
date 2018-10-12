@@ -118,7 +118,9 @@ expr bmc_ds::get_expr(  const llvm::Value* v ) {
   if( auto alloc = llvm::dyn_cast<llvm::AllocaInst>(v) ) {
     return get_array_state_var( 0, alloc );
   } else if( auto glb = llvm::dyn_cast<llvm::GlobalVariable>(v) ) {
-    return g_model.get_state_var( 0, glb );
+    auto ind = m_model.ind_in_mem_state[glb];
+    // TODO : Check block num
+    return m_model.store_state_map[0].mem_state_vec[ind].e;
   }else{
     return m.get_term( v );
   }
@@ -290,54 +292,21 @@ void bmc_ds::print_formulas(unsigned print_from, unsigned print_spec_from ) {
 }
 
 //----------------------------------------------------------------------------
-// manage global model
+// manage memory model
 
-//returns a pair of
-//  - update expr and
-//  - the new that was created
 std::pair<expr,expr>
-bmc_ds::glb_write( unsigned bidx, const llvm::StoreInst* I, expr& val ) {
-  return g_model.glb_write( bidx, I, val );
+bmc_ds::write( unsigned bidx, const llvm::StoreInst* I, expr& val ) {
+  return m_model.write( bidx, I, val );
 }
 
-expr bmc_ds::glb_read( unsigned bidx, const llvm::LoadInst* I) {
-  return g_model.glb_read( bidx, I );
+expr bmc_ds::read( unsigned bidx, const llvm::LoadInst* I ) {
+  return m_model.read( bidx, I );
 }
 
-expr bmc_ds::get_glb_state_var( unsigned bidx,
-                                    const llvm::GlobalVariable* g) {
-  return g_model.get_state_var( bidx, g );
-}
-
-glb_state& bmc_ds::get_glb_state( const bb* b ) {
-  unsigned bidx = find_block_idx(b);
-  return g_model.get_state( bidx );
-}
-expr bmc_ds::join_glb_state( std::vector<expr>& cs,
+expr bmc_ds::join_state( std::vector<expr>& cs,
                                  std::vector<unsigned>& prevs,
                                   unsigned src ) {
-  return g_model.join_glb_state(cs, prevs, src );
-}
-
-void bmc_ds::set_glb_state( unsigned bidx, glb_state& s ) {
-  assert( ar_model_init == FULL );
-  return g_model.set_state( bidx , s );
-}
-
-void bmc_ds::init_glb_model(glb_state& s) {
-  if( s.get_glb_name_vec().size() == 0 )
-    g_model.init_state(0);
-  else
-    g_model.set_state( 0 , s );
-}
-
-void bmc_ds::init_glb_model() {
-  glb_state s;
-  init_glb_model( s);
-}
-
-void bmc_ds::refresh_glb_state( unsigned bidx, const llvm::GlobalVariable* g) {
-  g_model.refresh_glb_state( bidx, g );
+  return m_model.join_state(cs, prevs, src );
 }
 
 //----------------------------------------------------------------------------
