@@ -1,6 +1,7 @@
 git = git -c user.name="Auto" -c user.email="auto@auto.com" 
 
 LLVMBMC=llvmbmc
+HOME_INSTALLED=~/installed
 BUILDDIR = $(PWD)/build
 SRCDIR = $(PWD)/src
 LLVM_VERSION=6.0.0
@@ -31,13 +32,13 @@ $(BUILDDIR)/buildr/Makefile: $(BUILDDIR)/z3/buildr/libz3.so
 	mkdir -p $(BUILDDIR)/buildr
 	cd $(BUILDDIR)/buildr; cmake -DCMAKE_BUILD_TYPE=Release -DLLVMBMC=$(LLVMBMC) $(SRCDIR)
 
-$(BUILDDIR)/buildd/Makefile: $(BUILDDIR)/z3/buildd/libz3.so $(BUILDDIR)/llvm-$(LLVM_VERSION)/lib/libLLVMCore.a
+$(BUILDDIR)/buildd/Makefile: $(BUILDDIR)/z3/buildd/libz3.so $(HOME_INSTALLED)/llvm-$(LLVM_VERSION)/lib/libLLVMCore.a
 	mkdir -p $(BUILDDIR)/buildd
-	cd $(BUILDDIR)/buildd; cmake -DCMAKE_BUILD_TYPE=Debug -DLLVM_VERSION=$(LLVM_VERSION) -DLLVMBMC=$(LLVMBMC) $(SRCDIR)
+	cd $(BUILDDIR)/buildd; cmake -DCMAKE_BUILD_TYPE=Debug -DINSTALLED=$(HOME_INSTALLED) -DLLVM_VERSION=$(LLVM_VERSION) -DLLVMBMC=$(LLVMBMC) $(SRCDIR)
 
-$(BUILDDIR)/buildl/Makefile: $(BUILDDIR)/z3/buildd/libz3.so $(BUILDDIR)/llvm-$(LLVM_VERSION)/lib/libLLVMCore.a
+$(BUILDDIR)/buildl/Makefile: $(BUILDDIR)/z3/buildd/libz3.so $(HOME_INSTALLED)/llvm-$(LLVM_VERSION)/lib/libLLVMCore.a
 	mkdir -p $(BUILDDIR)/buildl
-	cd $(BUILDDIR)/buildl; cmake -DCMAKE_BUILD_TYPE=Debug -DLLVM_VERSION=$(LLVM_VERSION) -DLLVMBMC=$(LLVMBMC) $(SRCDIR)
+	cd $(BUILDDIR)/buildl; cmake -DCMAKE_BUILD_TYPE=Debug -DINSTALLED=$(HOME_INSTALLED) -DLLVM_VERSION=$(LLVM_VERSION) -DLLVMBMC=$(LLVMBMC) $(SRCDIR)
 
 clean :
 	rm -rf $(BUILDDIR)/buildr
@@ -74,40 +75,40 @@ $(BUILDDIR)/z3/buildd/libz3.so : $(BUILDDIR)/z3/README.md
 #---------------------------------------------------------------------------
 # fetch and install local llvm with debugging enabled
 
-#$(BUILDDIR)/llvm-$(LLVM_VERSION).src/tools/clang/tools/extra/docs/clang-modernize.rst
-$(BUILDDIR)/llvm-$(LLVM_VERSION).src/LLVMBuild.txt:
-	cd $(BUILDDIR);wget http://releases.llvm.org/$(LLVM_VERSION)/llvm-$(LLVM_VERSION).src.tar.xz
-	cd $(BUILDDIR);wget http://releases.llvm.org/$(LLVM_VERSION)/cfe-$(LLVM_VERSION).src.tar.xz
-	cd $(BUILDDIR);wget http://releases.llvm.org/$(LLVM_VERSION)/clang-tools-extra-$(LLVM_VERSION).src.tar.xz
-	cd $(BUILDDIR);tar -xvJf llvm-$(LLVM_VERSION).src.tar.xz
-	cd $(BUILDDIR);tar -xvJf cfe-$(LLVM_VERSION).src.tar.xz -C llvm-$(LLVM_VERSION).src/tools/; mv llvm-$(LLVM_VERSION).src/tools/cfe-$(LLVM_VERSION).src llvm-$(LLVM_VERSION).src/tools/clang
-	cd $(BUILDDIR);tar -xvJf clang-tools-extra-$(LLVM_VERSION).src.tar.xz -C llvm-$(LLVM_VERSION).src/tools/clang/tools; mv llvm-$(LLVM_VERSION).src/tools/clang/tools/clang-tools-extra-$(LLVM_VERSION).src llvm-$(LLVM_VERSION).src/tools/clang/tools/extra
+#$(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/tools/clang/tools/extra/docs/clang-modernize.rst
+$(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/LLVMBuild.txt:
+	cd $(HOME_INSTALLED);wget http://releases.llvm.org/$(LLVM_VERSION)/llvm-$(LLVM_VERSION).src.tar.xz
+	cd $(HOME_INSTALLED);wget http://releases.llvm.org/$(LLVM_VERSION)/cfe-$(LLVM_VERSION).src.tar.xz
+	cd $(HOME_INSTALLED);wget http://releases.llvm.org/$(LLVM_VERSION)/clang-tools-extra-$(LLVM_VERSION).src.tar.xz
+	cd $(HOME_INSTALLED);tar -xvJf llvm-$(LLVM_VERSION).src.tar.xz
+	cd $(HOME_INSTALLED);tar -xvJf cfe-$(LLVM_VERSION).src.tar.xz -C llvm-$(LLVM_VERSION).src/tools/; mv llvm-$(LLVM_VERSION).src/tools/cfe-$(LLVM_VERSION).src llvm-$(LLVM_VERSION).src/tools/clang
+	cd $(HOME_INSTALLED);tar -xvJf clang-tools-extra-$(LLVM_VERSION).src.tar.xz -C llvm-$(LLVM_VERSION).src/tools/clang/tools; mv llvm-$(LLVM_VERSION).src/tools/clang/tools/clang-tools-extra-$(LLVM_VERSION).src llvm-$(LLVM_VERSION).src/tools/clang/tools/extra
 
-$(BUILDDIR)/llvm-svn.src/LLVMBuild.txt:
-	cd $(BUILDDIR);svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm-svn.src
-	cd $(BUILDDIR)/llvm-svn.src/tools; svn co http://llvm.org/svn/llvm-project/cfe/trunk clang
-	cd $(BUILDDIR)/llvm-svn.src/tools/clang/tools; svn co http://llvm.org/svn/llvm-project/clang-tools-extra/trunk extra
-	cd $(BUILDDIR)/llvm-svn.src/projects; svn co http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt
-	# cd $(BUILDDIR)/llvm-svn.src/projects; svn co http://llvm.org/svn/llvm-project/libcxx/trunk libcxx
+$(HOME_INSTALLED)/llvm-svn.src/LLVMBuild.txt:
+	cd $(HOME_INSTALLED);svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm-svn.src
+	cd $(HOME_INSTALLED)/llvm-svn.src/tools; svn co http://llvm.org/svn/llvm-project/cfe/trunk clang
+	cd $(HOME_INSTALLED)/llvm-svn.src/tools/clang/tools; svn co http://llvm.org/svn/llvm-project/clang-tools-extra/trunk extra
+	cd $(HOME_INSTALLED)/llvm-svn.src/projects; svn co http://llvm.org/svn/llvm-project/compiler-rt/trunk compiler-rt
+	# cd $(HOME_INSTALLED)/llvm-svn.src/projects; svn co http://llvm.org/svn/llvm-project/libcxx/trunk libcxx
 
 
 LLVM_CMAKE_OPTIONS= -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=DEBUG -DLLVM_ENABLE_RTTI:BOOL=TRUE -DLLVM_ENABLE_DUMP=TRUE -DCMAKE_INSTALL_PREFIX=../../llvm-$(LLVM_VERSION) ../
 
-$(BUILDDIR)/llvm-$(LLVM_VERSION)/lib/libLLVMCore.a : $(BUILDDIR)/llvm-$(LLVM_VERSION).src/LLVMBuild.txt
-	cd $(BUILDDIR); mkdir -p llvm-$(LLVM_VERSION).src/build; mkdir -p llvm-$(LLVM_VERSION)
-	cd $(BUILDDIR)/llvm-$(LLVM_VERSION).src/build;cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=DEBUG -DLLVM_ENABLE_RTTI:BOOL=TRUE -DLLVM_ENABLE_DUMP=TRUE -DCMAKE_INSTALL_PREFIX=../../llvm-$(LLVM_VERSION) ../
-	+make -C $(BUILDDIR)/llvm-$(LLVM_VERSION).src/build
-	+make -C $(BUILDDIR)/llvm-$(LLVM_VERSION).src/build install
+$(HOME_INSTALLED)/llvm-$(LLVM_VERSION)/lib/libLLVMCore.a : $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/LLVMBuild.txt
+	cd $(HOME_INSTALLED); mkdir -p llvm-$(LLVM_VERSION).src/build; mkdir -p llvm-$(LLVM_VERSION)
+	cd $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/build;cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=DEBUG -DLLVM_ENABLE_RTTI:BOOL=TRUE -DLLVM_ENABLE_DUMP=TRUE -DCMAKE_INSTALL_PREFIX=../../llvm-$(LLVM_VERSION) ../
+	+make -C $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/build
+	+make -C $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/build install
 
 llvm-up: export LLVM_VERSION = svn
 llvm-up:
-	cd $(BUILDDIR)/llvm-svn.src; svn up
-	cd $(BUILDDIR)/llvm-svn.src/tools/clang; svn up
-	cd $(BUILDDIR)/llvm-svn.src/tools/clang/tools/extra; svn up
-	cd $(BUILDDIR)/llvm-svn.src/projects/compiler-rt; svn up
-	cd $(BUILDDIR)/llvm-svn.src/build;cmake $(LLVM_CMAKE_OPTIONS)
-	+make -C $(BUILDDIR)/llvm-svn.src/build
-	+make -C $(BUILDDIR)/llvm-svn.src/build install
+	cd $(HOME_INSTALLED)/llvm-svn.src; svn up
+	cd $(HOME_INSTALLED)/llvm-svn.src/tools/clang; svn up
+	cd $(HOME_INSTALLED)/llvm-svn.src/tools/clang/tools/extra; svn up
+	cd $(HOME_INSTALLED)/llvm-svn.src/projects/compiler-rt; svn up
+	cd $(HOME_INSTALLED)/llvm-svn.src/build;cmake $(LLVM_CMAKE_OPTIONS)
+	+make -C $(HOME_INSTALLED)/llvm-svn.src/build
+	+make -C $(HOME_INSTALLED)/llvm-svn.src/build install
 
 #---------------------------------------------------------------------------
 
