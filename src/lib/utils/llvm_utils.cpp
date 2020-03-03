@@ -589,7 +589,7 @@ bool isInSubLoop(llvm::BasicBlock *BB, llvm::Loop *CurLoop, llvm::LoopInfo *LI) 
 // Return the first Basic Block in the Body of the Current Loop
 llvm::BasicBlock* getFirstBodyOfLoop(llvm::Loop *CurLoop){
   llvm::BasicBlock* head = CurLoop->getHeader();
-  const llvm::TerminatorInst *TInst = head->getTerminator();
+  const auto *TInst = head->getTerminator();
   //  unsigned nbSucc = TInst->getNumSuccessors();
   bool found = false;
   unsigned i = 0;
@@ -618,9 +618,8 @@ llvm::Function *printf_prototype(llvm::Module *mod, llvm::LLVMContext& glbContex
       llvm::TypeBuilder<int(char *, ...), false>::get(glbContext);
 
   auto attr_list =  llvm::AttributeList().addAttribute(mod->getContext(), 1U, llvm::Attribute::NoAlias);
-
-  llvm::Function *func = llvm::cast<llvm::Function>(mod->getOrInsertFunction(
-      "printf", printf_type, attr_list ));
+  auto a = mod->getOrInsertFunction("printf", printf_type, attr_list );
+  llvm::Function *func = llvm::cast<llvm::Function>(a.getCallee());
 
   return func;
 }
@@ -631,8 +630,8 @@ llvm::Function *assume_prototype(llvm::Module *mod, llvm::LLVMContext& glbContex
 
   auto attr_list = llvm::AttributeList().addAttribute(mod->getContext(), 1U, llvm::Attribute::NoAlias);
 
-  llvm::Function *func = llvm::cast<llvm::Function>(mod->getOrInsertFunction(
-      "__llbmc_assume", assume_type, attr_list ));
+  auto callee = mod->getOrInsertFunction("__llbmc_assume", assume_type, attr_list );
+    llvm::Function *func = llvm::cast<llvm::Function>(callee.getCallee());
 
   return func;
 }
@@ -643,8 +642,8 @@ llvm::Function *assert_prototype(llvm::Module *mod, llvm::LLVMContext& glbContex
 
   auto attr_list = llvm::AttributeList().addAttribute(mod->getContext(), 1U, llvm::Attribute::NoAlias);
 
-  llvm::Function *func = llvm::cast<llvm::Function>(mod->getOrInsertFunction(
-      "__llbmc_assert", assert_type, attr_list));
+  auto callee = mod->getOrInsertFunction("__llbmc_assert", assert_type, attr_list);
+  llvm::Function *func = llvm::cast<llvm::Function>(callee.getCallee());
 
   return func;
 }
@@ -1243,7 +1242,7 @@ bool deleteLoop(llvm::Loop *L, llvm::DominatorTree &DT, llvm::ScalarEvolution &S
   SE.forgetLoop(L);
 
   // Connect the preheader directly to the exit block
-  llvm::TerminatorInst *TI = preheader->getTerminator();
+  auto *TI = preheader->getTerminator();
   llvm::BasicBlock *exitBlock = exitBlocks[0];
   TI->replaceUsesOfWith(L->getHeader(), exitBlock);
 
@@ -1314,11 +1313,15 @@ std::string demangle( std::string mangled_name ) {
 src_loc
 getLoc( const llvm::Instruction* I ) {
   if( auto dbg = llvm::dyn_cast<llvm::DbgInfoIntrinsic>(I) ) {
-    auto loc = dbg->getVariableLocation();
-    if( auto I_val = llvm::dyn_cast<llvm::Instruction>(loc) ) {
-      if( I_val ) I = I_val;
-    }else if( llvm::dyn_cast<llvm::Constant>(loc) ) {
-      // what to do??
+    if( auto dbgvar = llvm::dyn_cast<llvm::DbgVariableIntrinsic>(dbg) ) {
+      auto loc = dbgvar->getVariableLocation();
+      if( auto I_val = llvm::dyn_cast<llvm::Instruction>(loc) ) {
+        if( I_val ) I = I_val;
+      }else if( llvm::dyn_cast<llvm::Constant>(loc) ) {
+        // what to do??
+      }
+    }else{
+      // Now what??
     }
   }
   const llvm::DebugLoc d = I->getDebugLoc();
