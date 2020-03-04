@@ -598,28 +598,28 @@ void bmc_pass::translateUnreachableInst( unsigned bidx,
   bmc_ds_ptr->add_spec(!unreach_path_bit);
 }
 
-void bmc_pass::translateTerminatorInst( unsigned bidx,
-                                        const llvm::TerminatorInst *I ) {
-  assert( I );
+// void bmc_pass::translateTerminatorInst( unsigned bidx,
+//                                         const llvm::TerminatorInst *I ) {
+//   assert( I );
 
-  if( auto br = llvm::dyn_cast<llvm::BranchInst>(I) ) {
-    translateBranch( bidx, br );
-  } else if( auto ret = llvm::dyn_cast<llvm::ReturnInst>(I) ) {
-    translateRetInst( ret );
-  } else if( auto swch = llvm::dyn_cast<llvm::SwitchInst>(I) ) {
-    translateSwitchInst(bidx, swch);
-  } else if( auto unreach = llvm::dyn_cast<llvm::UnreachableInst>(I) ) {
-    translateUnreachableInst(bidx, unreach);
-  } else {
-    BMC_UNSUPPORTED_INSTRUCTIONS( IndirectBrInst,    I );
-    BMC_UNSUPPORTED_INSTRUCTIONS( InvokeInst,        I );
-    BMC_UNSUPPORTED_INSTRUCTIONS( ResumeInst,        I );
-    BMC_UNSUPPORTED_INSTRUCTIONS( CatchSwitchInst,   I );
-    BMC_UNSUPPORTED_INSTRUCTIONS( CatchReturnInst,   I );
-    BMC_UNSUPPORTED_INSTRUCTIONS( CleanupReturnInst, I );
-    llvm_bmc_error( "bmc", "unsupported terminator instruction!");
-  }
-}
+//   if( auto br = llvm::dyn_cast<llvm::BranchInst>(I) ) {
+//     translateBranch( bidx, br );
+//   } else if( auto ret = llvm::dyn_cast<llvm::ReturnInst>(I) ) {
+//     translateRetInst( ret );
+//   } else if( auto swch = llvm::dyn_cast<llvm::SwitchInst>(I) ) {
+//     translateSwitchInst(bidx, swch);
+//   } else if( auto unreach = llvm::dyn_cast<llvm::UnreachableInst>(I) ) {
+//     translateUnreachableInst(bidx, unreach);
+//   } else {
+//     BMC_UNSUPPORTED_INSTRUCTIONS( IndirectBrInst,    I );
+//     BMC_UNSUPPORTED_INSTRUCTIONS( InvokeInst,        I );
+//     BMC_UNSUPPORTED_INSTRUCTIONS( ResumeInst,        I );
+//     BMC_UNSUPPORTED_INSTRUCTIONS( CatchSwitchInst,   I );
+//     BMC_UNSUPPORTED_INSTRUCTIONS( CatchReturnInst,   I );
+//     BMC_UNSUPPORTED_INSTRUCTIONS( CleanupReturnInst, I );
+//     llvm_bmc_error( "bmc", "unsupported terminator instruction!");
+//   }
+// }
 
 void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
   assert( b );
@@ -715,9 +715,27 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
       translateStoreInst( bidx, store );
     } else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(I) ) {
       translateGetElementPtrInst( gep );
-    } else if( auto terminate = llvm::dyn_cast<llvm::TerminatorInst>(I) ) {
-      translateTerminatorInst( bidx, terminate );
+      // Terminator instructions
+    } else if( auto br = llvm::dyn_cast<llvm::BranchInst>(I) ) {
+      translateBranch( bidx, br );
+    } else if( auto ret = llvm::dyn_cast<llvm::ReturnInst>(I) ) {
+      translateRetInst( ret );
+    } else if( auto swch = llvm::dyn_cast<llvm::SwitchInst>(I) ) {
+      translateSwitchInst(bidx, swch);
+    } else if( auto unreach = llvm::dyn_cast<llvm::UnreachableInst>(I) ) {
+      translateUnreachableInst(bidx, unreach);
+    // } else if( auto terminate = llvm::dyn_cast<llvm::TerminatorInst>(I) ) {
+    //   translateTerminatorInst( bidx, terminate );
     } else {
+      //Unsupported terminator instructions
+      BMC_UNSUPPORTED_INSTRUCTIONS( IndirectBrInst,    I );
+      BMC_UNSUPPORTED_INSTRUCTIONS( InvokeInst,        I );
+      BMC_UNSUPPORTED_INSTRUCTIONS( ResumeInst,        I );
+      BMC_UNSUPPORTED_INSTRUCTIONS( CatchSwitchInst,   I );
+      BMC_UNSUPPORTED_INSTRUCTIONS( CatchReturnInst,   I );
+      BMC_UNSUPPORTED_INSTRUCTIONS( CleanupReturnInst, I );
+
+      //Other unsupported instructions
       BMC_UNSUPPORTED_INSTRUCTIONS( FuncletPadInst,     I);
       // todo: cases for funclet CleanupPadInst, CatchPadInst
       BMC_UNSUPPORTED_INSTRUCTIONS( BinaryOperator,     I);

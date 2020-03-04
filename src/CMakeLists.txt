@@ -28,8 +28,8 @@ IF(LLVM_DEBUG)
   find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH HINTS "${LLVM_DIR}/lib/cmake/llvm/")
   find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "${CLANG_DIR}/lib/cmake/clang/")
 ELSE(LLVM_DEBUG)
-  find_package(LLVM 9.0 REQUIRED CONFIG)
-  find_package(Clang REQUIRED CONFIG HINTS "/usr/lib/llvm-9.0/lib/cmake/clang")
+  find_package(LLVM 9 REQUIRED CONFIG)
+  find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/llvm-9/lib/cmake/clang")
   message(STATUS "LLVM INCLUDE DIR - ${LLVM_INCLUDE_DIRS}")
   message(STATUS "CLANG INCLUDE DIR - ${CLANG_INCLUDE_DIRS}")
   # find_package(Clang REQUIRED clangTooling libClang)
@@ -73,7 +73,7 @@ else(LLVM_VERSION EQUAL "7.0.0svn")
 endif(LLVM_VERSION EQUAL "7.0.0svn")
 
 # unexplained guard 
-if( LLVM_DEBUG )
+# if( LLVM_DEBUG )
   llvm_map_components_to_libnames(llvm_libs
     aarch64asmparser aarch64codegen
     armasmparser armcodegen
@@ -91,7 +91,7 @@ if( LLVM_DEBUG )
     lanaicodegen
     objcarcopts
     )
-endif( LLVM_DEBUG )
+# endif( LLVM_DEBUG )
 
 # message(STATUS "LLVM LIBS : ${llvm_libs}")
 

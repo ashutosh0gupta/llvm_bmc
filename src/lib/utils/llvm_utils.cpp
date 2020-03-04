@@ -10,6 +10,7 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 // pragam'ed to aviod warnings due to llvm included files
+#include "llvm/IR/TypeBuilder.h"
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/LegacyPassManager.h"
 //clang related code

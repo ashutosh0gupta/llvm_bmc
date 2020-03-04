@@ -35,7 +35,7 @@ private:
   void translateCommentProperty( unsigned, const bb*);
 
   void translateUnaryInst(unsigned, const llvm::UnaryInstruction*  );
-  void translateTerminatorInst(unsigned, const llvm::TerminatorInst *);
+  // void translateTerminatorInst(unsigned, const llvm::TerminatorInst *);
 
   void translateRetInst(const llvm::ReturnInst *);
   void translateBinOp( unsigned, const llvm::BinaryOperator*);

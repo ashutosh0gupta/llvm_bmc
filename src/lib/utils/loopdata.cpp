@@ -19,7 +19,7 @@ void loopdata::getLoopPredecessor( bb_vec_t& return_blocks ) {
 void loopdata::getExitingBlocks( std::vector<
                        std::pair<const bb*, unsigned> >& return_blocks) {
   if( loop == NULL ) return;
-  llvm::SmallVector< std::pair<const bb*,const bb*>,10> exitEdges;
+  llvm::SmallVector< std::pair< bb*, bb*>, 10> exitEdges;
   loop->getExitEdges( exitEdges );
   for( auto e : exitEdges ) {
     unsigned succ_num = getSuccessorIndex( e.first, e.second );
