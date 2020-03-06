@@ -5,9 +5,22 @@ Dependencies
 * Install clang-9
 * Install Boost
 
+Install
+-------
+
+$make
 
 
 *TODO
 -----
 
 -- gracefully file is missing
+
+
+*For developer
+-------------
+
+* Changing version of LLVM
+   -- For debug version in the top Makefile
+   -- For release version: modify/CMakeLists.txt
+

@@ -5,12 +5,14 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem.hpp>
+#include <climits>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 // pragam'ed to aviod warnings due to llvm included files
-#include "llvm/IR/TypeBuilder.h"
+#include "llvm/IR/DerivedTypes.h"
+// #include "llvm/IR/TypeBuilder.h"
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/LegacyPassManager.h"
 //clang related code
@@ -614,9 +616,16 @@ std::string getFuncNameForDaikon(llvm::Loop *L) {
   return fName;
 }
 
-llvm::Function *printf_prototype(llvm::Module *mod, llvm::LLVMContext& glbContext) {
-  llvm::FunctionType *printf_type =
-      llvm::TypeBuilder<int(char *, ...), false>::get(glbContext);
+llvm::Function *printf_prototype( llvm::Module *mod,
+                                  llvm::LLVMContext& glbContext ) {
+
+  auto ty_char = llvm::IntegerType::get(glbContext, sizeof(char) * CHAR_BIT);
+  llvm::Type *param_types[] = { llvm::PointerType::getUnqual(ty_char) };
+  auto ret_type = llvm::IntegerType::get(glbContext, sizeof(int) * CHAR_BIT);
+  auto printf_type = llvm::FunctionType::get(ret_type , param_types, true );
+
+  // llvm::FunctionType *printf_type =
+  //     llvm::TypeBuilder<int(char *, ...), false>::get(glbContext);
 
   auto attr_list =  llvm::AttributeList().addAttribute(mod->getContext(), 1U, llvm::Attribute::NoAlias);
   auto a = mod->getOrInsertFunction("printf", printf_type, attr_list );
@@ -626,8 +635,14 @@ llvm::Function *printf_prototype(llvm::Module *mod, llvm::LLVMContext& glbContex
 }
 
 llvm::Function *assume_prototype(llvm::Module *mod, llvm::LLVMContext& glbContext) {
-  llvm::FunctionType *assume_type =
-      llvm::TypeBuilder<void(int), false>::get(glbContext);
+
+  auto ty_int = llvm::IntegerType::get(glbContext, sizeof(int) * CHAR_BIT);
+  llvm::Type *param_types[] = { ty_int };
+  auto ret_type = llvm::Type::getVoidTy(glbContext);
+  auto assume_type = llvm::FunctionType::get(ret_type , param_types, false );
+
+  // llvm::FunctionType *assume_type =
+  //     llvm::TypeBuilder<void(int), false>::get(glbContext);
 
   auto attr_list = llvm::AttributeList().addAttribute(mod->getContext(), 1U, llvm::Attribute::NoAlias);
 
@@ -638,8 +653,14 @@ llvm::Function *assume_prototype(llvm::Module *mod, llvm::LLVMContext& glbContex
 }
 
 llvm::Function *assert_prototype(llvm::Module *mod, llvm::LLVMContext& glbContext) {
-  llvm::FunctionType *assert_type =
-      llvm::TypeBuilder<void(int), false>::get(glbContext);
+
+  auto ty_int = llvm::IntegerType::get(glbContext, sizeof(int) * CHAR_BIT);
+  llvm::Type *param_types[] = { ty_int };
+  auto ret_type = llvm::Type::getVoidTy(glbContext);
+  auto assert_type = llvm::FunctionType::get(ret_type , param_types, false );
+
+  // llvm::FunctionType *assert_type =
+  //     llvm::TypeBuilder<void(int), false>::get(glbContext);
 
   auto attr_list = llvm::AttributeList().addAttribute(mod->getContext(), 1U, llvm::Attribute::NoAlias);
 

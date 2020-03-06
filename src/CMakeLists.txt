@@ -28,6 +28,7 @@ IF(LLVM_DEBUG)
   find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH HINTS "${LLVM_DIR}/lib/cmake/llvm/")
   find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "${CLANG_DIR}/lib/cmake/clang/")
 ELSE(LLVM_DEBUG)
+  # change here to modify the relase version of LLVM
   find_package(LLVM 9 REQUIRED CONFIG)
   find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/llvm-9/lib/cmake/clang")
   message(STATUS "LLVM INCLUDE DIR - ${LLVM_INCLUDE_DIRS}")
@@ -61,10 +62,14 @@ add_definitions(${LLVM_DEFINITIONS})
 include_directories(${LLVM_INCLUDE_DIRS})
 include_directories(${CLANG_INCLUDE_DIRS})
 
-#enabling lld linker
-SET( CMAKE_LINKER "/usr/bin/ld.lld-9.0" )
-add_definitions("-Wl,--threads -Wl,--thread-count,4")
-message(STATUS "Linker In use : ${CMAKE_LINKER}")
+IF(LLVM_DEBUG)
+  # in debug llvm linkers take a lot of time
+  # For enabling specialized linker; 
+  # TODO: may be remove; breaks modularity
+  SET( CMAKE_LINKER "/usr/bin/ld.lld-9.0" )
+  add_definitions("-Wl,--threads -Wl,--thread-count,4")
+ENDIF(LLVM_DEBUG)
+  message(STATUS "Linker In use : ${CMAKE_LINKER}")
 
 
 if(LLVM_VERSION EQUAL "7.0.0svn")
