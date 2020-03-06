@@ -1,8 +1,8 @@
 #ifndef WP_H
 #define WP_H
 
-#include<llvm_utils.h>
-#include<solver.h>
+#include<lib/utils/llvm_utils.h>
+#include<include/solver.h>
 
 
 expr wp( bb_vec_t , expr );
