@@ -78,7 +78,7 @@ else(LLVM_VERSION EQUAL "7.0.0svn")
 endif(LLVM_VERSION EQUAL "7.0.0svn")
 
 # unexplained guard 
-# if( LLVM_DEBUG )
+if( LLVM_DEBUG )
   llvm_map_components_to_libnames(llvm_libs
     aarch64asmparser aarch64codegen
     armasmparser armcodegen
@@ -96,7 +96,7 @@ endif(LLVM_VERSION EQUAL "7.0.0svn")
     lanaicodegen
     objcarcopts
     )
-# endif( LLVM_DEBUG )
+endif( LLVM_DEBUG )
 
 # message(STATUS "LLVM LIBS : ${llvm_libs}")
 

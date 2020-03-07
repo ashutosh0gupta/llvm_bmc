@@ -24,3 +24,5 @@ $make
    -- For debug version in the top Makefile
    -- For release version: modify/CMakeLists.txt
 
+* make VERBOSE=1 to see all the internal commands
+

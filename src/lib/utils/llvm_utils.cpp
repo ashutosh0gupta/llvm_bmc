@@ -321,6 +321,12 @@ bool ExecuteAction( clang::CompilerInstance& CI,
 //Direct translation via API clang
 std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   const std::string filename = o.get_input_file();
+
+  if ( !boost::filesystem::exists( filename ) ) {
+    llvm_bmc_error( "CLANG_PARSGING", "failed to find file " << filename );
+    // std::cout << "Can't find my file!" << std::endl;
+    return nullptr;
+  }
   llvm::LLVMContext& llvm_ctx = o.get_llvm_context();
 
   std::vector<std::string> include_dirs;
@@ -361,11 +367,13 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
                                             Clang.getDiagnostics());
   Clang.setInvocation(CI);
   clang::CodeGenAction *Act = new clang::EmitLLVMOnlyAction(&llvm_ctx);
-
-  if (!ExecuteAction(Clang, *Act, cmts.start_comments))
-  // if (!Clang.ExecuteAction(*Act))
+  try {
+    if (!ExecuteAction(Clang, *Act, cmts.start_comments))
+      // if (!Clang.ExecuteAction(*Act))
+      return nullptr;
+  }catch (...) {
     return nullptr;
-
+  }
   std::unique_ptr<llvm::Module> module = Act->takeModule();
 
   return std::move(module);

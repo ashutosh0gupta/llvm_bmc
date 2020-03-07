@@ -37,6 +37,7 @@ public:
 #define issue_error( ss )  { throw llvm_bmc::llvm_bmc_exception( ss.str() ); }
 #endif
 
+#define I_AM_HERE std::cerr << "I am here" << triggered_at << std::endl;
 
 #define llvm_bmc_error( M, S ) { std::stringstream ss;                   \
     ss << "# llvm_bmc " << M << " Error - " << S                         \
