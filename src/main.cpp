@@ -73,8 +73,14 @@ int main(int argc, char** argv) {
   std::unique_ptr<llvm::Module> module;
   comments cmts;
 
-  module = c2ir( o, cmts);
-
+  if( o.is_input_c() ){
+    module = c2ir( o, cmts);
+  }else if( o.is_input_llvm_asm() ) {
+    module = asm2ir( o, cmts);
+  }
+  if( module == nullptr ) {
+    llvm_bmc_error( "BMC", "failed to parse input successfully!" );
+  }
   if( o.verbosity > 8 ) {
     module->print( llvm::outs(), nullptr );
   }

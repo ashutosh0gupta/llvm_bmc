@@ -15,6 +15,8 @@
 // #include "llvm/IR/TypeBuilder.h"
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/LegacyPassManager.h"
+#include "llvm/AsmParser/Parser.h"
+#include "llvm/Support/SourceMgr.h"
 //clang related code
 #include <clang/CodeGen/CodeGenAction.h>
 #include <clang/Frontend/CompilerInstance.h>
@@ -324,7 +326,6 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
 
   if ( !boost::filesystem::exists( filename ) ) {
     llvm_bmc_error( "CLANG_PARSGING", "failed to find file " << filename );
-    // std::cout << "Can't find my file!" << std::endl;
     return nullptr;
   }
   llvm::LLVMContext& llvm_ctx = o.get_llvm_context();
@@ -381,6 +382,19 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   return nullptr;
 }
 
+
+std::unique_ptr<llvm::Module> asm2ir( options& o, comments& cmts ) {
+  const std::string filename = o.get_input_file();
+
+  if ( !boost::filesystem::exists( filename ) ) {
+    llvm_bmc_error( "ASM_PARSGING", "failed to find file " << filename );
+    return nullptr;
+  }
+
+  auto& llvm_ctx = o.get_llvm_context();
+  llvm::SMDiagnostic err;
+  return llvm::parseAssemblyFile( filename, err, llvm_ctx );
+}
 
 std::unique_ptr<llvm::Module> c2ir( options& o ) {
   comments comments_found;

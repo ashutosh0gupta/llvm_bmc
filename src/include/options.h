@@ -36,6 +36,12 @@ public:
   llvm::LLVMContext& get_llvm_context() { return globalContext; }
   solver_context& get_solver_context() { return solver_ctx; }
 
+  // check for input format
+  // the tool auto detect via looking at the extension of the input file
+  bool is_input_c();
+  bool is_input_llvm_asm();
+  bool is_input_llvm_bc(); //todo: not fully supported yet
+
 public:
   //todo: some of following show become private
   //---------------------------------------

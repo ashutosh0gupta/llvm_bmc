@@ -89,6 +89,25 @@ void options::parse_config(boost::filesystem::path filename) {
   }
 }
 
+bool options::is_input_c() {
+  boost::filesystem::path p(fileName);
+  auto ext = p.extension().string();
+  // std::cerr << ext;
+  if( ext == ".c" || ext == ".C" || ext == ".cpp" ) {
+    return true;
+  }
+  return false;
+}
+
+bool options::is_input_llvm_asm() {
+  boost::filesystem::path p(fileName);
+  auto ext = p.extension().string();
+  if( ext == ".s" ) {
+    return true;
+  }
+  return false;
+}
+
 bool options::parse_cmdline(int argc, char** argv) {
   po::variables_map vm;
   po::options_description config;

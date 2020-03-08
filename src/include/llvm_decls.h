@@ -50,6 +50,7 @@ public:
 };
 
 std::unique_ptr<llvm::Module> c2ir( options&,  comments& );
+std::unique_ptr<llvm::Module> asm2ir( options&,  comments& );
 
 void c2bc( const std::string&, const std::string& );
 
