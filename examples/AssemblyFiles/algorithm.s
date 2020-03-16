@@ -3,7 +3,7 @@ source_filename = "../Test/Examples/algorithm.adb"
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64--linux-gnu"
 
-module asm "\09.ident\09\22GCC: (Ubuntu 8.3.0-6ubuntu1~18.04.1) 8.3.0 LLVM: 6.0.0\22"
+module asm "\09.ident\09\22GCC: (Ubuntu 8.3.0-26ubuntu1~18.04) 8.3.0 LLVM: 6.0.0\22"
 
 @algorithm__matrix22 = unnamed_addr global float undef
 @algorithm__matrix12 = unnamed_addr global float undef

@@ -3,13 +3,11 @@ source_filename = "../Test/Examples/major_cycle.adb"
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64--linux-gnu"
 
-module asm "\09.ident\09\22GCC: (Ubuntu 8.3.0-6ubuntu1~18.04.1) 8.3.0 LLVM: 6.0.0\22"
+module asm "\09.ident\09\22GCC: (Ubuntu 8.3.0-26ubuntu1~18.04) 8.3.0 LLVM: 6.0.0\22"
 
-@major_cycle__timeconst_stage3 = unnamed_addr global float undef
 @major_cycle__duration = unnamed_addr global float undef
 @major_cycle__desiredq = local_unnamed_addr global [5 x float] undef, align 16
 @major_cycle__ttg_prev = unnamed_addr global float undef
-@major_cycle__corrfactor2 = unnamed_addr global float undef
 @major_cycle__ta = unnamed_addr global float undef
 @major_cycle__tempres = local_unnamed_addr global [5 x float] undef, align 16
 @major_cycle__brate = local_unnamed_addr global [5 x float] undef, align 16
@@ -155,21 +153,26 @@ entry:
   store float %31, float* @major_cycle__velocityincrmn, align 4
   %32 = load float, float* @major_cycle__instvelocity, align 4
   store float %32, float* @major_cycle__instvelocityprev, align 4
-  br label %"9"
+  br label %"10"
 
-"9":                                              ; preds = %"8", %"7"
+"9":                                              ; preds = %"7"
+  store float 0.000000e+00, float* @major_cycle__velocityincrmn, align 4
+  store float 0.000000e+00, float* @major_cycle__velocitycoeff, align 4
+  br label %"10"
+
+"10":                                             ; preds = %"9", %"8"
   %33 = load i16, i16* @major_cycle__minorflag_stage2, align 2
   %34 = icmp eq i16 %33, 1
-  br i1 %34, label %"10", label %"11"
+  br i1 %34, label %"11", label %"12"
 
-"10":                                             ; preds = %"9"
+"11":                                             ; preds = %"10"
   call void @major_cycle__constantq([5 x float]* @major_cycle__majorprev_q)
   %35 = load float, float* @major_cycle__ttg, align 4
   %36 = fsub float %35, 5.000000e-01
   store float %36, float* @major_cycle__ttg, align 4
-  br label %"17"
+  br label %"21"
 
-"11":                                             ; preds = %"9"
+"12":                                             ; preds = %"10"
   call void @major_cycle__computation1([5 x float]* @major_cycle__position, [5 x float]* @major_cycle__dircos_stage2)
   %37 = call float @math__dotproduct([5 x float]* @major_cycle__dircos_u, [5 x float]* @major_cycle__velocity)
   store float %37, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 0), align 4
@@ -226,54 +229,82 @@ entry:
   store float %74, float* @major_cycle__angley, align 4
   store float %74, float* @main__angley, align 4
   %75 = load float, float* @major_cycle__ttg, align 4
-  %76 = fcmp olt float %75, 1.350000e+01
-  %77 = load i16, i16* @major_cycle__event4, align 2
+  %76 = fcmp olt float %75, 6.000000e+00
+  %77 = load i16, i16* @major_cycle__velflag, align 2
   %78 = icmp eq i16 %77, 0
   %or.cond3 = and i1 %76, %78
-  br i1 %or.cond3, label %"13", label %"14"
+  br i1 %or.cond3, label %"14", label %"15"
 
-"13":                                             ; preds = %"11"
+"14":                                             ; preds = %"12"
+  %79 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__velocity, i64 0, i64 0), align 4
+  %80 = fmul float %79, %79
+  %81 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__velocity, i64 0, i64 1), align 4
+  %82 = fmul float %81, %81
+  %83 = fadd float %80, %82
+  %84 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__velocity, i64 0, i64 2), align 4
+  %85 = fmul float %84, %84
+  %86 = fadd float %83, %85
+  %87 = call float @library__squareroot(float %86)
+  store float %87, float* @major_cycle__instvelocity, align 4
+  store float 0.000000e+00, float* @major_cycle__velocityincrmj, align 4
+  store float 0.000000e+00, float* @major_cycle__velocityincrmn, align 4
+  %88 = load float, float* @major_cycle__instvelocity, align 4
+  store float %88, float* @major_cycle__velocitycoeff, align 4
+  %89 = load float, float* @major_cycle__instvelocity, align 4
+  store float %89, float* @major_cycle__instvelocityprev, align 4
+  store i16 1, i16* @major_cycle__velflag, align 2
+  br label %"15"
+
+"15":                                             ; preds = %"14", %"12"
+  %90 = load float, float* @major_cycle__ttg, align 4
+  %91 = fcmp olt float %90, 1.350000e+01
+  %92 = load i16, i16* @major_cycle__event4, align 2
+  %93 = icmp eq i16 %92, 0
+  %or.cond5 = and i1 %91, %93
+  br i1 %or.cond5, label %"17", label %"18"
+
+"17":                                             ; preds = %"15"
   store i16 1, i16* @major_cycle__event4, align 2
-  br label %"14"
+  br label %"18"
 
-"14":                                             ; preds = %"13", %"11"
-  %79 = load float, float* @major_cycle__angley, align 4
-  %80 = load float, float* @major_cycle__angler, align 4
-  call void @math__guidecitransform([5 x float]* @major_cycle__dircos_u, [5 x float]* @major_cycle__dircos_v, [5 x float]* @major_cycle__dircos, float %80, float %79, [5 x float]* @major_cycle__tempres)
+"18":                                             ; preds = %"17", %"15"
+  %94 = load float, float* @major_cycle__angley, align 4
+  %95 = load float, float* @major_cycle__angler, align 4
+  call void @math__guidecitransform([5 x float]* @major_cycle__dircos_u, [5 x float]* @major_cycle__dircos_v, [5 x float]* @major_cycle__dircos, float %95, float %94, [5 x float]* @major_cycle__tempres)
   call void @math__genrates([5 x float]* @major_cycle__tempres, [5 x float]* @major_cycle__majorprev_q, [5 x float]* @major_cycle__brate)
-  %81 = load float, float* @major_cycle__ttg, align 4
-  %82 = fcmp olt float %81, 5.000000e+00
-  br i1 %82, label %"15", label %"16"
+  %96 = load float, float* @major_cycle__ttg, align 4
+  %97 = fcmp olt float %96, 5.000000e+00
+  br i1 %97, label %"19", label %"20"
 
-"15":                                             ; preds = %"14"
+"19":                                             ; preds = %"18"
   store i16 1, i16* @major_cycle__minorflag_stage2, align 2
-  br label %"16"
+  br label %"20"
 
-"16":                                             ; preds = %"15", %"14"
+"20":                                             ; preds = %"19", %"18"
   call void @major_cycle__propagateq([5 x float]* @major_cycle__majorprev_q, [5 x float]* @major_cycle__brate)
-  br label %"17"
+  br label %"21"
 
-"17":                                             ; preds = %"16", %"10"
-  %83 = load float, float* @major_cycle__ttg, align 4
-  store float %83, float* @major_cycle__ttg_prev, align 4
-  %84 = load i16, i16* @major_cycle__minorflag_stage2, align 2
-  store i16 %84, i16* @main__minorflag_stage2, align 2
-  %85 = load float, float* @major_cycle__ttg, align 4
-  store float %85, float* @main__ttg, align 4
-  %86 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 0), align 4
-  store float %86, float* @main__guidvel_u, align 4
-  %87 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 1), align 4
-  store float %87, float* @main__guidvel_v, align 4
-  %88 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 2), align 4
-  store float %88, float* @main__guidvel_w, align 4
-  %89 = load float, float* @major_cycle__effectivegravity, align 4
-  store float %89, float* @main__effectivegravity, align 4
-  %90 = load float, float* @major_cycle__stage_time, align 4
-  store float %90, float* @main__stage_time, align 4
+"21":                                             ; preds = %"20", %"11"
+  %98 = load float, float* @major_cycle__ttg, align 4
+  store float %98, float* @major_cycle__ttg_prev, align 4
+  %99 = load i16, i16* @major_cycle__minorflag_stage2, align 2
+  store i16 %99, i16* @main__minorflag_stage2, align 2
+  %100 = load float, float* @major_cycle__ttg, align 4
+  store float %100, float* @main__ttg, align 4
+  %101 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 0), align 4
+  store float %101, float* @main__guidvel_u, align 4
+  %102 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 1), align 4
+  store float %102, float* @main__guidvel_v, align 4
+  %103 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 2), align 4
+  store float %103, float* @main__guidvel_w, align 4
+  %104 = load float, float* @major_cycle__effectivegravity, align 4
+  store float %104, float* @main__effectivegravity, align 4
+  %105 = load float, float* @major_cycle__stage_time, align 4
+  store float %105, float* @main__stage_time, align 4
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* bitcast ([5 x float]* @main__brate to i8*), i8* bitcast ([5 x float]* @major_cycle__brate to i8*), i64 20, i32 4, i1 false)
   br label %return
 
-return:                                           ; preds = %"17", %"4"
+return:                                           ; preds = %"21", %"4"
   ret void
 }
 
@@ -598,49 +629,47 @@ entry:
   %64 = load float, float* @major_cycle__velsqr, align 4
   %65 = fsub float %63, %64
   %66 = fdiv float %65, %62
-  %67 = load float, float* @major_cycle__corrfactor2, align 4
+  %67 = fadd float %66, 1.000000e+00
   %68 = fmul float %66, %67
-  %69 = fadd float %68, 1.000000e+00
-  %70 = fmul float %66, %69
-  store float %70, float* @major_cycle__effectivegravity, align 4
-  %71 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 0), align 4
-  %72 = load float, float* @major_cycle__hv_target, align 4
-  %73 = fmul float %61, %72
-  %74 = load float, float* @major_cycle__tempa, align 4
-  %75 = fdiv float %73, %74
-  %76 = fdiv float %75, 0x40B20DCA40000000
-  %77 = fsub float %71, %76
-  %78 = call float @library__exponent(float %77)
-  store float %78, float* @major_cycle__tempp, align 4
-  %79 = load float, float* @major_cycle__stage_time, align 4
-  %80 = fsub float 8.200000e+02, %79
-  store float %80, float* @major_cycle__tempt, align 4
-  %81 = load float, float* @major_cycle__tempp, align 4
-  %82 = fsub float 1.000000e+00, %81
-  %83 = fmul float %82, %80
-  store float %83, float* @major_cycle__ttg, align 4
+  store float %68, float* @major_cycle__effectivegravity, align 4
+  %69 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 0), align 4
+  %70 = load float, float* @major_cycle__hv_target, align 4
+  %71 = fmul float %61, %70
+  %72 = load float, float* @major_cycle__tempa, align 4
+  %73 = fdiv float %71, %72
+  %74 = fdiv float %73, 0x40B20DCA40000000
+  %75 = fsub float %69, %74
+  %76 = call float @library__exponent(float %75)
+  store float %76, float* @major_cycle__tempp, align 4
+  %77 = load float, float* @major_cycle__stage_time, align 4
+  %78 = fsub float 8.200000e+02, %77
+  store float %78, float* @major_cycle__tempt, align 4
+  %79 = load float, float* @major_cycle__tempp, align 4
+  %80 = fsub float 1.000000e+00, %79
+  %81 = fmul float %80, %78
+  store float %81, float* @major_cycle__ttg, align 4
+  %82 = load float, float* @major_cycle__stage_time, align 4
+  %83 = fadd float %81, %82
+  store float %83, float* @major_cycle__total_time_stage3, align 4
   %84 = load float, float* @major_cycle__stage_time, align 4
-  %85 = fadd float %83, %84
-  store float %85, float* @major_cycle__total_time_stage3, align 4
-  %86 = load float, float* @major_cycle__stage_time, align 4
-  %87 = load float, float* @major_cycle__tempa, align 4
-  %88 = load float, float* @major_cycle__effectivegravity, align 4
-  %89 = call float @algorithm__compangler([5 x float]* @major_cycle__guidvel, float %88, float %87, float %85, float %86)
-  store float %89, float* @major_cycle__angler, align 4
-  store float %89, float* @main__angler, align 4
-  %90 = load float, float* @major_cycle__stage_time, align 4
-  %91 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 1), align 4
-  %92 = load float, float* @major_cycle__distvelaxis, align 4
-  %93 = call float @algorithm__compangley(float %92, float %91, float %90)
-  store float %93, float* @major_cycle__angley, align 4
-  store float %93, float* @main__angley, align 4
-  %94 = load float, float* @major_cycle__angley, align 4
-  %95 = load float, float* @major_cycle__angler, align 4
-  call void @math__guidecitransform([5 x float]* @major_cycle__dircos_u, [5 x float]* @major_cycle__dircos_v, [5 x float]* @major_cycle__dircos, float %95, float %94, [5 x float]* @major_cycle__tempres)
+  %85 = load float, float* @major_cycle__tempa, align 4
+  %86 = load float, float* @major_cycle__effectivegravity, align 4
+  %87 = call float @algorithm__compangler([5 x float]* @major_cycle__guidvel, float %86, float %85, float %83, float %84)
+  store float %87, float* @major_cycle__angler, align 4
+  store float %87, float* @main__angler, align 4
+  %88 = load float, float* @major_cycle__stage_time, align 4
+  %89 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 1), align 4
+  %90 = load float, float* @major_cycle__distvelaxis, align 4
+  %91 = call float @algorithm__compangley(float %90, float %89, float %88)
+  store float %91, float* @major_cycle__angley, align 4
+  store float %91, float* @main__angley, align 4
+  %92 = load float, float* @major_cycle__angley, align 4
+  %93 = load float, float* @major_cycle__angler, align 4
+  call void @math__guidecitransform([5 x float]* @major_cycle__dircos_u, [5 x float]* @major_cycle__dircos_v, [5 x float]* @major_cycle__dircos, float %93, float %92, [5 x float]* @major_cycle__tempres)
   call void @math__genrates([5 x float]* @major_cycle__tempres, [5 x float]* @major_cycle__majorprev_q, [5 x float]* @major_cycle__brate)
-  %96 = load float, float* @major_cycle__ttg, align 4
-  %97 = fcmp olt float %96, 5.000000e+00
-  br i1 %97, label %"17", label %"18"
+  %94 = load float, float* @major_cycle__ttg, align 4
+  %95 = fcmp olt float %94, 5.000000e+00
+  br i1 %95, label %"17", label %"18"
 
 "17":                                             ; preds = %"16"
   store i16 1, i16* @major_cycle__minorflag_stage3, align 2
@@ -651,22 +680,22 @@ entry:
   br label %"19"
 
 "19":                                             ; preds = %"18", %"8"
+  %96 = load float, float* @major_cycle__ttg, align 4
+  store float %96, float* @major_cycle__ttg_prev, align 4
+  %97 = load i16, i16* @major_cycle__minorflag_stage3, align 2
+  store i16 %97, i16* @main__minorflag_stage3, align 2
   %98 = load float, float* @major_cycle__ttg, align 4
-  store float %98, float* @major_cycle__ttg_prev, align 4
-  %99 = load i16, i16* @major_cycle__minorflag_stage3, align 2
-  store i16 %99, i16* @main__minorflag_stage3, align 2
-  %100 = load float, float* @major_cycle__ttg, align 4
-  store float %100, float* @main__ttg, align 4
-  %101 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 0), align 4
-  store float %101, float* @main__guidvel_u, align 4
-  %102 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 1), align 4
-  store float %102, float* @main__guidvel_v, align 4
-  %103 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 2), align 4
-  store float %103, float* @main__guidvel_w, align 4
-  %104 = load float, float* @major_cycle__effectivegravity, align 4
-  store float %104, float* @main__effectivegravity, align 4
-  %105 = load float, float* @major_cycle__stage_time, align 4
-  store float %105, float* @main__stage_time, align 4
+  store float %98, float* @main__ttg, align 4
+  %99 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 0), align 4
+  store float %99, float* @main__guidvel_u, align 4
+  %100 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 1), align 4
+  store float %100, float* @main__guidvel_v, align 4
+  %101 = load float, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__guidvel, i64 0, i64 2), align 4
+  store float %101, float* @main__guidvel_w, align 4
+  %102 = load float, float* @major_cycle__effectivegravity, align 4
+  store float %102, float* @main__effectivegravity, align 4
+  %103 = load float, float* @major_cycle__stage_time, align 4
+  store float %103, float* @main__stage_time, align 4
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* bitcast ([5 x float]* @main__brate to i8*), i8* bitcast ([5 x float]* @major_cycle__brate to i8*), i64 20, i32 4, i1 false)
   br label %return
 
@@ -681,8 +710,7 @@ entry:
   store float 0.000000e+00, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__brate, i64 0, i64 1), align 4
   store float 0.000000e+00, float* getelementptr inbounds ([5 x float], [5 x float]* @major_cycle__brate, i64 0, i64 2), align 4
   store float 0x40B0C9C7A0000000, float* @algorithm__exhaustvel, align 4
-  %0 = load float, float* @major_cycle__timeconst_stage3, align 4
-  store float %0, float* @algorithm__timeconst, align 4
+  store float 0x408A21D700000000, float* @algorithm__timeconst, align 4
   store float 0x40838851E0000000, float* @major_cycle__ttg_prev, align 4
   store float 0x4083B18520000000, float* @major_cycle__total_time_stage3, align 4
   call void @llvm.memcpy.p0i8.p0i8.i64(i8* bitcast ([5 x float]* @major_cycle__majorprev_q to i8*), i8* bitcast ([5 x float]* @main__qc to i8*), i64 20, i32 4, i1 false)
