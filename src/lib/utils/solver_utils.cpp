@@ -432,6 +432,26 @@ expr get_fresh_int( solver_context& c, std::string suff )
   return loc_expr;
 }
 
+
+expr get_fresh_float( solver_context& c, std::string suff )
+{
+  static unsigned count = 0;
+  count++;
+  std::string loc_name = "f_" + std::to_string(count) + "_" + suff;
+  expr loc_expr = c.fpa_const(loc_name.c_str(),8,24);
+  return loc_expr;
+}
+
+
+expr get_fresh_double( solver_context& c, std::string suff )
+{
+  static unsigned count = 0;
+  count++;
+  std::string loc_name = "d_" + std::to_string(count) + "_" + suff;
+  expr loc_expr = c.fpa_const(loc_name.c_str(),11,53);
+  return loc_expr;
+}
+
 expr get_fresh_bv( solver_context& c, unsigned size, std::string suff )
 {
   static unsigned count = 0;

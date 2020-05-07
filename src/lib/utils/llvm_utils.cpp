@@ -1439,6 +1439,7 @@ std::string getLocRange(const llvm::BasicBlock* b ) {
 
 sort llvm_to_sort( solver_context& c, llvm::Type* t ) {
   if( t->isIntegerTy() ) {
+    if( t->isIntegerTy( 16 ) ) return c.int_sort();
     if( t->isIntegerTy( 32 ) ) return c.int_sort();
     if( t->isIntegerTy( 64 ) ) return c.int_sort();
     if( t->isIntegerTy( 8 ) ) return c.bool_sort();
@@ -1448,6 +1449,9 @@ sort llvm_to_sort( solver_context& c, llvm::Type* t ) {
     sort z_te = llvm_to_sort(c, te);
     return c.array_sort( c.int_sort(), z_te );
   }
+  if( t->isFloatTy() ) return c.fpa_sort<32>();
+  if( t->isDoubleTy() ) return c.fpa_sort<64>();
+  
   llvm_bmc_error("llvm_utils", "only int and bool sorts are supported");
   // return c.bv_sort(32); // needs to be added
   // return c.bv_sort(16);
@@ -1461,6 +1465,7 @@ sort llvm_to_sort( solver_context& c, llvm::Type* t ) {
 
 sort llvm_to_bv_sort( solver_context& c, llvm::Type* t ) {
   if( t->isIntegerTy() ) {
+    if( t->isIntegerTy( 16 ) ) return c.bv_sort(16);
     if( t->isIntegerTy( 32 ) ) return c.bv_sort(32);
     if( t->isIntegerTy( 64 ) ) return c.bv_sort(64);
     if( t->isIntegerTy( 8 ) ) return c.bv_sort(8);
@@ -1475,8 +1480,11 @@ sort llvm_to_bv_sort( solver_context& c, llvm::Type* t ) {
     llvm::Type* te = t->getArrayElementType();
     sort z_te = llvm_to_bv_sort(c, te);
     return c.array_sort( c.bv_sort(DEFAULT_INDEX_SORT), z_te );
-  }else if( t->isFloatingPointTy() ) {
-    llvm_bmc_error("llvm_utils", "float sorts are not supported");
+  }else if( t->isFloatTy() ) {
+    return c.fpa_sort<32>();
+  }else if( t->isDoubleTy() ) {
+    return c.fpa_sort<64>();
+    //llvm_bmc_error("llvm_utils", "float sorts are not supported");
   }else if( t->isLabelTy() ) {
     llvm_bmc_error("llvm_utils", "label sorts are not supported");
   }else if( t->isMetadataTy() ) {
@@ -1531,6 +1539,12 @@ expr read_const( options& o, const llvm::Value* op ) {
       if(bw == 32 || bw == 64 ) { return get_fresh_int(ctx);
       }else if(      bw == 1  ) { return get_fresh_bool(ctx);
       }
+    }
+     else if (ty->isFloatTy() ) {
+       return get_fresh_float(ctx);
+    }
+      else if (ty->isDoubleTy() ) {
+       return get_fresh_double(ctx);
     }
     llvm_bmc_error("llvm_utils", "unsupported type: "<< ty << "!!");
   }else if( llvm::isa<llvm::Constant>(op) ) {

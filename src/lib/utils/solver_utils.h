@@ -81,6 +81,8 @@ expr get_fresh_bool( solver_context&, std::string = "");
 expr get_fresh_int( solver_context&, std::string = "");
 expr get_fresh_bv( solver_context&, unsigned, std::string = "");
 expr get_fresh_const( solver_context&, sort , std::string = "");
+expr get_fresh_float( solver_context&, std::string = "");
+expr get_fresh_double( solver_context&, std::string = "");
 
 expr _or( std::vector<expr>&, solver_context& );
 expr _or( std::vector<expr> &);
