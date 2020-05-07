@@ -390,8 +390,9 @@ void bmc_pass::translateCastInst( unsigned bidx,
         llvm_bmc_error("bmc", "sign extn instruction of unsupported size");
       }
     }
-  }else if( auto bitCast = llvm::dyn_cast<llvm::BitCastInst>(cast) ) {
-      
+  // }else if( auto bitCast = llvm::dyn_cast<llvm::BitCastInst>(cast) ) {
+  }else if( llvm::isa<llvm::BitCastInst>(cast) ) {
+    llvm_bmc_error("bmc", "cast instruction is not recognized !!");
   }else{
     BMC_UNSUPPORTED_INSTRUCTIONS( FPTruncInst,       cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( FPExtInst,         cast);
@@ -463,7 +464,8 @@ void bmc_pass::translateLoadInst( unsigned bidx,
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
     bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
-  } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
+  // } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
+  } else if( llvm::isa<const llvm::AllocaInst>(addr) ) {
     // To handle a[0] when a is dynamic sized array
     expr idx_expr = get_expr_const(solver_ctx,0);
     loadFromArrayHelper(bidx, load, idx_expr);
@@ -525,11 +527,13 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
     bmc_ds_ptr->bmc_vec.push_back( glb_wrt.first );
     bmc_ds_ptr->m.insert_term_map( store, bidx, glb_wrt.second );
-  } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
+  } else if(llvm::isa<const llvm::AllocaInst>(addr)) {
+  // } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
     // To handle a[0] when a is dynamic sized array
     expr idx_expr = get_expr_const(solver_ctx,0);
     storeToArrayHelper(bidx, store, val, idx_expr);
-  } else if( auto cons = llvm::dyn_cast<llvm::Constant>(addr) ) {
+  } else if( llvm::isa<llvm::Constant>(addr) ) {
+  // } else if( auto cons = llvm::dyn_cast<llvm::Constant>(addr) ) {
     llvm_bmc_error("bmc", "constant access to the memory!");
   }else {
     LLVM_DUMP( store );

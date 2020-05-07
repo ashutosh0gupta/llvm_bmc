@@ -1343,8 +1343,8 @@ std::string demangle( std::string mangled_name ) {
   if(mangled_name == mainStr) return mainStr;
   int status;
   char * res = abi::__cxa_demangle( mangled_name.c_str(), NULL, NULL, &status );
-  assert(status == 0);
-  if(res == NULL) return std::string();
+  //assert(status == 0);
+  if(res == NULL) return mangled_name; //todo: handle .s naming convention
   std::string demangled_name(res);
   free(res);
   std::size_t ind = demangled_name.find('(');

@@ -4,6 +4,7 @@ Dependencies
 * Install llvm-9
 * Install clang-9
 * Install Boost
+* depends on -lz
 
 Install
 -------
