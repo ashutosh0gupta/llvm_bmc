@@ -32,7 +32,11 @@ bmc_pass::~bmc_pass() {
 void bmc_pass::translateParams(llvm::Function &f) {
   //  for (auto& f_arg : f.getArgumentList()) {
   for( auto ab = f.arg_begin(), ae = f.arg_end(); ab != ae; ab++) {
-    bmc_ds_ptr->m.get_term( &(*ab) );
+    auto a = &(*ab);
+    auto ty = a->getType();
+    if( !ty->isPointerTy() ) { // input pointers are viewed as arrays
+      bmc_ds_ptr->m.get_term( a );
+    }
   }
 }
 
