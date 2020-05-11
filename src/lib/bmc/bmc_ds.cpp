@@ -312,46 +312,79 @@ expr bmc_ds::join_state( std::vector<expr>& cs,
 //----------------------------------------------------------------------------
 // manage array model
 
+const llvm::Value*
+identify_array( const llvm::Value* op_ptr) {
+  if(auto gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_ptr)) {
+    auto op_gep_ptr = gep->getPointerOperand();
+    if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
+      op_gep_ptr = cast;
+    }
+    if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_gep_ptr)) {
+      return addr;
+    }
+  }else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(op_ptr) ) {
+    // To handle a[0] when a is dynamic sized array
+    if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_ptr)) {
+      // actual allocation in the code
+      return addr;
+    }
+    if( auto addr = llvm::dyn_cast<const llvm::Argument>(op_ptr) ) {
+      // passed as an argument
+      return addr;
+    }
+  }else{
+    // llvm_bmc_error("bmc", "non array global write/read not supported!");
+  }
+  return NULL;
+}
+
 void bmc_ds::init_array_model( array_model_t ar_model_local,
                                array_state& s ) {
   unsigned bidx = 0;
   for( const bb* bb : bb_vec ) {
     if( bb == NULL ) continue;
-    if( bidx++ < processed_bidx ) continue; 
+    if( bidx++ < processed_bidx ) continue;
     for( auto it = bb->begin(), e = bb->end(); it != e; ++it) {
       auto I = &(*it);
       if( auto load = llvm::dyn_cast<const llvm::LoadInst>(I) ) {
-        auto op_ptr = load->getPointerOperand();
-        if(auto gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_ptr)) {
-          auto op_gep_ptr = gep->getPointerOperand();
-          if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_gep_ptr)) {
-            ary_access_to_index[load] = ary_to_int.at(addr);
-          }
-        }else if (auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(op_ptr)) {
-          // To handle a[0] when a is dynamic sized array
-          if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_ptr)) {
-            ary_access_to_index[load] = ary_to_int.at(addr);
-          }
-        }else{
-          // llvm_bmc_error("bmc", "non array global write/read not supported!");
-        }
+        auto ary  = identify_array( load->getPointerOperand() );
+        if( ary ) ary_access_to_index[load] = ary_to_int.at( ary );
+      }else if( auto store = llvm::dyn_cast<const llvm::StoreInst>(I) ) {
+        auto ary  = identify_array( store->getPointerOperand() );
+        if( ary ) ary_access_to_index[store] = ary_to_int.at( ary );
       }
-      if(auto store = llvm::dyn_cast<const llvm::StoreInst>(I)) {
-        auto op_ptr = store->getPointerOperand();
-        if(auto gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_ptr)) {
-          auto op_gep_ptr = gep->getPointerOperand();
-          if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_gep_ptr)) {
-            ary_access_to_index[store] = ary_to_int.at(addr);
-          }
-        }else if (auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(op_ptr)) {
-          // To handle a[0] when a is dynamic sized array
-          if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_ptr)) {
-            ary_access_to_index[store] = ary_to_int.at(addr);
-          }
-        }else{
-          // llvm_bmc_error("bmc", "non array global write/read not supported!");
-        }
-      }
+      // if( auto load = llvm::dyn_cast<const llvm::LoadInst>(I) ) {
+      //   auto op_ptr = load->getPointerOperand();
+      //   if(auto gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_ptr)) {
+      //     auto op_gep_ptr = gep->getPointerOperand();
+      //     if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_gep_ptr)) {
+      //       ary_access_to_index[load] = ary_to_int.at(addr);
+      //     }
+      //   }else if (auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(op_ptr)) {
+      //     // To handle a[0] when a is dynamic sized array
+      //     if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_ptr)) {
+      //       ary_access_to_index[load] = ary_to_int.at(addr);
+      //     }
+      //   }else{
+      //     // llvm_bmc_error("bmc", "non array global write/read not supported!");
+      //   }
+      // }
+      // if(auto store = llvm::dyn_cast<const llvm::StoreInst>(I)) {
+      //   auto op_ptr = store->getPointerOperand();
+      //   if(auto gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_ptr)) {
+      //     auto op_gep_ptr = gep->getPointerOperand();
+      //     if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_gep_ptr)) {
+      //       ary_access_to_index[store] = ary_to_int.at(addr);
+      //     }
+      //   }else if (auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(op_ptr)) {
+      //     // To handle a[0] when a is dynamic sized array
+      //     if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_ptr)) {
+      //       ary_access_to_index[store] = ary_to_int.at(addr);
+      //     }
+      //   }else{
+      //     // llvm_bmc_error("bmc", "non array global write/read not supported!");
+      //   }
+      // }
     }
   }
   unsigned array_num = ary_to_int.size();

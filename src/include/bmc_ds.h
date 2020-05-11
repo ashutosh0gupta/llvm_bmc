@@ -39,7 +39,7 @@ public:
   value_expr_map m;
 
   bmc_ds( options& o_, //solver_context& solver_ctx_,
-          std::map<const llvm::Instruction*, unsigned>& aim,
+          std::map<const llvm::Value*, unsigned>& aim,
           std::vector<expr>& alv,
           memory_model& m_model_ )
     : o(o_)
@@ -69,7 +69,7 @@ public:
   // array_model_partition ar_model_part;
 
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
-  std::map< const llvm::Instruction*, unsigned >& ary_to_int;
+  std::map< const llvm::Value*, unsigned >& ary_to_int;
   std::vector<expr>& array_lengths;
 
   arr_write_expr array_write( unsigned, const llvm::StoreInst*, expr&, expr& );
@@ -186,7 +186,7 @@ class bmc_fun : public bmc_ds {
 
 public:
   bmc_fun( options& o,
-           std::map<const llvm::Instruction*, unsigned>& aim,
+           std::map<const llvm::Value*, unsigned>& aim,
            std::vector<expr>& alv,
            memory_model& m_model)
     : bmc_ds( o, aim, alv, m_model) {}
@@ -205,7 +205,7 @@ class bmc_loop : public bmc_ds {
   loopdata* ld = 0;
 public:
   bmc_loop( options& o,
-            std::map<const llvm::Instruction*, unsigned>& aim,
+            std::map<const llvm::Value*, unsigned>& aim,
             std::vector<expr>& alv,
             memory_model& m_model,
             loopdata* ld_ )

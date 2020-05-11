@@ -728,7 +728,7 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
       translateSwitchInst(bidx, swch);
     } else if( auto unreach = llvm::dyn_cast<llvm::UnreachableInst>(I) ) {
       translateUnreachableInst(bidx, unreach);
-    // } else if( auto terminate = llvm::dyn_cast<llvm::TerminatorInst>(I) ) {
+    // } else if( auto terminate = llvm::dyn_cast<llvm::TerminatorInst>(I)) {
     //   translateTerminatorInst( bidx, terminate );
     } else {
       //Unsupported terminator instructions
@@ -903,6 +903,14 @@ void bmc_pass::populateArrAccMap(llvm::Function* f) {
       } else {} // no errors needed!!
     }
   }
+  for( auto ab = f->arg_begin(), ae = f->arg_end(); ab != ae; ab++) {
+    auto a = &(*ab);
+    auto ty = a->getType();
+    if( ty->isPointerTy() ) {
+      ary_to_int[a] = arrCntr++;
+    }
+  }
+
 }
 
 
