@@ -317,7 +317,7 @@ identify_array( const llvm::Value* op_ptr) {
   if(auto gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_ptr)) {
     auto op_gep_ptr = gep->getPointerOperand();
     if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
-      op_gep_ptr = cast;
+      op_gep_ptr = cast->getOperand(0);
     }
     if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_gep_ptr)) {
       return addr;
