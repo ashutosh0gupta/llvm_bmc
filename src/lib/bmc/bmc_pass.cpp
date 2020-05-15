@@ -59,9 +59,10 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   case llvm::Instruction::UDiv: bmc_ds_ptr->m.insert_term_map( bop, bidx, a/b     ); break;
   case llvm::Instruction::SRem: bmc_ds_ptr->m.insert_term_map( bop, bidx, rem(a,b)); break;
   case llvm::Instruction::URem: bmc_ds_ptr->m.insert_term_map( bop, bidx, rem(a,b)); break;
-  case llvm::Instruction::FAdd:
-  case llvm::Instruction::FSub:
-  case llvm::Instruction::FDiv:
+  case llvm::Instruction::FAdd: bmc_ds_ptr->m.insert_term_map( bop, bidx, a+b     ); break;
+  case llvm::Instruction::FSub: bmc_ds_ptr->m.insert_term_map( bop, bidx, a-b     ); break;
+  case llvm::Instruction::FMul: bmc_ds_ptr->m.insert_term_map( bop, bidx, a*b     ); break;
+  case llvm::Instruction::FDiv: bmc_ds_ptr->m.insert_term_map( bop, bidx, a/b     ); break;
   case llvm::Instruction::FRem:
   default: {
     const char* opName = bop->getOpcodeName();

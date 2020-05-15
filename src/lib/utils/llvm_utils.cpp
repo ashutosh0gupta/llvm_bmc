@@ -1262,6 +1262,12 @@ int readInt( const llvm::ConstantInt* c ) {
   return *v;
 }
 
+double readFlt( const llvm::ConstantFP* c ) {
+  const llvm::APFloat& n = c->getValueAPF();
+  const double v = n.convertToDouble();
+  return v;
+}
+
 // Remove a loop
 bool deleteLoop(llvm::Loop *L, llvm::DominatorTree &DT, llvm::ScalarEvolution &SE,
                 llvm::LoopInfo &LI) {
@@ -1449,8 +1455,10 @@ sort llvm_to_sort( solver_context& c, llvm::Type* t ) {
     sort z_te = llvm_to_sort(c, te);
     return c.array_sort( c.int_sort(), z_te );
   }
-  if( t->isFloatTy() ) return c.fpa_sort<32>();
-  if( t->isDoubleTy() ) return c.fpa_sort<64>();
+  if( t->isFloatingPointTy() ) {
+     if( t->isFloatTy() ) return c.fpa_sort<32>();
+     if( t->isDoubleTy() ) return c.fpa_sort<64>();
+  }
   
   llvm_bmc_error("llvm_utils", "only int and bool sorts are supported");
   // return c.bv_sort(32); // needs to be added
@@ -1480,10 +1488,9 @@ sort llvm_to_bv_sort( solver_context& c, llvm::Type* t ) {
     llvm::Type* te = t->getArrayElementType();
     sort z_te = llvm_to_bv_sort(c, te);
     return c.array_sort( c.bv_sort(DEFAULT_INDEX_SORT), z_te );
-  }else if( t->isFloatTy() ) {
-    return c.fpa_sort<32>();
-  }else if( t->isDoubleTy() ) {
-    return c.fpa_sort<64>();
+  }else if( t->isFloatingPointTy() ) {
+     if( t->isFloatTy() ) return c.fpa_sort<32>();
+     if( t->isDoubleTy() ) return c.fpa_sort<64>();
     //llvm_bmc_error("llvm_utils", "float sorts are not supported");
   }else if( t->isLabelTy() ) {
     llvm_bmc_error("llvm_utils", "label sorts are not supported");
@@ -1540,23 +1547,25 @@ expr read_const( options& o, const llvm::Value* op ) {
       }else if(      bw == 1  ) { return get_fresh_bool(ctx);
       }
     }
-     else if (ty->isFloatTy() ) {
-       return get_fresh_float(ctx);
-    }
-      else if (ty->isDoubleTy() ) {
-       return get_fresh_double(ctx);
-    }
+     else if (ty->isFloatingPointTy() ) {
+       if (ty->isFloatTy() ) {return get_fresh_float(ctx);
+       } else if (ty->isDoubleTy() ) {return get_fresh_double(ctx);
+       }
+     }
     llvm_bmc_error("llvm_utils", "unsupported type: "<< ty << "!!");
+  }//else if( llvm::isa<llvm::ConstantFP>(op) ) {
+   //const llvm::APFloat& n = c->getValueAPF();
+    if( const llvm::ConstantFP* c = llvm::dyn_cast<llvm::ConstantFP>(op) ) {
+     double i = readFlt( c );
+     return ctx.fpa_val(i);
+    // double v = n.convertToDouble();
+    //return ctx.real_val(v);
+    //llvm_bmc_error("llvm_utils", "Floating point constant not implemented!!" );
   }else if( llvm::isa<llvm::Constant>(op) ) {
     llvm_bmc_error("llvm_utils", "non int constants are not implemented!!" );
     std::cerr << "un recognized constant!";
     //     // int i = readInt(c);
     //     // return eHandler->mkIntVal( i );
-  }else if( llvm::isa<llvm::ConstantFP>(op) ) {
-    // const llvm::APFloat& n = c->getValueAPF();
-    // double v = n.convertToDouble();
-    //return ctx.real_val(v);
-    llvm_bmc_error("llvm_utils", "Floating point constant not implemented!!" );
   }else if( llvm::isa<llvm::ConstantExpr>(op) ) {
     llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
   }else if( llvm::isa<llvm::ConstantArray>(op) ) {
