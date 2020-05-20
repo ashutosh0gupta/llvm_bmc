@@ -397,7 +397,8 @@ void bmc_pass::translateCastInst( unsigned bidx,
     }
   // }else if( auto bitCast = llvm::dyn_cast<llvm::BitCastInst>(cast) ) {
   }else if( llvm::isa<llvm::BitCastInst>(cast) ) {
-    llvm_bmc_error("bmc", "cast instruction is not recognized !!");
+    llvm_bmc_warning("bmc", "Ignoring a bit bast! Be careful");
+    // llvm_bmc_error("bmc", "cast instruction is not recognized !!");
   }else{
     BMC_UNSUPPORTED_INSTRUCTIONS( FPTruncInst,       cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( FPExtInst,         cast);

@@ -1532,8 +1532,10 @@ expr read_const( options& o, const llvm::Value* op ) {
           return ctx.bool_val(true);
         else
           return ctx.bool_val(false);
-      }else
+      }else{
+        // c->dump();
         llvm_bmc_error("llvm_utils", "unrecognized constant!" );
+      }
     }
   }else if( llvm::isa<llvm::ConstantPointerNull>(op) ) {
     llvm_bmc_error("llvm_utils", "Constant pointer are not implemented!!" );
