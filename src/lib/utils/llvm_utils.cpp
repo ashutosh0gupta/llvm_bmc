@@ -1262,7 +1262,14 @@ int readInt( const llvm::ConstantInt* c ) {
   return *v;
 }
 
-double readFlt( const llvm::ConstantFP* c ) {
+float readFlt( const llvm::ConstantFP* c ) {
+  const llvm::APFloat& n = c->getValueAPF();
+  const float v = n.convertToFloat();
+  return v;
+}
+
+
+double readDbl( const llvm::ConstantFP* c ) {
   const llvm::APFloat& n = c->getValueAPF();
   const double v = n.convertToDouble();
   return v;
@@ -1558,8 +1565,12 @@ expr read_const( options& o, const llvm::Value* op ) {
   }//else if( llvm::isa<llvm::ConstantFP>(op) ) {
    //const llvm::APFloat& n = c->getValueAPF();
     if( const llvm::ConstantFP* c = llvm::dyn_cast<llvm::ConstantFP>(op) ) {
-     double i = readFlt( c );
-     return ctx.fpa_val(i);
+     llvm::Type* ty = op->getType();
+     if (ty->isFloatTy() ) {float i = readFlt( c );
+                            return ctx.fpa_val(i);
+     } else  if (ty->isDoubleTy() ) {double i = readDbl( c );
+                                     return ctx.fpa_val(i);
+     }
     // double v = n.convertToDouble();
     //return ctx.real_val(v);
     //llvm_bmc_error("llvm_utils", "Floating point constant not implemented!!" );

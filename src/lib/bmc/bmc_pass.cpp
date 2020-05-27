@@ -455,7 +455,7 @@ void bmc_pass::loadFromArrayHelper( unsigned bidx,
 void bmc_pass::translateLoadInst( unsigned bidx,
                                   const llvm::LoadInst* load ) {
   assert( load );
-
+  load->print( llvm::outs() );
   auto addr = load->getOperand(0);
   if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
     // TODO : Add more general support to parse gep instruction when supporting 
