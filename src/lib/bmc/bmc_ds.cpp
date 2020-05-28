@@ -322,6 +322,9 @@ identify_array( const llvm::Value* op_ptr) {
     if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_gep_ptr)) {
       return addr;
     }
+    if(auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
+      return addr;
+    }
   }else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(op_ptr) ) {
     // To handle a[0] when a is dynamic sized array
     if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_ptr)) {
