@@ -150,7 +150,8 @@ void find_cutpoints(llvm::Pass* P, llvm::Function &f, std::vector< llvm::BasicBl
 //                      std::vector< llvm::BasicBlock* >& cutPoints,
 //                      std::vector< segment >& segVec);
 int readInt( const llvm::ConstantInt* );
-double readFlt( const llvm::ConstantFP* );
+float readFlt( const llvm::ConstantFP* );
+double readDbl( const llvm::ConstantFP* );
 void buildBlockMap(llvm::BasicBlock*, std::map<std::string, llvm::Value*>&);
 bool deleteLoop(llvm::Loop *, llvm::DominatorTree &, llvm::ScalarEvolution &, llvm::LoopInfo &);
 
