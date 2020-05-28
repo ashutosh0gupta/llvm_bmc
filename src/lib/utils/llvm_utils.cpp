@@ -1271,9 +1271,8 @@ float readFlt( const llvm::ConstantFP* c ) {
 
 double readDbl( const llvm::ConstantFP* c ) {
   const llvm::APFloat& n = c->getValueAPF();
-  //const double v = n.convertToDouble();
-  const float v = n.convertToFloat();
-  return (double)v;
+  const double v = n.convertToDouble();
+  return v;
 }
 
 // Remove a loop
