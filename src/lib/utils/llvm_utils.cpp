@@ -1264,8 +1264,9 @@ int readInt( const llvm::ConstantInt* c ) {
 
 double readFlt( const llvm::ConstantFP* c ) {
   const llvm::APFloat& n = c->getValueAPF();
-  const double v = n.convertToDouble();
-  return v;
+  //const double v = n.convertToDouble();
+  const float v = n.convertToFloat();
+  return (double)v;
 }
 
 // Remove a loop
