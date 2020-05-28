@@ -36,6 +36,8 @@ void bmc_pass::translateParams(llvm::Function &f) {
     auto ty = a->getType();
     if( !ty->isPointerTy() ) { // input pointers are viewed as arrays
       bmc_ds_ptr->m.get_term( a );
+    }else{
+      //todo: compute length of the array
     }
   }
 }
@@ -436,7 +438,8 @@ void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
     array_lengths.push_back(const_expr);
   }
   else {
-
+    //todo : why this else is not implemented?
+    // what is the default return value
   }
 }
 
