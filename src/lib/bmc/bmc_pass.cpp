@@ -34,10 +34,22 @@ void bmc_pass::translateParams(llvm::Function &f) {
   for( auto ab = f.arg_begin(), ae = f.arg_end(); ab != ae; ab++) {
     auto a = &(*ab);
     auto ty = a->getType();
+
     if( !ty->isPointerTy() ) { // input pointers are viewed as arrays
       bmc_ds_ptr->m.get_term( a );
     }else{
       //todo: compute length of the array
+
+    std::string type_str;
+    llvm::raw_string_ostream rso(type_str);
+    ty->print(rso);
+    std::cout<<"Type is " << rso.str() << "\n";
+    
+    auto T = llvm::dyn_cast<llvm::PointerType>(ty)->getElementType();
+    int siz = llvm::dyn_cast<llvm::ArrayType>(T)->getArrayNumElements();
+    std::cout << "Size is " << siz << "\n";
+    expr const_expr = get_expr_const(solver_ctx,siz);
+    array_lengths.push_back(const_expr);
     }
   }
 }
@@ -459,6 +471,7 @@ void bmc_pass::translateLoadInst( unsigned bidx,
                                   const llvm::LoadInst* load ) {
   assert( load );
   load->print( llvm::outs() );
+  std::cout << "\n";
   auto addr = load->getOperand(0);
   if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
     // TODO : Add more general support to parse gep instruction when supporting 
