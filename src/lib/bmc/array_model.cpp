@@ -118,12 +118,13 @@ array_model_full::array_read( unsigned bidx, const llvm::LoadInst* I,
   auto& vec = ar_st.get_name_vec();
   expr ar_name = vec.at(i);
   expr lower_bound_arr(idx >= 0);
-  expr upper_bound_arr(idx <= (get_lengths_vec().at(i) - 1));
+  int idx_num = solver_ctx.int_val(idx);  //To convert idx from bv to int
+  expr upper_bound_arr(idx_num <= (get_lengths_vec().at(i) - 1));
   std::vector<expr> temp_vec;
   temp_vec.push_back(lower_bound_arr);
   temp_vec.push_back(upper_bound_arr);
   expr bound_guard = _and(temp_vec);
-  return arr_read_expr( select( ar_name, idx), bound_guard );
+  return arr_read_expr( select( ar_name, idx_num), bound_guard );
 }
 
 void array_model_full::
