@@ -47,8 +47,8 @@ void bmc_pass::translateParams(llvm::Function &f) {
     
     auto T = llvm::dyn_cast<llvm::PointerType>(ty)->getElementType();
     int siz = llvm::dyn_cast<llvm::ArrayType>(T)->getArrayNumElements();
-    std::cout << "Size is " << siz << "\n";
-    expr const_expr = get_expr_const(solver_ctx,siz);
+    auto siz_bv = solver_ctx.bv_val(siz, 64);
+    expr const_expr = get_expr_const(solver_ctx, siz_bv);
     array_lengths.push_back(const_expr);
     }
   }
