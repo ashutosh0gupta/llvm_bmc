@@ -194,6 +194,10 @@ std::vector<unsigned>& bmc_ds::get_prev_idxs( unsigned bidx) {
 // }
 
 
+// Populate data structure
+//    pred_idxs
+// The data structure records the lists of previous blocks
+//
 void bmc_ds::setup_prevs_non_repeating() {
   unsigned bidx = 0;
   for( const bb* src : bb_vec ) {
@@ -314,6 +318,9 @@ expr bmc_ds::join_state( std::vector<expr>& cs,
 
 const llvm::Value*
 identify_array( const llvm::Value* op_ptr) {
+  if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_ptr) ) {
+    op_ptr = cast->getOperand(0);
+  }
   if(auto gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_ptr)) {
     auto op_gep_ptr = gep->getPointerOperand();
     if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
@@ -331,11 +338,11 @@ identify_array( const llvm::Value* op_ptr) {
       // actual allocation in the code
       return addr;
     }
-    if( auto addr = llvm::dyn_cast<const llvm::Argument>(op_ptr) ) {
-      // passed as an argument
-      return addr;
-    }
-  }else{
+  }else if( auto addr = llvm::dyn_cast<const llvm::Argument>(op_ptr) ) {
+    // passed as an argument
+    return addr;
+  } else{
+    // op_ptr->print( llvm::outs() );
     // llvm_bmc_error("bmc", "non array global write/read not supported!");
   }
   return NULL;

@@ -118,6 +118,7 @@ array_model_full::array_read( unsigned bidx, const llvm::LoadInst* I,
   auto& vec = ar_st.get_name_vec();
   expr ar_name = vec.at(i);
   expr lower_bound_arr(idx >= 0);
+  //tddo: a trick to avoid bv/arith issue;; may need a fix in future
   int idx_num = solver_ctx.int_val(idx);  //To convert idx from bv to int
   expr upper_bound_arr(idx_num <= (get_lengths_vec().at(i) - 1));
   std::vector<expr> temp_vec;
