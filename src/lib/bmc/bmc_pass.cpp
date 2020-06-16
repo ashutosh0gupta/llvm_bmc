@@ -491,14 +491,14 @@ void bmc_pass::translateLoadInst( unsigned bidx,
     // To handle a[0] when a is dynamic sized array
     expr idx_expr = get_expr_const(solver_ctx,0);
     loadFromArrayHelper(bidx, load, idx_expr);
-  } else if (llvm::isa<const llvm::BitCastInst>(addr) ) {
+  } else if (auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
     // To handle the case of a pointer with a bitcast instruction as parameter
-        auto a = &(*addr);
-        auto ty = a->getType();
-        if( ty->isPointerTy() ) {
-        expr idx_expr = get_expr_const(solver_ctx,0);
-    	loadFromArrayHelper(bidx, load, idx_expr);
-      }  
+    auto a = bcast->getOperand(0);
+    auto ty = a->getType();
+    if( ty->isPointerTy() ) {
+      expr idx_expr = get_expr_const(solver_ctx,0);
+      loadFromArrayHelper(bidx, load, idx_expr);
+    }  
   } else {
     LLVM_DUMP( load );
     llvm_bmc_error("bmc", "Only array and global write/read supported!");
