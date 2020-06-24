@@ -527,10 +527,13 @@ void buildNameMap( llvm::Function& f,
         }
       }
       if( !found ) {
+        // b.dump();
+        // phi->dump();
         // If this function fails, investigate to find the (correct) name
-        llvm_bmc_error("build name map::","name of a phi node not found!!");
+        llvm_bmc_warning("build name map::","name of a phi node not found!!");
+      }else{
+        localNameMap[phi] = name;
       }
-      localNameMap[phi] = name;
     }
   }
 }
