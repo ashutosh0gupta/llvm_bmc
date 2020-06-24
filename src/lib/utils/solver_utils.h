@@ -78,6 +78,7 @@ bool is_false( expr );
 bool is_true( expr );
 expr get_expr_const( solver_context&, int num);
 expr get_fresh_bool( solver_context&, std::string = "");
+expr get_fresh_real( solver_context&, std::string = "");
 expr get_fresh_int( solver_context&, std::string = "");
 expr get_fresh_bv( solver_context&, unsigned, std::string = "");
 expr get_fresh_const( solver_context&, sort , std::string = "");

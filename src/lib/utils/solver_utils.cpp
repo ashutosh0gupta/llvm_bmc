@@ -432,6 +432,15 @@ expr get_fresh_int( solver_context& c, std::string suff )
   return loc_expr;
 }
 
+expr get_fresh_real( solver_context& c, std::string suff )
+{
+  static unsigned count = 0;
+  count++;
+  std::string loc_name = "r_" + std::to_string(count) + "_" + suff;
+  expr loc_expr = c.real_const(loc_name.c_str());
+  return loc_expr;
+}
+
 
 expr get_fresh_float( solver_context& c, std::string suff )
 {

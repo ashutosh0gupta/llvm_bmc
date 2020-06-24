@@ -1552,16 +1552,24 @@ expr read_const( options& o, const llvm::Value* op ) {
     llvm::Type* ty = op->getType();
     if( auto i_ty = llvm::dyn_cast<llvm::IntegerType>(ty) ) {
       int bw = i_ty->getBitWidth();
-      if(bw == 32 || bw == 64 ) { return get_fresh_int(ctx);
-      }else if(      bw == 1  ) { return get_fresh_bool(ctx);
-      }else if(bw == 16) { return get_fresh_bv(ctx,16);
+      if( o.bit_precise ) {
+        // todo: add support for signed an unsigned
+        return get_fresh_bv(ctx,bw);
+      }else{
+        if( bw == 32 || bw == 64 || bw == 16 ) { return get_fresh_int(ctx);
+        }else if( bw == 1  ) { return get_fresh_bool(ctx);
+        }
+      }
+    }else if (ty->isFloatingPointTy() ) {
+      if( o.bit_precise ) {
+        // todo: add support for signed an unsigned
+        if (ty->isFloatTy() ) {return get_fresh_float(ctx);
+        } else if (ty->isDoubleTy() ) {return get_fresh_double(ctx);
+        }
+      }else{
+        return get_fresh_real(ctx);
       }
     }
-     else if (ty->isFloatingPointTy() ) {
-       if (ty->isFloatTy() ) {return get_fresh_float(ctx);
-       } else if (ty->isDoubleTy() ) {return get_fresh_double(ctx);
-       }
-     }
     llvm_bmc_error("llvm_utils", "unsupported type: "<< ty << "!!");
   }//else if( llvm::isa<llvm::ConstantFP>(op) ) {
    //const llvm::APFloat& n = c->getValueAPF();
