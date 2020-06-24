@@ -1554,6 +1554,7 @@ expr read_const( options& o, const llvm::Value* op ) {
       int bw = i_ty->getBitWidth();
       if(bw == 32 || bw == 64 ) { return get_fresh_int(ctx);
       }else if(      bw == 1  ) { return get_fresh_bool(ctx);
+      }else if(bw == 16) { return get_fresh_bv(ctx,16);
       }
     }
      else if (ty->isFloatingPointTy() ) {
