@@ -40,10 +40,10 @@ void bmc_pass::translateParams(llvm::Function &f) {
     }else{
       //todo: compute length of the array
 
-    std::string type_str;
-    llvm::raw_string_ostream rso(type_str);
-    ty->print(rso);
-    std::cout<<"Type is " << rso.str() << "\n";
+    //std::string type_str;
+    //llvm::raw_string_ostream rso(type_str);
+    //ty->print(rso);
+    //std::cout<<"Type is " << rso.str() << "\n";
     
     auto T = llvm::dyn_cast<llvm::PointerType>(ty)->getElementType();
     int siz = llvm::dyn_cast<llvm::ArrayType>(T)->getArrayNumElements();
@@ -118,6 +118,19 @@ void bmc_pass::translateCmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
   case llvm::CmpInst::ICMP_SGE : cnd = (l>=r); break;
   case llvm::CmpInst::ICMP_SLT : cnd = (l< r); break;
   case llvm::CmpInst::ICMP_SLE : cnd = (l<=r); break;
+  //Added FP compare instructions
+  case llvm::CmpInst::FCMP_OEQ  : cnd = (l==r); break;
+  case llvm::CmpInst::FCMP_ONE  : cnd = (l!=r); break;
+  case llvm::CmpInst::FCMP_OGT  : cnd = (l> r); break;
+  case llvm::CmpInst::FCMP_OGE  : cnd = (l>=r); break;
+  case llvm::CmpInst::FCMP_OLT  : cnd = (l< r); break;
+  case llvm::CmpInst::FCMP_OLE  : cnd = (l<=r); break;
+  case llvm::CmpInst::FCMP_UEQ  : cnd = (l==r); break;
+  case llvm::CmpInst::FCMP_UNE  : cnd = (l!=r); break;
+  case llvm::CmpInst::FCMP_UGT  : cnd = (l> r); break;
+  case llvm::CmpInst::FCMP_UGE  : cnd = (l>=r); break;
+  case llvm::CmpInst::FCMP_ULT  : cnd = (l< r); break;
+  case llvm::CmpInst::FCMP_ULE  : cnd = (l<=r); break;
   default: {
     llvm_bmc_error("bmc", "unsupported predicate in compare " << pred << "!!");
   }
@@ -315,7 +328,6 @@ void bmc_pass::translateCallInst( unsigned bidx,
   assert(call);
 
   llvm::Function* fp = call->getCalledFunction();
-
   if( auto dbg_val = llvm::dyn_cast<llvm::IntrinsicInst>(call) ) {
     translateIntrinsicInst( bidx, dbg_val );
   } else if( fp != NULL && fp->getName().startswith("__VERIFIER") ) {
@@ -470,8 +482,8 @@ void bmc_pass::loadFromArrayHelper( unsigned bidx,
 void bmc_pass::translateLoadInst( unsigned bidx,
                                   const llvm::LoadInst* load ) {
   assert( load );
-  load->print( llvm::outs() );
-  std::cout << "\n";
+  //load->print( llvm::outs() );
+  //std::cout << "\n";
   auto addr = load->getOperand(0);
   if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
     // TODO : Add more general support to parse gep instruction when supporting 
