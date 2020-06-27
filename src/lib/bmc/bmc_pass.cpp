@@ -176,6 +176,19 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
   }
 }
 
+
+void bmc_pass::translateSelectInst( unsigned bidx,
+                                    const llvm::SelectInst *sel ) {
+  assert( sel );
+
+  auto cond = sel->getCondition();
+  expr trueVal = bmc_ds_ptr->m.get_term(sel->getTrueValue());
+  expr FalseVal = bmc_ds_ptr->m.get_term(sel->getFalseValue());
+  if (cond) bmc_ds_ptr->m.insert_term_map( sel, bidx, trueVal );
+  else bmc_ds_ptr->m.insert_term_map( sel, bidx, FalseVal );
+}
+
+
 void bmc_pass::assume_to_bmc(unsigned bidx, const llvm::CallInst* call) {
   assert(call);
   expr assume_path_bit = bmc_ds_ptr->get_path_bit(bidx);
@@ -768,6 +781,8 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
       translateRetInst( ret );
     } else if( auto swch = llvm::dyn_cast<llvm::SwitchInst>(I) ) {
       translateSwitchInst(bidx, swch);
+    } else if( auto sel = llvm::dyn_cast<llvm::SelectInst>(I) ) {
+      translateSelectInst(bidx, sel);
     } else if( auto unreach = llvm::dyn_cast<llvm::UnreachableInst>(I) ) {
       translateUnreachableInst(bidx, unreach);
     // } else if( auto terminate = llvm::dyn_cast<llvm::TerminatorInst>(I)) {
@@ -788,7 +803,7 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
       BMC_UNSUPPORTED_INSTRUCTIONS( FenceInst,          I);
       BMC_UNSUPPORTED_INSTRUCTIONS( AtomicCmpXchgInst,  I);
       BMC_UNSUPPORTED_INSTRUCTIONS( AtomicRMWInst,      I);
-      BMC_UNSUPPORTED_INSTRUCTIONS( SelectInst,         I);
+      //BMC_UNSUPPORTED_INSTRUCTIONS( SelectInst,         I);
       BMC_UNSUPPORTED_INSTRUCTIONS( ExtractElementInst, I);
       BMC_UNSUPPORTED_INSTRUCTIONS( InsertElementInst,  I);
       BMC_UNSUPPORTED_INSTRUCTIONS( ShuffleVectorInst,  I);

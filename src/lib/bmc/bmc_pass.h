@@ -41,6 +41,7 @@ private:
   void translateBinOp( unsigned, const llvm::BinaryOperator*);
   void translateCmpInst( unsigned, const llvm::CmpInst*);
   void translatePhiNode(  unsigned, const llvm::PHINode* );
+  void translateSelectInst( unsigned, const llvm::SelectInst* );
   void translateBranch( unsigned, const llvm::BranchInst* );
   void translateCallInst( unsigned, const llvm::CallInst* );
   void translateIntrinsicInst( unsigned, const llvm::IntrinsicInst* );
