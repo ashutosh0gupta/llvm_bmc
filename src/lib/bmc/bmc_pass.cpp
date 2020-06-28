@@ -144,7 +144,7 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
   unsigned num = phi->getNumIncomingValues();
 
   if( !phi->getType()->isIntegerTy() && !phi->getType()->isFloatTy() ) {
-    phi->getParent()->dump();
+    // phi->getParent()->dump();
     llvm_bmc_error("bmc", "phi nodes with non integers not supported !!");
   }
 
