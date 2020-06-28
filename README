@@ -27,3 +27,6 @@ $make
 
 * make VERBOSE=1 to see all the internal commands
 
+* linking multiple .s files in a single .s file
+
+llvm-link -S -o target.s source1.s source2.s .... 

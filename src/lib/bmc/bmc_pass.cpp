@@ -181,11 +181,11 @@ void bmc_pass::translateSelectInst( unsigned bidx,
                                     const llvm::SelectInst *sel ) {
   assert( sel );
 
-  auto cond = sel->getCondition();
+  expr cond = bmc_ds_ptr->m.get_term( sel->getCondition() );
   expr trueVal = bmc_ds_ptr->m.get_term(sel->getTrueValue());
   expr FalseVal = bmc_ds_ptr->m.get_term(sel->getFalseValue());
-  if (cond) bmc_ds_ptr->m.insert_term_map( sel, bidx, trueVal );
-  else bmc_ds_ptr->m.insert_term_map( sel, bidx, FalseVal );
+  expr result = ite(cond, trueVal, FalseVal );
+  bmc_ds_ptr->m.insert_term_map( sel, bidx, result );
 }
 
 
