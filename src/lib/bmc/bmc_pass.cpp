@@ -142,38 +142,46 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
   assert( phi );
 
   unsigned num = phi->getNumIncomingValues();
-  if( phi->getType()->isIntegerTy() ) {
-    expr new_var = o.loop_aggr ? bmc_ds_ptr->m.get_term( phi ) :
-      bmc_ds_ptr->m.insert_new_def( phi );
-    if( std::find(bmc_ds_ptr->quant_elim_val.begin(), bmc_ds_ptr->quant_elim_val.end(), phi) != bmc_ds_ptr->quant_elim_val.end() ) {
+
+  if( !phi->getType()->isIntegerTy() && !phi->getType()->isFloatTy() ) {
+    phi->getParent()->dump();
+    llvm_bmc_error("bmc", "phi nodes with non integers not supported !!");
+  }
+
+  expr new_var = o.loop_aggr ? bmc_ds_ptr->m.get_term( phi ) :
+    bmc_ds_ptr->m.insert_new_def( phi );
+
+  if( std::find(bmc_ds_ptr->quant_elim_val.begin(), bmc_ds_ptr->quant_elim_val.end(), phi) != bmc_ds_ptr->quant_elim_val.end() ) {
       bmc_ds_ptr->quant_elim_vars.push_back(new_var);
     }
 
-    std::vector<expr> phi_cons;
-    for( unsigned i = 0 ; i < num ; i++ ) {
-      const bb* prev = phi->getIncomingBlock(i);
-      const llvm::Value* v_ = phi->getIncomingValue(i);
+  // auto& qe_vals =bmc_ds_ptr->quant_elim_val;
+  // if( std::find(qe_vals.begin(), qe_vals.end(), phi) != qe_vals.end() ) {
+  //   bmc_ds_ptr->quant_elim_vars.push_back(new_var);
+  // }
 
-      // condition to skip??
-      std::vector<unsigned> pre_bidxes;
-      for( unsigned pre_b_local: bmc_ds_ptr->pred_idxs[bidx]) {
-        if( prev == bmc_ds_ptr->bb_vec[pre_b_local] ) {
-          pre_bidxes.push_back( pre_b_local );
-        }
-      }
-      //todo: check if this works
-      for( unsigned pre_bidx : pre_bidxes) {
-        expr prev_var = bmc_ds_ptr->m.get_earlier_term( v_, pre_bidx );
-        // expr prev_var = bmc_ds_ptr->m.get_term( v_ );
-        expr path_cond = extend_path( bidx, pre_bidx );
-        phi_cons.push_back( implies(path_cond, new_var == prev_var) );
+  std::vector<expr> phi_cons;
+  for( unsigned i = 0 ; i < num ; i++ ) {
+    const bb* prev = phi->getIncomingBlock(i);
+    const llvm::Value* v_ = phi->getIncomingValue(i);
+
+    // condition to skip??
+    std::vector<unsigned> pre_bidxes;
+    for( unsigned pre_b_local: bmc_ds_ptr->pred_idxs[bidx]) {
+      if( prev == bmc_ds_ptr->bb_vec[pre_b_local] ) {
+        pre_bidxes.push_back( pre_b_local );
       }
     }
-
-    bmc_ds_ptr->bmc_vec.push_back( _and(phi_cons, solver_ctx) );
-  }else{
-    llvm_bmc_error("bmc", "phi nodes with non integers not supported !!");
+    //todo: check if this works
+    for( unsigned pre_bidx : pre_bidxes) {
+      expr prev_var = bmc_ds_ptr->m.get_earlier_term( v_, pre_bidx );
+      // expr prev_var = bmc_ds_ptr->m.get_term( v_ );
+      expr path_cond = extend_path( bidx, pre_bidx );
+      phi_cons.push_back( implies(path_cond, new_var == prev_var) );
+    }
   }
+
+  bmc_ds_ptr->bmc_vec.push_back( _and(phi_cons, solver_ctx) );
 }
 
 
