@@ -2,8 +2,12 @@
 #include "lib/utils/llvm_utils.h"
 #include "lib/utils/solver_utils.h"
 
+void state_obj::print() {
+  std::cout << e << ":" << t.type <<"\n";
+}
+
 expr memory_model::get_fresh_name( sort ty, std::string name_str ) {
-	// TODO : Restrict access
+  // TODO : Restrict access
   if( ty.is_array() ) {
     llvm_bmc_error( "bmc", "bad sort is passed!!" );
   }
@@ -19,7 +23,7 @@ memory_model::write( unsigned bidx, const llvm::StoreInst* I,
   if(auto g_var = llvm::dyn_cast<llvm::GlobalVariable>(I->getPointerOperand())) {
     auto i = ind_in_mem_state[g_var];
     expr new_expr = get_fresh_name(mem_st.mem_state_vec[i].t.type,g_var->getName().str());
-    
+
     datatype ty(mem_st.mem_state_vec[i].t.type);
     state_obj tem_state_obj(new_expr,ty);
     mem_st.mem_state_vec[i] = tem_state_obj;
@@ -84,5 +88,25 @@ void memory_model::update_name( unsigned eb, std::vector<const llvm::GlobalVaria
   for( auto I : glbs_updated) {
     auto i = ind_in_mem_state[&*I];
     mem_st.mem_state_vec[i].e = get_fresh_name(mem_st.mem_state_vec[i].t.type,"mem");
+  }
+}
+
+
+void memory_model::print() {
+  std::cout << "Heap states:\n";
+  std::cout << "Global to index map:\n";
+  for( auto glb_idx_pair : ind_in_mem_state ) {
+    auto g = glb_idx_pair.first;
+    auto idx = glb_idx_pair.second;
+    g->print( llvm::outs() );
+    std::cout << "~~>" << idx << "\n";
+  }
+  for( auto idx_men_st_pair : store_state_map ) {
+    auto idx = idx_men_st_pair.first;
+    std::vector<state_obj>& mem_st = idx_men_st_pair.second.mem_state_vec;
+    std::cout << "==== Block number "<< idx << "\n";
+    for( auto m_obj : mem_st ) {
+      m_obj.print();
+    }
   }
 }
