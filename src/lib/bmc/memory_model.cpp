@@ -18,8 +18,9 @@ expr memory_model::get_fresh_name( sort ty, std::string name_str ) {
 std::pair<expr,expr>
 memory_model::write( unsigned bidx, const llvm::StoreInst* I,
                       expr& val ) {
-	// TODO : Add setters and getters
+  // TODO : Add setters and getters
   memory_state& mem_st = store_state_map[bidx];
+  // print();
   if(auto g_var = llvm::dyn_cast<llvm::GlobalVariable>(I->getPointerOperand())) {
     auto i = ind_in_mem_state[g_var];
     expr new_expr = get_fresh_name(mem_st.mem_state_vec[i].t.type,g_var->getName().str());
@@ -46,14 +47,14 @@ expr memory_model::read( unsigned bidx, const llvm::LoadInst* I ) {
 }
 
 expr memory_model::join_state( std::vector<expr>& conds,
-                                    std::vector<unsigned>& prevs,
-                                    unsigned src
-                                    ) {
+                               std::vector<unsigned>& prevs,
+                               unsigned src
+                               ) {
   assert( conds.size() > 0  &&  prevs.size() == conds.size() );
   auto& s_names = store_state_map[src].mem_state_vec;
   // unsigned glb_size = exit_glb_map[prevs[0]].get_glb_name_vec().size();
   std::vector<expr> vec;
-  for( unsigned j=0; j < store_state_map[src].mem_state_vec.size() ; j++ ) {
+  for( unsigned j=0; j < ind_in_mem_state.size(); j++ ) {
     //check if all equal
     auto& o_name = store_state_map[prevs[0]].mem_state_vec[j].e;
     bool is_all_equal = true;
@@ -64,19 +65,23 @@ expr memory_model::join_state( std::vector<expr>& conds,
         break;
       }
     }
+    // read solver type
+    auto solver_typ = store_state_map[prevs[0]].mem_state_vec[j].t.type;
+    // create a datatype object
+    datatype tempDataType( solver_typ );
     if( is_all_equal ) {
       // if all symbols are euqal; no need to join.
-      datatype tempDataType(store_state_map[prevs[0]].mem_state_vec[j].t.type);
-      state_obj tempStateObj(o_name,tempDataType); 
-      s_names.push_back(tempStateObj);
+      // state_obj tempStateObj( o_name, tempDataType );
+      // s_names.push_back(tempStateObj);
+      s_names.push_back(store_state_map[prevs[0]].mem_state_vec[j]);
     }else{
-      expr new_name = get_fresh_name(store_state_map[src].mem_state_vec[j].t.type,"mem");
+      expr new_name = get_fresh_name( solver_typ,"mem");
       for( unsigned i=0; i < conds.size(); i++ ) {
         auto& p_st = store_state_map[prevs[i]].mem_state_vec;
         vec.push_back( implies( conds[i], new_name == p_st[j].e ) );
       }
-      datatype tempDataType(store_state_map[src].mem_state_vec[j].t.type);
-      state_obj tempStateObj(new_name,tempDataType); 
+      // datatype tempDataType(store_state_map[src].mem_state_vec[j].t.type);
+      state_obj tempStateObj( new_name, tempDataType );
       s_names.push_back(tempStateObj);
     }
   }
