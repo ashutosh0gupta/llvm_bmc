@@ -54,18 +54,20 @@ void build_name_map::buildRevNameMap( llvm::Function &f ) {
         if( exists( loop_ignore_edges, b ) ) {
           if( exists( loop_ignore_edges.at( b ), prev) ) continue;
         }
-        for( auto& pair: revEndLocalNameMap.at(prev) ) {
-          std::string name = pair.first;
-          const llvm::Value* v = pair.second;
-          if( conflicted_names.find( name ) != conflicted_names.end() )
-            continue;
-          if( start_map.find( name ) != start_map.end() ) {
-            if( v != start_map.at(name) ) {
-              conflicted_names.insert( name );
-              start_map.erase(name); // not needed really
+        if( revEndLocalNameMap.find(prev) != revEndLocalNameMap.end() ) {
+          for( auto& pair: revEndLocalNameMap.at(prev) ) {
+            std::string name = pair.first;
+            const llvm::Value* v = pair.second;
+            if( conflicted_names.find( name ) != conflicted_names.end() )
+              continue;
+            if( start_map.find( name ) != start_map.end() ) {
+              if( v != start_map.at(name) ) {
+                conflicted_names.insert( name );
+                start_map.erase(name); // not needed really
+              }
+            }else{
+              start_map[name] = v;
             }
-          }else{
-            start_map[name] = v;
           }
         }
       }
