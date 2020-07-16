@@ -83,6 +83,14 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
     llvm_bmc_error("bmc", "unsupported instruction \"" << opName << "\" occurred!!");
   }
   }
+  if( o.include_overflow_specs ) {
+    expr v = bmc_ds_ptr->m.get_term(bop);
+    // need to say that the integer was less than 1;
+    // expr lb = ?;
+    // expr ub = ?;
+    // expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+    // bmc_ds_ptr->add_spec( !path_bit || v <= lb v >= ub, spec_reason_t::OUT_OF_BOUND );
+  }
 }
 
 void bmc_pass::translateCmpInst( unsigned bidx, const llvm::CmpInst* cmp) {

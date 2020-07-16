@@ -397,7 +397,7 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
       // }
     }
   }
-  unsigned array_num = ary_to_int.size();
+  unsigned array_num = ary_to_int.size();//todo : collect types of the arrays
   std::map< const llvm::Instruction*, unsigned >& map = ary_access_to_index;
   if(ar_model_local == FULL) {
     // full model using store and select

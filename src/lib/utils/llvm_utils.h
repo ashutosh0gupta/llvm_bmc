@@ -29,7 +29,7 @@ typedef std::vector<const inst*> inst_vec_t;
 
 
 #ifndef NDEBUG
-#define LLVM_DUMP( ObjPtr ) { if(ObjPtr) ObjPtr->dump(); \
+#define LLVM_DUMP( ObjPtr ) { if(ObjPtr) ObjPtr->print(llvm::outs());   \
                               llvm_bmc_warning("", "^^^^^^^^^^^^^^^^^^^^^^^"); }
 #else
 #define LLVM_DUMP( ObjPtr ) {}

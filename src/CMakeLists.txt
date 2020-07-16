@@ -11,14 +11,17 @@ project(${LLVMBMC})
 # FLEX_TARGET(MyScanner inv2smt/inv2smt.l  ${CMAKE_CURRENT_BINARY_DIR}/inv2smt.l.cpp)
 # ADD_FLEX_BISON_DEPENDENCY(MyScanner MyParser)
 
-SET (LLVM_DEBUG FALSE CACHE BOOL "Use Locally compiled and debug enabled LLVM")
+# SET (LLVM_DEBUG FALSE CACHE BOOL "Use Locally compiled and debug enabled LLVM")
 SET (Z3_DEBUG FALSE CACHE BOOL "Link debug verion of Z3")
 
 IF(CMAKE_BUILD_TYPE MATCHES Debug)
-    message("debug mode")
-    SET (LLVM_DEBUG TRUE)
-    SET (Z3_DEBUG TRUE)
+  message("debug mode")
+  IF(NOT DEFINED LLVM_DEBUG)
+    SET( LLVM_DEBUG TRUE )
+  ENDIF(NOT DEFINED LLVM_DEBUG)
+  SET (Z3_DEBUG TRUE)
 ENDIF(CMAKE_BUILD_TYPE MATCHES Debug)
+
 
 message(STATUS "DEBUG : LLVM - ${LLVM_DEBUG}")
 

@@ -21,6 +21,12 @@ debug :  $(BUILDDIR)/buildd/Makefile
 	rm -rf $(LLVMBMC)
 	ln -s $(BUILDDIR)/buildd/$(LLVMBMC) $(LLVMBMC)
 
+# no debug for llvm
+semidebug :  $(BUILDDIR)/builds/Makefile
+	+make -C $(BUILDDIR)/builds
+	rm -rf $(LLVMBMC)
+	ln -s $(BUILDDIR)/builds/$(LLVMBMC) $(LLVMBMC)
+
 llvm-svn: export LLVM_VERSION = svn
 llvm-svn: $(BUILDDIR)/buildl/Makefile
 	echo "$(LLVM_VERSION)"
@@ -31,6 +37,10 @@ llvm-svn: $(BUILDDIR)/buildl/Makefile
 $(BUILDDIR)/buildr/Makefile: $(BUILDDIR)/z3/buildr/libz3.so
 	mkdir -p $(BUILDDIR)/buildr
 	cd $(BUILDDIR)/buildr; cmake -DCMAKE_BUILD_TYPE=Release -DLLVMBMC=$(LLVMBMC) $(SRCDIR)
+
+$(BUILDDIR)/builds/Makefile: $(BUILDDIR)/z3/buildd/libz3.so
+	mkdir -p $(BUILDDIR)/builds
+	cd $(BUILDDIR)/builds; cmake -DCMAKE_BUILD_TYPE=Debug -DINSTALLED=$(HOME_INSTALLED) -DLLVM_DEBUG=FALSE -DLLVM_VERSION=$(LLVM_VERSION) -DLLVMBMC=$(LLVMBMC) $(SRCDIR)
 
 $(BUILDDIR)/buildd/Makefile: $(BUILDDIR)/z3/buildd/libz3.so $(HOME_INSTALLED)/llvm-$(LLVM_VERSION)/lib/libLLVMCore.a
 	mkdir -p $(BUILDDIR)/buildd
@@ -44,6 +54,7 @@ clean :
 	rm -rf $(BUILDDIR)/buildr
 	rm -rf $(BUILDDIR)/buildd
 	rm -rf $(BUILDDIR)/buildl
+	rm -rf $(BUILDDIR)/builds
 	rm -f llvmbmc
 	find -name "*~"| xargs rm -rf
 
