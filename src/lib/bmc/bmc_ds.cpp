@@ -397,19 +397,23 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
       // }
     }
   }
-  unsigned array_num = ary_to_int.size();//todo : collect types of the arrays
+  std::vector<const llvm::Type*> ar_types;
+  for( auto& ar_int_pair : ary_to_int ) {
+    auto ar = ar_int_pair.first;
+    ar_types.push_back( ar->getType() );
+  }
   std::map< const llvm::Instruction*, unsigned >& map = ary_access_to_index;
   if(ar_model_local == FULL) {
     // full model using store and select
-    init_full_array_model( array_num, map, array_lengths );
+    init_full_array_model( ar_types, map, array_lengths );
     ar_model_full.init_state( 0, s );
     // ar_model_full.init_state( eb );
   } else if ( ar_model_local == FIXED_LEN) { //
     // array has fixed number of 'symbolic' cells
-    init_fixed_len_array_model(array_num, map);
+    init_fixed_len_array_model(ar_types, map);
   } else if ( ar_model_local == PARTITION) {
     // vaphor like model
-    init_partition_array_model(array_num);
+    init_partition_array_model(ar_types);
   } else {
     llvm_bmc_error("bmc", "array model initialization");
   }
@@ -419,28 +423,28 @@ void bmc_ds::init_array_model( array_model_t ar_model_local ) {
   array_state s;
   init_array_model( ar_model_local, s );
 }
-void bmc_ds::init_full_array_model( unsigned array_num,
+void bmc_ds::init_full_array_model(  std::vector<const llvm::Type*>& ar_types,
                                  std::map< const llvm::Instruction*, unsigned >& map,
                                  std::vector< expr >& array_lengths ) {
   if( ar_model_init != NONE )
        llvm_bmc_error( "bmc", "array model is already initialized" );
   ar_model_init = FULL;
-  ar_model_full.set_array_num( array_num );
+  ar_model_full.set_array_num( ar_types.size() );
   ar_model_full.set_access_map( map );
   ar_model_full.set_lengths_vec( &array_lengths );
 }
 
-void bmc_ds::init_fixed_len_array_model(unsigned part_num,
+void bmc_ds::init_fixed_len_array_model( std::vector<const llvm::Type*>& ar_types,
                                      std::map< const llvm::Instruction*, unsigned >& map) {
   if( ar_model_init != NONE )
       llvm_bmc_error( "bmc", "array model is already initialized" );
   ar_model_init = FIXED_LEN;
-  ar_model_fixed.set_partition_len( part_num );
+  ar_model_fixed.set_partition_len( ar_types.size() );
   ar_model_fixed.set_access_map( map );
 }
 
 
-void bmc_ds::init_partition_array_model(unsigned part_num) {
+void bmc_ds::init_partition_array_model( std::vector<const llvm::Type*>& ar_types) {
   if( ar_model_init != NONE )
       llvm_bmc_error( "bmc", "array model is already initialized" );
   ar_model_init = PARTITION;

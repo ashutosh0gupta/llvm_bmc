@@ -87,11 +87,11 @@ public:
   // two array models can not be initialized at the sametime;
   // once a model is initialized, call to the other initializations will throw
   // error.
-  void init_partition_array_model(unsigned part_num);
-  void init_full_array_model( unsigned,
+  void init_partition_array_model(std::vector<const llvm::Type*>&);
+  void init_full_array_model( std::vector<const llvm::Type*>&,
                               std::map<const llvm::Instruction*,unsigned>&,
                               std::vector<expr>& );
-  void init_fixed_len_array_model( unsigned,
+  void init_fixed_len_array_model( std::vector<const llvm::Type*>&,
                                    std::map<const llvm::Instruction*,unsigned>&);
   void init_array_model( array_model_t );
   void init_array_model( array_model_t ar_model_local, array_state& );
