@@ -429,7 +429,7 @@ void bmc_ds::init_full_array_model(  std::vector<const llvm::Type*>& ar_types,
   if( ar_model_init != NONE )
        llvm_bmc_error( "bmc", "array model is already initialized" );
   ar_model_init = FULL;
-  ar_model_full.set_array_num( ar_types.size() );
+  ar_model_full.set_array_num( ar_types);//( ar_types.size() );
   ar_model_full.set_access_map( map );
   ar_model_full.set_lengths_vec( &array_lengths );
 }

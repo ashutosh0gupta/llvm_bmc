@@ -168,7 +168,8 @@ public:
     model = FULL;
   }
 
-  void set_array_num( unsigned len );
+  //void set_array_num( unsigned len );
+  void set_array_num(std::vector<const llvm::Type*>& arr_type);
 
   inline void set_array_num( std::vector<sort>& sorts ) {
     ar_sorts = sorts;

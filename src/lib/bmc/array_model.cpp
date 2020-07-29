@@ -48,13 +48,28 @@ expr array_model::join_array_state( std::vector<expr>& conds,
   return _and( vec, solver_ctx );
 }
 
-
-void array_model_full::set_array_num( unsigned len ) {
-  num_arrays = len;
+void array_model_full::set_array_num(std::vector<const llvm::Type*>& arr_type) {
+//void array_model_full::set_array_num( unsigned len ) {
+//  num_arrays = len;
+  num_arrays = arr_type.size();
   for( unsigned i = 0; i < num_arrays; i++) {
+  if (arr_type[i] -> isPointerTy()) {
+  auto T = arr_type[i]->getPointerElementType();
+  auto ElemTy = llvm::dyn_cast<llvm::ArrayType>(T)->getArrayElementType();
+  if (ElemTy -> isFloatTy()) {
     ar_sorts.push_back( solver_ctx.array_sort( solver_ctx.int_sort(),
+                                               solver_ctx.fpa_sort<32>() ) );
+  } 
+  if (ElemTy -> isDoubleTy()) {
+    ar_sorts.push_back( solver_ctx.array_sort( solver_ctx.int_sort(),
+                                               solver_ctx.fpa_sort<64>() ) );
+  }
+}
+   else {
+   ar_sorts.push_back( solver_ctx.array_sort( solver_ctx.int_sort(),
                                                solver_ctx.int_sort() ) );
   }
+ }
 }
 
 expr array_model_full::get_fresh_ary_name( unsigned i ) {
