@@ -130,6 +130,10 @@ memory_state bmc::populate_mem_state() {
 void bmc::check_all_spec( bmc_ds* bmc_ds_ptr ) {
   std::ostream& os = std::cout;
   for(spec s : bmc_ds_ptr->spec_vec) {
+    if( o.verbosity > 3 ) {
+      os << "Solving for specification\n";
+      s.print( os );
+    }
     expr prop = s.get_formula();
     if( run_solver( prop, bmc_ds_ptr) ) {
       os << "\nSpecification that failed the check : \n";

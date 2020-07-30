@@ -42,11 +42,12 @@ void c2bc( const std::string& fileName, const std::string& outName )
 // --------------------------------------------------------------------------
 
 void src_loc::print( std::ostream& os ) {
-  if( file == "" )
+  if( file == "" ) {
+    os << "unknown file";
+  }else{
     os << file << ":" << line << ":" << col;
     // os << "l" << line << "_c" << col << "_"<< file;
-  else
-    os << "loc_dummy";
+  }
 }
 
 void src_loc::print_short( std::ostream& os ) {
