@@ -1610,4 +1610,3 @@ expr read_const( options& o, const llvm::Value* op ) {
   return e; // contains no expression;
 }
 
-

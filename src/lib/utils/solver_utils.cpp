@@ -584,6 +584,18 @@ expr switch_sort( expr& b, sort& s ) {
   llvm_bmc_error("z3Utils", "failed to change sort!" );
 }
 
+
+expr switchint_sort( expr& b, sort& s ) {
+  sort bs = b.get_sort();
+  if( bs.is_bv() && s.is_bv() ) {
+    if( bs.bv_size() < s.bv_size()) {
+      return b.ctx().bv_val(b,s.bv_size());
+    }
+   }
+  llvm_bmc_error("z3Utils", "failed to change sort!" );
+}
+
+
 int get_numeral_int(const expr& i) {
   int val;
   if(Z3_get_numeral_int( i.ctx(), i, &val) ) {

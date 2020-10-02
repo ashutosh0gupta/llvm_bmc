@@ -61,6 +61,20 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   auto op1 = bop->getOperand( 1 );
   expr a = bmc_ds_ptr->m.get_term( op0 );
   expr b = bmc_ds_ptr->m.get_term( op1 );
+
+// a and b may have different types, due to llvm does not record clearly
+  // if something is int. Our translation may incorrectly identify
+  // sort of some constant number. The following code corrects the mismatch
+  if( !matched_sort( a, b ) ) {
+    if( is_const( a ) ) {
+      auto s = b.get_sort();
+      a = switchint_sort(a, s );
+    }else if( is_const( b ) ) {
+      auto s = a.get_sort();
+      b = switchint_sort(b, s );
+    }
+  }
+
   unsigned op = bop->getOpcode();
   switch( op ) {
   case llvm::Instruction::Add : bmc_ds_ptr->m.insert_term_map( bop, bidx, a+b     ); break;
@@ -454,10 +468,15 @@ void bmc_pass::translateCastInst( unsigned bidx,
   }else if( llvm::isa<llvm::BitCastInst>(cast) ) {
     llvm_bmc_warning("bmc", "Ignoring a bit bast! Be careful");
     // llvm_bmc_error("bmc", "cast instruction is not recognized !!");
-  }else{
+  }
+  /*else if( llvm::isa<llvm::UItoFPInst>(cast) ) {
+    expr ex_v = bmc_ds_ptr->m.get_term(v);
+      unsigned new_size = c_ty->getIntegerBitWidth();
+      bmc_ds_ptr->m.insert_term_map( cast, bidx, zext( ex_v, new_size ) );
+    } */ else{
     BMC_UNSUPPORTED_INSTRUCTIONS( FPTruncInst,       cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( FPExtInst,         cast);
-    BMC_UNSUPPORTED_INSTRUCTIONS( UIToFPInst,        cast);
+    //BMC_UNSUPPORTED_INSTRUCTIONS( UIToFPInst,        cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( SIToFPInst,        cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( FPToUIInst,        cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( FPToSIInst,        cast);
@@ -623,12 +642,29 @@ void bmc_pass::translateGetElementPtrInst(const llvm::GetElementPtrInst* gep) {
 
 void bmc_pass::translateBranch( unsigned bidx,
                                 const llvm::BranchInst* br ) {
-  assert( br );
+/*  assert( br );
 
   auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
   if( !br->isUnconditional() ) {
     expr cond = bmc_ds_ptr->m.get_term( br->getCondition() );
     bmc_ds_ptr->bmc_vec.push_back( cond == exit_bits[0] );
+  }else{
+    // for unconditional branch, there is no need of constraints
+    // bmc_ds_ptr->bmc_vec.push_back( exit_bit );
+  } */
+  assert( br );
+
+  auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
+  if( !br->isUnconditional() ) {
+    expr cond = bmc_ds_ptr->m.get_term( br->getCondition() );
+    auto cond_sort = cond.get_sort();
+    auto exit_sort = exit_bits[0].get_sort();
+    if (cond_sort.is_bv() && exit_sort.is_bool()) {    	
+	expr exitbits_bv = solver_ctx.bv_val(exit_bits[0],1);
+    	bmc_ds_ptr->bmc_vec.push_back( cond == exitbits_bv );
+    }
+    else  
+	bmc_ds_ptr->bmc_vec.push_back( cond == exit_bits[0] );
   }else{
     // for unconditional branch, there is no need of constraints
     // bmc_ds_ptr->bmc_vec.push_back( exit_bit );

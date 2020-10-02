@@ -99,6 +99,7 @@ expr store( expr&, expr&, expr& );
 
 bool matched_sort( const expr& l, const expr& r );
 expr switch_sort( expr& b, sort& s);
+expr switchint_sort( expr& b, sort& s);
 int get_numeral_int(const expr& i);
 
 bool is_true( expr, model );
