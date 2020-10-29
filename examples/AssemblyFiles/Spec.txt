@@ -1,34 +1,32 @@
+; This is a comment
+
 
 ;; Declare variable
 (declare-fun algorithm__compangley)
 
 
 ;; Declare thread
-(declare-thread t1 starting_fun_name)
+(declare-thread major starting_fun_name)
 
 
 ;; write preconditions
-(pre-condition t1 (invoke algorithm__compangley))
+(pre-condition major (invoke algorithm__compangley))
 
 
 
+(post-condition major (invoke algorithm__compangley))
 
 
 ;; Declare thread
-(declare-thread t2 starting_fun_name2)
+(declare-thread minor starting_fun_name2)
 
 
 ;; write preconditions
-(pre-condition t2 (invoke algorithm__compangley) )
+(pre-condition minor (invoke algorithm__compangley) )
 
 
-
-
-
-
-
-
+(post-condition minor (invoke algorithm__compangley) )
 
 
 ;; Execution environment
-(some how describe it)
+(execution-env (parallel major (repeat minor 25) ) )
