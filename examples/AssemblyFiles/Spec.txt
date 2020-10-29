@@ -1,1 +1,34 @@
-invoke algorithm__compangley
+
+;; Declare variable
+(declare-fun algorithm__compangley)
+
+
+;; Declare thread
+(declare-thread t1 starting_fun_name)
+
+
+;; write preconditions
+(pre-condition t1 (invoke algorithm__compangley))
+
+
+
+
+
+;; Declare thread
+(declare-thread t2 starting_fun_name2)
+
+
+;; write preconditions
+(pre-condition t2 (invoke algorithm__compangley) )
+
+
+
+
+
+
+
+
+
+
+;; Execution environment
+(some how describe it)
