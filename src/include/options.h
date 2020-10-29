@@ -35,6 +35,7 @@ public:
   const std::vector<std::string>& get_include_dirs() { return include_dirs; }
   llvm::LLVMContext& get_llvm_context() { return globalContext; }
   solver_context& get_solver_context() { return solver_ctx; }
+  std::string get_spec_file() { return specFilePath; }
 
   // check for input format
   // the tool auto detect via looking at the extension of the input file
@@ -51,6 +52,8 @@ public:
   std::string fileName;
   std::string filePath;
   std::string funcName;
+  std::string specFileName;
+  std::string specFilePath;
   std::vector<std::string> include_dirs;
   boost::filesystem::path outDirPath;
   int mode = 0;
@@ -76,6 +79,7 @@ public:
   bool include_overflow_specs=false;
   array_model_t ar_model = FULL;
   bool bit_precise = false; // model integers as true "int" or bit vectors
+  bool check_spec = false;
   //----------------------------------------
 
   llvm::LLVMContext globalContext;

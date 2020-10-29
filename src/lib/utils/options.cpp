@@ -41,6 +41,7 @@ void options::get_description_cmd(po::options_description& config,
     ("bounds-check", po::bool_switch(&include_out_of_bound_specs), "Enable array-index-out-of-bounds check")
     ("overflow-check", po::bool_switch(&include_overflow_specs), "Enable over/underflow check")
     ("include-dirs,I", po::value< std::vector<std::string> >(&include_dirs), "Location of include files")
+    ("specifications,s", po::value(&specFilePath), "Set spec file")
     ;
   hidden.add_options()
     ("input,i", po::value(&filePath), "Set source files")
@@ -68,6 +69,12 @@ void options::interpret_options(po::variables_map& vm) {
   if( loop_aggr && mode == 3 ) {
     mode = 5;
   }
+  if (vm.count("specifications")) {
+    boost::filesystem::path sf( specFilePath);
+    specFileName = sf.filename().string();
+    check_spec = true;
+  }
+
 }
 
 void options::parse_config(boost::filesystem::path filename) {

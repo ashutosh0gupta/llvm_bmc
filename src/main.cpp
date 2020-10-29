@@ -1,6 +1,7 @@
 #include "include/options.h"
 #include "include/bmc.h"
 #include "lib/utils/llvm_utils.h"
+#include "lib/utils/verify_prop_pass.h"
 
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/LinkAllPasses.h"
@@ -34,6 +35,10 @@ void prepare_module( options& o,
         fit->addFnAttr(llvm::Attribute::AlwaysInline);
       }
     }
+  }
+
+  if (o.check_spec) {
+    passMan.add( new verify_prop_pass(*module.get(), o));  	
   }
 
   passMan.run( *module.get() );
