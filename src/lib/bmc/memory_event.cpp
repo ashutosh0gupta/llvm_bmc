@@ -1,29 +1,4 @@
-/*
- * Copyright 2014, IST Austria
- *
- * This file is part of TARA.
- *
- * TARA is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * TARA is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with TARA.  If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include "memory_event.h"
-//#include "hb_enc/encoding.h"
-//#include "hb_enc/hb.h"
-
-//using namespace tara;
-//using namespace tara::hb_enc;
-//using namespace tara::helpers;
 
 using namespace std;
 
@@ -31,23 +6,26 @@ using namespace std;
 /*************************
  * tstamp
  *************************/
-  
-tstamp::tstamp(z3::context& ctx, string name, bool special) : expr(z3::expr(ctx)), name(name) , special(special) {}
+
+tstamp::tstamp( solver_context& ctx, string name, bool special)
+  : e(z3::expr(ctx))
+  , name(name)
+  , special(special) {}
 
 bool tstamp::operator==(const tstamp &other) const {
   // if expr is empty fall back to name
-  if ((Z3_ast)this->expr==0) 
+  if ((Z3_ast)this->e==0)
     return this->name == other.name;
   else
-    return (Z3_ast)this->expr == (Z3_ast)other.expr;
+    return (Z3_ast)this->e == (Z3_ast)other.e;
 }
 
 bool tstamp::operator!=(const tstamp &other) const {
   return !(*this == other);
 }
 
-tstamp::operator z3::expr () const {
-  return expr;
+tstamp::operator expr () const {
+  return e;
 }
 
 uint16_t tstamp::serial() const
@@ -129,11 +107,11 @@ std::string source_loc::gen_name() {
 }
 
 tstamp_var_ptr
-memory_event::create_internal_event( solver_context& z3,
+memory_event::create_internal_event( solver_context& sol_ctx,
                                        std::string e_name, unsigned tid,
                                        unsigned instr_no, bool special )
 {
-  auto e_v = make_shared<tstamp>( z3, e_name, special );
+  auto e_v = make_shared<tstamp>( sol_ctx, e_name, special );
   e_v->thread = tid;
   e_v->instr_no = instr_no; // not used in post POPL15
 
@@ -152,40 +130,40 @@ unsigned memory_event::get_instr_no() const {
   return e_v->instr_no;
 }
 
-z3::expr memory_event::get_solver_symbol() const {
+expr memory_event::get_solver_symbol() const {
   return *e_v;
 }
 
-z3::expr memory_event::get_thin_solver_symbol() const {
+expr memory_event::get_thin_solver_symbol() const {
   return *thin_v;
 }
 
-z3::expr memory_event::get_c11_hb_solver_symbol() const {
+expr memory_event::get_c11_hb_solver_symbol() const {
   return *get_c11_hb_stamp();
 }
 
-z3::expr memory_event::get_c11_mo_solver_symbol() const {
+expr memory_event::get_c11_mo_solver_symbol() const {
   return *get_c11_mo_stamp();
 }
 
-z3::expr memory_event::get_c11_sc_solver_symbol() const {
+expr memory_event::get_c11_sc_solver_symbol() const {
   return *get_c11_sc_stamp();
 }
 
 
-z3::expr memory_event::get_power_hb_solver_symbol() const {
+expr memory_event::get_power_hb_solver_symbol() const {
   return *get_power_hb_stamp();
 }
 
-z3::expr memory_event::get_power_prop_solver_symbol() const {
+expr memory_event::get_power_prop_solver_symbol() const {
   return *get_power_prop_stamp();
 }
 
-z3::expr memory_event::get_power_obs_solver_symbol() const {
+expr memory_event::get_power_obs_solver_symbol() const {
   return *get_power_obs_stamp();
 }
 
-z3::expr memory_event::get_power_mo_solver_symbol() const {
+expr memory_event::get_power_mo_solver_symbol() const {
   return *get_power_obs_stamp();
 }
 
@@ -202,7 +180,7 @@ void memory_event::update_topological_order() {
 //Old constructors:
 // Move the ctrc calls to the new constructors
 
-memory_event::memory_event( solver_context& z3, unsigned _tid,
+memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
                                 se_set& _prev_events, unsigned instr_no,
                                 const variable& _v,
                                 const variable& _prog_v,
@@ -214,7 +192,7 @@ memory_event::memory_event( solver_context& z3, unsigned _tid,
   , loc_name(_loc)
   , et( _et )
   , prev_events( _prev_events )
-  , guard(z3)
+  , guard(sol_ctx)
 {
   if( et != event_t::r &&  et != event_t::w &&  et != event_t::u ) {
     llvm_bmc_error("mem_event", "symboic event with wrong parameters!");
@@ -223,42 +201,42 @@ memory_event::memory_event( solver_context& z3, unsigned _tid,
     v_copy = v + "#update_wr";
   }
   std::string e_name = event_t_name( et ) + "#" + v.name;
-  e_v = create_internal_event(   z3,            e_name,tid,instr_no,false);
-  thin_v = create_internal_event(z3,"__thin__" +e_name,tid,instr_no,false);
-  c11_hb_v=create_internal_event(z3,"__hb__"   +e_name,tid,instr_no,false);
+  e_v = create_internal_event(   sol_ctx,           e_name,tid,instr_no,false);
+  thin_v = create_internal_event(sol_ctx,"__thin__"+e_name,tid,instr_no,false);
+  c11_hb_v=create_internal_event(sol_ctx,"__hb__"  +e_name,tid,instr_no,false);
   update_topological_order();
   o_tag = o_tag_t::na;
 }
 
 
 // barrier events
-memory_event::memory_event( solver_context& z3, unsigned _tid,
+memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
                                 se_set& _prev_events, unsigned instr_no,
                                 std::string _loc, event_t _et )
   : tid(_tid)
-  , v("dummy",z3)
-  , v_copy("dummy",z3)
-  , prog_v( "dummy",z3)
+  , v("dummy",sol_ctx)
+  , v_copy("dummy",sol_ctx)
+  , prog_v( "dummy",sol_ctx)
   , loc_name(_loc)
   , et( _et )
   , prev_events( _prev_events )
-  , guard(z3)
+  , guard(sol_ctx)
 {
   std::string e_name = event_t_name( et ) + "#" + loc_name;
-  e_v = create_internal_event    (z3,            e_name,tid,instr_no,true);
-  thin_v = create_internal_event (z3, "__thin__"+e_name,tid,instr_no,true);
-  c11_hb_v =create_internal_event(z3, "__hb__"  +e_name,tid,instr_no,true);
+  e_v = create_internal_event    (sol_ctx,            e_name,tid,instr_no,true);
+  thin_v = create_internal_event (sol_ctx, "__thin__"+e_name,tid,instr_no,true);
+  c11_hb_v =create_internal_event(sol_ctx, "__hb__"  +e_name,tid,instr_no,true);
   update_topological_order();
   o_tag = o_tag_t::na;
 }
 
 
 // new constructor
-memory_event::memory_event( solver_context& z3, unsigned _tid,
+memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
                                 se_set& _prev_events,
                                 const variable& _prog_v,
-                                z3::expr& path_cond,
-                                std::vector<z3::expr>& _history,
+                                expr& path_cond,
+                                std::vector<expr>& _history,
                                 source_loc& _loc, event_t _et,
                                 o_tag_t _o_tag )
   : tid(_tid)
@@ -285,22 +263,22 @@ memory_event::memory_event( solver_context& z3, unsigned _tid,
   v_copy = (et != event_t::u) ? v : v + "#update_wr";
 
   std::string e_name = e_t_name + "#" + v.name;
-  e_v    = create_internal_event( z3,            e_name,tid, 0, false);
-  thin_v = create_internal_event(z3,"__thin__" +e_name,tid, 0, false);
-  c11_hb_v=create_internal_event(z3,"__hb__"   +e_name,tid, 0, false);
+  e_v    = create_internal_event( sol_ctx,            e_name,tid, 0, false);
+  thin_v = create_internal_event(sol_ctx,"__thin__" +e_name,tid, 0, false);
+  c11_hb_v=create_internal_event(sol_ctx,"__hb__"   +e_name,tid, 0, false);
   update_topological_order();
 }
 
-memory_event::memory_event( solver_context& z3, unsigned _tid,
+memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
                                 se_set& _prev_events,
-                                z3::expr& path_cond,
-                                std::vector<z3::expr>& _history,
+                                expr& path_cond,
+                                std::vector<expr>& _history,
                                 source_loc& _loc, event_t _et,
                                 o_tag_t _o_tag )
   : tid(_tid)
-  , v("dummy",z3)
-  , v_copy("dummy",z3)
-  , prog_v( "dummy",z3)
+  , v("dummy",sol_ctx)
+  , v_copy("dummy",sol_ctx)
+  , prog_v( "dummy",sol_ctx)
   , loc(_loc)
   , et( _et )
   , o_tag( _o_tag )
@@ -320,37 +298,37 @@ memory_event::memory_event( solver_context& z3, unsigned _tid,
   position_name = e_t_name + "#" + loc.position_name();
 
   std::string e_name = e_t_name + "#" + loc_name;
-  e_v = create_internal_event    (z3,            e_name,tid,0,true);
-  thin_v = create_internal_event (z3, "__thin__"+e_name,tid,0,true);
-  c11_hb_v =create_internal_event(z3, "__hb__"  +e_name,tid,0,true);
+  e_v = create_internal_event    (sol_ctx,            e_name,tid,0,true);
+  thin_v = create_internal_event (sol_ctx, "__thin__"+e_name,tid,0,true);
+  c11_hb_v =create_internal_event(sol_ctx, "__hb__"  +e_name,tid,0,true);
 
   update_topological_order();
 }
 
-z3::expr memory_event::get_rd_expr( const variable& g ) {
+expr memory_event::get_rd_expr( const variable& g ) {
   assert( et == event_t::r   || et == event_t::u || et == event_t::post );
   if( et == event_t::r || et == event_t::u ) {
-    z3::expr v_expr = (z3::expr)(v);
+    expr v_expr = (expr)(v);
     return v_expr;
   }
   variable tmp_v = g+"#post";
-  return (z3::expr)(tmp_v);
+  return (expr)(tmp_v);
 }
 
-z3::expr memory_event::get_wr_expr( const variable& g ) {
+expr memory_event::get_wr_expr( const variable& g ) {
   assert( et == event_t::u   || et == event_t::w || et == event_t::pre );
   if( et == event_t::w || et == event_t::u ) {
-    z3::expr v_expr = (z3::expr)(v_copy);
+    expr v_expr = (expr)(v_copy);
     return v_expr;
   }
-  variable tmp_v(g.sort.ctx());
+  variable tmp_v(g.s.ctx());
   switch( et ) {
   // case event_t::barr: { tmp_v = g+"#barr";  break; }
   case event_t::pre : { tmp_v = g+"#pre" ;  break; }
   case event_t::post: { tmp_v = g+"#post";  break; }
   default: llvm_bmc_error( "memory_event", "unreachable code!!");
   }
-  return (z3::expr)(tmp_v);
+  return (expr)(tmp_v);
 }
 
 
@@ -358,12 +336,12 @@ void memory_event::set_pre_events( se_set& prev_events_) {
   prev_events = prev_events_;
 }
 
-void memory_event::add_post_events( se_ptr& e, z3::expr cond ) {
+void memory_event::add_post_events( se_ptr& e, expr cond ) {
   post_events.insert( depends( e, cond) );
 }
 
 //todo : make the following function efficient
-z3::expr memory_event::get_post_cond( const se_ptr& e_post ) const {
+expr memory_event::get_post_cond( const se_ptr& e_post ) const {
   for( const auto& dep : post_events ) {
     if( dep.e == e_post ) return dep.cond;
   }
@@ -399,34 +377,34 @@ void memory_event::set_dependencies( const depends_set& data,
   set_ctrl_dependency( ctrl );
 }
 
-z3::expr memory_event::get_data_dependency_cond( const se_ptr& e2 ) {
+expr memory_event::get_data_dependency_cond( const se_ptr& e2 ) {
   for( auto& dep : data_dependency ) {
     if( dep.e == e2 ) {
        return dep.cond;
       break;
     }
   }
-  return z3::expr( guard.ctx() );
+  return expr( guard.ctx() );
 }
 
-z3::expr memory_event::get_ctrl_dependency_cond( const se_ptr& e2 ) {
+expr memory_event::get_ctrl_dependency_cond( const se_ptr& e2 ) {
   for( auto& dep : ctrl_dependency ) {
     if( dep.e == e2 ) {
        return dep.cond;
       break;
     }
   }
-  return z3::expr( guard.ctx() );
+  return expr( guard.ctx() );
 }
 
-z3::expr memory_event::get_addr_dependency_cond( const se_ptr& e2 ) {
+expr memory_event::get_addr_dependency_cond( const se_ptr& e2 ) {
   for( auto& dep : addr_dependency ) {
     if( dep.e == e2 ) {
        return dep.cond;
       break;
     }
   }
-  return z3::expr( guard.ctx() );
+  return expr( guard.ctx() );
 }
 
 
@@ -508,7 +486,7 @@ void debug_print( std::ostream& out, const depends_set& set ) {
 
 void 
 full_initialize_se( memory_cons& mem_enc, se_ptr e, se_set& prev_es,
-                    std::map<const se_ptr, z3::expr>& branch_conds) {
+                    std::map<const se_ptr, expr>& branch_conds) {
   mem_enc.record_event( e );
   for(se_ptr ep  : prev_es) {
     ep->add_post_events( e, branch_conds.at(ep) );
