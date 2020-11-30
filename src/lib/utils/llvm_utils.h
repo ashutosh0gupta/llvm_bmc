@@ -107,30 +107,32 @@ llvm::Value* getValueFromZ3Expr(expr, llvm::IRBuilder<>&, llvm::LLVMContext&,
 llvm::Value* getValueFromZ3SubExpr(expr, llvm::IRBuilder<>&, llvm::LLVMContext&,
                                    std::map<std::string, llvm::Value*>&, std::set<llvm::Value*>&);
 void collectArr(llvm::Function &f, std::set<llvm::Value*>&);
-template< class Key >
-bool exists( const std::vector<Key>& v, const Key& k ) {
-  return std::find( v.begin(), v.end(), k ) != v.end();
-}
 
-template< class Key >
-bool exists( std::vector<Key>& v, Key& k ) {
-  return std::find( v.begin(), v.end(), k ) != v.end();
-}
+// template< class Key >
+// bool exists( const std::vector<Key>& v, const Key& k ) {
+//   return std::find( v.begin(), v.end(), k ) != v.end();
+// }
 
-template< class Key >
-bool exists( const std::set<Key>& set1, const Key& k ) {
-  return set1.find( k ) !=  set1.end();
-}
+// template< class Key >
+// bool exists( std::vector<Key>& v, Key& k ) {
+//   return std::find( v.begin(), v.end(), k ) != v.end();
+// }
 
-template< class Key,  class Val>
-bool exists( const std::map<Key,Val>& map1, const Key& k ) {
-  return map1.find( k ) !=  map1.end();
-}
+// template< class Key >
+// bool exists( const std::set<Key>& set1, const Key& k ) {
+//   return set1.find( k ) !=  set1.end();
+// }
 
-template< class Key,class cmp >
-bool exists( const std::set<Key,cmp>& set1, const Key& k ) {
-  return set1.find( k ) !=  set1.end();
-}
+// template< class Key,  class Val>
+// bool exists( const std::map<Key,Val>& map1, const Key& k ) {
+//   return map1.find( k ) !=  map1.end();
+// }
+
+// template< class Key,class cmp >
+// bool exists( const std::set<Key,cmp>& set1, const Key& k ) {
+//   return set1.find( k ) !=  set1.end();
+// }
+
 
 void computeTopologicalOrder(llvm::Function &F,
                              std::map<const llvm::BasicBlock*,

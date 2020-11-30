@@ -1,29 +1,10 @@
-/*
- * Copyright 2014, IST Austria
- *
- * This file is part of TARA.
- *
- * TARA is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * TARA is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with TARA.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#ifndef TARA_CSSA_SYMBOLIC_EVENT_H
-#define TARA_CSSA_SYMBOLIC_EVENT_H
+#ifndef BMC_MEMORY_EVENT_H
+#define BMC_MEMORY_EVENT_H
 
 //#include "constants.h"
 //#include "helpers/z3interf.h"
 #include "lib/utils/solver_utils.h"
-//#include "encoding.h"
+#include "memory_cons.h"
 //#include "program/variable.h"
 #include <vector>
 #include <list>
@@ -33,17 +14,15 @@
 #include <unordered_set>
 #include <boost/concept_check.hpp>
 
-//namespace tara{
-//namespace hb_enc {
 
   class tstamp;
 
-/*  typedef std::shared_ptr<symbolic_event> se_ptr;
-  typedef std::set<se_ptr> se_set;
-//  typedef std::shared_ptr<hb_enc::hb> hb_ptr;
-//  typedef std::vector<hb_ptr> hb_vec; */
+  // typedef std::shared_ptr<memory_event> se_ptr;
+  // typedef std::set<se_ptr> se_set;
+  // typedef std::shared_ptr<hb_enc::hb> hb_ptr;
+  // typedef std::vector<hb_ptr> hb_vec;
   typedef std::shared_ptr<tstamp const> tstamp_ptr;
-  typedef std::shared_ptr<tstamp> tstamp_var_ptr; 
+  typedef std::shared_ptr<tstamp> tstamp_var_ptr;
 
   std::string to_string (const tstamp& loc);
 
@@ -83,6 +62,25 @@
     bool operator<( const variable& rhs) const {
       return this->name < rhs.name;
     }
+
+    struct variable_hash {
+      size_t operator () (const variable &v) const { return std::hash<std::string>()(v.name); }
+    };
+
+    struct variable_equal : std::binary_function <variable,variable,bool> {
+      bool operator() (const variable& x, const variable& y) const {
+        return std::equal_to<std::string>()(x.name, y.name);
+      }
+    };
+
+    typedef std::unordered_set<variable, variable_hash, variable_equal> variable_set;
+    typedef std::unordered_set<std::string> string_set;
+
+    //--------------------------------------------------------------------------
+    //support for gdb
+    void debug_print( const variable_set& , std::ostream& out);
+    //--------------------------------------------------------------------------
+
   };
 
 
@@ -187,18 +185,18 @@ struct source_loc{
 
   std::string event_t_name( event_t et );
 
-  class symbolic_event;
-  typedef symbolic_event se;
-  typedef std::shared_ptr<symbolic_event> se_ptr;
+  class memory_event;
+  typedef memory_event se;
+  typedef std::shared_ptr<memory_event> se_ptr;
   typedef std::set<se_ptr> se_set;
   typedef std::vector<se_ptr> se_vec;
   class depends;
   typedef std::set<depends> depends_set;
 
 //
-// symbolic event
+// memory event
 //
-  class symbolic_event
+  class memory_event
   {
   private:
     tstamp_var_ptr
@@ -208,27 +206,27 @@ struct source_loc{
                            // bool is_read, std::string& prog_v_name );
     void update_topological_order();
   public:
-    symbolic_event( //helpers::z3interf& z3,
+    memory_event( //helpers::z3interf& z3,
 		    solver_context& sol_ctx,
                     unsigned _tid, se_set& _prev_events, unsigned i,
                     //const tara::variable& _v, const tara::variable& _prog_v,
 		    const variable& _v, const variable& _prog_v,
                     std::string loc, event_t _et );
 
-    symbolic_event( //helpers::z3interf& z3,
+    memory_event( //helpers::z3interf& z3,
 		    solver_context& sol_ctx,
                     unsigned _tid, se_set& _prev_events, unsigned instr_no,
                     std::string _loc, event_t _et );
 
 
-    symbolic_event( //helpers::z3interf& z3, 
+    memory_event( //helpers::z3interf& z3, 
 		    solver_context& sol_ctx, unsigned _tid,
                     se_set& _prev_events, //const tara::variable& _prog_v,
 		    const variable& _prog_v,
                     z3::expr& path_cond, std::vector<z3::expr>& history_,
                     source_loc& _loc, event_t _et, o_tag_t ord_tag );
 
-    symbolic_event( //helpers::z3interf& z3, 
+    memory_event( //helpers::z3interf& z3, 
 		    solver_context& sol_ctx, unsigned _tid,
                     se_set& _prev_events, z3::expr& path_cond,
                     std::vector<z3::expr>& _history,
@@ -249,7 +247,7 @@ struct source_loc{
     //tara::variable wr_v() { return v_copy; }
     variable wr_v() { return v_copy; }
     source_loc loc;
-    hb_enc::se_ptr rmw_other=NULL;
+    se_ptr rmw_other=NULL;
   private:
     unsigned topological_order;
   public:
@@ -266,7 +264,7 @@ struct source_loc{
 
     se_set prev_events; // in straight line programs it will be singleton
                         // we need to remove access to  pointer
-    hb_enc::depends_set post_events;
+    depends_set post_events;
     z3::expr guard;
     std::vector<z3::expr> history;
     depends_set data_dependency;
@@ -405,130 +403,130 @@ struct source_loc{
     void add_post_events( se_ptr&, z3::expr );
     z3::expr get_post_cond( const se_ptr& e_post ) const;
 
-    void set_data_dependency( const hb_enc::depends_set& deps );
-    void set_ctrl_dependency( const hb_enc::depends_set& deps );
-    void set_ctrl_isync_dep( const hb_enc::depends_set& deps );
-    void set_addr_dependency( const hb_enc::depends_set& deps );
-    void set_dependencies( const hb_enc::depends_set& data,
-                           const hb_enc::depends_set& ctrl );
+    void set_data_dependency( const depends_set& deps );
+    void set_ctrl_dependency( const depends_set& deps );
+    void set_ctrl_isync_dep( const depends_set& deps );
+    void set_addr_dependency( const depends_set& deps );
+    void set_dependencies( const depends_set& data,
+                           const depends_set& ctrl );
     z3::expr get_ctrl_dependency_cond( const se_ptr& e2 );
     z3::expr get_data_dependency_cond( const se_ptr& e2 );
     z3::expr get_addr_dependency_cond( const se_ptr& e2 );
 
     friend std::ostream& operator<< ( std::ostream& stream,
-                                      const symbolic_event& var ) {
+                                      const memory_event& var ) {
       stream << var.name();
       return stream;
     }
     void debug_print(std::ostream& stream );
-    z3::expr get_rd_expr(const tara::variable&);
-    z3::expr get_wr_expr(const tara::variable&);
+    z3::expr get_rd_expr(const variable&);
+    z3::expr get_wr_expr(const variable&);
   };
 
   typedef std::unordered_map<std::string, se_ptr> name_to_ses_map;
 
-  void full_initialize_se( hb_enc::encoding& hb_enc, se_ptr e, se_set& prev_es,
-                           std::map<const hb_enc::se_ptr, z3::expr>& branch_conds);
+  void full_initialize_se( memory_cons& hb_enc, se_ptr e, se_set& prev_es,
+                           std::map<const se_ptr, z3::expr>& branch_conds);
 
 
-  inline se_ptr
-  mk_se_ptr_old( hb_enc::encoding& hb_enc, unsigned tid, unsigned instr_no,
-                 const tara::variable& prog_v, std::string loc,
-                 event_t et, se_set& prev_es) {
-    std::string prefix = et == hb_enc::event_t::r ? "pi_" : "";
-    tara::variable n_v = prefix + prog_v + "#" + loc;
-    se_ptr e = std::make_shared<symbolic_event>( hb_enc.z3, tid, prev_es,
-                                                 instr_no, n_v, prog_v, loc, et);
-    e->guard = hb_enc.z3.mk_true();
+  // inline se_ptr
+  // mk_se_ptr_old( memory_cons& hb_enc, unsigned tid, unsigned instr_no,
+  //                const variable& prog_v, std::string loc,
+  //                event_t et, se_set& prev_es) {
+  //   std::string prefix = et == event_t::r ? "pi_" : "";
+  //   variable n_v = prefix + prog_v + "#" + loc;
+  //   se_ptr e = std::make_shared<memory_event>( hb_enc.z3, tid, prev_es,
+  //                                                instr_no, n_v, prog_v, loc, et);
+  //   e->guard = hb_enc.z3.mk_true();
 
-    std::map<const hb_enc::se_ptr, z3::expr> bconds;
-    for( auto& ep : prev_es ) {
-      bconds.insert( std::make_pair( ep, hb_enc.z3.mk_true() ) );
-    }
-    full_initialize_se( hb_enc, e, prev_es, bconds );
-    // hb_enc.record_event( e );
-    return e;
-  }
+  //   std::map<const se_ptr, z3::expr> bconds;
+  //   for( auto& ep : prev_es ) {
+  //     bconds.insert( std::make_pair( ep, hb_enc.z3.mk_true() ) );
+  //   }
+  //   full_initialize_se( hb_enc, e, prev_es, bconds );
+  //   // hb_enc.record_event( e );
+  //   return e;
+  // }
 
 
-  inline se_ptr
-  mk_se_ptr_old( hb_enc::encoding& hb_enc, unsigned tid, unsigned instr_no,
-                 std::string loc, event_t et, se_set& prev_es ) {
-    se_ptr e =
-      std::make_shared<symbolic_event>(hb_enc.z3, tid, prev_es, instr_no, loc, et);
-    e->guard = hb_enc.z3.mk_true();
+  // inline se_ptr
+  // mk_se_ptr_old( memory_cons& hb_enc, unsigned tid, unsigned instr_no,
+  //                std::string loc, event_t et, se_set& prev_es ) {
+  //   se_ptr e =
+  //     std::make_shared<memory_event>(hb_enc.z3, tid, prev_es, instr_no, loc, et);
+  //   e->guard = hb_enc.z3.mk_true();
 
-    std::map<const hb_enc::se_ptr, z3::expr> bconds;
-    for( auto& ep : prev_es ) {
-      bconds.insert( std::make_pair( ep, hb_enc.z3.mk_true() ) );
-    }
-    full_initialize_se( hb_enc, e, prev_es, bconds );
-    // hb_enc.record_event( e );
-    return e;
-  }
+  //   std::map<const se_ptr, z3::expr> bconds;
+  //   for( auto& ep : prev_es ) {
+  //     bconds.insert( std::make_pair( ep, hb_enc.z3.mk_true() ) );
+  //   }
+  //   full_initialize_se( hb_enc, e, prev_es, bconds );
+  //   // hb_enc.record_event( e );
+  //   return e;
+  // }
 
   //--------------------------------------------------------------------------
   // new calls
   // todo: streamline se all tstamps
 
   inline se_ptr
-  mk_se_ptr( hb_enc::encoding& hb_enc, unsigned tid, se_set prev_es,
+  mk_se_ptr( memory_cons& mem_enc, unsigned tid, se_set prev_es,
              z3::expr& path_cond, std::vector<z3::expr>& history_,
-             const tara::variable& prog_v, hb_enc::source_loc& loc,
-             event_t _et, hb_enc::o_tag_t ord_tag ) {
-    std::map<const hb_enc::se_ptr, z3::expr > bconds;
+             const variable& prog_v, source_loc& loc,
+             event_t _et, o_tag_t ord_tag ) {
+    std::map<const se_ptr, z3::expr > bconds;
     for( auto& ep : prev_es ) {
-      bconds.insert( std::make_pair( ep, hb_enc.z3.mk_true() ) );
+      bconds.insert( std::make_pair( ep, mem_enc.solver_ctx.bool_val(true) ) );
     }
-    se_ptr e = std::make_shared<symbolic_event>( hb_enc.z3, tid, prev_es,prog_v,
-                                                 path_cond, history_, loc, _et,
-                                                 ord_tag );
-    full_initialize_se( hb_enc, e, prev_es, bconds );
+    se_ptr e = std::make_shared<memory_event>( mem_enc.solver_ctx, tid, prev_es,prog_v,
+                                               path_cond, history_, loc, _et,
+                                               ord_tag );
+    full_initialize_se( mem_enc, e, prev_es, bconds );
 
     // std::string loc_name = loc.gen_name();
-    // tara::variable ssa_v = prog_v + "#" + loc_name;
-    // se_ptr e = std::make_shared<symbolic_event>( hb_enc.z3, tid, prev_es, 0,
+    // variable ssa_v = prog_v + "#" + loc_name;
+    // se_ptr e = std::make_shared<memory_event>( mem_enc.solver_ctx, tid, prev_es, 0,
     //                                              ssa_v, prog_v,loc_name,_et);
-    // full_initialize_se( hb_enc, e, prev_es, path_cond, history_,loc,ord_tag,bconds);
+    // full_initialize_se( mem_enc, e, prev_es, path_cond, history_,loc,ord_tag,bconds);
     return e;
   }
 
   inline se_ptr
-  mk_se_ptr( hb_enc::encoding& hb_enc, unsigned tid, se_set prev_es,
+  mk_se_ptr( memory_cons& mem_enc, unsigned tid, se_set prev_es,
              z3::expr& path_cond, std::vector<z3::expr>& history_,
-             hb_enc::source_loc& loc, event_t et,
-             std::map<const hb_enc::se_ptr, z3::expr>& bconds,
-             hb_enc::o_tag_t ord_tag = hb_enc::o_tag_t::na  ) {
+             source_loc& loc, event_t et,
+             std::map<const se_ptr, z3::expr>& bconds,
+             o_tag_t ord_tag = o_tag_t::na  ) {
 
-    se_ptr e = std::make_shared<symbolic_event>( hb_enc.z3, tid, prev_es,
+    se_ptr e = std::make_shared<memory_event>( mem_enc.solver_ctx, tid, prev_es,
                                                  path_cond, history_, loc, et,
                                                  ord_tag );
-    full_initialize_se( hb_enc, e, prev_es, bconds );
+    full_initialize_se( mem_enc, e, prev_es, bconds );
 
     // std::string lname;
-    // if( et == hb_enc::event_t::block ) {
-    //   hb_enc::source_loc loc_d;
+    // if( et == event_t::block ) {
+    //   source_loc loc_d;
     //   lname = "block__" + std::to_string(tid) + "__"+ loc_d.gen_name();
     // }else{
     //   lname = loc.gen_name();
     // }
     // se_ptr e =
-    //   std::make_shared<symbolic_event>(hb_enc.z3,tid,prev_es,0,lname,et);
-    // full_initialize_se( hb_enc, e, prev_es, path_cond, history_,loc,ord_tag,bconds);
+    //   std::make_shared<memory_event>(mem_enc.solver_ctx,tid,prev_es,0,lname,et);
+    // full_initialize_se( mem_enc, e, prev_es, path_cond, history_,loc,ord_tag,bconds);
     return e;
   }
 
   inline se_ptr
-  mk_se_ptr( hb_enc::encoding& hb_enc, unsigned tid, se_set prev_es,
+  mk_se_ptr( memory_cons& mem_enc, unsigned tid, se_set prev_es,
              z3::expr& path_cond, std::vector<z3::expr>& history_,
-             hb_enc::source_loc& loc, //std::string loc,
-             event_t et, hb_enc::o_tag_t ord_tag = hb_enc::o_tag_t::na ) {
-    std::map<const hb_enc::se_ptr, z3::expr> branch_conds;
+             source_loc& loc, //std::string loc,
+             event_t et, o_tag_t ord_tag = o_tag_t::na ) {
+    std::map<const se_ptr, z3::expr> branch_conds;
     for( auto& ep : prev_es ) {
-      branch_conds.insert( std::make_pair( ep, hb_enc.z3.mk_true() ) );
+      branch_conds.insert( std::make_pair( ep, mem_enc.solver_ctx.bool_val(true) ) );
     }
     // std::string loc_name = loc.name();
-    se_ptr e = mk_se_ptr( hb_enc, tid, prev_es, path_cond, history_,
+    se_ptr e = mk_se_ptr( mem_enc, tid, prev_es, path_cond, history_,
                           loc, et, branch_conds, ord_tag );
     e->loc = loc;
     return e;
@@ -544,14 +542,14 @@ struct source_loc{
   };
 
   struct se_equal :
-    std::binary_function <symbolic_event,symbolic_event,bool> {
+    std::binary_function <memory_event,memory_event,bool> {
     bool operator() (const se_ptr& x, const se_ptr& y) const {
       return std::equal_to<std::string>()(x->name(), y->name());
     }
   };
 
   struct se_cmp :
-    std::binary_function <symbolic_event,symbolic_event,bool> {
+    std::binary_function <memory_event,memory_event,bool> {
     bool operator() (const se_ptr& x, const se_ptr& y) const {
       return x->get_topological_order() < y->get_topological_order() ||
         ( x->get_topological_order() == y->get_topological_order() &&
@@ -563,11 +561,11 @@ struct source_loc{
   typedef std::set< se_ptr, se_cmp > se_tord_set;
   // typedef std::unordered_set<se_ptr, se_hash, se_equal> se_set;
 
-  typedef std::unordered_map<tara::variable, se_ptr, tara::variable_hash, tara::variable_equal> var_to_se_map;
+typedef std::unordered_map<variable, se_ptr, variable::variable_hash, variable::variable_equal> var_to_se_map;
 
-  typedef std::unordered_map<tara::variable, se_set, tara::variable_hash, tara::variable_equal> var_to_ses_map;
+  typedef std::unordered_map<variable, se_set, variable::variable_hash, variable::variable_equal> var_to_ses_map;
 
-  typedef std::unordered_map<tara::variable, se_vec, tara::variable_hash, tara::variable_equal> var_to_se_vec_map;
+  typedef std::unordered_map<variable, se_vec, variable::variable_hash, variable::variable_equal> var_to_se_vec_map;
 
   typedef std::unordered_map<se_ptr, se_set, se_hash, se_equal> se_to_ses_map;
 
@@ -582,13 +580,13 @@ struct source_loc{
   };
 
   typedef std::unordered_map<se_ptr, depends_set, se_hash, se_equal> se_to_depends_map;
-  typedef std::unordered_map< tara::variable,
+  typedef std::unordered_map< variable,
                               depends_set,
-                              tara::variable_hash,
-                              tara::variable_equal> var_to_depends_map;
+                              variable::variable_hash,
+                              variable::variable_equal> var_to_depends_map;
 
 
-  depends pick_maximal_depends_set( hb_enc::depends_set& set );
+  depends pick_maximal_depends_set( depends_set& set );
   void join_depends_set( const se_ptr&, const z3::expr, depends_set& set );
   void join_depends_set( const depends& dep, depends_set& set );
   void join_depends_set( const depends_set& , depends_set& );
@@ -596,7 +594,7 @@ struct source_loc{
   void join_depends_set( const std::vector<depends_set>&, depends_set& );
   void join_depends_set( const std::vector<depends_set>&,
                          const std::vector<z3::expr>& conds,
-                         hb_enc::depends_set& result );
+                         depends_set& result );
   void meet_depends_set( const se_ptr&, const z3::expr, depends_set& set );
   void meet_depends_set( const depends& dep, depends_set& set );
   void meet_depends_set( const depends_set& , depends_set& );
@@ -604,7 +602,7 @@ struct source_loc{
   void meet_depends_set( const std::vector<depends_set>&, depends_set& );
   void meet_depends_set( const std::vector<depends_set>&,
                          const std::vector<z3::expr>& conds,
-                         hb_enc::depends_set& result );
+                         depends_set& result );
   void pointwise_and( const depends_set&, z3::expr, depends_set& );
 
 
@@ -616,11 +614,11 @@ struct source_loc{
 
 //}
 
-  void debug_print(std::ostream& out, const hb_enc::se_vec& set );
-  void debug_print(std::ostream& out, const hb_enc::se_set& set );
-  void debug_print(std::ostream& out, const hb_enc::se_to_ses_map& dep );
-  void debug_print(std::ostream& out, const hb_enc::depends& dep );
-  void debug_print(std::ostream& out, const hb_enc::depends_set& set);
+  void debug_print(std::ostream& out, const se_vec& set );
+  void debug_print(std::ostream& out, const se_set& set );
+  void debug_print(std::ostream& out, const se_to_ses_map& dep );
+  void debug_print(std::ostream& out, const depends& dep );
+  void debug_print(std::ostream& out, const depends_set& set);
 //}
 
-#endif // TARA_CSSA_SYMBOLIC_EVENT_H
+#endif // BMC_MEMORY_EVENT_H
