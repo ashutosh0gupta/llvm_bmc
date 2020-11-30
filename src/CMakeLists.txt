@@ -108,7 +108,7 @@ SET(clang_libs clangDaemon clangFrontendTool)
 LINK_DIRECTORIES(${LLVM_LIBRARY_DIRS})
 
 # lib/bmc/bmc_loop_pass.cpp
-SET(SOURCES lib/utils/llvm_utils.cpp lib/utils/verify_prop_pass.cpp lib/utils/solver_utils.cpp lib/utils/options.cpp lib/utils/build_name_map.cpp lib/utils/loopdata.cpp lib/utils/collect_loopdata.cpp lib/bmc/value_expr_map.cpp lib/bmc/array_model.cpp lib/bmc/memory_model.cpp lib/bmc/bmc_pass.cpp lib/bmc/bmc_fun_pass.cpp lib/bmc/bmc_loop_pass.cpp lib/bmc/witness.cpp lib/bmc/bmc_ds.cpp lib/bmc/bmc.cpp lib/bmc/bmc_utils.cpp lib/wp/wp.cpp main.cpp) 
+SET(SOURCES lib/utils/llvm_utils.cpp lib/utils/verify_prop_pass.cpp lib/utils/solver_utils.cpp lib/utils/options.cpp lib/utils/build_name_map.cpp lib/utils/loopdata.cpp lib/utils/collect_loopdata.cpp lib/bmc/memory_event.cpp lib/bmc/value_expr_map.cpp lib/bmc/array_model.cpp lib/bmc/memory_model.cpp lib/bmc/bmc_pass.cpp lib/bmc/bmc_fun_pass.cpp lib/bmc/bmc_loop_pass.cpp lib/bmc/witness.cpp lib/bmc/bmc_ds.cpp lib/bmc/bmc.cpp lib/bmc/bmc_utils.cpp lib/wp/wp.cpp main.cpp) 
 
 add_executable(${LLVMBMC} ${SOURCES})
 
