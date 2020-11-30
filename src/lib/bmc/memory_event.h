@@ -1,17 +1,9 @@
 #ifndef BMC_MEMORY_EVENT_H
 #define BMC_MEMORY_EVENT_H
 
-//#include "constants.h"
-//#include "helpers/z3interf.h"
+#include "lib/utils/utils.h"
 #include "lib/utils/solver_utils.h"
 #include "memory_cons.h"
-//#include "program/variable.h"
-#include <vector>
-#include <list>
-#include <set>
-#include <memory>
-#include <unordered_map>
-#include <unordered_set>
 #include <boost/concept_check.hpp>
 
 
@@ -33,20 +25,20 @@
 
   struct variable {
     std::string name;
-    z3::sort sort;
+    sort s;
     operator std::string() const { return name;}
-    variable(std::string name, z3::sort sort) : name(name), sort(sort) {}
-    variable(std::string name, z3::context& ctx) : name(name), sort(z3::sort(ctx)) {}
-    variable(z3::context& ctx) : sort(z3::sort(ctx)) {}
+    variable(std::string name, sort s_) : name(name), s(s_) {}
+    variable(std::string name, solver_context& ctx) : name(name), s(sort(ctx)) {}
+    variable(solver_context& ctx) : s(sort(ctx)) {}
     friend variable operator+ (const variable& v, const std::string& str) {
-      return variable(v.name+str, v.sort);
+      return variable(v.name+str, v.s);
     }
     friend variable operator+ (const std::string& str, const variable& v) {
-      return variable(str+v.name, v.sort);
+      return variable(str+v.name, v.s);
     }
 
-    operator z3::expr() const {
-      return sort.ctx().constant(name.c_str(), sort);
+    operator expr() const {
+      return s.ctx().constant(name.c_str(), s);
     }
 
     friend std::ostream& operator<< (std::ostream& stream, const variable& var) {
@@ -86,14 +78,14 @@
 
 struct tstamp {
 private:
-  z3::expr expr; // ensure this one is not visible from the outside
+  expr e; // ensure this one is not visible from the outside
   uint16_t _serial;
 
   //friend class hb_enc::integer;
 public:
   tstamp(tstamp& ) = delete;
   tstamp& operator=(tstamp&) = delete;
-  tstamp(z3::context& ctx, std::string name ,bool special = false);
+  tstamp(solver_context& ctx, std::string name ,bool special = false);
 
   std::string name;
   /**
@@ -120,7 +112,7 @@ public:
 
   bool operator==(const tstamp &other) const;
   bool operator!=(const tstamp &other) const;
-  operator z3::expr () const;
+  operator expr () const;
   uint16_t serial() const;
 
   friend std::ostream& operator<< (std::ostream& stream, const tstamp& loc);
@@ -200,36 +192,31 @@ struct source_loc{
   {
   private:
     tstamp_var_ptr
-    create_internal_event//( helpers::z3interf& _hb_enc, std::string event_name,
-                           (solver_context& sol_ctx, std::string event_name,
+    create_internal_event(solver_context& sol_ctx, std::string event_name,
                            unsigned tid, unsigned instr_no, bool special);
                            // bool is_read, std::string& prog_v_name );
     void update_topological_order();
   public:
-    memory_event( //helpers::z3interf& z3,
-		    solver_context& sol_ctx,
+    memory_event( solver_context& sol_ctx,
                     unsigned _tid, se_set& _prev_events, unsigned i,
                     //const tara::variable& _v, const tara::variable& _prog_v,
 		    const variable& _v, const variable& _prog_v,
                     std::string loc, event_t _et );
 
-    memory_event( //helpers::z3interf& z3,
-		    solver_context& sol_ctx,
+    memory_event(  solver_context& sol_ctx,
                     unsigned _tid, se_set& _prev_events, unsigned instr_no,
                     std::string _loc, event_t _et );
 
 
-    memory_event( //helpers::z3interf& z3, 
-		    solver_context& sol_ctx, unsigned _tid,
+    memory_event( solver_context& sol_ctx, unsigned _tid,
                     se_set& _prev_events, //const tara::variable& _prog_v,
 		    const variable& _prog_v,
-                    z3::expr& path_cond, std::vector<z3::expr>& history_,
+                    expr& path_cond, std::vector<expr>& history_,
                     source_loc& _loc, event_t _et, o_tag_t ord_tag );
 
-    memory_event( //helpers::z3interf& z3, 
-		    solver_context& sol_ctx, unsigned _tid,
-                    se_set& _prev_events, z3::expr& path_cond,
-                    std::vector<z3::expr>& _history,
+    memory_event(   solver_context& sol_ctx, unsigned _tid,
+                    se_set& _prev_events, expr& path_cond,
+                    std::vector<expr>& _history,
                     source_loc& _loc, event_t _et, o_tag_t _o_tag );
   public:
     unsigned tid;
@@ -265,8 +252,8 @@ struct source_loc{
     se_set prev_events; // in straight line programs it will be singleton
                         // we need to remove access to  pointer
     depends_set post_events;
-    z3::expr guard;
-    std::vector<z3::expr> history;
+    expr guard;
+    std::vector<expr> history;
     depends_set data_dependency;
     depends_set ctrl_dependency;
     depends_set ctrl_isync_dep;
@@ -354,28 +341,28 @@ struct source_loc{
       topological_order = order;
     }
 
-    inline void append_history( z3::expr f ) {
+    inline void append_history( expr f ) {
       guard = guard && f;
       history.push_back(f);
     }
 
     // symbol aliases for generic model
-    z3::expr get_solver_symbol() const;
-    z3::expr get_thin_solver_symbol() const;
+    expr get_solver_symbol() const;
+    expr get_thin_solver_symbol() const;
 
     // symbol aliases for c11 model
-    z3::expr get_c11_hb_solver_symbol() const;
-    z3::expr get_c11_mo_solver_symbol() const;
-    z3::expr get_c11_sc_solver_symbol() const;
+    expr get_c11_hb_solver_symbol() const;
+    expr get_c11_mo_solver_symbol() const;
+    expr get_c11_sc_solver_symbol() const;
     inline tstamp_ptr get_c11_hb_stamp() const { return c11_hb_v; }
     inline tstamp_ptr get_c11_mo_stamp() const { return thin_v; }
     inline tstamp_ptr get_c11_sc_stamp() const { return e_v; }
 
     // symbol aliases for power model
-    z3::expr get_power_hb_solver_symbol() const;
-    z3::expr get_power_prop_solver_symbol() const;
-    z3::expr get_power_obs_solver_symbol() const;
-    z3::expr get_power_mo_solver_symbol() const;
+    expr get_power_hb_solver_symbol() const;
+    expr get_power_prop_solver_symbol() const;
+    expr get_power_obs_solver_symbol() const;
+    expr get_power_mo_solver_symbol() const;
     inline tstamp_ptr get_power_hb_stamp()   const { return e_v; }
     inline tstamp_ptr get_power_thin_stamp() const { return thin_v; }
     inline tstamp_ptr get_power_obs_stamp()  const { return e2; }
@@ -400,8 +387,8 @@ struct source_loc{
     }
 
     void set_pre_events( se_set& );
-    void add_post_events( se_ptr&, z3::expr );
-    z3::expr get_post_cond( const se_ptr& e_post ) const;
+    void add_post_events( se_ptr&, expr );
+    expr get_post_cond( const se_ptr& e_post ) const;
 
     void set_data_dependency( const depends_set& deps );
     void set_ctrl_dependency( const depends_set& deps );
@@ -409,9 +396,9 @@ struct source_loc{
     void set_addr_dependency( const depends_set& deps );
     void set_dependencies( const depends_set& data,
                            const depends_set& ctrl );
-    z3::expr get_ctrl_dependency_cond( const se_ptr& e2 );
-    z3::expr get_data_dependency_cond( const se_ptr& e2 );
-    z3::expr get_addr_dependency_cond( const se_ptr& e2 );
+    expr get_ctrl_dependency_cond( const se_ptr& e2 );
+    expr get_data_dependency_cond( const se_ptr& e2 );
+    expr get_addr_dependency_cond( const se_ptr& e2 );
 
     friend std::ostream& operator<< ( std::ostream& stream,
                                       const memory_event& var ) {
@@ -419,51 +406,15 @@ struct source_loc{
       return stream;
     }
     void debug_print(std::ostream& stream );
-    z3::expr get_rd_expr(const variable&);
-    z3::expr get_wr_expr(const variable&);
+    expr get_rd_expr(const variable&);
+    expr get_wr_expr(const variable&);
   };
 
   typedef std::unordered_map<std::string, se_ptr> name_to_ses_map;
 
   void full_initialize_se( memory_cons& hb_enc, se_ptr e, se_set& prev_es,
-                           std::map<const se_ptr, z3::expr>& branch_conds);
+                           std::map<const se_ptr, expr>& branch_conds);
 
-
-  // inline se_ptr
-  // mk_se_ptr_old( memory_cons& hb_enc, unsigned tid, unsigned instr_no,
-  //                const variable& prog_v, std::string loc,
-  //                event_t et, se_set& prev_es) {
-  //   std::string prefix = et == event_t::r ? "pi_" : "";
-  //   variable n_v = prefix + prog_v + "#" + loc;
-  //   se_ptr e = std::make_shared<memory_event>( hb_enc.z3, tid, prev_es,
-  //                                                instr_no, n_v, prog_v, loc, et);
-  //   e->guard = hb_enc.z3.mk_true();
-
-  //   std::map<const se_ptr, z3::expr> bconds;
-  //   for( auto& ep : prev_es ) {
-  //     bconds.insert( std::make_pair( ep, hb_enc.z3.mk_true() ) );
-  //   }
-  //   full_initialize_se( hb_enc, e, prev_es, bconds );
-  //   // hb_enc.record_event( e );
-  //   return e;
-  // }
-
-
-  // inline se_ptr
-  // mk_se_ptr_old( memory_cons& hb_enc, unsigned tid, unsigned instr_no,
-  //                std::string loc, event_t et, se_set& prev_es ) {
-  //   se_ptr e =
-  //     std::make_shared<memory_event>(hb_enc.z3, tid, prev_es, instr_no, loc, et);
-  //   e->guard = hb_enc.z3.mk_true();
-
-  //   std::map<const se_ptr, z3::expr> bconds;
-  //   for( auto& ep : prev_es ) {
-  //     bconds.insert( std::make_pair( ep, hb_enc.z3.mk_true() ) );
-  //   }
-  //   full_initialize_se( hb_enc, e, prev_es, bconds );
-  //   // hb_enc.record_event( e );
-  //   return e;
-  // }
 
   //--------------------------------------------------------------------------
   // new calls
@@ -471,10 +422,10 @@ struct source_loc{
 
   inline se_ptr
   mk_se_ptr( memory_cons& mem_enc, unsigned tid, se_set prev_es,
-             z3::expr& path_cond, std::vector<z3::expr>& history_,
+             expr& path_cond, std::vector<expr>& history_,
              const variable& prog_v, source_loc& loc,
              event_t _et, o_tag_t ord_tag ) {
-    std::map<const se_ptr, z3::expr > bconds;
+    std::map<const se_ptr, expr > bconds;
     for( auto& ep : prev_es ) {
       bconds.insert( std::make_pair( ep, mem_enc.solver_ctx.bool_val(true) ) );
     }
@@ -493,9 +444,9 @@ struct source_loc{
 
   inline se_ptr
   mk_se_ptr( memory_cons& mem_enc, unsigned tid, se_set prev_es,
-             z3::expr& path_cond, std::vector<z3::expr>& history_,
+             expr& path_cond, std::vector<expr>& history_,
              source_loc& loc, event_t et,
-             std::map<const se_ptr, z3::expr>& bconds,
+             std::map<const se_ptr, expr>& bconds,
              o_tag_t ord_tag = o_tag_t::na  ) {
 
     se_ptr e = std::make_shared<memory_event>( mem_enc.solver_ctx, tid, prev_es,
@@ -518,10 +469,10 @@ struct source_loc{
 
   inline se_ptr
   mk_se_ptr( memory_cons& mem_enc, unsigned tid, se_set prev_es,
-             z3::expr& path_cond, std::vector<z3::expr>& history_,
+             expr& path_cond, std::vector<expr>& history_,
              source_loc& loc, //std::string loc,
              event_t et, o_tag_t ord_tag = o_tag_t::na ) {
-    std::map<const se_ptr, z3::expr> branch_conds;
+    std::map<const se_ptr, expr> branch_conds;
     for( auto& ep : prev_es ) {
       branch_conds.insert( std::make_pair( ep, mem_enc.solver_ctx.bool_val(true) ) );
     }
@@ -572,8 +523,8 @@ typedef std::unordered_map<variable, se_ptr, variable::variable_hash, variable::
   class depends{
   public:
     se_ptr e;
-    z3::expr cond;
-    depends( se_ptr e_, z3::expr cond_ ) : e(e_), cond(cond_) {}
+    expr cond;
+    depends( se_ptr e_, expr cond_ ) : e(e_), cond(cond_) {}
     friend inline bool operator<( const depends& d1, const depends& d2 ) {
       return d1.e < d2.e;
     }
@@ -587,23 +538,23 @@ typedef std::unordered_map<variable, se_ptr, variable::variable_hash, variable::
 
 
   depends pick_maximal_depends_set( depends_set& set );
-  void join_depends_set( const se_ptr&, const z3::expr, depends_set& set );
+  void join_depends_set( const se_ptr&, const expr, depends_set& set );
   void join_depends_set( const depends& dep, depends_set& set );
   void join_depends_set( const depends_set& , depends_set& );
   void join_depends_set( const depends_set& , const depends_set&, depends_set&);
   void join_depends_set( const std::vector<depends_set>&, depends_set& );
   void join_depends_set( const std::vector<depends_set>&,
-                         const std::vector<z3::expr>& conds,
+                         const std::vector<expr>& conds,
                          depends_set& result );
-  void meet_depends_set( const se_ptr&, const z3::expr, depends_set& set );
+  void meet_depends_set( const se_ptr&, const expr, depends_set& set );
   void meet_depends_set( const depends& dep, depends_set& set );
   void meet_depends_set( const depends_set& , depends_set& );
   void meet_depends_set( const depends_set& , const depends_set&, depends_set&);
   void meet_depends_set( const std::vector<depends_set>&, depends_set& );
   void meet_depends_set( const std::vector<depends_set>&,
-                         const std::vector<z3::expr>& conds,
+                         const std::vector<expr>& conds,
                          depends_set& result );
-  void pointwise_and( const depends_set&, z3::expr, depends_set& );
+  void pointwise_and( const depends_set&, expr, depends_set& );
 
 
   bool is_po_new( const se_ptr& x, const se_ptr& y );
