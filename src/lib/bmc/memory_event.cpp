@@ -348,7 +348,7 @@ z3::expr memory_event::get_wr_expr( const variable& g ) {
   // case event_t::barr: { tmp_v = g+"#barr";  break; }
   case event_t::pre : { tmp_v = g+"#pre" ;  break; }
   case event_t::post: { tmp_v = g+"#post";  break; }
-  default: hb_enc_error("unreachable code!!");
+  default: llvm_bmc_error( "memory_event", "unreachable code!!");
   }
   return (z3::expr)(tmp_v);
 }
@@ -495,7 +495,7 @@ void debug_print( std::ostream& out, const se_to_ses_map& map ) {
 
 void debug_print( std::ostream& out, const depends& dep ) {
   out << "("<< *(dep.e) << ",";
-  debug_print( out, dep.cond );
+  print_expr( out, dep.cond );
   out << ")";
 }
 
@@ -507,9 +507,9 @@ void debug_print( std::ostream& out, const depends_set& set ) {
 }
 
 void 
-full_initialize_se( encoding& hb_enc, se_ptr e, se_set& prev_es,
+full_initialize_se( memory_cons& mem_enc, se_ptr e, se_set& prev_es,
                     std::map<const se_ptr, z3::expr>& branch_conds) {
-  hb_enc.record_event( e );
+  mem_enc.record_event( e );
   for(se_ptr ep  : prev_es) {
     ep->add_post_events( e, branch_conds.at(ep) );
   }
