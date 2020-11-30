@@ -203,21 +203,18 @@ struct source_loc{
 		    const variable& _v, const variable& _prog_v,
                     std::string loc, event_t _et );
 
-    memory_event( //helpers::z3interf& z3,
-		    solver_context& sol_ctx,
+    memory_event(  solver_context& sol_ctx,
                     unsigned _tid, se_set& _prev_events, unsigned instr_no,
                     std::string _loc, event_t _et );
 
 
-    memory_event( //helpers::z3interf& z3, 
-		    solver_context& sol_ctx, unsigned _tid,
+    memory_event( solver_context& sol_ctx, unsigned _tid,
                     se_set& _prev_events, //const tara::variable& _prog_v,
 		    const variable& _prog_v,
                     expr& path_cond, std::vector<expr>& history_,
                     source_loc& _loc, event_t _et, o_tag_t ord_tag );
 
-    memory_event( //helpers::z3interf& z3, 
-		    solver_context& sol_ctx, unsigned _tid,
+    memory_event(   solver_context& sol_ctx, unsigned _tid,
                     se_set& _prev_events, expr& path_cond,
                     std::vector<expr>& _history,
                     source_loc& _loc, event_t _et, o_tag_t _o_tag );
@@ -418,42 +415,6 @@ struct source_loc{
   void full_initialize_se( memory_cons& hb_enc, se_ptr e, se_set& prev_es,
                            std::map<const se_ptr, expr>& branch_conds);
 
-
-  // inline se_ptr
-  // mk_se_ptr_old( memory_cons& hb_enc, unsigned tid, unsigned instr_no,
-  //                const variable& prog_v, std::string loc,
-  //                event_t et, se_set& prev_es) {
-  //   std::string prefix = et == event_t::r ? "pi_" : "";
-  //   variable n_v = prefix + prog_v + "#" + loc;
-  //   se_ptr e = std::make_shared<memory_event>( hb_enc.z3, tid, prev_es,
-  //                                                instr_no, n_v, prog_v, loc, et);
-  //   e->guard = hb_enc.z3.mk_true();
-
-  //   std::map<const se_ptr, expr> bconds;
-  //   for( auto& ep : prev_es ) {
-  //     bconds.insert( std::make_pair( ep, hb_enc.z3.mk_true() ) );
-  //   }
-  //   full_initialize_se( hb_enc, e, prev_es, bconds );
-  //   // hb_enc.record_event( e );
-  //   return e;
-  // }
-
-
-  // inline se_ptr
-  // mk_se_ptr_old( memory_cons& hb_enc, unsigned tid, unsigned instr_no,
-  //                std::string loc, event_t et, se_set& prev_es ) {
-  //   se_ptr e =
-  //     std::make_shared<memory_event>(hb_enc.z3, tid, prev_es, instr_no, loc, et);
-  //   e->guard = hb_enc.z3.mk_true();
-
-  //   std::map<const se_ptr, expr> bconds;
-  //   for( auto& ep : prev_es ) {
-  //     bconds.insert( std::make_pair( ep, hb_enc.z3.mk_true() ) );
-  //   }
-  //   full_initialize_se( hb_enc, e, prev_es, bconds );
-  //   // hb_enc.record_event( e );
-  //   return e;
-  // }
 
   //--------------------------------------------------------------------------
   // new calls
