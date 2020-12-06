@@ -40,4 +40,12 @@ public:
   std::map<const llvm::GlobalVariable*,unsigned> ind_in_mem_state;
   std::map<unsigned,memory_state> store_state_map;
   void print();
+
+  // =================================================
+  // - create threads
+  // - ability to store events by thread
+  // - declare which globals are concurrent variables
+  // - add events
+  // - modify write and read to add appropriate params
+
 };
