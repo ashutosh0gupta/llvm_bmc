@@ -4,7 +4,7 @@ LLVMBMC=llvmbmc
 HOME_INSTALLED=~/installed
 BUILDDIR = $(PWD)/build
 SRCDIR = $(PWD)/src
-LLVM_VERSION=9.0.0
+LLVM_VERSION=10.0.0
 # LLVM_VERSION=3.6.2
 LD=ld.gold
 
@@ -87,14 +87,18 @@ $(BUILDDIR)/z3/buildd/libz3.so : $(BUILDDIR)/z3/README.md
 # fetch and install local llvm with debugging enabled
 
 #$(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/tools/clang/tools/extra/docs/clang-modernize.rst
+#LLVM_HOST=http://releases.llvm.org/
+LLVM_HOST=https://github.com/llvm/llvm-project/releases/download/llvmorg-
+
 $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/LLVMBuild.txt:
-	cd $(HOME_INSTALLED);wget http://releases.llvm.org/$(LLVM_VERSION)/llvm-$(LLVM_VERSION).src.tar.xz
-	cd $(HOME_INSTALLED);wget http://releases.llvm.org/$(LLVM_VERSION)/cfe-$(LLVM_VERSION).src.tar.xz
-	cd $(HOME_INSTALLED);wget http://releases.llvm.org/$(LLVM_VERSION)/clang-tools-extra-$(LLVM_VERSION).src.tar.xz
+	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/llvm-$(LLVM_VERSION).src.tar.xz
+	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/clang-$(LLVM_VERSION).src.tar.xz
+	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/clang-tools-extra-$(LLVM_VERSION).src.tar.xz
 	cd $(HOME_INSTALLED);tar -xvJf llvm-$(LLVM_VERSION).src.tar.xz
-	cd $(HOME_INSTALLED);tar -xvJf cfe-$(LLVM_VERSION).src.tar.xz -C llvm-$(LLVM_VERSION).src/tools/; mv llvm-$(LLVM_VERSION).src/tools/cfe-$(LLVM_VERSION).src llvm-$(LLVM_VERSION).src/tools/clang
+	cd $(HOME_INSTALLED);tar -xvJf clang-$(LLVM_VERSION).src.tar.xz -C llvm-$(LLVM_VERSION).src/tools/; mv llvm-$(LLVM_VERSION).src/tools/clang-$(LLVM_VERSION).src llvm-$(LLVM_VERSION).src/tools/clang
 	cd $(HOME_INSTALLED);tar -xvJf clang-tools-extra-$(LLVM_VERSION).src.tar.xz -C llvm-$(LLVM_VERSION).src/tools/clang/tools; mv llvm-$(LLVM_VERSION).src/tools/clang/tools/clang-tools-extra-$(LLVM_VERSION).src llvm-$(LLVM_VERSION).src/tools/clang/tools/extra
 
+# probably outdated; things have moved to git
 $(HOME_INSTALLED)/llvm-svn.src/LLVMBuild.txt:
 	cd $(HOME_INSTALLED);svn co http://llvm.org/svn/llvm-project/llvm/trunk llvm-svn.src
 	cd $(HOME_INSTALLED)/llvm-svn.src/tools; svn co http://llvm.org/svn/llvm-project/cfe/trunk clang

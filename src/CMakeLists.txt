@@ -32,8 +32,10 @@ IF(LLVM_DEBUG)
   find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "${CLANG_DIR}/lib/cmake/clang/")
 ELSE(LLVM_DEBUG)
   # change here to modify the relase version of LLVM
-  find_package(LLVM 9 REQUIRED CONFIG)
-  find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/llvm-9/lib/cmake/clang")
+  find_package(LLVM 10 REQUIRED CONFIG)
+  #find_package(Clang REQUIRED CONFIG)
+  # find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/llvm-10/lib/cmake/clang")
+  find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/cmake/clang-10/")
   message(STATUS "LLVM INCLUDE DIR - ${LLVM_INCLUDE_DIRS}")
   message(STATUS "CLANG INCLUDE DIR - ${CLANG_INCLUDE_DIRS}")
   # find_package(Clang REQUIRED clangTooling libClang)
@@ -54,7 +56,7 @@ ELSE(Z3_DEBUG)
   LINK_DIRECTORIES("${PROJECT_BINARY_DIR}/../z3/buildr")
 ENDIF(Z3_DEBUG)
 
-ADD_DEFINITIONS(-std=c++11 -Wall)
+ADD_DEFINITIONS(-std=c++14 -Wall)
 
 
 include_directories (${CMAKE_CURRENT_BINARY_DIR} "${PROJECT_SOURCE_DIR}" "${PROJECT_BINARY_DIR}/../z3/src/api" "${PROJECT_BINARY_DIR}/../z3/src/api/c++")

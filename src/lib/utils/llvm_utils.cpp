@@ -62,7 +62,8 @@ void src_loc::print_short( std::ostream& os ) {
 // --------------------------------------------------------------------------
 
 // best guess of location
-class estimate_loc_pass : public llvm::BasicBlockPass {
+// class estimate_loc_pass : public llvm::BasicBlockPass {
+class estimate_loc_pass : public llvm::FunctionPass {
 
   src_loc ref;
   src_loc ref_end;
@@ -86,13 +87,15 @@ public:
 
 public:
   estimate_loc_pass( src_loc& loc_, src_loc& ref_end_) :
-    llvm::BasicBlockPass(ID), ref(loc_),ref_end(ref_end_),
+    llvm::FunctionPass(ID), ref(loc_),ref_end(ref_end_),
     low_est( 0,0, loc_.file),
     up_est( UINT_MAX, UINT_MAX, loc_.file) {
   };
   ~estimate_loc_pass() {};
 
-  virtual bool runOnBasicBlock( llvm::BasicBlock &bb ) {
+  // virtual bool runOnBasicBlock( llvm::BasicBlock &bb ) {
+  virtual bool runOnFunction( llvm::Function &f ) {
+    for( llvm::BasicBlock& bb : f.getBasicBlockList() ) {
     for( llvm::Instruction& I : bb.getInstList() ) {
       const llvm::DebugLoc d = I.getDebugLoc();
       if( d ) {
@@ -142,7 +145,7 @@ public:
         //   I_low = &I;
         // }
       }
-    }
+    }}
 
     return false;
   }
@@ -275,24 +278,30 @@ bool ExecuteAction( clang::CompilerInstance& CI,
       Act.Execute();
       clang::ASTContext& ast_ctx = CI.getASTContext();
       clang::SourceManager& sm = CI.getSourceManager();
+      auto FID = sm.getMainFileID();
       clang::RawCommentList& comment_list = ast_ctx.getRawCommentList();
-      for( clang::RawComment* cmnt : comment_list.getComments() ) {
-        // OS << comment->getRawText( sm ) << "\n";
-        //todo: check prefix of the comment
-        std::string multi_cmt = cmnt->getRawText( sm );
+      const std::map< unsigned, clang::RawComment * > * cmts = comment_list.getCommentsInFile(FID);
+      if( cmts ) {
+      // for( clang::RawComment* cmnt : comment_list.getComments() ) {
+        for( auto& pos_cmt_pair : *cmts ) {
+          clang::RawComment* cmnt = pos_cmt_pair.second;
+          // OS << comment->getRawText( sm ) << "\n";
+          //todo: check prefix of the comment
+          std::string multi_cmt = cmnt->getRawText( sm );
 
-        std::vector<std::string> cmts;
-        boost::split(cmts, multi_cmt, [](char c){return c == '\n';});
-        for( auto cmt : cmts ) {
-          comment c;
-          boost::algorithm::trim(cmt);
-          if(COMMENT_PREFIX == cmt.substr(0, COMMENT_PREFIX_LEN) ) {
-            auto txt =
-              cmt.substr(COMMENT_PREFIX_LEN, cmt.size()-COMMENT_PREFIX_LEN );
-            c.texts.push_back( txt );
-            c.start = getLocFromClangSource(cmnt->getSourceRange().getBegin(), sm);
-            c.end = getLocFromClangSource( cmnt->getSourceRange().getEnd(), sm);
-            comments_found.push_back(c);
+          std::vector<std::string> cmts;
+          boost::split(cmts, multi_cmt, [](char c){return c == '\n';});
+          for( auto cmt : cmts ) {
+            comment c;
+            boost::algorithm::trim(cmt);
+            if(COMMENT_PREFIX == cmt.substr(0, COMMENT_PREFIX_LEN) ) {
+              auto txt =
+                cmt.substr(COMMENT_PREFIX_LEN, cmt.size()-COMMENT_PREFIX_LEN );
+              c.texts.push_back( txt );
+              c.start = getLocFromClangSource(cmnt->getSourceRange().getBegin(), sm);
+              c.end = getLocFromClangSource( cmnt->getSourceRange().getEnd(), sm);
+              comments_found.push_back(c);
+            }
           }
         }
       }
@@ -360,12 +369,15 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   }
   args.push_back( filename.c_str() );
 
+  llvm::ArrayRef<const char *> args_arry(args);
+
   clang::CompilerInstance Clang;
   Clang.createDiagnostics();
 
   std::shared_ptr<clang::CompilerInvocation> CI(new clang::CompilerInvocation());
-  clang::CompilerInvocation::CreateFromArgs( *CI.get(), &args[0],
-                                             &args[0] + args.size(),
+  clang::CompilerInvocation::CreateFromArgs( *CI.get(),
+                                             args_arry,
+                                             // &args[0], &args[0] + args.size(),
                                             Clang.getDiagnostics());
   Clang.setInvocation(CI);
   clang::CodeGenAction *Act = new clang::EmitLLVMOnlyAction(&llvm_ctx);
