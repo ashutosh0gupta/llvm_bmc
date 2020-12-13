@@ -9,8 +9,8 @@
 
   class tstamp;
 
-  // typedef std::shared_ptr<memory_event> se_ptr;
-  // typedef std::set<se_ptr> se_set;
+  // typedef std::shared_ptr<memory_event> me_ptr;
+  // typedef std::set<me_ptr> me_set;
   // typedef std::shared_ptr<hb_enc::hb> hb_ptr;
   // typedef std::vector<hb_ptr> hb_vec;
   typedef std::shared_ptr<tstamp const> tstamp_ptr;
@@ -179,9 +179,9 @@ struct source_loc{
 
   class memory_event;
   typedef memory_event se;
-  typedef std::shared_ptr<memory_event> se_ptr;
-  typedef std::set<se_ptr> se_set;
-  typedef std::vector<se_ptr> se_vec;
+  typedef std::shared_ptr<memory_event> me_ptr;
+  typedef std::set<me_ptr> me_set;
+  typedef std::vector<me_ptr> me_vec;
   class depends;
   typedef std::set<depends> depends_set;
 
@@ -198,24 +198,24 @@ struct source_loc{
     void update_topological_order();
   public:
     memory_event( solver_context& sol_ctx,
-                    unsigned _tid, se_set& _prev_events, unsigned i,
+                    unsigned _tid, me_set& _prev_events, unsigned i,
                     //const tara::variable& _v, const tara::variable& _prog_v,
 		    const variable& _v, const variable& _prog_v,
                     std::string loc, event_t _et );
 
     memory_event(  solver_context& sol_ctx,
-                    unsigned _tid, se_set& _prev_events, unsigned instr_no,
+                    unsigned _tid, me_set& _prev_events, unsigned instr_no,
                     std::string _loc, event_t _et );
 
 
     memory_event( solver_context& sol_ctx, unsigned _tid,
-                    se_set& _prev_events, //const tara::variable& _prog_v,
+                    me_set& _prev_events, //const tara::variable& _prog_v,
 		    const variable& _prog_v,
                     expr& path_cond, std::vector<expr>& history_,
                     source_loc& _loc, event_t _et, o_tag_t ord_tag );
 
     memory_event(   solver_context& sol_ctx, unsigned _tid,
-                    se_set& _prev_events, expr& path_cond,
+                    me_set& _prev_events, expr& path_cond,
                     std::vector<expr>& _history,
                     source_loc& _loc, event_t _et, o_tag_t _o_tag );
   public:
@@ -234,7 +234,7 @@ struct source_loc{
     //tara::variable wr_v() { return v_copy; }
     variable wr_v() { return v_copy; }
     source_loc loc;
-    se_ptr rmw_other=NULL;
+    me_ptr rmw_other=NULL;
   private:
     unsigned topological_order;
   public:
@@ -249,7 +249,7 @@ struct source_loc{
     event_t et;    // type of the event
     o_tag_t o_tag; // ordering tag on the event
 
-    se_set prev_events; // in straight line programs it will be singleton
+    me_set prev_events; // in straight line programs it will be singleton
                         // we need to remove access to  pointer
     depends_set post_events;
     expr guard;
@@ -368,12 +368,12 @@ struct source_loc{
     inline tstamp_ptr get_power_obs_stamp()  const { return e2; }
     inline tstamp_ptr get_power_prop_stamp()   const { return e3; }
 
-    inline bool access_same_var( const se_ptr& e ) const {
+    inline bool access_same_var( const me_ptr& e ) const {
       if( is_pre() || is_post() ) return true;
       return prog_v.name == e->prog_v.name;
     }
 
-    inline bool access_dominates( const se_ptr& e ) const {
+    inline bool access_dominates( const me_ptr& e ) const {
       if( !access_same_var(e) ) return false;
       if( et == e->et) return true;
       if( is_pre() || is_post() ) return true;
@@ -386,9 +386,9 @@ struct source_loc{
       return tid;
     }
 
-    void set_pre_events( se_set& );
-    void add_post_events( se_ptr&, expr );
-    expr get_post_cond( const se_ptr& e_post ) const;
+    void set_pre_events( me_set& );
+    void add_post_events( me_ptr&, expr );
+    expr get_post_cond( const me_ptr& e_post ) const;
 
     void set_data_dependency( const depends_set& deps );
     void set_ctrl_dependency( const depends_set& deps );
@@ -396,9 +396,9 @@ struct source_loc{
     void set_addr_dependency( const depends_set& deps );
     void set_dependencies( const depends_set& data,
                            const depends_set& ctrl );
-    expr get_ctrl_dependency_cond( const se_ptr& e2 );
-    expr get_data_dependency_cond( const se_ptr& e2 );
-    expr get_addr_dependency_cond( const se_ptr& e2 );
+    expr get_ctrl_dependency_cond( const me_ptr& e2 );
+    expr get_data_dependency_cond( const me_ptr& e2 );
+    expr get_addr_dependency_cond( const me_ptr& e2 );
 
     friend std::ostream& operator<< ( std::ostream& stream,
                                       const memory_event& var ) {
@@ -410,46 +410,46 @@ struct source_loc{
     expr get_wr_expr(const variable&);
   };
 
-  typedef std::unordered_map<std::string, se_ptr> name_to_ses_map;
+  typedef std::unordered_map<std::string, me_ptr> name_to_ses_map;
 
-  void full_initialize_se( memory_cons& hb_enc, se_ptr e, se_set& prev_es,
-                           std::map<const se_ptr, expr>& branch_conds);
+  void full_initialize_se( memory_cons& hb_enc, me_ptr e, me_set& prev_es,
+                           std::map<const me_ptr, expr>& branch_conds);
 
 
   //--------------------------------------------------------------------------
   // new calls
   // todo: streamline se all tstamps
 
-  inline se_ptr
-  mk_se_ptr( memory_cons& mem_enc, unsigned tid, se_set prev_es,
+  inline me_ptr
+  mk_me_ptr( memory_cons& mem_enc, unsigned tid, me_set prev_es,
              expr& path_cond, std::vector<expr>& history_,
              const variable& prog_v, source_loc& loc,
              event_t _et, o_tag_t ord_tag ) {
-    std::map<const se_ptr, expr > bconds;
+    std::map<const me_ptr, expr > bconds;
     for( auto& ep : prev_es ) {
       bconds.insert( std::make_pair( ep, mem_enc.solver_ctx.bool_val(true) ) );
     }
-    se_ptr e = std::make_shared<memory_event>( mem_enc.solver_ctx, tid, prev_es,prog_v,
+    me_ptr e = std::make_shared<memory_event>( mem_enc.solver_ctx, tid, prev_es,prog_v,
                                                path_cond, history_, loc, _et,
                                                ord_tag );
     full_initialize_se( mem_enc, e, prev_es, bconds );
 
     // std::string loc_name = loc.gen_name();
     // variable ssa_v = prog_v + "#" + loc_name;
-    // se_ptr e = std::make_shared<memory_event>( mem_enc.solver_ctx, tid, prev_es, 0,
+    // me_ptr e = std::make_shared<memory_event>( mem_enc.solver_ctx, tid, prev_es, 0,
     //                                              ssa_v, prog_v,loc_name,_et);
     // full_initialize_se( mem_enc, e, prev_es, path_cond, history_,loc,ord_tag,bconds);
     return e;
   }
 
-  inline se_ptr
-  mk_se_ptr( memory_cons& mem_enc, unsigned tid, se_set prev_es,
+  inline me_ptr
+  mk_me_ptr( memory_cons& mem_enc, unsigned tid, me_set prev_es,
              expr& path_cond, std::vector<expr>& history_,
              source_loc& loc, event_t et,
-             std::map<const se_ptr, expr>& bconds,
+             std::map<const me_ptr, expr>& bconds,
              o_tag_t ord_tag = o_tag_t::na  ) {
 
-    se_ptr e = std::make_shared<memory_event>( mem_enc.solver_ctx, tid, prev_es,
+    me_ptr e = std::make_shared<memory_event>( mem_enc.solver_ctx, tid, prev_es,
                                                  path_cond, history_, loc, et,
                                                  ord_tag );
     full_initialize_se( mem_enc, e, prev_es, bconds );
@@ -461,23 +461,23 @@ struct source_loc{
     // }else{
     //   lname = loc.gen_name();
     // }
-    // se_ptr e =
+    // me_ptr e =
     //   std::make_shared<memory_event>(mem_enc.solver_ctx,tid,prev_es,0,lname,et);
     // full_initialize_se( mem_enc, e, prev_es, path_cond, history_,loc,ord_tag,bconds);
     return e;
   }
 
-  inline se_ptr
-  mk_se_ptr( memory_cons& mem_enc, unsigned tid, se_set prev_es,
+  inline me_ptr
+  mk_me_ptr( memory_cons& mem_enc, unsigned tid, me_set prev_es,
              expr& path_cond, std::vector<expr>& history_,
              source_loc& loc, //std::string loc,
              event_t et, o_tag_t ord_tag = o_tag_t::na ) {
-    std::map<const se_ptr, expr> branch_conds;
+    std::map<const me_ptr, expr> branch_conds;
     for( auto& ep : prev_es ) {
       branch_conds.insert( std::make_pair( ep, mem_enc.solver_ctx.bool_val(true) ) );
     }
     // std::string loc_name = loc.name();
-    se_ptr e = mk_se_ptr( mem_enc, tid, prev_es, path_cond, history_,
+    me_ptr e = mk_me_ptr( mem_enc, tid, prev_es, path_cond, history_,
                           loc, et, branch_conds, ord_tag );
     e->loc = loc;
     return e;
@@ -485,23 +485,23 @@ struct source_loc{
 
   //--------------------------------------------------------------------------
 
-  struct se_hash {
-    size_t operator () (const se_ptr &v) const {
+  struct me_hash {
+    size_t operator () (const me_ptr &v) const {
       // return std::hash<std::string>()(v->e_v->name);
       return std::hash<std::string>()(v->name());
     }
   };
 
-  struct se_equal :
+  struct me_equal :
     std::binary_function <memory_event,memory_event,bool> {
-    bool operator() (const se_ptr& x, const se_ptr& y) const {
+    bool operator() (const me_ptr& x, const me_ptr& y) const {
       return std::equal_to<std::string>()(x->name(), y->name());
     }
   };
 
-  struct se_cmp :
+  struct me_cmp :
     std::binary_function <memory_event,memory_event,bool> {
-    bool operator() (const se_ptr& x, const se_ptr& y) const {
+    bool operator() (const me_ptr& x, const me_ptr& y) const {
       return x->get_topological_order() < y->get_topological_order() ||
         ( x->get_topological_order() == y->get_topological_order() &&
           x < y
@@ -509,28 +509,28 @@ struct source_loc{
     }
   };
 
-  typedef std::set< se_ptr, se_cmp > se_tord_set;
-  // typedef std::unordered_set<se_ptr, se_hash, se_equal> se_set;
+  typedef std::set< me_ptr, me_cmp > me_tord_set;
+  // typedef std::unordered_set<me_ptr, me_hash, me_equal> me_set;
 
-typedef std::unordered_map<variable, se_ptr, variable::variable_hash, variable::variable_equal> var_to_se_map;
+typedef std::unordered_map<variable, me_ptr, variable::variable_hash, variable::variable_equal> var_to_me_map;
 
-  typedef std::unordered_map<variable, se_set, variable::variable_hash, variable::variable_equal> var_to_ses_map;
+  typedef std::unordered_map<variable, me_set, variable::variable_hash, variable::variable_equal> var_to_ses_map;
 
-  typedef std::unordered_map<variable, se_vec, variable::variable_hash, variable::variable_equal> var_to_se_vec_map;
+  typedef std::unordered_map<variable, me_vec, variable::variable_hash, variable::variable_equal> var_to_me_vec_map;
 
-  typedef std::unordered_map<se_ptr, se_set, se_hash, se_equal> se_to_ses_map;
+  typedef std::unordered_map<me_ptr, me_set, me_hash, me_equal> me_to_ses_map;
 
   class depends{
   public:
-    se_ptr e;
+    me_ptr e;
     expr cond;
-    depends( se_ptr e_, expr cond_ ) : e(e_), cond(cond_) {}
+    depends( me_ptr e_, expr cond_ ) : e(e_), cond(cond_) {}
     friend inline bool operator<( const depends& d1, const depends& d2 ) {
       return d1.e < d2.e;
     }
   };
 
-  typedef std::unordered_map<se_ptr, depends_set, se_hash, se_equal> se_to_depends_map;
+  typedef std::unordered_map<me_ptr, depends_set, me_hash, me_equal> me_to_depends_map;
   typedef std::unordered_map< variable,
                               depends_set,
                               variable::variable_hash,
@@ -538,7 +538,7 @@ typedef std::unordered_map<variable, se_ptr, variable::variable_hash, variable::
 
 
   depends pick_maximal_depends_set( depends_set& set );
-  void join_depends_set( const se_ptr&, const expr, depends_set& set );
+  void join_depends_set( const me_ptr&, const expr, depends_set& set );
   void join_depends_set( const depends& dep, depends_set& set );
   void join_depends_set( const depends_set& , depends_set& );
   void join_depends_set( const depends_set& , const depends_set&, depends_set&);
@@ -546,7 +546,7 @@ typedef std::unordered_map<variable, se_ptr, variable::variable_hash, variable::
   void join_depends_set( const std::vector<depends_set>&,
                          const std::vector<expr>& conds,
                          depends_set& result );
-  void meet_depends_set( const se_ptr&, const expr, depends_set& set );
+  void meet_depends_set( const me_ptr&, const expr, depends_set& set );
   void meet_depends_set( const depends& dep, depends_set& set );
   void meet_depends_set( const depends_set& , depends_set& );
   void meet_depends_set( const depends_set& , const depends_set&, depends_set&);
@@ -554,20 +554,20 @@ typedef std::unordered_map<variable, se_ptr, variable::variable_hash, variable::
   void meet_depends_set( const std::vector<depends_set>&,
                          const std::vector<expr>& conds,
                          depends_set& result );
-  void pointwise_and( const depends_set&, expr, depends_set& );
+  void pointwime_and( const depends_set&, expr, depends_set& );
 
 
-  bool is_po_new( const se_ptr& x, const se_ptr& y );
+  bool is_po_new( const me_ptr& x, const me_ptr& y );
   // must_before: if y occurs then, x must occur in the past
-  // bool is_must_before( const se_ptr& x, const se_ptr& y );
+  // bool is_must_before( const me_ptr& x, const me_ptr& y );
   // must_after : if x occurs then, y must occur in the future
-  // bool is_must_after ( const se_ptr& x, const se_ptr& y );
+  // bool is_must_after ( const me_ptr& x, const me_ptr& y );
 
 //}
 
-  void debug_print(std::ostream& out, const se_vec& set );
-  void debug_print(std::ostream& out, const se_set& set );
-  void debug_print(std::ostream& out, const se_to_ses_map& dep );
+  void debug_print(std::ostream& out, const me_vec& set );
+  void debug_print(std::ostream& out, const me_set& set );
+  void debug_print(std::ostream& out, const me_to_ses_map& dep );
   void debug_print(std::ostream& out, const depends& dep );
   void debug_print(std::ostream& out, const depends_set& set);
 //}

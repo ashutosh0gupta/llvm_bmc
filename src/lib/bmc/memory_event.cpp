@@ -170,7 +170,7 @@ expr memory_event::get_power_mo_solver_symbol() const {
 
 void memory_event::update_topological_order() {
   unsigned max = 0;
-  for( const se_ptr e : prev_events)
+  for( const me_ptr e : prev_events)
     if( max < e->get_topological_order() ) max = e->get_topological_order();
   topological_order = max + 1;
   // o_tag = o_tag_t::na;
@@ -181,7 +181,7 @@ void memory_event::update_topological_order() {
 // Move the ctrc calls to the new constructors
 
 memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
-                                se_set& _prev_events, unsigned instr_no,
+                                me_set& _prev_events, unsigned instr_no,
                                 const variable& _v,
                                 const variable& _prog_v,
                                 std::string _loc, event_t _et )
@@ -211,7 +211,7 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
 
 // barrier events
 memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
-                                se_set& _prev_events, unsigned instr_no,
+                                me_set& _prev_events, unsigned instr_no,
                                 std::string _loc, event_t _et )
   : tid(_tid)
   , v("dummy",sol_ctx)
@@ -233,7 +233,7 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
 
 // new constructor
 memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
-                                se_set& _prev_events,
+                                me_set& _prev_events,
                                 const variable& _prog_v,
                                 expr& path_cond,
                                 std::vector<expr>& _history,
@@ -270,7 +270,7 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
 }
 
 memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
-                                se_set& _prev_events,
+                                me_set& _prev_events,
                                 expr& path_cond,
                                 std::vector<expr>& _history,
                                 source_loc& _loc, event_t _et,
@@ -332,16 +332,16 @@ expr memory_event::get_wr_expr( const variable& g ) {
 }
 
 
-void memory_event::set_pre_events( se_set& prev_events_) {
+void memory_event::set_pre_events( me_set& prev_events_) {
   prev_events = prev_events_;
 }
 
-void memory_event::add_post_events( se_ptr& e, expr cond ) {
+void memory_event::add_post_events( me_ptr& e, expr cond ) {
   post_events.insert( depends( e, cond) );
 }
 
 //todo : make the following function efficient
-expr memory_event::get_post_cond( const se_ptr& e_post ) const {
+expr memory_event::get_post_cond( const me_ptr& e_post ) const {
   for( const auto& dep : post_events ) {
     if( dep.e == e_post ) return dep.cond;
   }
@@ -377,7 +377,7 @@ void memory_event::set_dependencies( const depends_set& data,
   set_ctrl_dependency( ctrl );
 }
 
-expr memory_event::get_data_dependency_cond( const se_ptr& e2 ) {
+expr memory_event::get_data_dependency_cond( const me_ptr& e2 ) {
   for( auto& dep : data_dependency ) {
     if( dep.e == e2 ) {
        return dep.cond;
@@ -387,7 +387,7 @@ expr memory_event::get_data_dependency_cond( const se_ptr& e2 ) {
   return expr( guard.ctx() );
 }
 
-expr memory_event::get_ctrl_dependency_cond( const se_ptr& e2 ) {
+expr memory_event::get_ctrl_dependency_cond( const me_ptr& e2 ) {
   for( auto& dep : ctrl_dependency ) {
     if( dep.e == e2 ) {
        return dep.cond;
@@ -397,7 +397,7 @@ expr memory_event::get_ctrl_dependency_cond( const se_ptr& e2 ) {
   return expr( guard.ctx() );
 }
 
-expr memory_event::get_addr_dependency_cond( const se_ptr& e2 ) {
+expr memory_event::get_addr_dependency_cond( const me_ptr& e2 ) {
   for( auto& dep : addr_dependency ) {
     if( dep.e == e2 ) {
        return dep.cond;
@@ -421,16 +421,16 @@ void memory_event::debug_print( std::ostream& stream ) {
 //----------------------
 // todo: enable memoization
 //----------------------
-bool is_po_new( const se_ptr& x, const se_ptr& y ) {
+bool is_po_new( const me_ptr& x, const me_ptr& y ) {
   if( x == y )
     return true;
   if( x->is_pre() || y->is_post() ) return true;
   if( x->is_post() || y->is_pre() ) return false;
   if( x->tid != y->tid ) return false;
   if( x->get_topological_order() >= y->get_topological_order() ) return false;
-  se_set visited, pending = y->prev_events;
+  me_set visited, pending = y->prev_events;
   while( !pending.empty() ) {
-    se_ptr yp = *pending.begin();
+    me_ptr yp = *pending.begin();
     pending.erase( yp );
     visited.insert( yp );
     if( x == yp ) return true;
@@ -446,24 +446,24 @@ bool is_po_new( const se_ptr& x, const se_ptr& y ) {
 
 //------------------------------------------------------------------------
 
-void debug_print( std::ostream& out, const se_vec& set ) {
+void debug_print( std::ostream& out, const me_vec& set ) {
   for (auto c : set) {
     out << *c << " ";
   }
   out << std::endl;
 }
 
-void debug_print( std::ostream& out, const se_set& set ) {
+void debug_print( std::ostream& out, const me_set& set ) {
   for (auto c : set) {
     out << *c << " ";
   }
   out << std::endl;
 }
 
-void debug_print( std::ostream& out, const se_to_ses_map& map ) {
+void debug_print( std::ostream& out, const me_to_ses_map& map ) {
   for (auto it : map) {
-    se_ptr e = it.first;
-    se_set set  = it.second;
+    me_ptr e = it.first;
+    me_set set  = it.second;
     out << *e << "->";
     debug_print( out, set );
     out << "\n";
@@ -485,10 +485,10 @@ void debug_print( std::ostream& out, const depends_set& set ) {
 }
 
 void 
-full_initialize_se( memory_cons& mem_enc, se_ptr e, se_set& prev_es,
-                    std::map<const se_ptr, expr>& branch_conds) {
+full_initialize_se( memory_cons& mem_enc, me_ptr e, me_set& prev_es,
+                    std::map<const me_ptr, expr>& branch_conds) {
   mem_enc.record_event( e );
-  for(se_ptr ep  : prev_es) {
+  for(me_ptr ep  : prev_es) {
     ep->add_post_events( e, branch_conds.at(ep) );
   }
 }

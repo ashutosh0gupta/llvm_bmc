@@ -15,6 +15,7 @@ expr memory_model::get_fresh_name( sort ty, std::string name_str ) {
   return newExpr;
 }
 
+// modify this function to handle write concurrrent globals
 std::pair<expr,expr>
 memory_model::write( unsigned bidx, const llvm::StoreInst* I,
                       expr& val ) {
