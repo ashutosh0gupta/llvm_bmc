@@ -27,18 +27,28 @@ public:
 	expr length;
 };
 
+class me_set;
+
 class memory_model {
 public:
   memory_model( solver_context& solver_ctx_ ) : solver_ctx(solver_ctx_) {}
   expr get_fresh_name( sort, std::string );
   void update_name( unsigned, std::vector<const llvm::GlobalVariable*>& );
+  // 
   std::pair<expr,expr> write(unsigned, const llvm::StoreInst*, expr& );
   expr read( unsigned, const llvm::LoadInst*);
   expr join_state( std::vector<expr>&, std::vector<unsigned>&, unsigned );
+
   solver_context& solver_ctx;
   // TODO : change to a more general thing than GlobalVariable*
   std::map<const llvm::GlobalVariable*,unsigned> ind_in_mem_state;
   std::map<unsigned,memory_state> store_state_map;
+
+  //todo: thread name may change to a class reference
+  std::vector<std::string> threads; // thread names
+  std::map< std::string, me_set&> events;
+  std::vector<const llvm::GlobalVariable*> concurrent_vars;
+
   void print();
 
   // =================================================
@@ -48,4 +58,4 @@ public:
   // - add events
   // - modify write and read to add appropriate params
 
-};
+}
