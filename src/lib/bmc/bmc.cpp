@@ -5,6 +5,7 @@
 #include "lib/utils/collect_loopdata.h"
 #include "lib/utils/llvm_utils.h"
 // #include "lib/bmc/bmc_loop_pass.h"
+#include "include/collect_globals.h"
 #include "bmc_utils.h"
 #include "witness.h"
 
@@ -51,6 +52,9 @@ void bmc::run_bmc_pass() {
   } else {
     passMan.add( new bmc_fun_pass(o, o.solver_ctx,*this));
   }
+
+  passMan.add( new collect_globals_pass(*module.get(), o.solver_ctx) );
+
   passMan.run( *module.get() );
 }
 

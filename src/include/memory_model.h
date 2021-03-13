@@ -27,7 +27,7 @@ public:
 	expr length;
 };
 
-class me_set;
+class me_set1;
 
 class memory_model {
 public:
@@ -46,7 +46,7 @@ public:
 
   //todo: thread name may change to a class reference
   std::vector<std::string> threads; // thread names
-  std::map< std::string, me_set&> events;
+  std::map< std::string, me_set1&> events;
   std::vector<const llvm::GlobalVariable*> concurrent_vars;
 
   void print();
@@ -58,4 +58,4 @@ public:
   // - add events
   // - modify write and read to add appropriate params
 
-}
+};

@@ -6,7 +6,7 @@
 
 
 ;; Declare thread
-(declare-thread major starting_fun_name)
+declare-thread major _ada_mjguidancedriver
 
 
 ;; write preconditions
@@ -18,7 +18,7 @@
 
 
 ;; Declare thread
-(declare-thread minor starting_fun_name2)
+declare-thread minor _ada_mnguidancedriver
 
 
 ;; write preconditions
