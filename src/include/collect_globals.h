@@ -12,8 +12,6 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/LinkAllPasses.h"
 
-#include "include/options.h"
-
 #include "lib/bmc/memory_cons.h"
 #include "lib/bmc/memory_event.h"
 #include "include/solver.h"
@@ -32,6 +30,7 @@ public:
   static char ID;
   solver_context& solver_ctx;
   memory_cons& mem_enc;
+  options& o;
   unsigned thread_num = 0;
   std::string fname1, fname2;
   std::map< std::string,  std::vector<const llvm::GlobalVariable*>> fn_gvars_map;
@@ -48,7 +47,7 @@ public:
   expr start_cond = solver_ctx.bool_val(true);
 
 public:
-  collect_globals_pass(llvm::Module &m, solver_context& solver_ctx__);
+  collect_globals_pass(llvm::Module &m, solver_context& solver_ctx__, options& o);
    ~collect_globals_pass();
 
   virtual bool runOnModule(llvm::Module &m); //when there is a Module
@@ -56,6 +55,9 @@ public:
 
   void insert_concurrent(std::string FnName1, std::string FnName2);
   unsigned add_thread( std::string str);
+  void CreateRdWrEvents(llvm::Function& f);
+
+  o_tag_t translate_ordering_tags( llvm::AtomicOrdering ord );
   
   void add_event( me_ptr e ) { events.push_back( e ); }
 
@@ -66,6 +68,16 @@ public:
   
   void set_start_event( unsigned i, me_ptr e, expr cond ) {
       set_start_event( e, cond );
+    }
+
+  source_loc getInstructionLocation(const llvm::Instruction* I );
+
+  void add_event( unsigned i, me_ptr e );
+
+  void add_event( unsigned i, me_set es ) {
+      for( auto e : es ) {
+        add_event( i, e );
+      }
     }
 
   virtual void getAnalysisUsage(llvm::AnalysisUsage &au) const;

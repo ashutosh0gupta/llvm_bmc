@@ -183,7 +183,7 @@ void memory_event::update_topological_order() {
 memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
                                 me_set& _prev_events, unsigned instr_no,
                                 const variable& _v,
-                                const variable& _prog_v,
+                                const llvm::GlobalVariable* _prog_v,
                                 std::string _loc, event_t _et )
   : tid(_tid)
   , v(_v)
@@ -216,7 +216,7 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
   : tid(_tid)
   , v("dummy",sol_ctx)
   , v_copy("dummy",sol_ctx)
-  , prog_v( "dummy",sol_ctx)
+  , prog_v( prog_v)
   , loc_name(_loc)
   , et( _et )
   , prev_events( _prev_events )
@@ -234,14 +234,14 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
 // new constructor
 memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
                                 me_set& _prev_events,
-                                const variable& _prog_v,
+                                const llvm::GlobalVariable* _prog_v,
                                 expr& path_cond,
                                 std::vector<expr>& _history,
                                 source_loc& _loc, event_t _et,
                                 o_tag_t _o_tag )
   : tid(_tid)
-  , v(_prog_v)      // temp init
-  , v_copy(_prog_v) // temp init
+  , v(v)      // temp init
+  , v_copy(v) // temp init
   , prog_v( _prog_v )
   , loc(_loc)
   , et( _et )
@@ -257,9 +257,10 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
 
   loc_name = loc.gen_name();
   std::string e_t_name = event_t_name( et );
-  position_name = e_t_name + "#" + prog_v.name + "#" + loc.position_name();
+  //position_name = e_t_name + "#" + (std::string) (prog_v -> getName()) + "#" + loc.position_name();
+  position_name = e_t_name + "#" + loc.position_name();  //To be modified later
 
-  v = prog_v + "#" + loc_name;
+  //v = prog_v + "#" + loc_name; //To be modified later
   v_copy = (et != event_t::u) ? v : v + "#update_wr";
 
   std::string e_name = e_t_name + "#" + v.name;
@@ -278,7 +279,7 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
   : tid(_tid)
   , v("dummy",sol_ctx)
   , v_copy("dummy",sol_ctx)
-  , prog_v( "dummy",sol_ctx)
+  , prog_v( prog_v)
   , loc(_loc)
   , et( _et )
   , o_tag( _o_tag )
