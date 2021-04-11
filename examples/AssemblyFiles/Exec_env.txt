@@ -1,0 +1,9 @@
+1. 2 threads - minor and major
+2. Minor has higher priority (20 ms), cannot be interrupted
+3. Major has a periodicity of 500 ms, can be interrupted
+4. All inputs are passed through a driver file -  time, minor ID and other time-based inputs are passed from a text file - for standalone testing
+5. All functional & TM outputs are collected in a driver file and printed - for standalone testing
+6. Variables which can be initialised through an init file, but are given default values in the code
+7. Hardware related - interrupts, arithmetic error, code and data memory
+8. Scheduling
+9. A routine which is invoked only once to initialise all essential variables by driver file
