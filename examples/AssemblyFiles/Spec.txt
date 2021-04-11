@@ -2,31 +2,42 @@
 
 
 ;; Declare variable
-(declare-fun algorithm__compangley)
+;; list all the variables that are read
+(declare-var x Int)
+(declare-var x (Array Int Int))
 
 
-;; Declare thread
-declare-thread major _ada_mjguidancedriver
-
+;; -----------------------------------------
+;; Declare major thread
+;; -----------------------------------------
+;; Declare threads
+(declare-thread major _ada_mjguidancedriver) ; param name entry_function
+(invoke-behaviour major synchronous unqiue can-be-killed (repeated 0ms 500ms) (priority low))
+;; model when a thread can be killed.
 
 ;; write preconditions
-(pre-condition major (invoke algorithm__compangley))
+(pre-condition major (x > 0) )
 
+(post-condition major (and (x_pre > x) (x > 0) (invoke algorithm__compangley)))
 
+(env-invarinat (x > 0) )
 
-(post-condition major (invoke algorithm__compangley))
+;; -----------------------------------------
+;; Declare minor thread
+;; -----------------------------------------
 
+(declare-thread minor _ada_mnguidancedriver)
 
-;; Declare thread
-declare-thread minor _ada_mnguidancedriver
-
+(invoke-behaviour minor synchronous unqiue can-be-killed (repeated 0ms 20ms) (priority high))
 
 ;; write preconditions
 (pre-condition minor (invoke algorithm__compangley) )
 
-
 (post-condition minor (invoke algorithm__compangley) )
 
 
-;; Execution environment
-(execution-env (parallel major (repeat minor 25) ) )
+
+
+
+
+
