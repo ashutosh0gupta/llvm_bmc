@@ -3,9 +3,41 @@
 
 ;; Declare variable
 ;; list all the variables that are read
-(declare-var x Int)
-(declare-var x (Array Int Int))
-
+(declare-var @algorithm__exhaustvel float32)  ;init
+(declare-var @algorithm__velocityradial float32)  ;init
+(declare-var @algorithm__hv_target float32)  ;init
+(declare-var @algorithm__rd_target float32)  ;init
+(declare-var @lookup__distance_incr float32)  ;input
+(declare-var @lookup__distance array float32 60)  ;init
+(declare-var @lookup__rotangle array float32 60)  ;init
+(declare-var @lookup__dircosl array float32 60)  ;init
+(declare-var @lookup__dircosm array float32 60)  ;init
+(declare-var @lookup__dircosn array float32 60)  ;init
+(declare-var @lookup__cmdquaternion1 array float32 60)  ;init
+(declare-var @lookup__cmdquaternion2 array float32 60)  ;init
+(declare-var @lookup__cmdquaternion3 array float32 60)  ;init
+(declare-var @lookup__cmdquaternion4 array float32 60)  ;init
+(declare-var @main__cyclecount i32); input
+(declare-var @main__minorinmajor i16); input
+(declare-var @main__step12 i16); output
+(declare-var @main__step8 i16); output
+(declare-var @main__step7 i16); output
+(declare-var @main__apogee float32); input
+(declare-var @main__radialdist float32); input
+(declare-var @main__velu float32); input
+(declare-var @main__velv float32); input
+(declare-var @main__velw float32); input
+(declare-var @main__posx float32); input
+(declare-var @main__posy float32); input
+(declare-var @main__posz float32); input
+(declare-var @main__combinederrorflag i16); output
+(declare-var @main__guidoutflagc  i16); output
+(declare-var @main__guidoutflag  i16); output
+(declare-var @main__stageflg  i16); input
+(declare-var @main__stageflgc  i16); input
+(declare-var @main__altitudeinfo float32); input
+(declare-var @main__qc array float32 4)  ;output
+(declare-var @major_cycle__desiredq array float32 5)  ;init
 
 ;; -----------------------------------------
 ;; Declare major thread
