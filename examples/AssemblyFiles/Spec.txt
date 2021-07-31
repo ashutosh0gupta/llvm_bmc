@@ -5,8 +5,6 @@
 ;; list all the variables that are read
 (declare-var @algorithm__exhaustvel float32)  ;init
 (declare-var @algorithm__velocityradial float32)  ;init
-(declare-var @algorithm__hv_target float32)  ;init
-(declare-var @algorithm__rd_target float32)  ;init
 (declare-var @lookup__distance_incr float32)  ;input
 (declare-var @lookup__distance array float32 60)  ;init
 (declare-var @lookup__rotangle array float32 60)  ;init
@@ -37,22 +35,86 @@
 (declare-var @main__stageflgc  i16); input
 (declare-var @main__altitudeinfo float32); input
 (declare-var @main__qc array float32 4)  ;output
-(declare-var @major_cycle__desiredq array float32 5)  ;init
+(declare-var @main__stage_time float32)  ;output
+(declare-var @main__effectivegravity float32)  ;output 
+(declare-var @main__angler float32)  ;output 
+(declare-var @main__angley float32)  ;output
+(declare-var @main__guidvel_u float32)  ;output 
+(declare-var @main__guidvel_v float32)  ;output 
+(declare-var @main__guidvel_w float32)  ;output 
+(declare-var @main__steercoeffa float32)  ;output 
+(declare-var @main__steercoeffb float32)  ;output 
+(declare-var @main__steercoeffc float32)  ;output 
+(declare-var @main__steercoeffd float32)  ;output
+(declare-var @main__posdefoutofplane float32)  ;output
+(declare-var @main__defpos float32)  ;output
+(declare-var @main__defvel float32)  ;output 
+(declare-var @main__matrix11 float32)  ;output
+(declare-var @main__matrix12 float32)  ;output
+(declare-var @main__matrix22 float32)  ;output
+(declare-var @minor_cycle__velocitycoeff float32)  ;output
+
 
 ;; -----------------------------------------
 ;; Declare major thread
 ;; -----------------------------------------
 ;; Declare threads
 (declare-thread major _ada_mjguidancedriver) ; param name entry_function
-(invoke-behaviour major synchronous unqiue can-be-killed (repeated 0ms 500ms) (priority low))
+(invoke-behaviour major synchronous unique can-be-killed (repeated 0ms 500ms) (priority low))
 ;; model when a thread can be killed.
 
 ;; write preconditions
-(pre-condition major (x > 0) )
+(pre-condition major (@main__BRate(1) = 0.0))
+(pre-condition major (@main__BRate(2) = 0.0))
+(pre-condition major (@main__BRate(3) = 0.0))
+(pre-condition major (@main__Stage_Time = 0.0))
+(pre-condition major (@main__EffectiveGravity = 0.0))
+(pre-condition major (@main__AngleR = 0.0))
+(pre-condition major (@main__AngleY = 0.0))
+(pre-condition major (@main__GuidVel_U = 0.0))
+(pre-condition major (@main__GuidVel_V = 0.0))
+(pre-condition major (@main__GuidVel_W = 0.0))
+(pre-condition major (@main__SteerCoeffA = 0.0))
+(pre-condition major (@main__SteerCoeffB = 0.0))
+(pre-condition major (@main__SteerCoeffC = 0.0))
+(pre-condition major (@main__SteerCoeffD = 0.0))
+(pre-condition major (@main__PosDefOutofPlane = 0.0))
+(pre-condition major (@main__DefPos = 0.0))
+(pre-condition major (@main__DefVel = 0.0))
+(pre-condition major (@main__Matrix11 = 0.0))
+(pre-condition major (@main__Matrix12 = 0.0))
+(pre-condition major (@main__Matrix22 = 0.0))
 
-(post-condition major (and (x_pre > x) (x > 0) (invoke algorithm__compangley)))
 
-(env-invarinat (x > 0) )
+(post-condition major ((@main__stageflg == 16#0044#) => F((@main__BRate(1) != 0.0) 
+		and (@main__BRate(2) != 0.0) and (@main__BRate(3) != 0.0) 
+		and (@main__AngleR != 0.0) and (@main__AngleY != 0.0)
+		and (@main__SteerCoeffA != 0.0) and (@main__SteerCoeffB != 0.0)
+		and (@main__SteerCoeffC != 0.0) and (@main__SteerCoeffD != 0.0) 
+		and (@main__PosDefOutofPlane != 0.0) and (@main__DefPos != 0.0)
+		and (@main__DefVel != 0.0) and (@main__Matrix11 != 0.0)
+		and (@main__Matrix12 != 0.0) and (@main__Matrix22 != 0.0) 
+		and (@main__GuidVel_u != 0.0) and (@main__GuidVel_v != 0.0)
+		and (@main__GuidVel_w != 0.0) and (@main__EffectiveGravity != 0.0)
+		and (@main__Stage_time != 0.0))))
+(post-condition major (((@main__stageflg == 16#0044#) and (@main__minorinmajor != 1) 
+		and (@main__BRate(1) == 0.0) and (@main__BRate(2) == 0.0)
+		and (@main__BRate(3) == 0.0)) => ((@main__BRate(1)' = 0.0) 
+		and (@main__BRate(2)' = 0.0) and (@main__BRate(3)' = 0.0))))
+(post-condition major (((@main__stageflg == 16#0055#) and (@main__minorinmajor != 1)) 
+		=> ((@main__BRate(1)' = @main__BRate(1)) and (@main__BRate(2)' = @main__BRate(2)) 
+		   and (@main__BRate(3)' = @main__BRate(3)))))		
+(post-condition major ((@main__stageflg == 16#77#) = F(@main__guidoutflag = 16#2222#)))
+(post-condition major (((@main__stageflg >= 16#0055#) and (@main__stageflg <= 16#0066#)) 
+		=> ((@main__BRate(1)' = @main__BRate(1)) and (@main__BRate(2)' = @main__BRate(2)) 
+		   and (@main__BRate(3)' = @main__BRate(3)))))
+(post-condition major (CallSequence(Main.StageFlags, Major_Cycle.Manoeuvre)))
+(post-condition major (CallSequence(Main.StageFlags, Major_Cycle.Stage3_Major)))
+(post-condition major (CallSequence(Main.StageFlags, Major_Cycle.Stage2_Major)))
+(post-condition major (CallSequence(Major_Cycle.Stage2_Major, Major_Cycle.Stage3_Major)))		
+
+(env-invariant (@algorithm__exhaustvel = 2921.79) )
+(env-invariant (@algorithm__velocityradial = -561.28) )
 
 ;; -----------------------------------------
 ;; Declare minor thread
@@ -60,12 +122,40 @@
 
 (declare-thread minor _ada_mnguidancedriver)
 
-(invoke-behaviour minor synchronous unqiue can-be-killed (repeated 0ms 20ms) (priority high))
+(invoke-behaviour minor synchronous unique can-be-killed (repeated 0ms 20ms) (priority high))
 
 ;; write preconditions
-(pre-condition minor (invoke algorithm__compangley) )
+(pre-condition minor (@main__minorinmajor = 1) )
+(pre-condition minor (@main__guidoutflag = 16#0000#))
+(pre-condition minor (@main__guidoutflagC = 16#FFFF#))
+(pre-condition minor (@main__combinederrorflag = 0))
+(pre-condition minor (@main__qc(1) = 0.3601))
+(pre-condition minor (@main__qc(2) = -0.1903))
+(pre-condition minor (@main__qc(3) = 0.6051))
+(pre-condition minor (@main__qc(4) = 0.7012))
 
-(post-condition minor (invoke algorithm__compangley) )
+(post-condition minor (G(@main__combinederrorflag = 0)))
+(post-condition minor ((@minor_cycle__velocitycoeff > 5236.0) =>
+		    F(@main__guidoutflag = 16#0022#)))
+(post-condition minor ((@main__stageflg == 16#0022#) => F((@main__qc(1)' != @main__qc(1)) 
+		and (@main__qc(2)' != @main__qc(2)) and (@main__qc(3)' != @main__qc(3)) 
+		and (@main__qc(4)' != @main__qc(4)))))
+(post-condition minor (CallSequence(Main.StageFlags, Minor_Cycle.Manoeuvre)))		
+(post-condition minor (CallSequence(Main.StageFlags, Minor_Cycle.Stage3_Minor)))
+(post-condition minor (CallSequence(Main.StageFlags, Minor_Cycle.Stage2_Minor)))
+(post-condition minor (CallSequence(Main.StageFlags, Minor_Cycle.Stage1_Minor)))
+(post-condition minor (CallSequence(Minor_Cycle.Stage1_Minor, Minor_Cycle.Stage2_Minor)))
+(post-condition minor (CallSequence(Minor_Cycle.Stage2_Minor, Minor_Cycle.Stage3_Minor)))
+
+Size of @lookup__distance array = Size of @lookup__rotangle array = Size of @lookup__dircosl array = 
+Size of @lookup__dircosm array = Size of @lookup__dircosn array = Size of @lookup__cmdquaternion1 array = 
+Size of @lookup__cmdquaternion2 array = Size of @lookup__cmdquaternion3 array = Size of @lookup__cmdquaternion4 array 
+
+Contents of @lookup__distance array are in increasing order
+Values of @lookup__cmdquaternion1 array lie between -0.2 to 0.4
+Values of @lookup__cmdquaternion2 array lie between 0.0 to -0.4
+Values of @lookup__cmdquaternion3 array lie between 0.5 to 0.7
+Values of @lookup__cmdquaternion2 array lie between 0.6 to 0.8
 
 
 

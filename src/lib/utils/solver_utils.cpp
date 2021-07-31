@@ -8,6 +8,7 @@
 #include "solver_utils.h"
 
 expr smt2_parse_string( solver_context& sol_ctx, const char* str ) {
+  std::cout << "Str is " << str <<"\n";
   expr_vector es = sol_ctx.parse_string( str );
   assert( es.size() == 1 );
   expr e = es[0];

@@ -3,6 +3,14 @@
 #include "lib/utils/llvm_utils.h"
 #include "lib/utils/verify_prop_pass.h"
 
+#include <iostream>
+#include <sstream>
+#include <fstream>
+
+#include <boost/algorithm/string.hpp>
+#include <boost/filesystem/fstream.hpp>
+#include <boost/filesystem.hpp>
+
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/LinkAllPasses.h"
 
@@ -14,6 +22,14 @@ void prepare_module( options& o,
   llvm::legacy::PassManager passMan;
   passMan.add( llvm::createPromoteMemoryToRegisterPass() );
   passMan.add( llvm::createLoopRotatePass() ); // some params
+
+   if (o.check_spec) {
+        llvm::legacy::PassManager passMan;
+	passMan.add( new verify_prop_pass(*module.get(), o));
+	passMan.run( *module.get() );
+  }
+
+
   passMan.add( llvm::createAlwaysInlinerLegacyPass() );
   if( o.unwind && o.llvm_unroll ) {
     // Work around due to a bug in interface since LLVM 4.0 =======
@@ -37,10 +53,6 @@ void prepare_module( options& o,
     }
   }
 
-  if (o.check_spec) {
-    passMan.add( new verify_prop_pass(*module.get(), o));  	
-  }
-
   passMan.run( *module.get() );
 
   estimate_comment_location( module, cmts, block_comment_map );
@@ -60,9 +72,17 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
   bmc b( module, bb_cmt_map, o );
   b.init();
   b.run_bmc_pass();
+
+/*   if (o.check_spec) {
+        llvm::legacy::PassManager passMan;
+	passMan.add( new verify_prop_pass(*module.get(), o));
+	passMan.run( *module.get() );
+  } */
+
   for( auto& it : b.func_formula_map ) {
     b.check_all_spec( it.second );
-  }
+  } 
+
 }
 
 int main(int argc, char** argv) {
@@ -91,4 +111,5 @@ int main(int argc, char** argv) {
   }
 
   run_bmc( module, cmts, o);
+
 }
