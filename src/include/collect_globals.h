@@ -13,7 +13,7 @@
 #include "llvm/LinkAllPasses.h"
 
 #include "include/memory_cons.h"
-#include "lib/bmc/memory_event.h"
+#include "include/memory_event.h"
 #include "include/solver.h"
 #include "lib/utils/solver_utils.h"
 #include "include/options.h"
