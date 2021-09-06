@@ -1,10 +1,8 @@
+#include "include/collect_globals.h"
 #include "lib/utils/utils.h"
 #include "lib/utils/llvm_utils.h"
-#include "lib/bmc/memory_event.h"
-#include "lib/bmc/memory_cons.h"
 #include "include/value_expr_map.h"
-#include "include/options.h"
-#include "include/collect_globals.h"
+
 #include "llvm/IR/DIBuilder.h"
 
 char collect_globals_pass::ID = 0;
@@ -74,10 +72,10 @@ if ((f.getName().str() == fname1) ||(f.getName().str() == fname2)) {
 				  } 
 				}    
 
-			std::cout << "Function name is " << f.getName().str() << "\n" << "No. of global variables is " << list_gvars.size() << " \n";
+			//std::cout << "Function name is " << f.getName().str() << "\n" << "No. of global variables is " << list_gvars.size() << " \n";
 
-			for(int i=0; i < list_gvars.size(); i++)
-   				std::cout << (std::string)((list_gvars.at(i))->getName()) << "\n";
+			//for(int i=0; i < list_gvars.size(); i++)
+   				//std::cout << (std::string)((list_gvars.at(i))->getName()) << "\n";
 
 		    auto pair = std::make_pair( f.getName().str() , list_gvars );
   		    fn_gvars_map.insert( pair );

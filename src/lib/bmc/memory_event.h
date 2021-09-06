@@ -1,13 +1,12 @@
 #ifndef BMC_MEMORY_EVENT_H
 #define BMC_MEMORY_EVENT_H
 
-#include "llvm/IR/Constants.h"
-
 #include "lib/utils/utils.h"
 #include "lib/utils/solver_utils.h"
 #include "memory_cons.h"
 #include <boost/concept_check.hpp>
 
+#include "llvm/IR/Constants.h"
 
   class tstamp;
 
@@ -23,7 +22,7 @@
   std::string operator+ (const std::string& lhs, const tstamp_ptr& rhs);
   typedef std::pair<tstamp_ptr,tstamp_ptr> tstamp_pair;
   std::ostream& operator<< (std::ostream& stream, const tstamp_pair& loc_pair);
-
+   
 
   struct variable {
     std::string name;
@@ -79,11 +78,12 @@
 
 
 struct tstamp {
-private:
-  expr e; // ensure this one is not visible from the outside
   uint16_t _serial;
+  expr e;
+private:
+  //expr e; // ensure this one is not visible from the outside
 
-  //friend class hb_enc::integer;
+  //friend class integer;
 public:
   tstamp(tstamp& ) = delete;
   tstamp& operator=(tstamp&) = delete;
@@ -537,8 +537,7 @@ typedef std::unordered_map<variable, me_ptr, variable::variable_hash, variable::
   typedef std::unordered_map< variable,
                               depends_set,
                               variable::variable_hash,
-                              variable::variable_equal> var_to_depends_map;
-
+                              variable::variable_equal> var_to_depends_map;   
 
   depends pick_maximal_depends_set( depends_set& set );
   void join_depends_set( const me_ptr&, const expr, depends_set& set );

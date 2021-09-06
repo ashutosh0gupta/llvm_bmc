@@ -3,6 +3,8 @@
 
 #include "utils.h"
 #include "include/solver.h"
+#include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 
 struct expr_hash {
   size_t operator () (const expr& a) const {
@@ -144,6 +146,7 @@ expr substitute( expr,
                      std::vector<expr>& );
 
 expr smt2_parse_string( solver_context&, const char* );
+expr parseFormula(solver_context&, std::string, const std::vector <std::string>&, const std::vector <expr>&);
 
 void eliminate_vars( expr, std::vector<expr>&,
                      std::vector<expr>& );

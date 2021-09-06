@@ -137,12 +137,34 @@ void parser_data::read_variable( std::istream& in ) {
    
    if (in.peek() == ')')
    {
-	   if (var_type == "float32") {
-	   expr e = solver_ctx.fpa_const(var_name.c_str(),8,24); 
-	   list_readvar.push_back(e); }
-	   if ((var_type == "i16") || (var_type == "i32")) {
-	   expr e = solver_ctx.int_const(var_name.c_str()); 
-	   list_readvar.push_back(e); }
+	    if (var_type == "float32") {
+		expr e = solver_ctx.fpa_const(var_name.c_str(),8,24); 
+		list_readvar.push_back(e);
+
+		names.push_back(var_name);
+		declarations.push_back(solver_ctx.fpa_const(var_name.c_str(),8,24));
+		var_name = var_name + ".";
+		names.push_back(var_name);
+		declarations.push_back(solver_ctx.fpa_const(var_name.c_str(),8,24)); }
+	   
+	    if ((var_type == "i16") || (var_type == "i32")) {
+		expr e = solver_ctx.int_const(var_name.c_str()); 
+	   	list_readvar.push_back(e);
+		names.push_back(var_name);
+		declarations.push_back(solver_ctx.int_const(var_name.c_str()));
+		var_name = var_name + ".";
+		names.push_back(var_name);
+		declarations.push_back(solver_ctx.int_const(var_name.c_str())); }
+
+	     if (var_type == "flag") {
+		expr e = solver_ctx.bv_const(var_name.c_str(), 16); 
+	   	list_readvar.push_back(e);
+		names.push_back(var_name);
+		declarations.push_back(solver_ctx.bv_const(var_name.c_str(),16));
+		var_name = var_name + ".";
+		names.push_back(var_name);
+		declarations.push_back(solver_ctx.bv_const(var_name.c_str(),16)); }
+
    }
    else
    {
@@ -154,6 +176,12 @@ void parser_data::read_variable( std::istream& in ) {
 		if (var_type == "float64") z_te = solver_ctx.fpa_sort<64>();     
 		sort s = solver_ctx.array_sort( solver_ctx.int_sort(), z_te );
 		expr e = solver_ctx.constant( var_name.c_str(), s );
+
+		names.push_back(var_name);
+		declarations.push_back(solver_ctx.constant( var_name.c_str(), s ));
+		var_name = var_name + ".";
+		names.push_back(var_name);
+		declarations.push_back(solver_ctx.constant( var_name.c_str(), s ));
 		
 		auto array_size  = read_unsigned(in);
 		auto pair = std::make_pair( array_size, e );
@@ -191,14 +219,33 @@ void parser_data::read_postcond( std::istream& in ) {
 	std::string symb4 = read_symbol( in );
    	
 	auto pair1 = std::make_pair( symb3, symb4 );
-	auto pair2 = std::make_pair( symb1, pair1 );        
+	auto pair2 = std::make_pair( pair1, symb1 );        
 	callseq_map.insert( pair2 );
+	read_close_parentheses(in);
    }
-   const char* symb3 = symb2.c_str();
-   read_close_parentheses(in);
-   //expr e = smt2_parse_string( solver_ctx, symb3);
-   //auto pair = std::make_pair( symb1, e);
-   //list_postcond.push_back(pair);
+
+   if (symb2 == "assert") {
+	consume_spaces( in );
+	std::string symb3;
+	while( !in.eof() && ( in.peek() != '\n') && (in.peek() != '\r') )
+     	{
+       		symb3 = symb3.append( 1, in.get() );
+     	}
+	in.unget();
+	
+	//symb3 = "(assert" + symb3;
+	symb3.erase(symb3.end()-1);
+	symb3.erase(symb3.end()-1);
+	const char* symb4 = symb3.c_str();
+	//std::cout << "Symb3 is " << symb3 << "\n";
+	//smt_assert = true;
+	//read_close_parentheses(in);
+	//expr e = smt2_parse_string( solver_ctx, symb4);
+	
+	expr e = parseFormula(solver_ctx, symb4, names, declarations);
+	   //auto pair = std::make_pair( symb1, e);
+	   //list_postcond.push_back(pair);
+   }
 }
 
 
@@ -263,5 +310,7 @@ void parser_data::read_file( std::istream& in ) {
       llvm_bmc_error( "Spec_parse", "unknown command " << cmd << " !");
     }
     read_close_parentheses(in);
+    /* if (!smt_assert) read_close_parentheses(in);
+    else smt_assert = false; */
   }
  }

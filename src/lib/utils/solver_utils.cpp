@@ -8,12 +8,59 @@
 #include "solver_utils.h"
 
 expr smt2_parse_string( solver_context& sol_ctx, const char* str ) {
-  std::cout << "Str is " << str <<"\n";
+  //std::cout << "Str is " << str <<"\n";
   expr_vector es = sol_ctx.parse_string( str );
   assert( es.size() == 1 );
   expr e = es[0];
   return e;
 }
+
+
+inline std::string sanitise_string(std::string str) {
+  boost::trim(str);
+  while (str[0]=='(' && str[str.length()-1]==')') {
+    str[0] = ' ';
+    str[str.length()-1] = ' ';
+    boost::trim(str);
+  }
+  return str;
+}
+
+
+expr parseFormula(solver_context& sol_ctx, std::string str, const std::vector <std::string>& names, const std::vector <expr> & declarations) 
+{
+  assert (names.size() == declarations.size());
+  unsigned s = declarations.size();
+  Z3_symbol* symbols = new Z3_symbol[s];
+  Z3_func_decl* decls = new Z3_func_decl[s];
+  unsigned i = 0;
+  for (unsigned i=0; i<s; i++) {
+    symbols[i] = Z3_mk_string_symbol(sol_ctx,names[i].c_str());
+    decls[i] = declarations[i].decl();
+  }
+  
+  str = sanitise_string(str);
+  
+  std::string cmd = str.find_first_of(' ')!=std::string::npos ? "(assert (" + str + "))" : "(assert " + str + ")";
+  expr ast(sol_ctx);
+  //std::cout << "Cmd is " << cmd << "\n";
+  Z3_ast_vector es_ast =  Z3_parse_smtlib2_string(sol_ctx, cmd.c_str(), 0, NULL, NULL, s, symbols, decls);
+  delete[] symbols;
+  delete[] decls;
+  expr_vector es = expr_vector( sol_ctx, es_ast );
+  /*if( es.size() != 1 ) {
+       std::cout << "Error non unique formula parsed!" <<  "\n";
+  } */
+  ast = es[0]; 
+  
+  // adjust reference counter for variable
+  for (unsigned j=0; j<i; j++) {
+    Z3_dec_ref(sol_ctx, (Z3_ast)decls[j]);
+  }
+  
+  return ast;
+} 
+
 
 void expr_set_to_exprs( expr_set& s, exprs& v) {
   for( auto e : s ) {

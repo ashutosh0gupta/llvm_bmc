@@ -485,6 +485,78 @@ void debug_print( std::ostream& out, const depends_set& set ) {
   out << std::endl;
 }
 
+void memory_cons::save_tstamps(const vector< tstamp_var_ptr >& tstamps)
+{
+  tstamp_map.clear();
+  for (auto loc: tstamps) {
+    tstamp_map.insert(make_pair(loc->name, loc));
+  }
+}
+
+
+/*integer::integer(solver_context& sol_ctx_)
+  : memory_cons(solver_ctx)
+  {} */
+
+void memory_cons::record_event( me_ptr& e ) {
+  make_tstamp( e->e_v );
+  make_tstamp( e->thin_v );
+  make_po_tstamp( e->c11_hb_v );
+  event_lookup.insert( make_pair( e->get_solver_symbol(), e ) );
+  event_lookup.insert( make_pair( e->get_thin_solver_symbol(), e ) );
+  event_lookup.insert( make_pair( e->get_c11_hb_solver_symbol(), e ) );
+}
+
+
+void memory_cons::make_tstamp( tstamp_var_ptr loc )
+{
+  std::vector< tstamp_var_ptr > tstamps;
+  tstamps.push_back( loc );
+  add_time_stamps(tstamps);
+}
+
+void memory_cons::add_time_stamps(std::vector< tstamp_var_ptr > tstamps)
+{
+  for (unsigned i=0; i<tstamps.size(); i++) {
+    counter++;
+    tstamps[i]->_serial = counter;
+
+    std::cout << tstamps[i]->name.c_str() << "\n";
+
+    expr loc_expr = solver_ctx.int_const(tstamps[i]->name.c_str());
+    tstamps[i]->e = loc_expr;
+    tstamp_lookup.insert(make_pair(loc_expr, tstamps[i]));
+  }
+  save_tstamps(tstamps);
+}
+
+void memory_cons::make_po_tstamp( tstamp_var_ptr loc )
+{
+  counter++;
+  loc->_serial = counter;
+  auto hb_sort = solver_ctx.uninterpreted_sort("HB");
+  expr loc_expr = solver_ctx.constant( loc->name.c_str(), hb_sort );
+  loc->e = loc_expr;
+  tstamp_lookup.insert(make_pair(loc_expr, loc));
+}
+
+
+//hb memory_cons::make_hb(tstamp_ptr loc1, tstamp_ptr loc2) {
+//  return hb(loc1, loc2, loc1->e < loc2->e);
+//}
+
+//hb memory_cons::make_hb_po( tstamp_ptr loc1,
+//                        tstamp_ptr loc2 ) {
+//  return hb(loc1, loc2, sr_po(loc1->e,loc2->e) );
+//}
+
+//hb memory_cons::make_hb_po_ao( tstamp_ptr loc1,
+//                           tstamp_ptr loc2 ) {
+//  return hb(loc1, loc2, sr_po_ao( loc1->e,loc2->e ) );
+//}
+
+
+
 void 
 full_initialize_se( memory_cons& mem_enc, me_ptr e, me_set& prev_es,
                     std::map<const me_ptr, expr>& branch_conds) {

@@ -11,8 +11,11 @@ class parser_data {
 
 public:
      solver_context& solver_ctx;
+     bool smt_assert = false;
 
-     std::vector<expr> list_readvar;
+     std::vector <expr> list_readvar;
+     std::vector <std::string> names;
+     std::vector <expr> declarations;
 
      std::map <unsigned, expr> array_map;    
    
@@ -24,7 +27,7 @@ public:
      std::vector <condition> list_postcond;
      std::vector <std::string> list_envinv;
 
-     std::map <std::string, std::pair <std::string, std::string>> callseq_map; 
+     std::map <std::pair <std::string, std::string>, std::string> callseq_map; 
 
 public:
      

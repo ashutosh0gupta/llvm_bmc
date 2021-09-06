@@ -26,7 +26,7 @@ void prepare_module( options& o,
    if (o.check_spec) {
         llvm::legacy::PassManager passMan;
 	passMan.add( new verify_prop_pass(*module.get(), o));
-	passMan.run( *module.get() );
+	//passMan.run( *module.get() );
   }
 
 
