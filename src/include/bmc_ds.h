@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 #include "include/heap_model.h"
+#include "include/memory_cons.h"
 #include "include/memory_model.h"
 #include "include/value_expr_map.h"
 
@@ -46,6 +47,7 @@ public:
     , solver_ctx( o.solver_ctx )
     , m(o)
     , m_model( m_model_ )
+    , memory_global_events( solver_ctx )
     , ar_model_full( o.solver_ctx )
     , ar_model_fixed( o.solver_ctx )
     , ary_to_int(aim)
@@ -59,6 +61,11 @@ public:
   std::pair<expr,expr> write(unsigned, const llvm::StoreInst*, expr& );
   expr read( unsigned, const llvm::LoadInst*);
   expr join_state( std::vector<expr>&, std::vector<unsigned>&, unsigned );
+
+  //--------------------------------------------------------------------------
+  //interface to array model
+
+  memory_cons memory_global_events;
 
   //--------------------------------------------------------------------------
   //interface to array model

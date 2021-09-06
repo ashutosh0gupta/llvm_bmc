@@ -107,8 +107,8 @@ class memory_cons
 {
 public:
   memory_cons(solver_context& solver_ctx);
-  // encoding(context& ctx);
-  virtual ~memory_cons();
+ // encoding(context& ctx);
+  // virtual ~memory_cons();
   
   void record_event( se_ptr& );
   void record_rf_map( std::set< std::tuple<std::string, se_ptr, se_ptr> >& );

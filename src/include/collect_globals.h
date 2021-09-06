@@ -12,7 +12,7 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/LinkAllPasses.h"
 
-#include "lib/bmc/memory_cons.h"
+#include "include/memory_cons.h"
 #include "lib/bmc/memory_event.h"
 #include "include/solver.h"
 #include "lib/utils/solver_utils.h"
@@ -48,7 +48,10 @@ public:
   expr start_cond = solver_ctx.bool_val(true);
 
 public:
-  collect_globals_pass(llvm::Module &m, solver_context& solver_ctx__, options& o);
+  collect_globals_pass( llvm::Module &m,
+                        solver_context& solver_ctx__,
+                        memory_cons& mem_enc_,
+                        options& o);
    ~collect_globals_pass();
 
   virtual bool runOnModule(llvm::Module &m); //when there is a Module

@@ -1,9 +1,9 @@
 #ifndef BMC_MEMORY_EVENT_H
 #define BMC_MEMORY_EVENT_H
 
-#include "lib/utils/utils.h"
-#include "lib/utils/solver_utils.h"
-#include "memory_cons.h"
+// #include "lib/utils/utils.h"
+// #include "lib/utils/solver_utils.h"
+#include "include/memory_cons.h"
 #include <boost/concept_check.hpp>
 
 #include "llvm/IR/Constants.h"

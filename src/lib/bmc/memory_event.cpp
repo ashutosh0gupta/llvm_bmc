@@ -1,4 +1,4 @@
-#include "memory_event.h"
+#include "include/memory_event.h"
 
 using namespace std;
 
@@ -540,6 +540,10 @@ void memory_cons::make_po_tstamp( tstamp_var_ptr loc )
   tstamp_lookup.insert(make_pair(loc_expr, loc));
 }
 
+
+memory_cons::memory_cons(solver_context& solver_ctx_) :
+  solver_ctx(solver_ctx_) {
+}
 
 //hb memory_cons::make_hb(tstamp_ptr loc1, tstamp_ptr loc2) {
 //  return hb(loc1, loc2, loc1->e < loc2->e);

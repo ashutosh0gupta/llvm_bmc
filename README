@@ -30,3 +30,9 @@ $make
 * linking multiple .s files in a single .s file
 
 llvm-link -S -o target.s source1.s source2.s .... 
+
+
+Testing
+-------
+
+./llvmbmc -f "algorithm__compangley" -b  examples/AssemblyFiles/merged.s -s examples/AssemblyFiles/Spec3.txt
