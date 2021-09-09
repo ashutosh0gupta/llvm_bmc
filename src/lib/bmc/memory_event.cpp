@@ -494,10 +494,6 @@ void memory_cons::save_tstamps(const vector< tstamp_var_ptr >& tstamps)
 }
 
 
-/*integer::integer(solver_context& sol_ctx_)
-  : memory_cons(solver_ctx)
-  {} */
-
 void memory_cons::record_event( me_ptr& e ) {
   make_tstamp( e->e_v );
   make_tstamp( e->thin_v );
@@ -545,9 +541,9 @@ memory_cons::memory_cons(solver_context& solver_ctx_) :
   solver_ctx(solver_ctx_) {
 }
 
-//hb memory_cons::make_hb(tstamp_ptr loc1, tstamp_ptr loc2) {
-//  return hb(loc1, loc2, loc1->e < loc2->e);
-//}
+hb memory_cons::make_hb(tstamp_ptr loc1, tstamp_ptr loc2) {
+  return hb(loc1, loc2, loc1->e < loc2->e);
+}
 
 //hb memory_cons::make_hb_po( tstamp_ptr loc1,
 //                        tstamp_ptr loc2 ) {
@@ -559,6 +555,68 @@ memory_cons::memory_cons(solver_context& solver_ctx_) :
 //  return hb(loc1, loc2, sr_po_ao( loc1->e,loc2->e ) );
 //}
 
+
+/*as memory_cons::make_as(tstamp_ptr loc1, tstamp_ptr loc2)
+{
+  assert (loc1->thread == loc2->thread);
+  return as(loc1, loc2, loc1->e + (loc2->instr_no-loc1->instr_no)  == loc2->e);
+}
+
+bool memory_cons::eval_hb(const z3::model& model, tstamp_ptr loc1, tstamp_ptr loc2)
+{
+  return model.eval(make_hb(loc1, loc2)).get_bool();
+}
+
+hb_ptr memory_cons::get_hb(const expr& hb, bool allow_equal)
+{
+  bool possibly_equal = false;
+  bool is_partial = false;
+  expr hb_p = hb;
+  if( solver_ctx.is_implies( hb ) ) {
+    hb_p = hb.arg(1);
+  }
+  if( solver_ctx.is_bool_const( hb_p ) ) {
+    auto it = current_rf_map.find( solver_ctx.get_top_func_name( hb_p ) );
+    if( it != current_rf_map.end() ) {
+      return it->second;
+    }
+  }
+
+  auto p = get_locs(hb, possibly_equal, is_partial);
+  mapit loc1 = p.first, loc2 = p.second, end = tstamp_lookup.end();
+  if( (!possibly_equal || allow_equal || is_partial) && loc1!=end && loc2!=end){
+    tstamp_ptr l1 = get<1>(*loc1);
+    tstamp_ptr l2 = get<1>(*loc2);
+    se_ptr e1;
+    if( event_lookup.find( l1->expr ) != event_lookup.end() )
+      e1 = event_lookup.at( l1->expr );
+    se_ptr e2;
+    if( event_lookup.find( l2->expr ) != event_lookup.end() )
+      e2 = event_lookup.at( l2->expr );
+    if( is_partial ){
+      return shared_ptr<hb>(new hb( e1, l1, e2, l2, hb,
+                                                    possibly_equal,is_partial));
+    }else{
+      return shared_ptr<hb>(new hb(e1, l1, e2, l2, hb,
+                                                   possibly_equal));
+    }
+  } else
+    return shared_ptr<hb>();
+}
+
+// unused function set for deprecation
+// interesting code - it has annonymous function
+std::vector< tstamp_ptr > memory_cons::get_trace(const z3::model& m)
+{
+  std::vector<tstamp_ptr> result;
+  for (auto l : tstamp_map)
+    result.push_back(get<1>(l));
+  sort(result.begin(), result.end(), [&](const tstamp_ptr & a, const tstamp_ptr & b) -> bool
+  { 
+    return m.eval(((expr)(*a)) > *b).get_bool(); 
+  });
+  return result;
+} */
 
 
 void 
