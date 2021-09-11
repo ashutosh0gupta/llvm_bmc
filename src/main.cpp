@@ -2,6 +2,7 @@
 #include "include/bmc.h"
 #include "lib/utils/llvm_utils.h"
 #include "lib/utils/verify_prop_pass.h"
+#include "include/memory_cons.h"
 
 #include <iostream>
 #include <sstream>
@@ -87,7 +88,8 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
 
 int main(int argc, char** argv) {
   z3::context solver_ctx;
-  options o(solver_ctx);
+  memory_cons mem_enc(solver_ctx);
+  options o(solver_ctx, mem_enc);
   boost::filesystem::path def_config("default.conf");
   if ( boost::filesystem::exists( def_config ) ) {
     o.parse_config(def_config);

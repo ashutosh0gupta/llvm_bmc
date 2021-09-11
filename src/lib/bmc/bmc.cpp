@@ -53,7 +53,7 @@ void bmc::run_bmc_pass() {
     passMan.add( new bmc_fun_pass(o, o.solver_ctx,*this));
   }
 
-  //passMan.add( new collect_globals_pass(*module.get(), o.solver_ctx, o) );
+  passMan.add( new collect_globals_pass(*module.get(), o.solver_ctx, o.mem_enc, o) );
 
   passMan.run( *module.get() );
 }

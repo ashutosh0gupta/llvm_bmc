@@ -541,6 +541,123 @@ memory_cons::memory_cons(solver_context& solver_ctx_) :
   solver_ctx(solver_ctx_) {
 }
 
+
+/*************************
+ * hb
+ *************************/
+
+hb::operator expr () const {
+  return e;
+}
+
+expr hb::get_guarded_forbid_expr() {
+    return implies( e1->guard && e2->guard, !e );
+}
+
+void hb::update_signature() {
+    _signature = loc1->serial();
+    _signature <<= 16;
+    _signature |= loc2->serial();
+  }
+
+hb::hb(tstamp_ptr loc1_, tstamp_ptr loc2_, expr e_):
+  loc1(loc1_), loc2(loc2_), e(e_)
+{
+  update_signature();
+}
+
+  //the following allocator is not in use
+hb::hb(se_ptr e1_, se_ptr e2_, expr e_):
+  e1( e1_), e2( e2_), loc1(e1->e_v), loc2(e2->e_v),
+  is_neg( false ), is_partial( false ), type( hb_t::hb ),
+  e(e_)
+{
+  update_signature();
+}
+
+hb::hb( se_ptr e1_, tstamp_ptr l1_,
+        se_ptr e2_, tstamp_ptr l2_, expr e_,
+        bool is_neg ):
+  e1( e1_), e2( e2_), loc1(l1_), loc2(l2_),
+  is_neg( is_neg ), is_partial( false ), type( hb_t::hb ),
+  e(e_)
+{
+ if( loc1->name.find( "__thin__" ) == 0 ) { type = hb_t::thin;
+  }
+  update_signature();
+}
+
+  // todo: this call should be removed
+hb::hb( se_ptr e1_, tstamp_ptr l1_,
+        se_ptr e2_, tstamp_ptr l2_, expr e_,
+        bool is_neg, bool is_partial ):
+  e1( e1_), e2( e2_), loc1(l1_), loc2(l2_),
+  is_neg(is_neg) , is_partial( is_partial ), type( hb_t::hb ),
+  e(e_)
+{
+  if( is_partial ) { type = hb_t::phb;
+  }else if( loc1->name.find( "__thin__" ) == 0 ) { type = hb_t::thin;
+  }
+  update_signature();
+}
+
+hb::hb( se_ptr e1_, se_ptr e2_, expr e_,
+        bool is_neg, hb_t type_ ):
+  e1( e1_), e2( e2_),loc1( ), loc2( ),
+  is_neg(is_neg) , is_partial( false ), type( type_ ),
+  e(e_)
+{
+  if( type == hb_t::phb ) is_partial = false;
+  // update_signature();
+}
+
+uint32_t hb::signature()
+{
+  return _signature;
+}
+
+bool hb::operator==(const hb& other) const
+{
+  return _signature == other._signature;
+}
+
+bool hb::operator!=(const hb &other) const {
+  return !(*this == other);
+}
+
+bool operator< (const hb& hb1, const hb& hb2)
+{
+  if( hb1.loc1 != nullptr && hb1.loc2 != nullptr &&
+      hb2.loc1 != nullptr && hb2.loc2 != nullptr )
+    return COMPARE_OBJ2( hb1, hb2, loc1->name, loc2->name );
+  return COMPARE_OBJ2( hb1, hb2, e1->name(), e2->name() );
+}
+
+ostream& operator<< (std::ostream& stream, const hb& hb) {
+  if( hb.type == hb_t::rf ) {
+    stream << "rf(" << hb.e1->name() << "," << hb.e2->name() << ")";
+  }else if( hb.type == hb_t::thin ) {
+    stream << "hb_ar(" << hb.e1->name() << "," << hb.e2->name() << ")";
+  }else{
+    if( hb.is_partial && hb.is_neg )
+      stream << "!hb(" << hb.e2->name() << "," << hb.e1->name() << ")";
+    else if( hb.is_partial && !hb.is_neg )
+      stream << "hb(" << hb.e1->name() << "," << hb.e2->name() << ")";
+    else
+      stream << "hb(" << hb.loc1 << "," << hb.loc2 << ")";
+      // stream << "(" << hb.loc1 << " < " << hb.loc2 << ")";
+  }
+  return stream;
+}
+
+void hb::debug_print(std::ostream& stream ) {  stream << *this << "\n"; }
+
+hb hb::negate() const
+{
+  return hb(loc2, loc1, !e);
+}
+
+
 hb memory_cons::make_hb(tstamp_ptr loc1, tstamp_ptr loc2) {
   return hb(loc1, loc2, loc1->e < loc2->e);
 }

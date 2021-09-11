@@ -3,6 +3,7 @@
 
 #include<iostream>
 #include<include/solver.h>
+#include<include/memory_cons.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -30,7 +31,7 @@ enum array_model_t{
 class options
 {
 public:
-  options( solver_context& sol_ctx_ );
+  options( solver_context& sol_ctx_, memory_cons& mem_enc_ );
   std::string get_input_file() { return filePath; }
   const std::vector<std::string>& get_include_dirs() { return include_dirs; }
   llvm::LLVMContext& get_llvm_context() { return globalContext; }
@@ -47,6 +48,7 @@ public:
   //todo: some of following show become private
   //---------------------------------------
   solver_context& solver_ctx;
+  memory_cons& mem_enc;
   //---------------------------------------
   //tiler options
   std::string fileName;
