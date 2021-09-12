@@ -13,6 +13,10 @@ collect_globals_pass::collect_globals_pass( llvm::Module &m,
                                             options& o)
   : llvm::ModulePass(ID), solver_ctx(solver_ctx__), mem_enc(mem_enc_), o(o)
 {
+  //parser_data pd(o.solver_ctx);
+  //fname1 = pd.list_threads.at(1).second;
+  //fname2 = pd.list_threads.at(2).second;
+
   fname1 = "_ada_mnguidancedriver";
   fname2 = "_ada_mjguidancedriver";
   //solver_ctx = o.solver_ctx;
@@ -145,7 +149,7 @@ void collect_globals_pass::CreateRdWrEvents(llvm::Function &f) {
       if( auto store = llvm::dyn_cast<llvm::StoreInst>(I) ) {
         llvm::Value* addr = store->getOperand(1);
         auto loc = getInstructionLocation( I );
-        expr val = read_const( o, store->getOperand(0) );
+        //expr val = read_const( o, store->getOperand(0) );
         me_set new_events;
         if (auto g = llvm::dyn_cast<llvm::GlobalVariable>( addr ) ) {
           if (find(concurrent_list.begin(), concurrent_list.end(), g) != concurrent_list.end()) {			
@@ -171,7 +175,7 @@ void collect_globals_pass::CreateRdWrEvents(llvm::Function &f) {
       else if( auto load = llvm::dyn_cast<llvm::LoadInst>(I) ) {
         llvm::Value* addr = load->getOperand(0);
         auto loc = getInstructionLocation( I );
-        expr val = read_const( o, load->getOperand(1) );
+        //expr val = read_const( o, load->getOperand(1) );
         me_set new_events;
         if( auto g = llvm::dyn_cast<llvm::GlobalVariable>( addr ) ) {
           if (find(concurrent_list.begin(), concurrent_list.end(), g) != concurrent_list.end()) {			

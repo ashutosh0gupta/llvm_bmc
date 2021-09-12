@@ -17,6 +17,7 @@
 #include "include/solver.h"
 #include "lib/utils/solver_utils.h"
 #include "include/options.h"
+#include "include/parser_data.h"
 
 #include <string.h>
 #include<iostream>
