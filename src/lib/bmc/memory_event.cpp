@@ -240,8 +240,8 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
                                 source_loc& _loc, event_t _et,
                                 o_tag_t _o_tag )
   : tid(_tid)
-  , v(v)      // temp init
-  , v_copy(v) // temp init
+  , v(sol_ctx)      // temp init
+  , v_copy(sol_ctx) // temp init
   , prog_v( _prog_v )
   , loc(_loc)
   , et( _et )
