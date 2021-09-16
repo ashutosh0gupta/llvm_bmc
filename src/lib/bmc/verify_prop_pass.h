@@ -57,3 +57,5 @@ public:
 };
 
 
+void import_spec_file( std::unique_ptr<llvm::Module>& module,
+                       bmc& b, options& o);

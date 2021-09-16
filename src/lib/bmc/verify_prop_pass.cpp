@@ -1,4 +1,4 @@
-#include "lib/utils/verify_prop_pass.h"
+#include "verify_prop_pass.h"
 #include "lib/utils/utils.h"
 #include "lib/utils/llvm_utils.h"
 #include "include/bmc_ds.h"
@@ -164,4 +164,15 @@ llvm::StringRef verify_prop_pass::getPassName() const {
 void verify_prop_pass::getAnalysisUsage(llvm::AnalysisUsage &au) const {
   au.setPreservesAll();
   au.addRequired<llvm::LoopInfoWrapperPass>();
+}
+
+
+
+void import_spec_file( std::unique_ptr<llvm::Module>& module,
+                       bmc& b, options& o) {
+  if (o.check_spec) {
+    llvm::legacy::PassManager passMan;
+    passMan.add( new verify_prop_pass(*module.get(), o, b));
+    passMan.run( *module.get() );
+  }
 }
