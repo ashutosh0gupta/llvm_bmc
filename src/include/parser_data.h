@@ -11,6 +11,7 @@ class parser_data {
 
 public:
      solver_context& solver_ctx;
+     //bmc_ds* bmc_ds_ptr;
      bool smt_assert = false;
 
      std::vector <expr> list_readvar;
@@ -28,6 +29,8 @@ public:
      std::vector <std::string> list_envinv;
 
      std::map <std::pair <std::string, std::string>, std::string> callseq_map; 
+     std::map< std::string, unsigned > fn_thread_map;
+     unsigned thread_num = 0;
 
 public:
      

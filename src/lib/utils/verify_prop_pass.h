@@ -13,6 +13,7 @@
 #include "llvm/LinkAllPasses.h"
 
 #include "include/options.h"
+#include "lib/bmc/bmc_pass.h"
 
 #include <string.h>
 #include<iostream>
@@ -21,7 +22,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include "include/parser_data.h"
 
-class verify_prop_pass : public llvm::FunctionPass {
+class verify_prop_pass : public bmc_pass, public llvm::FunctionPass {
 
 public:
   static char ID;
@@ -40,9 +41,10 @@ public:
   std::string cmp_res_name[20] = {"cvar1", "cvar2", "cvar3", "cvar4", "cvar5", "cvar6", "cvar7", "cvar8", "cvar9", "cvar10", "cvar11", "cvar12", "cvar13", "cvar14", "cvar15", "cvar16", "cvar17", "cvar18", "cvar19", "cvar20"};
 
   int callseq_num = -1;
+  bmc& bmc_obj;
 
 public:
-  verify_prop_pass(llvm::Module &m, options& o);
+  verify_prop_pass(llvm::Module &m, options& o, bmc& b_);
   ~verify_prop_pass();
 
   void init_parse(llvm::Module &m, options& o);

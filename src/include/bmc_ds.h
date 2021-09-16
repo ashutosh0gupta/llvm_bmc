@@ -63,9 +63,10 @@ public:
   expr join_state( std::vector<expr>&, std::vector<unsigned>&, unsigned );
 
   //--------------------------------------------------------------------------
-  //interface to array model
+  //interface to execution environment model
 
   memory_cons memory_global_events;
+  std::map< std::string, unsigned > fn_to_thread;
 
   //--------------------------------------------------------------------------
   //interface to array model

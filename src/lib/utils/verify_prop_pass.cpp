@@ -1,14 +1,15 @@
 #include "lib/utils/verify_prop_pass.h"
 #include "lib/utils/utils.h"
 #include "lib/utils/llvm_utils.h"
+#include "include/bmc_ds.h"
 
 #include "llvm/Transforms/Utils/Cloning.h"
 
 
 char verify_prop_pass::ID = 0;
 
-verify_prop_pass::verify_prop_pass(llvm::Module &m, options& o)
-  : llvm::FunctionPass(ID)
+verify_prop_pass::verify_prop_pass(llvm::Module &m, options& o, bmc& b_)
+  : bmc_pass(o, o.solver_ctx, bmc_obj), bmc_obj(b_), llvm::FunctionPass(ID)
 {
     init_parse(m,o);
 }
@@ -25,6 +26,9 @@ void verify_prop_pass::init_parse(llvm::Module &m, options& o)
      }
      std::ifstream file(Specfilename);
      pd.read_file( file );
+
+     assert(bmc_ds_ptr);
+     bmc_ds_ptr->fn_to_thread = pd.fn_thread_map;
      
      llvm::LLVMContext& ctx = m.getContext();
      llvm::Type *i32_type = llvm::IntegerType::getInt32Ty(ctx);

@@ -41,7 +41,6 @@ bool collect_globals_pass::runOnModule(llvm::Module &m)
 
 
 bool collect_globals_pass::runOnFunction( llvm::Function &f ) {
-  
   if ((f.getName().str() == fname1) ||(f.getName().str() == fname2)) {
 
     for (auto bbit = f.begin(); bbit != f.end(); bbit++) { //Iterate over basic blocks in function       
@@ -116,8 +115,8 @@ void collect_globals_pass::insert_concurrent( std::string FnName1,
       } 
     }
   }
-  for(int i=0; i < concurrent_list.size(); i++)
-    std::cout << "Concurrent variable number " << i << " is " << (std::string)((concurrent_list.at(i))->getName()) << "\n";
+ /* for(int i=0; i < concurrent_list.size(); i++)
+    std::cout << "Concurrent variable number " << i << " is " << (std::string)((concurrent_list.at(i))->getName()) << "\n"; */
 	
 }
 

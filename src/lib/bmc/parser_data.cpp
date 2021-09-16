@@ -197,6 +197,11 @@ void parser_data::read_thread( std::istream& in ) {
    std::string symb2 = read_symbol( in );
    auto pair = std::make_pair( symb1, symb2);
    list_threads.push_back(pair);
+   thread_num++;
+   auto pair1 = std::make_pair( symb2, thread_num);
+   std::cout << "Entry fn is " << symb2 << " thread_num is " << thread_num << "\n";
+   //assert(bmc_ds_ptr);
+   fn_thread_map.insert( pair1 );
 }
 
 

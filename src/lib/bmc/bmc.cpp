@@ -35,7 +35,7 @@ bmc::~bmc() {
   }
   for( auto& it: loop_formula_map ) {
     delete it.second;
-  }
+  } 
   for( auto& it: ld_map ) {
     delete it.second;
   }
@@ -52,6 +52,12 @@ void bmc::run_bmc_pass() {
   } else {
     passMan.add( new bmc_fun_pass(o, o.solver_ctx,*this));
   }
+
+  /*if (o.check_spec) {
+        llvm::legacy::PassManager passMan;
+	passMan.add( new verify_prop_pass(*module.get(), o));
+	//passMan.run( *module.get() );
+  } */
 
   passMan.add( new collect_globals_pass(*module.get(), o.solver_ctx, o.mem_enc, o) );
 

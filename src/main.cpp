@@ -1,8 +1,8 @@
 #include "include/options.h"
 #include "include/bmc.h"
 #include "lib/utils/llvm_utils.h"
-#include "lib/utils/verify_prop_pass.h"
 #include "include/memory_cons.h"
+#include "lib/utils/verify_prop_pass.h"
 
 #include <iostream>
 #include <sstream>
@@ -24,11 +24,11 @@ void prepare_module( options& o,
   passMan.add( llvm::createPromoteMemoryToRegisterPass() );
   passMan.add( llvm::createLoopRotatePass() ); // some params
 
-   if (o.check_spec) {
+   /*if (o.check_spec) {
         llvm::legacy::PassManager passMan;
 	passMan.add( new verify_prop_pass(*module.get(), o));
 	//passMan.run( *module.get() );
-  }
+  } */
 
 
   passMan.add( llvm::createAlwaysInlinerLegacyPass() );
@@ -74,11 +74,11 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
   b.init();
   b.run_bmc_pass();
 
-/*   if (o.check_spec) {
+  if (o.check_spec) {
         llvm::legacy::PassManager passMan;
-	passMan.add( new verify_prop_pass(*module.get(), o));
+	passMan.add( new verify_prop_pass(*module.get(), o, b));
 	passMan.run( *module.get() );
-  } */
+  } 
 
   for( auto& it : b.func_formula_map ) {
     b.check_all_spec( it.second );

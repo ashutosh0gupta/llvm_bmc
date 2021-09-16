@@ -517,7 +517,7 @@ void memory_cons::add_time_stamps(std::vector< tstamp_var_ptr > tstamps)
     counter++;
     tstamps[i]->_serial = counter;
 
-    std::cout << tstamps[i]->name.c_str() << "\n";
+    //std::cout << tstamps[i]->name.c_str() << "\n";
 
     expr loc_expr = solver_ctx.int_const(tstamps[i]->name.c_str());
     tstamps[i]->e = loc_expr;
