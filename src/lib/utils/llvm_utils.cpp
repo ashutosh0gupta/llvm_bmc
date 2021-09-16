@@ -359,7 +359,7 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   args.push_back( "-debug-info-kind=standalone" );
   args.push_back( "-dwarf-version=2" );
   args.push_back( "-dwarf-column-info" );
-  args.push_back( "-mdisable-fp-elim");
+  // args.push_back( "-mdisable-fp-elim");
   args.push_back( "-femit-all-decls" );
   args.push_back( "-O1" );
   args.push_back( "-disable-O0-optnone" );
