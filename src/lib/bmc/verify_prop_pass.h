@@ -1,3 +1,6 @@
+#ifndef BMC_PARSE_SPEC_FILE_H
+#define BMC_PARSE_SPEC_FILE_H
+
 #include "llvm/Pass.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Constants.h"
@@ -61,3 +64,6 @@ public:
 
 // void import_spec_file( std::unique_ptr<llvm::Module>& module,
 //                        bmc& b, options& o);
+
+
+#endif // BMC_PARSE_SPEC_FILE_H
