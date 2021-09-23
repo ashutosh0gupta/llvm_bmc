@@ -29,6 +29,14 @@ public:
   std::map< const llvm::BasicBlock*,rev_name_map > revStartLocalNameMap;//todo:likely useless
   std::map< const llvm::BasicBlock*, rev_name_map > revEndLocalNameMap;
 
+  //--------------------------------------------------
+  // add data structure to store information collected
+  // from specification file
+
+
+  //--------------------------------------------
+
+
   bmc(std::unique_ptr<llvm::Module>& m_,
       std::map<const llvm::BasicBlock*, comments >& bb_comment_map_,
       options& o_ );

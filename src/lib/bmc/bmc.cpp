@@ -47,8 +47,14 @@ void bmc::run_bmc_pass() {
                                    revEndLocalNameMap ) );
   passMan.add( new collect_loopdata(o, ld_map, localNameMap, module) );
 
+  if( o.concurrent )
+    passMan.add( new collect_globals_pass(*module.get(), o.solver_ctx, o.mem_enc, o) );
+
   if(o.loop_aggr) {
     passMan.add( new bmc_loop_pass(o,o.solver_ctx, def_map, *this));
+  } if( o.concurrent ) {
+    // concurrent pass
+    // passMan.add( new bmc_concurrent_pass(o,o.solver_ctx, def_map, *this) );
   } else {
     passMan.add( new bmc_fun_pass(o, o.solver_ctx,*this));
   }
@@ -59,7 +65,6 @@ void bmc::run_bmc_pass() {
 	//passMan.run( *module.get() );
   } */
 
-  passMan.add( new collect_globals_pass(*module.get(), o.solver_ctx, o.mem_enc, o) );
 
   passMan.run( *module.get() );
 }

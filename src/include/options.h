@@ -65,6 +65,11 @@ public:
   bool loop_aggr = false;
 
   //----------------------------------------
+  // configuration for concurrent programs
+  bool concurrent = false;
+  
+
+  //----------------------------------------
   //module preprocess options
   bool dump_cfg = 0;
 

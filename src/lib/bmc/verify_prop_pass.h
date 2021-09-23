@@ -22,7 +22,9 @@
 #include <boost/filesystem/fstream.hpp>
 #include "include/parser_data.h"
 
-class verify_prop_pass : public bmc_pass, public llvm::FunctionPass {
+//public bmc_pass,
+
+class verify_prop_pass : public llvm::FunctionPass {
 
 public:
   static char ID;
