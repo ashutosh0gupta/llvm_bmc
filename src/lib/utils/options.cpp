@@ -4,7 +4,7 @@
 
 namespace po = boost::program_options;
 
-options::options( solver_context& sol_ctx_, memory_cons& mem_enc_ ) : solver_ctx(sol_ctx_),mem_enc(mem_enc_) {};
+options::options( solver_context& sol_ctx_ ) : solver_ctx(sol_ctx_),mem_enc(sol_ctx_) {};
 
 void options::show_help(po::options_description& desc) {
       std::cout << "\n\tllvmbmc - BMC library";

@@ -9,10 +9,11 @@
 
 enum spec_reason_t{
   UNKNOWN,      // unspecified
+  SPEC_FILE,    // spec file;
   COMMENT,      // property found in a comment
   ASSERT,       // property occured in code
   OUT_OF_BOUND, // out of range access to arrays
-  OUT_OF_RANGE // overflow/underflow
+  OUT_OF_RANGE  // overflow/underflow
 };
 
 

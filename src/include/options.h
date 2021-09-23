@@ -31,7 +31,7 @@ enum array_model_t{
 class options
 {
 public:
-  options( solver_context& sol_ctx_, memory_cons& mem_enc_ );
+  options( solver_context& sol_ctx_);
   std::string get_input_file() { return filePath; }
   const std::vector<std::string>& get_include_dirs() { return include_dirs; }
   llvm::LLVMContext& get_llvm_context() { return globalContext; }
@@ -48,7 +48,8 @@ public:
   //todo: some of following show become private
   //---------------------------------------
   solver_context& solver_ctx;
-  memory_cons& mem_enc;
+  memory_cons mem_enc; // todo: we all allocating here do we really need to allocate here?
+
   //---------------------------------------
   //tiler options
   std::string fileName;

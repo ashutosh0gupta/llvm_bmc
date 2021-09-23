@@ -1,12 +1,12 @@
 #include "include/options.h"
 #include "include/bmc.h"
-#include "include/memory_cons.h"
 
 //------------------------------------------
 // todo: remove the following header
-#include "lib/bmc/verify_prop_pass.h"
 #include "lib/utils/llvm_utils.h"
 //----------------------------------------
+
+#include <boost/filesystem.hpp>
 
 #include <iostream>
 #include <sstream>
@@ -46,7 +46,8 @@ void prepare_module( options& o,
   }
 
   for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
-    std::string fname = demangle(fit->getName().str()); 
+    // todo: remove dependency on demangle from llvm_utils
+    std::string fname = demangle(fit->getName().str());
     if(fname == o.funcName) {
       // Do nothing
     }else{
@@ -75,7 +76,7 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
 {
 
   std::map<const llvm::BasicBlock*, comments > bb_cmt_map;
-  prepare_module( o, module, cmts, bb_cmt_map);
+  prepare_module( o, module, cmts, bb_cmt_map );
   bmc b( module, bb_cmt_map, o );
 
   // initialize bmc data structure
@@ -83,7 +84,6 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
 
   // process the spec file
   import_spec_file( module, b, o);
-
 
   //translate function to formulas
   b.run_bmc_pass();
@@ -96,8 +96,8 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
 
 int main(int argc, char** argv) {
   z3::context solver_ctx;
-  memory_cons mem_enc(solver_ctx);
-  options o(solver_ctx, mem_enc);
+  // memory_cons mem_enc(solver_ctx);
+  options o(solver_ctx);
   boost::filesystem::path def_config("default.conf");
   if ( boost::filesystem::exists( def_config ) ) {
     o.parse_config(def_config);
