@@ -1,0 +1,6 @@
+/build/
+/CMakeLists.txt
+/llvmbmc
+/.cproject
+/.project
+/.z3-trace
