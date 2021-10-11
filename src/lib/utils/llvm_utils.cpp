@@ -17,6 +17,9 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/AsmParser/Parser.h"
 #include "llvm/Support/SourceMgr.h"
+#include "llvm/Analysis/CFGPrinter.h"
+#include "llvm/Passes/PassBuilder.h"
+
 //clang related code
 #include <clang/CodeGen/CodeGenAction.h>
 #include <clang/Frontend/CompilerInstance.h>
@@ -440,9 +443,22 @@ void dump_dot_module( boost::filesystem::path& dump_path,
   std::cerr << "dumping llvm program files in folder:" << dump_path << "\n";
   auto c_path = boost::filesystem::current_path();
   current_path( dump_path );
-  llvm::legacy::PassManager passMan;
-  passMan.add( llvm::createCFGPrinterLegacyPassPass() );
-  passMan.run( *module.get() );
+  // llvm::legacy::PassManager passMan;
+  // passMan.add( llvm::createCFGPrinterLegacyPassPass() );
+  // passMan.run( *module.get() );
+
+  llvm::FunctionPassManager FPM;
+  llvm::FunctionAnalysisManager FAM;
+
+  llvm::PassBuilder PB;
+  PB.registerFunctionAnalyses(FAM);
+
+  FPM.addPass( llvm::CFGPrinterPass() );
+
+  for(llvm::Function& F : *module ){
+    FPM.run(F, FAM);
+  }
+
   current_path( c_path );
 }
 
