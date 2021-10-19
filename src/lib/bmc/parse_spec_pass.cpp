@@ -1,4 +1,4 @@
-#include "verify_prop_pass.h"
+#include "parse_spec_pass.h"
 #include "lib/utils/utils.h"
 #include "lib/utils/llvm_utils.h"
 #include "include/bmc_ds.h"
@@ -6,17 +6,17 @@
 #include "llvm/Transforms/Utils/Cloning.h"
 
 
-char verify_prop_pass::ID = 0;
-// bmc_pass(o, o.solver_ctx, bmc_obj),
-verify_prop_pass::verify_prop_pass(llvm::Module &m, options& o, bmc& b_)
-  :  bmc_obj(b_), llvm::FunctionPass(ID)
+char parse_spec_pass::ID = 0;
+
+parse_spec_pass::parse_spec_pass(llvm::Module &m, options& o, bmc& b)
+  : llvm::FunctionPass(ID)
 {
-  init_parse(m,o);
+  init_parse(m,o,b);
 }
 
-verify_prop_pass::~verify_prop_pass() {}
+parse_spec_pass::~parse_spec_pass() {}
 
-void verify_prop_pass::init_parse(llvm::Module &m, options& o)
+void parse_spec_pass::init_parse(llvm::Module &m, options& o, bmc& b)
 {
   parser_data pd(o.solver_ctx);
   const std::string Specfilename = o.get_spec_file();
@@ -27,8 +27,37 @@ void verify_prop_pass::init_parse(llvm::Module &m, options& o)
   std::ifstream file(Specfilename);
   pd.read_file( file );
 
-  // assert(bmc_ds_ptr);
-  // bmc_ds_ptr->fn_to_thread = pd.fn_thread_map;
+  b.fn_to_thread = pd.fn_thread_map;
+  b.thread_list = pd.list_threads;
+
+  if (!pd.list_postcond.empty()) {
+    for (auto j = pd.list_postcond.begin(); j != pd.list_postcond.end(); j++) {
+      b.prop.push_back(j->second);
+     }
+   }
+
+  if (pd.callseq_map.empty()) {
+    for (auto j = pd.list_threads.begin(); j != pd.list_threads.end(); j++) {
+      ThName = j->first;
+      EntryFnName = j->second;
+      //std::cout << "Entry Fn is " << EntryFnName << " Thread is " << ThName << "\n";
+      for (auto mit = m.begin(); mit != m.end(); mit++) { //Iterate over functions in module
+
+      std::string Str1 = mit->getName();
+      if (Str1 == EntryFnName) {
+	for (auto i = pd.fn_thread_map.begin(); i != pd.fn_thread_map.end(); i++) {
+      		if (Str1 == i->first) {
+      		unsigned Th_num = i->second;
+		//std::cout << "Fn is " << EntryFnName << " Thread is " << ThName << "\n";
+        	CollectThreadInfo(*mit, Th_num, b);
+	    }
+      }
+     }
+    }
+  }
+ }
+
+  else {
 
   llvm::LLVMContext& ctx = m.getContext();
   llvm::Type *i32_type = llvm::IntegerType::getInt32Ty(ctx);
@@ -57,9 +86,16 @@ void verify_prop_pass::init_parse(llvm::Module &m, options& o)
       if (ThName == j->first) EntryFnName = j->second;
     }
 
+    for (auto k = pd.fn_thread_map.begin(); k != pd.fn_thread_map.end(); k++) {
+	if (EntryFnName == k->first)
+   		Th_num1 = k->second;
+    }
+
     auto CallSeqpair = i->first;
     std::string FnName1 = CallSeqpair.first;
     std::string FnName2 = CallSeqpair.second;
+
+    //std::cout << "Fn1 is " << FnName1 << " Fn2 is " << FnName2 << " Thread is " << i->second << "\n";
 
     insert_monitor(m,FnName1,FnName2);
 
@@ -68,7 +104,7 @@ void verify_prop_pass::init_parse(llvm::Module &m, options& o)
       std::string Str1 = mit->getName();
       if (Str1 == EntryFnName) {
         //std::cout << "Str1 is " << Str1 <<"\n";
-        bool modified = runOnFunction(*mit);
+        InlineInsertInst(*mit, b);
       }
     }
 
@@ -84,11 +120,15 @@ void verify_prop_pass::init_parse(llvm::Module &m, options& o)
     //call->print( llvm::outs() );     std::cout << "\n";
 
   }
+ }
+      for (auto mit = m.begin(); mit != m.end(); mit++) { //Iterate over functions in module
+	  bool Modified = runOnFunction(*mit);
+      }
 }
 
 
 
-void verify_prop_pass::insert_monitor(llvm::Module &m, std::string Fn1, std::string Fn2)
+void parse_spec_pass::insert_monitor(llvm::Module &m, std::string Fn1, std::string Fn2)
 {
 
   //auto ModName = m.getModuleIdentifier();
@@ -109,18 +149,32 @@ void verify_prop_pass::insert_monitor(llvm::Module &m, std::string Fn1, std::str
 }
 
 
-bool verify_prop_pass::runOnFunction( llvm::Function &f ) {
+void parse_spec_pass::InlineInsertInst( llvm::Function &f, bmc& b ) {
   for (auto bbit = f.begin(); bbit != f.end(); bbit++) { //Iterate over basic blocks in function
 
     auto bb = &(*bbit);
     for( auto it = bb->begin(), e = bb->end(); it != e; ++it) {
       auto I = &(*it);
       //I->print( llvm::outs() );     std::cout << "\n";
-      if( auto call = llvm::dyn_cast<llvm::CallInst>(I) ) {
-        llvm::Function *fun = call->getCalledFunction();
+  	auto call = llvm::dyn_cast<llvm::CallInst>(I);
+	auto invoke = llvm::dyn_cast<llvm::InvokeInst>(I);
+      if ((call) || (invoke)) {
+       // I->print( llvm::outs() );     std::cout << "\n";
+	std::string FuncName;	
+	llvm::Function *fun;
+        if (call) {
+		fun = call->getCalledFunction();
+		FuncName = fun->getName(); }
 
-        std::string FuncName = fun->getName();
-        //std::cout << "Called fn is " << FuncName << "\n";
+	else if (invoke) {
+		fun = invoke->getCalledFunction();
+		FuncName = fun->getName();
+	}
+        
+	auto pair = std::make_pair( FuncName, Th_num1 );
+	b.fn_to_thread.insert( pair );
+	//std::cout << "Called fn is " << FuncName << "\n";
+
         if (fname1 == FuncName) {
 
           llvm::Instruction *icmp = new llvm::ICmpInst(I,llvm::ICmpInst::ICMP_ULT, invokedFn_Val[callseq_num], i32_val2); // cmp_res_name);
@@ -143,25 +197,57 @@ bool verify_prop_pass::runOnFunction( llvm::Function &f ) {
           llvm::SelectInst *select = llvm::SelectInst::Create (icmp, const_val1, const_val2, monitor_var_name[callseq_num], I);
           //select->print( llvm::outs() );     std::cout << "\n";
         }
-
-        if( !fun->isDeclaration() ) {
-          // function has a body available
-          fun->addFnAttr(llvm::Attribute::AlwaysInline);
-        }
-	bool modified = runOnFunction(*fun);
+	InlineInsertInst(*fun, b);
       }
     }
 
   }
-  return true;
 }
 
 
-llvm::StringRef verify_prop_pass::getPassName() const {
+void parse_spec_pass::CollectThreadInfo( llvm::Function &f, unsigned ThreadNumber, bmc& b ) {
+  for (auto bbit = f.begin(); bbit != f.end(); bbit++) { //Iterate over basic blocks in function
+
+    auto bb = &(*bbit);
+    for( auto it = bb->begin(), e = bb->end(); it != e; ++it) {
+      auto I = &(*it);
+      //I->print( llvm::outs() );     std::cout << "\n";
+      auto call = llvm::dyn_cast<llvm::CallInst>(I);
+      auto invoke = llvm::dyn_cast<llvm::InvokeInst>(I);
+      if ((call) || (invoke)) {
+       // I->print( llvm::outs() );     std::cout << "\n";
+	std::string FuncName;	
+	llvm::Function *fun;
+        if (call) {
+		fun = call->getCalledFunction();
+		FuncName = fun->getName(); }
+
+	else if (invoke) {
+		fun = invoke->getCalledFunction();
+		FuncName = fun->getName();
+	}
+	//std::cout << "Called fn is " << FuncName << "\n";
+	auto pair = std::make_pair( FuncName, ThreadNumber );
+  	b.fn_to_thread.insert( pair );
+
+	CollectThreadInfo(*fun, ThreadNumber, b);
+      }
+    }
+  }
+}
+
+
+bool parse_spec_pass::runOnFunction( llvm::Function &f ) {
+	std::string FuncName = f.getName();
+	return true;
+}
+
+
+llvm::StringRef parse_spec_pass::getPassName() const {
   return "Verifies specified properties - Inserts monitor variable";
 }
 
-void verify_prop_pass::getAnalysisUsage(llvm::AnalysisUsage &au) const {
+void parse_spec_pass::getAnalysisUsage(llvm::AnalysisUsage &au) const {
   au.setPreservesAll();
   au.addRequired<llvm::LoopInfoWrapperPass>();
 }
@@ -169,10 +255,14 @@ void verify_prop_pass::getAnalysisUsage(llvm::AnalysisUsage &au) const {
 
 
 void import_spec_file( std::unique_ptr<llvm::Module>& module,
-                       bmc& b, options& o) {
+                       options& o, bmc& b) {
   if (o.check_spec) {
     llvm::legacy::PassManager passMan;
-    passMan.add( new verify_prop_pass(*module.get(), o, b));
+    passMan.add( new parse_spec_pass(*module.get(), o, b));
     passMan.run( *module.get() );
-  }
-}
+    }
+
+//  for (auto i = b.fn_to_thread.begin(); i != b.fn_to_thread.end(); i++) {
+//	std::cout << "Fn. name is " << i->first << " Thread num is " << i->second << "\n";
+//  }
+ }

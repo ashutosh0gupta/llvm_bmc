@@ -199,7 +199,7 @@ void parser_data::read_thread( std::istream& in ) {
    list_threads.push_back(pair);
    thread_num++;
    auto pair1 = std::make_pair( symb2, thread_num);
-   std::cout << "Entry fn is " << symb2 << " thread_num is " << thread_num << "\n";
+   //std::cout << "Entry fn is " << symb2 << " thread_num is " << thread_num << "\n";
    //assert(bmc_ds_ptr);
    fn_thread_map.insert( pair1 );
 }
@@ -248,8 +248,8 @@ void parser_data::read_postcond( std::istream& in ) {
 	//expr e = smt2_parse_string( solver_ctx, symb4);
 	
 	expr e = parseFormula(solver_ctx, symb4, names, declarations);
-	   //auto pair = std::make_pair( symb1, e);
-	   //list_postcond.push_back(pair);
+	auto pair = std::make_pair( symb1, e);
+	list_postcond.push_back(pair);
    }
 }
 

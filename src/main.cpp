@@ -1,6 +1,6 @@
 #include "include/options.h"
 #include "include/bmc.h"
-// hii git test
+
 //------------------------------------------
 // todo: remove the following header
 #include "lib/utils/llvm_utils.h"
@@ -28,14 +28,7 @@ void prepare_module( options& o,
   passMan.add( llvm::createPromoteMemoryToRegisterPass() );
   passMan.add( llvm::createLoopRotatePass() ); // some params
 
-   /*if (o.check_spec) {
-        llvm::legacy::PassManager passMan;
-	passMan.add( new verify_prop_pass(*module.get(), o));
-	//passMan.run( *module.get() );
-  } */
-
-
-  passMan.add( llvm::createAlwaysInlinerLegacyPass() );
+   //passMan.add( llvm::createAlwaysInlinerLegacyPass() );
   if( o.unwind && o.llvm_unroll ) {
     // Work around due to a bug in interface since LLVM 4.0 =======
     // setting unroll count via commmand line parsing
@@ -54,7 +47,7 @@ void prepare_module( options& o,
       // declare all non entry functions can be inlined
       if( !fit->isDeclaration() ) {
         // function has a body available
-        fit->addFnAttr(llvm::Attribute::AlwaysInline);
+        //fit->addFnAttr(llvm::Attribute::AlwaysInline);
       }
     }
   }
@@ -83,20 +76,21 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
   b.init();
 
   // process the spec file
-  import_spec_file( module, b, o);
+  import_spec_file( module, o, b);
 
   //translate function to formulas
   b.run_bmc_pass();
 
-  for( auto& it : b.func_formula_map ) {
-    b.check_all_spec( it.second );
-  } 
+//  for( auto& it : b.func_formula_map ) {
+//    b.check_all_spec( it.second );
+//  } 
+
+  bool verify_result = b.verify_prop();
 
 }
 
 int main(int argc, char** argv) {
   z3::context solver_ctx;
-  // memory_cons mem_enc(solver_ctx);
   options o(solver_ctx);
   boost::filesystem::path def_config("default.conf");
   if ( boost::filesystem::exists( def_config ) ) {

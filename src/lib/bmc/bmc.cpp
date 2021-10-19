@@ -15,6 +15,7 @@
 #include "llvm/Transforms/IPO/AlwaysInliner.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Analysis/CFGPrinter.h"
+#include "llvm/Analysis/InlineCost.h"
 #pragma GCC diagnostic pop
 
 
@@ -42,29 +43,68 @@ bmc::~bmc() {
 }
 
 void bmc::run_bmc_pass() {
+
   llvm::legacy::PassManager passMan;
+
+  for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
+    // todo: remove dependency on demangle from llvm_utils
+    std::string fname = demangle(fit->getName().str());
+    //if(fname == o.funcName) {
+      // Do nothing
+    //}else{
+      // declare all non entry functions can be inlined
+      if( !fit->isDeclaration() ) {
+        // function has a body available
+        fit->addFnAttr(llvm::Attribute::AlwaysInline);
+      }
+    //}
+  }
+  passMan.add( llvm::createAlwaysInlinerLegacyPass() );
+  passMan.run( *module.get() );
+
+//  for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
+//     std::string fname = demangle(fit->getName().str());
+//       auto inline_res = llvm::isInlineViable(*fit);
+//       if (inline_res && fit->hasFnAttribute(llvm::Attribute::AlwaysInline) &&
+//        isInlineViable(*fit)) {
+//	       std::cout << "fn. name is " << fname << "\n";//" Failure reason " << (char*)inline_res.message << "test\n"; 
+//	}
+//       else {std::cout << "Failed fn. name is " << fname << "\n"; }//" Failure reason " << (char*)inline_res.message << "test\n"; }
+//  } 
+
+
+  for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
+  std::string fname = demangle(fit->getName().str());
+  if (fname == "_ada_mnguidancedriver") {
+
+    for (auto bbit = fit->begin(); bbit != fit->end(); bbit++) { //Iterate over basic blocks in function       
+		       
+      auto bb = &(*bbit);
+      for( auto it = bb->begin();  it != bb->end(); ++it) {
+        auto I = &(*it);
+	auto call = llvm::dyn_cast<llvm::CallInst>(I);
+      auto invoke = llvm::dyn_cast<llvm::InvokeInst>(I);
+      if ((call) || (invoke)) {
+          I->print( llvm::outs() );     std::cout << "\n";
+	  }
+	}
+      }
+     }
+    }
+
   passMan.add( new build_name_map( localNameMap, revStartLocalNameMap,
                                    revEndLocalNameMap ) );
   passMan.add( new collect_loopdata(o, ld_map, localNameMap, module) );
 
-  if( o.concurrent )
-    passMan.add( new collect_globals_pass(*module.get(), o.solver_ctx, o.mem_enc, o) );
+  //if( o.concurrent )
+    passMan.add( new collect_globals_pass(*module.get(), o.solver_ctx, o.mem_enc, o, *this) );
 
   if(o.loop_aggr) {
     passMan.add( new bmc_loop_pass(o,o.solver_ctx, def_map, *this));
-  } if( o.concurrent ) {
-    // concurrent pass
-    // passMan.add( new bmc_concurrent_pass(o,o.solver_ctx, def_map, *this) );
-  } else {
+  } 
+  else {
     passMan.add( new bmc_fun_pass(o, o.solver_ctx,*this));
   }
-
-  /*if (o.check_spec) {
-        llvm::legacy::PassManager passMan;
-	passMan.add( new verify_prop_pass(*module.get(), o));
-	//passMan.run( *module.get() );
-  } */
-
 
   passMan.run( *module.get() );
 }
@@ -173,6 +213,23 @@ bool bmc::run_solver(expr &spec, bmc_ds* bmc_ds_ptr) {
   } else {
     return false;
   }
+}
+
+
+bool bmc::verify_prop() {
+  std::ostream& os = std::cout;
+  z3::solver s(o.solver_ctx);
+  for(expr e : prop) {
+    s.add(!e);
+    if (s.check() == z3::sat) {
+      os << "\nSpecification that failed the check : \n";
+      os << e;
+      os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
+      return false;
+    } else { } // contine with other specifications
+  }
+  os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
+  return true;    
 }
 
 

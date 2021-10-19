@@ -371,6 +371,7 @@ void bmc_pass::translateCallInst( unsigned bidx,
   assert(call);
 
   llvm::Function* fp = call->getCalledFunction();
+  
   if( auto dbg_val = llvm::dyn_cast<llvm::IntrinsicInst>(call) ) {
     translateIntrinsicInst( bidx, dbg_val );
   } else if( fp != NULL && fp->getName().startswith("__VERIFIER") ) {

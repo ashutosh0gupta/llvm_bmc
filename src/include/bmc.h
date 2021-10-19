@@ -32,8 +32,11 @@ public:
   //--------------------------------------------------
   // add data structure to store information collected
   // from specification file
-
-
+  std::map< std::string, unsigned > fn_to_thread;
+  typedef std::pair<std::string, std::string> threads;
+  std::vector <threads> thread_list;
+  std::vector<expr> prop;
+  bool verify_prop();
   //--------------------------------------------
 
 
@@ -72,6 +75,6 @@ public:
 };
 
 void import_spec_file( std::unique_ptr<llvm::Module>& module,
-                       bmc& b, options& o);
+                       options& o, bmc& b);
 
 #endif // LLVM_BMC_H

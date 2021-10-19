@@ -27,7 +27,7 @@
 
 //public bmc_pass,
 
-class verify_prop_pass : public llvm::FunctionPass {
+class parse_spec_pass : public llvm::FunctionPass {
 
 public:
   static char ID;
@@ -46,24 +46,22 @@ public:
   std::string cmp_res_name[20] = {"cvar1", "cvar2", "cvar3", "cvar4", "cvar5", "cvar6", "cvar7", "cvar8", "cvar9", "cvar10", "cvar11", "cvar12", "cvar13", "cvar14", "cvar15", "cvar16", "cvar17", "cvar18", "cvar19", "cvar20"};
 
   int callseq_num = -1;
-  bmc& bmc_obj;
+  unsigned Th_num1;
 
 public:
-  verify_prop_pass(llvm::Module &m, options& o, bmc& b_);
-  ~verify_prop_pass();
+  parse_spec_pass(llvm::Module &m, options& o, bmc& b);
+  ~parse_spec_pass();
 
-  void init_parse(llvm::Module &m, options& o);
+  void init_parse(llvm::Module &m, options& o, bmc& b);
   void insert_monitor(llvm::Module &m, std::string Fn1, std::string Fn2);
   //virtual bool runOnModule(llvm::Module &m); //when there is a Module
-  virtual bool runOnFunction(llvm::Function &f); //called by runOnModule
+  void InlineInsertInst(llvm::Function &f, bmc& b); //called by runOnModule
+  void CollectThreadInfo( llvm::Function &f, unsigned ThreadNumber, bmc& b );
+  virtual bool runOnFunction(llvm::Function &f);
 
   virtual void getAnalysisUsage(llvm::AnalysisUsage &au) const;
   llvm::StringRef getPassName() const;
 };
-
-
-// void import_spec_file( std::unique_ptr<llvm::Module>& module,
-//                        bmc& b, options& o);
 
 
 #endif // BMC_PARSE_SPEC_FILE_H
