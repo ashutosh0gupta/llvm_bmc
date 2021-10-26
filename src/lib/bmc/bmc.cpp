@@ -73,24 +73,24 @@ void bmc::run_bmc_pass() {
 //  } 
 
 
-  for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
-  std::string fname = demangle(fit->getName().str());
-  if (fname == "_ada_mnguidancedriver") {
+//  for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
+//  std::string fname = demangle(fit->getName().str());
+//  if (fname == "_ada_mnguidancedriver") {
 
-    for (auto bbit = fit->begin(); bbit != fit->end(); bbit++) { //Iterate over basic blocks in function       
-		       
-      auto bb = &(*bbit);
-      for( auto it = bb->begin();  it != bb->end(); ++it) {
-        auto I = &(*it);
-	auto call = llvm::dyn_cast<llvm::CallInst>(I);
-      auto invoke = llvm::dyn_cast<llvm::InvokeInst>(I);
-      if ((call) || (invoke)) {
-          I->print( llvm::outs() );     std::cout << "\n";
-	  }
-	}
-      }
-     }
-    }
+//    for (auto bbit = fit->begin(); bbit != fit->end(); bbit++) { //Iterate over basic blocks in function       
+//		       
+//      auto bb = &(*bbit);
+//      for( auto it = bb->begin();  it != bb->end(); ++it) {
+//        auto I = &(*it);
+//	auto call = llvm::dyn_cast<llvm::CallInst>(I);
+//      auto invoke = llvm::dyn_cast<llvm::InvokeInst>(I);
+//      if ((call) || (invoke)) {
+//          I->print( llvm::outs() );     std::cout << "\n";
+//	  }
+//	}
+//      }
+//     }
+//    }
 
   passMan.add( new build_name_map( localNameMap, revStartLocalNameMap,
                                    revEndLocalNameMap ) );

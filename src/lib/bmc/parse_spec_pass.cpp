@@ -95,7 +95,7 @@ void parse_spec_pass::init_parse(llvm::Module &m, options& o, bmc& b)
     std::string FnName1 = CallSeqpair.first;
     std::string FnName2 = CallSeqpair.second;
 
-    //std::cout << "Fn1 is " << FnName1 << " Fn2 is " << FnName2 << " Thread is " << i->second << "\n";
+    std::cout << "Fn1 is " << FnName1 << " Fn2 is " << FnName2 << " Thread is " << i->second << "\n";
 
     insert_monitor(m,FnName1,FnName2);
 
@@ -115,9 +115,15 @@ void parse_spec_pass::init_parse(llvm::Module &m, options& o, bmc& b)
     llvm::LLVMContext& ctx = m.getContext();
     llvm::Type *i1_type = llvm::IntegerType::getInt1Ty(ctx);
 
-    auto assertfunc = m.getOrInsertFunction("__VERIFIER_assert_CallSeqCheck", i1_type);
-    llvm::CallInst *call = llvm::CallInst::Create(assertfunc, icmp1, "assertfunc");
-    //call->print( llvm::outs() );     std::cout << "\n";
+    auto ret_type = llvm::Type::getVoidTy(ctx);
+    auto assert_type = llvm::FunctionType::get(ret_type , i1_type, false );
+
+    auto attr_list = llvm::AttributeList().addAttribute(m.getContext(), 1U, llvm::Attribute::NoAlias);
+
+    auto assertfunc = m.getOrInsertFunction("__VERIFIER_assert_CallSeqCheck", assert_type, attr_list);
+  llvm::CallInst *call = llvm::CallInst::Create(assertfunc, icmp1, "assertfunc");
+   call->print( llvm::outs() );     std::cout << "\n";
+   //auto assertfunc = m.getOrInsertFunction("__VERIFIER_assert_CallSeqCheck", i1_type);
 
   }
  }
