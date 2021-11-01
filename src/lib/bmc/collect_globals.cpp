@@ -21,9 +21,11 @@ collect_globals_pass::collect_globals_pass( llvm::Module &m,
       std::cout << "Entry Fn is " << str2 << " Thread is " << str1 << "\n";
   } */
 
-  fname1 = b.thread_list.at(0).second;
-  fname2 = b.thread_list.at(1).second;
-
+  if( b.thread_list.size() >= 2 ) {
+    fname1 = b.thread_list.at(0).second;
+    fname2 = b.thread_list.at(1).second;
+  }
+  
   //fname1 = "_ada_mnguidancedriver";
   //fname2 = "_ada_mjguidancedriver";
   //solver_ctx = o.solver_ctx;
@@ -35,7 +37,8 @@ collect_globals_pass::~collect_globals_pass() {}
 bool collect_globals_pass::runOnModule(llvm::Module &m)
 {
   for (auto mit = m.begin(); mit != m.end(); mit++) { //Iterate over functions in module
-    bool modified = runOnFunction(*mit);
+    //bool modified =
+    runOnFunction(*mit);
   }
   insert_concurrent(fname1, fname2);
 
@@ -109,7 +112,7 @@ void collect_globals_pass::insert_concurrent( std::string FnName1,
     list_gvars = fn_gvars_map[FnName1];
     for (auto i = fn_gvars_map.begin(); i != fn_gvars_map.end(); i++) {
       if (i->first ==  FnName2) {
-        for(int j=0; j < list_gvars.size(); j++)
+        for(unsigned j=0; j < list_gvars.size(); j++)
           {
             auto g1 = list_gvars.at(j);
             if (find(i->second.begin(), i->second.end(), g1) != i->second.end()) {

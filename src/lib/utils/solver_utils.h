@@ -53,6 +53,7 @@ void dump( expr e );
 void dump( expr_set e );
 void dump( exprs e );
 void dump( expr_vector e );
+void dump( sort e );
 
 // other is_.. can be found in z3++.h
 bool reportErrNThrow(std::string s, bool th);
@@ -100,8 +101,8 @@ expr select( expr&, expr& );
 expr store( expr&, expr&, expr& );
 
 bool matched_sort( const expr& l, const expr& r );
-expr switch_sort( expr& b, sort& s);
-expr switchint_sort( expr& b, sort& s);
+expr switch_int_sort( expr& b, sort& s);
+expr switch_bv_sort( expr& b, sort& s);
 int get_numeral_int(const expr& i);
 
 bool is_true( expr, model );

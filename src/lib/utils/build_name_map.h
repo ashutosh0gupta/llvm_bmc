@@ -11,18 +11,21 @@ public:
 
   build_name_map(
                  // value_expr_map&,
+                 options& o,
                  name_map&,
                  std::map<const bb*, rev_name_map >&,
                  std::map<const bb*, rev_name_map >&
                  );
   ~build_name_map();
 
+  options& o;
   std::map< const bb*, rev_name_map >& revStartLocalNameMap;//todo: likely useless
   std::map< const bb*, rev_name_map >& revEndLocalNameMap;
   name_map& localNameMap;
   //  std::map<std::string, llvm::Value*> nameValMap;
   // value_expr_map& def_map;
 
+  void buildNameMap( llvm::Function&, name_map&);
   void buildRevNameMap( llvm::Function &f );
   void buildParamExpr( llvm::Function &f );
 

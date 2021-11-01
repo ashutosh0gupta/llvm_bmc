@@ -59,6 +59,12 @@ expr value_expr_map::get_term( const llvm::Value* op ) {
 
 expr value_expr_map::get_term( const llvm::Value* op, unsigned c_count ) {
   assert( op );
+  //------------------------------------
+  // Debug code
+  // if( op->getName() == "p.02740") {
+  //   llvm_bmc_warning( "value expr map", "value of interest visited");
+  // }
+  //------------------------------------
   expr e = read_term( op, c_count );
   if( e ) return e;
   // create new name
@@ -96,10 +102,10 @@ expr value_expr_map::create_fresh_name( const llvm::Value* op  ) {
       return get_fresh_bv( ctx, bw, op->getName().str() );
     }else{
       int bw = i_ty->getBitWidth();
-      if(bw == 32 || bw == 64 ) {
+      if( bw == 32 || bw == 64 || bw == 8 ) {
         expr i =  get_fresh_int(ctx, op->getName().str());
         return i;
-      }else if(bw == 1 || bw == 8) {
+      }else if(bw == 1) {
         expr bit =  get_fresh_bool(ctx, op->getName().str());
         return bit;
       }
@@ -110,6 +116,7 @@ expr value_expr_map::create_fresh_name( const llvm::Value* op  ) {
       return get_fresh_const( ctx, s, op->getName().str() );
     }
   }
+  op->print( llvm::errs() ); llvm::errs() << "\n";
   ty->print( llvm::errs() ); llvm::errs() << "\n";
   llvm_bmc_error("llvm_utils", "unsupported type!!");
   expr e(ctx);

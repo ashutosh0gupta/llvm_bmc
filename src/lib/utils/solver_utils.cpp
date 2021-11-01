@@ -107,6 +107,10 @@ void print_expr( std::ostream& o, expr e) {
     o << e << "\n";
 }
 
+void print_sort( std::ostream& o, sort e) {
+    o << e << "\n";
+}
+
 void dump( expr e ) {
   print_expr( std::cerr, e );
 }
@@ -121,6 +125,10 @@ void dump( expr_set es ) {
 
 void dump( expr_vector es ) {
   print_expr_vec( std::cerr, es );
+}
+
+void dump( sort e ) {
+  print_sort( std::cerr, e );
 }
 
 std::string display(expr e) {
@@ -239,6 +247,7 @@ std::string display_app(expr e) {
     return e.decl().name().str();
   }
 }
+
 
 
 bool reportErrNThrow(std::string s, bool th)
@@ -613,7 +622,7 @@ bool matched_sort( const expr& l, const expr& r ) {
   return eq(l.get_sort(),r.get_sort());
 }
 
-expr switch_sort( expr& b, sort& s ) {
+expr switch_int_sort( expr& b, sort& s ) {
   sort bs = b.get_sort();
   if( bs.is_bool() && s.is_int() ) {
     if( is_false( b) ) {
@@ -629,11 +638,13 @@ expr switch_sort( expr& b, sort& s ) {
       return s.ctx().bool_val(false);
     }
   }
+  dump(b);
+  dump(s);
   llvm_bmc_error("z3Utils", "failed to change sort!" );
 }
 
 
-expr switchint_sort( expr& b, sort& s ) {
+expr switch_bv_sort( expr& b, sort& s ) {
   sort bs = b.get_sort();
   if( bs.is_bv() && s.is_bv() ) {
     if( bs.bv_size() < s.bv_size()) {

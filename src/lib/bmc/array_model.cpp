@@ -48,28 +48,56 @@ expr array_model::join_array_state( std::vector<expr>& conds,
   return _and( vec, solver_ctx );
 }
 
-void array_model_full::set_array_num(std::vector<const llvm::Type*>& arr_type) {
-//void array_model_full::set_array_num( unsigned len ) {
-//  num_arrays = len;
-  num_arrays = arr_type.size();
-  for( unsigned i = 0; i < num_arrays; i++) {
-  if (arr_type[i] -> isPointerTy()) {
-  auto T = arr_type[i]->getPointerElementType();
-  auto ElemTy = llvm::dyn_cast<llvm::ArrayType>(T)->getArrayElementType();
-  if (ElemTy -> isFloatTy()) {
-    ar_sorts.push_back( solver_ctx.array_sort( solver_ctx.int_sort(),
-                                               solver_ctx.fpa_sort<32>() ) );
-  } 
-  if (ElemTy -> isDoubleTy()) {
-    ar_sorts.push_back( solver_ctx.array_sort( solver_ctx.int_sort(),
-                                               solver_ctx.fpa_sort<64>() ) );
+sort array_model_full::get_address_sort() {
+  return solver_ctx.int_sort();
+}
+
+sort array_model_full::get_solver_array_ty( const llvm::ArrayType* ty ) {
+  auto elemTy = ty->getArrayElementType();
+  auto s  = llvm_to_sort( o, elemTy );
+  return solver_ctx.array_sort( get_address_sort(), s );
+  // if( ElemTy->isFloatTy() ) {
+  //   return solver_ctx.array_sort( get_address_sort(),
+  //                                 solver_ctx.fpa_sort<32>() );
+  // }
+  // if (ElemTy->isDoubleTy()) {
+  //   return solver_ctx.array_sort( get_address_sort(),
+  //                                 solver_ctx.fpa_sort<64>() );
+  // }
+  // if( ElemTy->isCharTy() ) {
+  // }
+  // if( ElemTy->isIntegerTy() ) {
+  // }
+}
+
+sort array_model_full::get_solver_array_ty( const llvm::PointerType* ty ) {
+  auto T = ty->getPointerElementType();
+  if( auto ar_ty = llvm::dyn_cast<llvm::ArrayType>(T)){
+    return get_solver_array_ty( ar_ty );
+  }else if( auto pty = llvm::dyn_cast<llvm::PointerType>(T) ) {
+    return get_solver_array_ty( pty );
+  }else{
+    auto e_sort= llvm_to_sort( o, T);
+    return solver_ctx.array_sort( get_address_sort(), e_sort );
   }
 }
-   else {
-   ar_sorts.push_back( solver_ctx.array_sort( solver_ctx.int_sort(),
-                                               solver_ctx.int_sort() ) );
+
+void array_model_full::set_array_num(std::vector<const llvm::Type*>& arr_type) {
+  num_arrays = arr_type.size();
+  for( unsigned i = 0; i < num_arrays; i++) {
+    if( auto pty = llvm::dyn_cast<llvm::PointerType>(arr_type[i]) ) {
+      ar_sorts.push_back( get_solver_array_ty( pty ) );
+      // auto T = arr_type[i]->getPointerElementType();
+      // if( auto ar_ty = llvm::dyn_cast<llvm::ArrayType>(T)){
+      //   ar_sorts.push_back( get_solver_array_ty( ar_ty ) );
+      // }else if( T->isPointerTy() ) {
+      // }
+    } else {
+      //todo: why this path??
+      ar_sorts.push_back( solver_ctx.array_sort( get_address_sort(),
+                                                 solver_ctx.int_sort() ) );
+    }
   }
- }
 }
 
 expr array_model_full::get_fresh_ary_name( unsigned i ) {
@@ -107,11 +135,21 @@ void array_model_full::copy_to_init_state( array_state& in ) {
   }
 }
 
+
+unsigned array_model_full::get_accessed_array( const llvm::Instruction* I ) {
+  try{
+    return ary_access_to_index.at(I);
+  }catch(...){
+    dump_ary_access_to_index();
+    llvm_bmc_error( "array model full", "array for the access not found")
+  }
+}
+
 arr_write_expr
 array_model_full::array_write( unsigned bidx, const llvm::StoreInst* I,
                                expr& idx, expr& val ) {
   array_state& ar_st = get_state( bidx );
-  auto i = ary_access_to_index.at(I);
+  auto i = get_accessed_array(I); //ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
   expr ar_name = vec.at(i);
   expr new_ar = get_fresh_ary_name(i);
@@ -129,7 +167,7 @@ arr_read_expr
 array_model_full::array_read( unsigned bidx, const llvm::LoadInst* I,
                               expr& idx ) {
   array_state& ar_st = get_state( bidx );
-  auto i = ary_access_to_index.at(I);
+  auto i = get_accessed_array(I); //ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
   expr ar_name = vec.at(i);
   expr lower_bound_arr(idx >= 0);
@@ -149,7 +187,7 @@ update_names( unsigned eb,
   array_state& s = exit_ary_map.at(eb);
   auto& vec = s.get_name_vec();
   for( auto I : arrays_updated) {
-    auto i = ary_access_to_index.at(&(*I));
+    auto i = get_accessed_array(&(*I));//ary_access_to_index.at(&(*I));
     expr new_ar = get_fresh_ary_name(i);
     vec[i] = new_ar;
     //vec[i] = get_fresh_ary_name(i);
@@ -163,38 +201,50 @@ void array_model_full::update_name( unsigned eb, unsigned i) {
   vec[i] = new_ar;
 }
 
-//=======================================================================
+// Debugging code
 
-expr array_model_fixed_len::get_fresh_ary_name( unsigned i ) {
-  return get_fresh_int(solver_ctx);
-}
-
-void array_model_fixed_len::init_state( unsigned //const bb*
-                                        eb ) {
-  array_state& s = exit_ary_map[eb];
-  auto& vec = s.get_name_vec();
-  vec.clear();
-  for( unsigned i = 0; i < num_partition; i++) {
-    vec.push_back( get_fresh_int(solver_ctx) );
+void array_model_full::dump_ary_access_to_index() {
+  for( auto pr : ary_access_to_index) {
+    auto I = pr.first;
+    I->print(llvm::outs());
+    std::cout << "-->"<< pr.second << "\n";
   }
 }
 
-arr_write_expr array_model_fixed_len::array_write( unsigned bidx,
-                                    const llvm::StoreInst* I,
-                                    expr& idx,
-                                    expr& val ) {
-  llvm_bmc_error( "bmc", "stub!!" );
-  arr_write_expr ret;
-  return ret;
-}
 
-arr_read_expr array_model_fixed_len::array_read( unsigned bidx,
-                                            const llvm::LoadInst* I,
-                                            expr& idx) {
-  llvm_bmc_error( "bmc", "stub!!" );
-  arr_read_expr ret;
-  return ret;
-}
+
+//=======================================================================
+
+// expr array_model_fixed_len::get_fresh_ary_name( unsigned i ) {
+//   return get_fresh_int(solver_ctx);
+// }
+
+// void array_model_fixed_len::init_state( unsigned //const bb*
+//                                         eb ) {
+//   array_state& s = exit_ary_map[eb];
+//   auto& vec = s.get_name_vec();
+//   vec.clear();
+//   for( unsigned i = 0; i < num_partition; i++) {
+//     vec.push_back( get_fresh_int(solver_ctx) );
+//   }
+// }
+
+// arr_write_expr array_model_fixed_len::array_write( unsigned bidx,
+//                                     const llvm::StoreInst* I,
+//                                     expr& idx,
+//                                     expr& val ) {
+//   llvm_bmc_error( "bmc", "stub!!" );
+//   arr_write_expr ret;
+//   return ret;
+// }
+
+// arr_read_expr array_model_fixed_len::array_read( unsigned bidx,
+//                                             const llvm::LoadInst* I,
+//                                             expr& idx) {
+//   llvm_bmc_error( "bmc", "stub!!" );
+//   arr_read_expr ret;
+//   return ret;
+// }
 
 // array_state&
 // array_model_fixed_len::join_array_state(std::vector<const bb*> prevs,

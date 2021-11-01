@@ -113,7 +113,10 @@ int main(int argc, char** argv) {
   if( o.verbosity > 8 ) {
     module->print( llvm::outs(), nullptr );
   }
-
-  run_bmc( module, cmts, o);
-
+  // try {
+    run_bmc( module, cmts, o );
+  // }catch(...){
+  //   llvm_bmc_error( "BMC", "some exception is thrown!" );
+  // }
+ 
 }

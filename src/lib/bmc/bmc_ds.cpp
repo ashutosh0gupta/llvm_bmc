@@ -317,11 +317,11 @@ expr bmc_ds::join_state( std::vector<expr>& cs,
 // manage array model
 
 const llvm::Value*
-identify_array( const llvm::Value* op_ptr) {
-  if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_ptr) ) {
-    op_ptr = cast->getOperand(0);
+identify_array( const llvm::Value* op) {
+  if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
+    op = cast->getOperand(0);
   }
-  if(auto gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_ptr)) {
+  if(auto gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op)) {
     auto op_gep_ptr = gep->getPointerOperand();
     if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
       op_gep_ptr = cast->getOperand(0);
@@ -332,19 +332,31 @@ identify_array( const llvm::Value* op_ptr) {
     if(auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
       return addr;
     }
-  }else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(op_ptr) ) {
+    if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr)) {
+      return glb;
+    }
+    llvm_bmc_error("bmc", "unseen GEP pattern detected!");
+    // op_gep_ptr->print( llvm::outs() );
+  }else if( llvm::dyn_cast<const llvm::AllocaInst>(op) ) {
+    // auto alloc =
     // To handle a[0] when a is dynamic sized array
-    if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_ptr)) {
+    if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op)) {
       // actual allocation in the code
       return addr;
     }
-  }else if( auto addr = llvm::dyn_cast<const llvm::Argument>(op_ptr) ) {
+  }else if( auto addr = llvm::dyn_cast<const llvm::Argument>(op) ) {
     // passed as an argument
     return addr;
-  } else{
-    // op_ptr->print( llvm::outs() );
+  }else if( auto cnst = llvm::dyn_cast<const llvm::ConstantExpr>(op)) {
+    if( auto gep = llvm::dyn_cast<llvm::GEPOperator>(cnst) ) {
+      auto const_ptr = gep->getPointerOperand();
+      return const_ptr;
+    }
+    llvm_bmc_error("bmc", "non GEP constant expression!");
+  }else{
     // llvm_bmc_error("bmc", "non array global write/read not supported!");
   }
+  // op->print( llvm::outs() );
   return NULL;
 }
 
@@ -398,22 +410,17 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
     }
   }
   std::vector<const llvm::Type*> ar_types;
+  ar_types.resize( ary_to_int.size() );
   for( auto& ar_int_pair : ary_to_int ) {
     auto ar = ar_int_pair.first;
-    ar_types.push_back( ar->getType() );
+    auto indx = ar_int_pair.second;
+    ar_types[indx] = ar->getType();
   }
   std::map< const llvm::Instruction*, unsigned >& map = ary_access_to_index;
   if(ar_model_local == FULL) {
     // full model using store and select
     init_full_array_model( ar_types, map, array_lengths );
     ar_model_full.init_state( 0, s );
-    // ar_model_full.init_state( eb );
-  } else if ( ar_model_local == FIXED_LEN) { //
-    // array has fixed number of 'symbolic' cells
-    init_fixed_len_array_model(ar_types, map);
-  } else if ( ar_model_local == PARTITION) {
-    // vaphor like model
-    init_partition_array_model(ar_types);
   } else {
     llvm_bmc_error("bmc", "array model initialization");
   }
@@ -434,23 +441,6 @@ void bmc_ds::init_full_array_model(  std::vector<const llvm::Type*>& ar_types,
   ar_model_full.set_lengths_vec( &array_lengths );
 }
 
-void bmc_ds::init_fixed_len_array_model( std::vector<const llvm::Type*>& ar_types,
-                                     std::map< const llvm::Instruction*, unsigned >& map) {
-  if( ar_model_init != NONE )
-      llvm_bmc_error( "bmc", "array model is already initialized" );
-  ar_model_init = FIXED_LEN;
-  ar_model_fixed.set_partition_len( ar_types.size() );
-  ar_model_fixed.set_access_map( map );
-}
-
-
-void bmc_ds::init_partition_array_model( std::vector<const llvm::Type*>& ar_types) {
-  if( ar_model_init != NONE )
-      llvm_bmc_error( "bmc", "array model is already initialized" );
-  ar_model_init = PARTITION;
-  // ar_model_part.init(part_num);
-  llvm_bmc_error( "bmc", "stub!!" );
-}
 
 
 void bmc_ds::refresh_array_state( unsigned bidx,
@@ -465,7 +455,7 @@ bmc_ds::array_write( unsigned bidx, const llvm::StoreInst* I,
   assert( I );
   switch( ar_model_init ) {
   case FULL     : return ar_model_full.array_write( bidx, I, idx, val ); break;
-  case FIXED_LEN: return ar_model_full.array_write( bidx, I, idx, val ); break;
+  // case FIXED_LEN: return ar_model_full.array_write( bidx, I, idx, val ); break;
   // case PARTITION: return ar_model_full.array_write( I, val ); break;
   default:
     llvm_bmc_error( "bmc", "incomplete implementation of an array model!!" );
@@ -513,8 +503,8 @@ expr bmc_ds::join_array_state(std::vector<expr>& cs,
   assert( src );
   assert( cs.size() == prevs.size() );
   switch(ar_model_init) {
-  case FIXED_LEN: return ar_model_fixed.join_array_state(cs,prevs, src ); break;
   case FULL:      return ar_model_full.join_array_state(cs, prevs, src ); break;
+  // case FIXED_LEN: return ar_model_fixed.join_array_state(cs,prevs, src ); break;
   // case PARTITION: return ar_model_part.join_array_state(cs, prevs, src);break;
   default:
     llvm_bmc_error( "bmc", "incomplete implementation of an array model!!" );

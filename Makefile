@@ -90,7 +90,9 @@ $(BUILDDIR)/z3/buildd/libz3.so : $(BUILDDIR)/z3/README.md
 #LLVM_HOST=http://releases.llvm.org/
 LLVM_HOST=https://github.com/llvm/llvm-project/releases/download/llvmorg-
 
-$(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/LLVMBuild.txt: $(HOME_INSTALLED)
+# $(HOME_INSTALLED)
+
+$(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/LLVMBuild.txt: | $(HOME_INSTALLED)
 	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/llvm-$(LLVM_VERSION).src.tar.xz
 	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/clang-$(LLVM_VERSION).src.tar.xz
 	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/clang-tools-extra-$(LLVM_VERSION).src.tar.xz

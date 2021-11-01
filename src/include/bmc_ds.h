@@ -49,8 +49,7 @@ public:
     , m(o)
     , m_model( m_model_ )
     , memory_global_events( solver_ctx )
-    , ar_model_full( o.solver_ctx )
-    , ar_model_fixed( o.solver_ctx )
+    , ar_model_full( o )
     , ary_to_int(aim)
     , array_lengths(alv)
 {}
@@ -73,7 +72,7 @@ public:
 
   array_model_t ar_model_init = NONE;
   array_model_full      ar_model_full;
-  array_model_fixed_len ar_model_fixed;
+  // array_model_fixed_len ar_model_fixed;
   // array_model_partition ar_model_part;
 
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
@@ -95,12 +94,12 @@ public:
   // two array models can not be initialized at the sametime;
   // once a model is initialized, call to the other initializations will throw
   // error.
-  void init_partition_array_model(std::vector<const llvm::Type*>&);
+  // void init_partition_array_model(std::vector<const llvm::Type*>&);
   void init_full_array_model( std::vector<const llvm::Type*>&,
                               std::map<const llvm::Instruction*,unsigned>&,
                               std::vector<expr>& );
-  void init_fixed_len_array_model( std::vector<const llvm::Type*>&,
-                                   std::map<const llvm::Instruction*,unsigned>&);
+  // void init_fixed_len_array_model( std::vector<const llvm::Type*>&,
+  //                                  std::map<const llvm::Instruction*,unsigned>&);
   void init_array_model( array_model_t );
   void init_array_model( array_model_t ar_model_local, array_state& );
   void refresh_array_state( unsigned, std::vector<const llvm::Instruction*>& );

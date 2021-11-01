@@ -37,23 +37,31 @@ void bmc_pass::translateParams(llvm::Function &f) {
 
     if( !ty->isPointerTy() ) { // input pointers are viewed as arrays
       bmc_ds_ptr->m.get_term( a );
-    }else{
-      //todo: compute length of the array
+    }else{ // array case
+
+      // Nothing is needs to be done here
+      // In array modeling module array lengths are already calculated.
 
     //std::string type_str;
     //llvm::raw_string_ostream rso(type_str);
     //ty->print(rso);
     //std::cout<<"Type is " << rso.str() << "\n";
     
-    auto T = llvm::dyn_cast<llvm::PointerType>(ty)->getElementType();
-    int siz = llvm::dyn_cast<llvm::ArrayType>(T)->getArrayNumElements();
-    //auto siz_bv = solver_ctx.bv_val(siz, 64);
-    expr const_expr = get_expr_const(solver_ctx, siz);
-    array_lengths.push_back(const_expr);
+    // auto T = llvm::dyn_cast<llvm::PointerType>(ty)->getElementType();
+    // int siz = llvm::dyn_cast<llvm::ArrayType>(T)->getArrayNumElements();
+    // //auto siz_bv = solver_ctx.bv_val(siz, 64);
+    // expr const_expr = get_expr_const(solver_ctx, siz);
+    // array_lengths.push_back(const_expr);
     }
   }
 }
 
+expr switch_sort( options& o, expr& b, sort& s) {
+  if( o.bit_precise ) {
+    return switch_bv_sort( b, s);
+  }
+  return switch_int_sort( b, s);
+}
 
 void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   assert( bop );
@@ -68,13 +76,13 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   if( !matched_sort( a, b ) ) {
     if( is_const( a ) ) {
       auto s = b.get_sort();
-      a = switchint_sort(a, s );
+      a = switch_sort( o, a, s );
     }else if( is_const( b ) ) {
       auto s = a.get_sort();
-      b = switchint_sort(b, s );
+      b = switch_sort( o, b, s );
     }
   }
-
+  
   unsigned op = bop->getOpcode();
   switch( op ) {
   case llvm::Instruction::Add : bmc_ds_ptr->m.insert_term_map( bop, bidx, a+b     ); break;
@@ -114,22 +122,25 @@ void bmc_pass::translateCmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
   llvm::Value* lhs = cmp->getOperand( 0 ),* rhs = cmp->getOperand( 1 );
   // expr l = get_term( solver_ctx, lhs, m ), r = get_term( solver_ctx, rhs, m );
   expr l = bmc_ds_ptr->m.get_term( lhs ), r = bmc_ds_ptr->m.get_term( rhs );
+
   // l and r may have different types, due to llvm does not record clearly
   // if something is bool or int. Our translation may incorrectly identify
   // sort of some constant number. The following code corrects the mismatch
   if( !matched_sort( l, r ) ) {
     if( is_const( l ) ) {
       auto s = r.get_sort();
-      l = switch_sort(l, s );
+      l = switch_sort( o, l, s );
     }else if( is_const( r ) ) {
       auto s = l.get_sort();
-      r = switch_sort(r, s );
+      r = switch_sort( o, r, s );
     }else llvm_bmc_error("bmc", "mismatched types in cmp instruction!!");
   }
-  llvm::CmpInst::Predicate pred = cmp->getPredicate();
 
+  // construct expression for comparision
+  llvm::CmpInst::Predicate pred = cmp->getPredicate();
   expr cnd(solver_ctx);
   switch( pred ) {
+  //Integer compare instructions
   case llvm::CmpInst::ICMP_EQ  : cnd = (l==r); break;
   case llvm::CmpInst::ICMP_NE  : cnd = (l!=r); break;
   case llvm::CmpInst::ICMP_UGT : cnd = (l> r); break;
@@ -157,6 +168,8 @@ void bmc_pass::translateCmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
     llvm_bmc_error("bmc", "unsupported predicate in compare " << pred << "!!");
   }
   }
+
+  //store the expression
   bmc_ds_ptr->m.insert_term_map( cmp, bidx, cnd );
 }
 
@@ -314,7 +327,9 @@ void bmc_pass::translateDebugInfo( unsigned bidx,
       // map debug val instruction to its value
       if( seen_dbg_val.find( val ) == seen_dbg_val.end() ) {
         bmc_ds_ptr->dbg_name_map[dbg_val] = name;
-        bmc_ds_ptr->m.insert_term_map( dbg_val,  bidx, bmc_ds_ptr->m.get_term( val ) );
+        if( !is_pointer(val) ) {
+          bmc_ds_ptr->m.insert_term_map(dbg_val, bidx,bmc_ds_ptr->m.get_term( val ) );
+        }
         seen_dbg_val.insert( val );
       }
     }else{
@@ -437,9 +452,10 @@ void bmc_pass::translateCastInst( unsigned bidx,
       unsigned new_size = c_ty->getIntegerBitWidth();
       bmc_ds_ptr->m.insert_term_map( cast, bidx, zext( ex_v, new_size ) );
     }else{
-      // Current policy allow extensions [ 1 -> 8, 1->32, 32->64]
+      // Current policy allow extensions [ 1 -> 8, 8->32, 1->32, 32->64]
       if( ok_cast( c_ty, v_ty, 8, 1 ) || ok_cast( c_ty, v_ty, 32, 1 ) ||
-          ok_cast( c_ty, v_ty, 64, 32 ) ) {
+          ok_cast( c_ty, v_ty, 64, 32 ) || ok_cast( c_ty, v_ty, 32, 8 )
+          ) {
       // if( (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(8)) ||
       //     (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(32)) ||
       //     (v_ty->isIntegerTy(32) && c_ty->isIntegerTy(64)) ) {
@@ -454,14 +470,16 @@ void bmc_pass::translateCastInst( unsigned bidx,
       unsigned new_size = c_ty->getIntegerBitWidth();
       bmc_ds_ptr->m.insert_term_map( cast, bidx, sext( ex_v, new_size ) );
     }else{
-      // Current policy allow extensions [ 1 -> 8, 1->32, 32->64]
+      // Current policy allow extensions [ 1 -> 8, 1->32, 32->64, 8->32 ]
       if( ok_cast( c_ty, v_ty, 8, 1 ) || ok_cast( c_ty, v_ty, 32, 1 ) ||
-          ok_cast( c_ty, v_ty, 64, 32 ) ) {
+          ok_cast( c_ty, v_ty, 64, 32 ) || ok_cast( c_ty, v_ty, 32, 8 )
+          ) {
       // if( (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(8)) ||
       //     (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(32)) ||
       //     (v_ty->isIntegerTy(32) && c_ty->isIntegerTy(64)) ) {
         bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v );
       } else {
+        cast->print( llvm::outs());
         llvm_bmc_error("bmc", "sign extn instruction of unsupported size");
       }
     }
@@ -611,7 +629,7 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     if(gep->getNumOperands() == 2) idx = gep->getOperand(1);
     else if(gep->getNumOperands() == 3) idx = gep->getOperand(2); 
     auto idx_expr = bmc_ds_ptr->m.get_term( idx );
-    storeToArrayHelper(bidx, store, val, idx_expr);  
+    storeToArrayHelper(bidx, store, val, idx_expr); 
   } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto val_expr = bmc_ds_ptr->m.get_term( val );
@@ -1004,6 +1022,17 @@ void bmc_pass::populateArrAccMap(llvm::Function* f) {
   int arrCntr = 0;
   ary_to_int.clear();
   array_lengths.clear();
+
+  // collect global arrays of the module
+  for( auto& glb : f->getParent()->globals()) {
+    if( auto ptr = llvm::dyn_cast<llvm::PointerType>( glb.getType() ) ) {
+      if( ptr->getElementType()->isArrayTy() ) {
+        ary_to_int[&glb] = arrCntr++;
+      }
+    }
+  }
+
+  // collect arrays allocated in the function
   for( auto bbit = f->begin(), end = f->end(); bbit != end; bbit++ ) {
     auto bb = &(*bbit);
     for( auto it = bb->begin(), e = bb->end(); it != e; ++it) {
@@ -1013,6 +1042,8 @@ void bmc_pass::populateArrAccMap(llvm::Function* f) {
       } else {} // no errors needed!!
     }
   }
+
+  // collect arrays passed in the function
   for( auto ab = f->arg_begin(), ae = f->arg_end(); ab != ae; ab++) {
     auto a = &(*ab);
     auto ty = a->getType();

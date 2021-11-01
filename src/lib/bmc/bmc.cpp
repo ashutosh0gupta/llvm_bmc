@@ -92,7 +92,7 @@ void bmc::run_bmc_pass() {
 //     }
 //    }
 
-  passMan.add( new build_name_map( localNameMap, revStartLocalNameMap,
+  passMan.add( new build_name_map( o, localNameMap, revStartLocalNameMap,
                                    revEndLocalNameMap ) );
   passMan.add( new collect_loopdata(o, ld_map, localNameMap, module) );
 

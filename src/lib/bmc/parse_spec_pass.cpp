@@ -128,7 +128,8 @@ void parse_spec_pass::init_parse(llvm::Module &m, options& o, bmc& b)
   }
  }
       for (auto mit = m.begin(); mit != m.end(); mit++) { //Iterate over functions in module
-	  bool Modified = runOnFunction(*mit);
+        //bool Modified =
+        runOnFunction(*mit);
       }
 }
 
@@ -189,7 +190,8 @@ void parse_spec_pass::InlineInsertInst( llvm::Function &f, bmc& b ) {
           llvm::Value *const_val2 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 2, true);
           llvm::Value *const_val1 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 1, true);  //Create an i32 constant with value 1
 
-          llvm::SelectInst *select = llvm::SelectInst::Create (icmp, const_val1, const_val2, monitor_var_name[callseq_num], I);
+          //llvm::SelectInst *select =
+          llvm::SelectInst::Create (icmp, const_val1, const_val2, monitor_var_name[callseq_num], I);
           //select->print( llvm::outs() );     std::cout << "\n";
           //break;
         }
@@ -200,7 +202,9 @@ void parse_spec_pass::InlineInsertInst( llvm::Function &f, bmc& b ) {
           //icmp->print( llvm::outs() );     std::cout << "\n";
           llvm::Value *const_val1 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 1, true);
           llvm::Value *const_val2 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 2, true);  //Create an i32 constant with value 1
-          llvm::SelectInst *select = llvm::SelectInst::Create (icmp, const_val1, const_val2, monitor_var_name[callseq_num], I);
+
+          //llvm::SelectInst *select =
+          llvm::SelectInst::Create (icmp, const_val1, const_val2, monitor_var_name[callseq_num], I);
           //select->print( llvm::outs() );     std::cout << "\n";
         }
 	InlineInsertInst(*fun, b);

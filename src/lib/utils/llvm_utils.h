@@ -44,6 +44,9 @@ typedef std::vector<const inst*> inst_vec_t;
 // #define COMMENT_FIRST_TOKEN "(assert"
 
 
+void dump( llvm::Value* );
+
+
 llvm::Instruction*
 estimate_comment_location( std::unique_ptr<llvm::Module>&, src_loc, src_loc);
 
@@ -63,7 +66,6 @@ void printBlockInfo(std::vector<llvm::BasicBlock*>& blockList);
 std::string getVarName(const llvm::DbgValueInst* dbgVal );
 std::string getVarName(const llvm::DbgDeclareInst* dbgVal );
 
-void buildNameMap( llvm::Function&, name_map&);
 
 bool isInHeader(llvm::Instruction *, llvm::Loop *);
 bool isOutOfLoop(llvm::Instruction *, llvm::Loop *);
@@ -74,6 +76,7 @@ bool isInSubLoop(llvm::BasicBlock *, llvm::Loop *, llvm::LoopInfo *);
 
 bool is_assert_call(const llvm::CallInst*);
 bool is_assert_loop(llvm::Loop*);
+bool is_pointer( llvm::Value* );
 
 llvm::BasicBlock* getFirstBodyOfLoop(llvm::Loop *);
 std::string getFuncNameForDaikon(llvm::Loop *);

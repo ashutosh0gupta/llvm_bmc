@@ -30,6 +30,14 @@
 
 #define CLANG_VERSION "5.0"
 
+void dump( llvm::Value* v) {
+  if(v)
+    v->print(llvm::outs());
+  else
+    llvm::outs() << "NULL\n";
+}
+
+
 void c2bc( const std::string& fileName, const std::string& outName )
 {
   // make a system call
@@ -384,8 +392,8 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   Clang.setInvocation(CI);
   clang::CodeGenAction *Act = new clang::EmitLLVMOnlyAction(&llvm_ctx);
   try {
-    if (!ExecuteAction(Clang, *Act, cmts.start_comments))
-      // if (!Clang.ExecuteAction(*Act))
+    // if (!ExecuteAction(Clang, *Act, cmts.start_comments))
+    if (!Clang.ExecuteAction(*Act))
       return nullptr;
   }catch (...) {
     return nullptr;
@@ -482,87 +490,6 @@ std::string getVarName(const llvm::DbgDeclareInst* dDecl ) {
   return str;
 }
 
-void buildNameMap( llvm::Function& f,
-                   name_map& localNameMap) {
- // std::map<std::string, llvm::Value*>& nameValueMap) {
-  //  std::cout << "Inside buildNameMap\n";
-  //  localNameMap.clear();
-  //  nameValueMap.clear();
-  for( llvm::inst_iterator iter(f),end(f,true); iter != end; ++iter ) {
-    llvm::Instruction* I = &*iter;
-    llvm::Value* var = NULL;
-    llvm::MDNode* md = NULL;
-    std::string str;
-    if( llvm::DbgDeclareInst* dDecl =
-        llvm::dyn_cast<llvm::DbgDeclareInst>(I) ) {
-      var = dDecl->getAddress();
-      md = dDecl->getVariable();
-      llvm::DIVariable* diMd = llvm::dyn_cast<llvm::DIVariable>(md);
-      str = (std::string)( diMd->getName() );
-//      std::cout << "Got the name:" << str << "\n";
-    } else if( llvm::DbgValueInst* dVal =
-               llvm::dyn_cast<llvm::DbgValueInst>(I)) {
-      var = dVal->getValue();
-      md = dVal->getVariable();
-      llvm::DIVariable* diMd = llvm::dyn_cast<llvm::DIVariable>(md);
-      str = (std::string)( diMd->getName() );
-      if( llvm::isa<llvm::Constant>(var) ) {
-        var = dVal;
-      }
-//      std::cout << "Got the name:" << str << "\n";
-    }
-    if( var ) {
-      // if var is non-null add the name to the map
-      localNameMap[var] = str;
-      //      nameValueMap[str] = var;
-//to look at the scope field
-// check if there has been a declaration with same name with different
-// line number
-//        auto it = declarationLocationMap.find( str );
-//        if( it == declarationLocationMap.end() ) {
-//          declarationLocationMap[str] = lineNum;
-//          localNameMap[var] = str;
-//          nameValueMap[str] = var;
-//        }else if( it->second == lineNum ) {
-//          localNameMap[var] = str;
-//          nameValueMap[str] = var;
-//        }else{
-//          localNameMap[var] = str + "_at_"+ std::to_string( lineNum );
-//          nameValueMap[str] = var;
-//        }
-    }
-  }
-
-  //Extend names to phiNodes
-  for( auto& b: f.getBasicBlockList() ) {
-    for( llvm::BasicBlock::iterator I = b.begin(); llvm::isa<llvm::PHINode>(I); ++I) {
-      llvm::PHINode *phi = llvm::cast<llvm::PHINode>(I);
-      if( localNameMap.find(phi) != localNameMap.end() ) continue;
-      unsigned num = phi->getNumIncomingValues();
-      std::string name;
-      bool found = false;
-      for ( unsigned i = 0 ; i < num ; i++ ) {
-        llvm::Value *v = phi->getIncomingValue(i);
-        if(llvm::Instruction *inI = llvm::dyn_cast<llvm::Instruction>(v)) {
-          if( localNameMap.find(inI) != localNameMap.end() ) {
-            if( found && name != localNameMap.at(inI) )
-              llvm_bmc_error("build name map::","phi node has multiple names!!");
-            name = localNameMap.at(inI);
-            found = true;
-          }
-        }
-      }
-      if( !found ) {
-        // b.dump();
-        // phi->dump();
-        // If this function fails, investigate to find the (correct) name
-        // llvm_bmc_warning("build name map::","name of a phi node not found!!");
-      }else{
-        localNameMap[phi] = name;
-      }
-    }
-  }
-}
 
 
 
@@ -1080,6 +1007,10 @@ bool is_assert_loop( llvm::Loop* L ) {
   return assert_seen;
 }
 
+bool is_pointer( llvm::Value* v ) {
+  return v->getType()->isPointerTy();
+}
+
 class bb_succ_iter : public llvm::succ_const_iterator {
 public:
   bb_succ_iter( llvm::succ_const_iterator begin_,
@@ -1484,7 +1415,7 @@ sort llvm_to_sort( solver_context& c, llvm::Type* t ) {
     if( t->isIntegerTy( 16 ) ) return c.int_sort();
     if( t->isIntegerTy( 32 ) ) return c.int_sort();
     if( t->isIntegerTy( 64 ) ) return c.int_sort();
-    if( t->isIntegerTy( 8 ) ) return c.bool_sort();
+    if( t->isIntegerTy( 8 ) ) return c.int_sort();
   }
   if( t->isArrayTy() ) {
     llvm::Type* te = t->getArrayElementType();
@@ -1495,13 +1426,8 @@ sort llvm_to_sort( solver_context& c, llvm::Type* t ) {
      if( t->isFloatTy() ) return c.fpa_sort<32>();
      if( t->isDoubleTy() ) return c.fpa_sort<64>();
   }
-  
+ 
   llvm_bmc_error("llvm_utils", "only int and bool sorts are supported");
-  // return c.bv_sort(32); // needs to be added
-  // return c.bv_sort(16);
-  // return c.bv_sort(64);
-  // return c.bool_sort();
-  // return c.real_sort();
   return c.int_sort(); // dummy return
 }
 
@@ -1560,9 +1486,9 @@ expr read_const( options& o, const llvm::Value* op ) {
     if( o.bit_precise ){
       return ctx.bv_val( i, bw );
     }else {
-      if( bw == 32 || bw == 64 ) {
+      if( bw == 32 || bw == 64 || bw == 8 ) {
         return ctx.int_val(i);
-      }else if(bw == 1 || bw == 8) {
+      }else if(bw == 1 ) {
         assert( i == 0 || i == 1 );
         if( i == 1 )
           return ctx.bool_val(true);

@@ -129,7 +129,8 @@ class array_model_partition;
 
 class array_model{
 public:
-  array_model( solver_context& ctx_ ) : solver_ctx(ctx_) {}
+  array_model( options& o_ ) :
+    o(o_), solver_ctx(o.solver_ctx) {}
 
   // need to provide copy operator
 
@@ -152,6 +153,7 @@ public:
   expr get_array_state_var( unsigned b, unsigned ith_ary );
 
 private:
+  options& o;
   solver_context& solver_ctx;
   array_model_t model = NONE;
   // std::map< const bb*, array_state > exit_ary_map;
@@ -164,7 +166,7 @@ private:
 
 class array_model_full : public array_model {
 public:
-  array_model_full( solver_context& ctx_ ) : array_model(ctx_) {
+  array_model_full( options& o ) : array_model(o) {
     model = FULL;
   }
 
@@ -186,7 +188,7 @@ public:
     lengths = array_lengths;
   }
 
-  inline  std::vector<expr> 
+  inline  std::vector<expr>
   get_lengths_vec() {
     return *lengths;
   }
@@ -209,44 +211,52 @@ public:
 private:
   unsigned num_arrays;
   std::vector< sort > ar_sorts;
-  std::vector< expr >* lengths;
+  std::vector< expr >* lengths; // todo: change from pointer to object.
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
+
+  // converting llvm array sorts to solver sorts
+  sort get_address_sort();
+  sort get_solver_array_ty( const llvm::ArrayType* ty );
+  sort get_solver_array_ty( const llvm::PointerType* ty );
+
+  unsigned get_accessed_array( const llvm::Instruction* I );
+  void dump_ary_access_to_index();
 };
 
-class array_model_fixed_len : public array_model {
-public:
-  array_model_fixed_len( solver_context& ctx_ ) : array_model(ctx_) {
-    model = FIXED_LEN;
-  }
+// class array_model_fixed_len : public array_model {
+// public:
+//   array_model_fixed_len( options& ctx_ ) : array_model(ctx_) {
+//     model = FIXED_LEN;
+//   }
 
-  // void init_state( const bb* );
-  void init_state( unsigned );
+//   // void init_state( const bb* );
+//   void init_state( unsigned );
 
-  inline void set_partition_len( unsigned len ) { num_partition = len; }
-  inline void
-  set_access_map( std::map< const llvm::Instruction*, unsigned >& map ) {
-    ary_access_to_patition_map = map;
-  }
-  virtual expr get_fresh_ary_name( unsigned );
+//   inline void set_partition_len( unsigned len ) { num_partition = len; }
+//   inline void
+//   set_access_map( std::map< const llvm::Instruction*, unsigned >& map ) {
+//     ary_access_to_patition_map = map;
+//   }
+//   virtual expr get_fresh_ary_name( unsigned );
   
-  arr_write_expr
-  array_write( unsigned bidx, const llvm::StoreInst* I, expr& idx, expr& val );
-  arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, expr& val );
+//   arr_write_expr
+//   array_write( unsigned bidx, const llvm::StoreInst* I, expr& idx, expr& val );
+//   arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, expr& val );
 
-private:
-  unsigned num_partition=0;
-  std::map< const llvm::Instruction*, unsigned > ary_access_to_patition_map;
+// private:
+//   unsigned num_partition=0;
+//   std::map< const llvm::Instruction*, unsigned > ary_access_to_patition_map;
 
-};
+// };
 
-class array_model_partition : public array_model {
-public:
-  array_model_partition( solver_context& ctx_ ) : array_model(ctx_) {
-    model = PARTITION;
-  }
-  virtual expr get_fresh_ary_name( unsigned );
+// class array_model_partition : public array_model {
+// public:
+//   array_model_partition( options& ctx_ ) : array_model(ctx_) {
+//     model = PARTITION;
+//   }
+//   virtual expr get_fresh_ary_name( unsigned );
 
-};
+// };
 
 //update heap model
 
