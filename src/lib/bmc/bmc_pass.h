@@ -21,7 +21,6 @@ public:
   // Permanent facts accross do_run calls. the facts may be extended
   // accross run calls but infomration does not go stale.
   std::map< const llvm::Value*, unsigned > ary_to_int;
-  std::vector<expr> array_lengths;
 
 private:
   //--------------------------------------------------------------------------
@@ -60,10 +59,13 @@ private:
 
   void translateNondet(unsigned, const llvm::CallInst*);
   void assume_to_bmc(unsigned bidx, const llvm::CallInst*);
-  bool is_assume(const llvm::CallInst*);
   void assert_to_spec( unsigned bidx, const llvm::CallInst*);
-  bool is_assert(const llvm::CallInst*);
   void populate_globals_map( std::unique_ptr<llvm::Module>& );
+
+  // recognizing function calls
+  bool is_assume(const llvm::CallInst*);
+  bool is_assert(const llvm::CallInst*);
+  bool is_nondet(const llvm::CallInst*);
 
   // expr extend_path( const bb* pre_b, unsigned idx_succ );
   // expr extend_path( const bb* b, const bb* pre_b );

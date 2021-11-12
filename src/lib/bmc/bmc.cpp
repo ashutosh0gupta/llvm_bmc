@@ -206,9 +206,10 @@ bool bmc::run_solver(expr &spec, bmc_ds* bmc_ds_ptr) {
     s.add(e);
   }
   s.add(!spec);
+  // std::cout << s;
   if (s.check() == z3::sat) {
     model m = s.get_model();
-    produce_witness(m, bmc_ds_ptr);
+    // produce_witness(m, bmc_ds_ptr);
     return true;
   } else {
     return false;
@@ -273,7 +274,7 @@ std::string state_to_string( std::map<std::string,std::string>& state ) {
 void bmc::produce_witness_call( model mdl, const llvm::CallInst* call ) {
   assert(call);
   if( ignore_special_functions( call ) ) return;
-  if( llvm::cast<llvm::IntrinsicInst>(call) ) {
+  if( llvm::isa<llvm::IntrinsicInst>(call) ) {
     // ignore
   }else if( ignore_special_functions( call ) ) {
     // ignore

@@ -409,17 +409,11 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
       // }
     }
   }
-  std::vector<const llvm::Type*> ar_types;
-  ar_types.resize( ary_to_int.size() );
-  for( auto& ar_int_pair : ary_to_int ) {
-    auto ar = ar_int_pair.first;
-    auto indx = ar_int_pair.second;
-    ar_types[indx] = ar->getType();
-  }
+
   std::map< const llvm::Instruction*, unsigned >& map = ary_access_to_index;
   if(ar_model_local == FULL) {
     // full model using store and select
-    init_full_array_model( ar_types, map, array_lengths );
+    init_full_array_model( map );
     ar_model_full.init_state( 0, s );
   } else {
     llvm_bmc_error("bmc", "array model initialization");
@@ -430,15 +424,16 @@ void bmc_ds::init_array_model( array_model_t ar_model_local ) {
   array_state s;
   init_array_model( ar_model_local, s );
 }
-void bmc_ds::init_full_array_model(  std::vector<const llvm::Type*>& ar_types,
-                                 std::map< const llvm::Instruction*, unsigned >& map,
-                                 std::vector< expr >& array_lengths ) {
+
+void bmc_ds::
+init_full_array_model(std::map< const llvm::Instruction*, unsigned >& map) {
   if( ar_model_init != NONE )
        llvm_bmc_error( "bmc", "array model is already initialized" );
   ar_model_init = FULL;
-  ar_model_full.set_array_num( ar_types);//( ar_types.size() );
+
+  //todo : move to array model code
+  ar_model_full.set_array_info( ary_to_int );
   ar_model_full.set_access_map( map );
-  ar_model_full.set_lengths_vec( &array_lengths );
 }
 
 
@@ -449,16 +444,23 @@ void bmc_ds::refresh_array_state( unsigned bidx,
   ar_model_full.update_name( bidx, ary_to_int[I] );
 }
 
+void bmc_ds::set_array_length( const llvm::Value* arr, expr& len ) {
+  assert(arr);
+  unsigned ar_num = ary_to_int.at(arr);
+  switch( ar_model_init ) {
+  case FULL : return ar_model_full.set_array_length( ar_num, len ); break;
+  default: llvm_bmc_error( "bmc", "array model incomplete implementation!!");
+  }
+
+}
+
 arr_write_expr
 bmc_ds::array_write( unsigned bidx, const llvm::StoreInst* I,
                       expr& idx, expr& val ) {
   assert( I );
   switch( ar_model_init ) {
-  case FULL     : return ar_model_full.array_write( bidx, I, idx, val ); break;
-  // case FIXED_LEN: return ar_model_full.array_write( bidx, I, idx, val ); break;
-  // case PARTITION: return ar_model_full.array_write( I, val ); break;
-  default:
-    llvm_bmc_error( "bmc", "incomplete implementation of an array model!!" );
+  case FULL : return ar_model_full.array_write( bidx, I, idx, val ); break;
+  default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
   }
 }
 
@@ -467,10 +469,8 @@ arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::LoadInst* I,
   assert( I );
   switch( ar_model_init ) {
   case FULL     : return ar_model_full.array_read( bidx, I, idx ); break;
-  case FIXED_LEN: return ar_model_full.array_read( bidx, I, idx ); break;
-  // case PARTITION: return ar_model_full.array_read( I, val ); break;
-  default:
-    llvm_bmc_error( "bmc", "incomplete implementation of an array model!!" );
+  // case FIXED_LEN: return ar_model_full.array_read( bidx, I, idx ); break;
+  default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
   }
 }
 

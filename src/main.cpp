@@ -35,7 +35,12 @@ void prepare_module( options& o,
     std::string ustr = "-unroll-count=" + std::to_string(o.loop_unroll_count);
     setLLVMConfigViaCommandLineOptions( ustr );
     // ============================================================
-    passMan.add( llvm::createLoopUnrollPass( 0, 100, o.loop_unroll_count ) );
+    passMan.add( llvm::createLoopUnrollPass( 2,
+                                             false, //OnlyWhenForced
+                                             false, // ForgetAllSCEV
+                                             30000,  // threshold
+                                             o.loop_unroll_count // Count
+                                             ) );
   }
 
   for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
@@ -81,11 +86,11 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
   //translate function to formulas
   b.run_bmc_pass();
 
-//  for( auto& it : b.func_formula_map ) {
-//    b.check_all_spec( it.second );
-//  } 
+ for( auto& it : b.func_formula_map ) {
+   b.check_all_spec( it.second );
+ }
 
-  bool verify_result = b.verify_prop();
+  // bool verify_result = b.verify_prop();
 
 }
 

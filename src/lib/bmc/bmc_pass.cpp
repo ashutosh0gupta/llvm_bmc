@@ -241,25 +241,25 @@ void bmc_pass::assume_to_bmc(unsigned bidx, const llvm::CallInst* call) {
   bmc_ds_ptr->bmc_vec.push_back( assume_bit == (assume_path_bit && assume_term) );
 }
 
-bool bmc_pass::is_assume(const llvm::CallInst* call) {
-  assert( call );
-  llvm::Function* fp = call->getCalledFunction();
-  if( fp != NULL &&
-      (fp->getName() == "_Z6assumeb" || fp->getName() == "assume" ) ) {
-    return true;
-  } else if (fp == NULL) {
-    const llvm::Value * val = call->getCalledValue();
-    if( auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val) ) {
-      if(CE->isCast()) {
-        if(CE->getOperand(0)->getName() == "assume" ||
-                  CE->getOperand(0)->getName() == "_Z6assumeb") {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-}
+// bool bmc_pass::is_assume(const llvm::CallInst* call) {
+//   assert( call );
+//   llvm::Function* fp = call->getCalledFunction();
+//   if( fp != NULL &&
+//       (fp->getName() == "_Z6assumeb" || fp->getName() == "assume" ) ) {
+//     return true;
+//   } else if( fp == NULL ) {
+//     const llvm::Value * val = call->getCalledValue();
+//     if( auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val) ) {
+//       if(CE->isCast()) {
+//         if( CE->getOperand(0)->getName() == "assume" ||
+//             CE->getOperand(0)->getName() == "_Z6assumeb") {
+//           return true;
+//         }
+//       }
+//     }
+//   }
+//   return false;
+// }
 
 void bmc_pass::assert_to_spec(unsigned bidx, const llvm::CallInst* call) {
   assert( call );
@@ -275,43 +275,89 @@ void bmc_pass::assert_to_spec(unsigned bidx, const llvm::CallInst* call) {
   }
 }
 
-bool bmc_pass::is_assert(const llvm::CallInst* call ) {
+// bool bmc_pass::is_assert(const llvm::CallInst* call ) {
+//   assert( call );
+
+//   llvm::Function* fp = call->getCalledFunction();
+//   if( fp != NULL &&
+//       (fp->getName() == "_Z6assertb" || fp->getName() == "assert" ) ) {
+//     return true;
+//   } else if (fp == NULL) {
+//     const llvm::Value * val = call->getCalledValue();
+//     if( auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val) ) {
+//       if(CE->isCast()) {
+//         if(CE->getOperand(0)->getName() == "assert" ||
+//            CE->getOperand(0)->getName() == "_Z6assertb") {
+//           return true;
+//         }
+//       }
+//     }
+//   }
+//   return false;
+// }
+
+bool has_name( llvm::StringRef str, std::vector<std::string>& names) {
+  for( auto& s : names ) {
+    if(str == s) return true;
+  }
+  return false;
+}
+
+bool match_function_names( const llvm::CallInst* call,
+                           std::vector<std::string>& names ) {
   assert( call );
 
   llvm::Function* fp = call->getCalledFunction();
-  if( fp != NULL &&
-      (fp->getName() == "_Z6assertb" || fp->getName() == "assert" ) ) {
+  if( fp != NULL && has_name( fp->getName(), names ) ) {
     return true;
   } else if (fp == NULL) {
     const llvm::Value * val = call->getCalledValue();
     if( auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val) ) {
-      if(CE->isCast()) {
-        if(CE->getOperand(0)->getName() == "assert" ||
-           CE->getOperand(0)->getName() == "_Z6assertb") {
+      if(CE->isCast() && has_name( CE->getOperand(0)->getName(), names)) {
           return true;
-        }
       }
     }
   }
   return false;
 }
 
+bool bmc_pass::is_assert( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z6assertb", "assert",
+                                     "_Z17__VERIFIER_assertb" };
+  return match_function_names( call, names );
+}
+
+bool bmc_pass::is_nondet( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z22__VERIFIER_nondet_charv",
+                                     "_Z21__VERIFIER_nondet_intv",};
+  return match_function_names( call, names );
+}
+
+bool bmc_pass::is_assume( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z6assumeb", "assume", "_Z17__VERIFIER_assumeb" };
+  return match_function_names( call, names );
+}
+
 void bmc_pass::translateNondet(unsigned bidx, const llvm::CallInst* call) {
   assert(call);
 
   llvm::Function* fp = call->getCalledFunction();
-  if(fp!=NULL &&
-     (fp->getReturnType()->isIntegerTy(32) ||
-      fp->getReturnType()->isIntegerTy(64))) {
-    expr nondet_int = get_fresh_int( solver_ctx, "nondet");
-    bmc_ds_ptr->m.insert_term_map( call, bidx, nondet_int );
-  } else if (fp!=NULL &&
-             (fp->getReturnType()->isIntegerTy(1) ||
-              fp->getReturnType()->isIntegerTy(8))) {
-    expr nondet_bit = get_fresh_bool( solver_ctx, "nondet");
-    bmc_ds_ptr->m.insert_term_map( call, bidx, nondet_bit );
-  } else {
-    llvm_bmc_error("bmc", "Unsupported nondet type!");
+  if(o.bit_precise){
+    llvm_bmc_error("bmc", "not det for bitprecise not implemented!");
+  }else{
+    if( fp!=NULL &&
+        (fp->getReturnType()->isIntegerTy(32) ||
+         fp->getReturnType()->isIntegerTy(64) ||
+         fp->getReturnType()->isIntegerTy(8)) ) {
+      expr nondet_int = get_fresh_int( solver_ctx, "nondet");
+      bmc_ds_ptr->m.insert_term_map( call, bidx, nondet_int );
+    } else if (fp!=NULL &&
+               (fp->getReturnType()->isIntegerTy(1))) {
+      expr nondet_bit = get_fresh_bool( solver_ctx, "nondet");
+      bmc_ds_ptr->m.insert_term_map( call, bidx, nondet_bit );
+    } else {
+      llvm_bmc_error("bmc", "Unsupported nondet type!");
+    }
   }
 }
 
@@ -340,7 +386,12 @@ void bmc_pass::translateDebugInfo( unsigned bidx,
     bmc_ds_ptr->locals.insert( name );
     // auto val = dbg_var->getAddress();
     // Ignore debug instructions
-  }else{ assert(false); } // not possible
+  }else if( auto dbg_label = llvm::dyn_cast<llvm::DbgLabelInst>(dbg) ) {
+    // some extra info on labels
+    assert( dbg_label );
+  }else{
+    assert(false);
+  } // not possible
 }
 
 void bmc_pass::translateIntrinsicInst( unsigned bidx,
@@ -389,6 +440,12 @@ void bmc_pass::translateCallInst( unsigned bidx,
   
   if( auto dbg_val = llvm::dyn_cast<llvm::IntrinsicInst>(call) ) {
     translateIntrinsicInst( bidx, dbg_val );
+  } else if( is_assert(call) ) {
+    assert_to_spec(bidx, call);
+  } else if( is_assume(call) ) {
+    assume_to_bmc( bidx, call);
+  } else if( is_nondet(call) ) {
+    translateNondet( bidx, call);
   } else if( fp != NULL && fp->getName().startswith("__VERIFIER") ) {
     if( fp->getName().startswith("__VERIFIER_nondet_") ) {
       translateNondet( bidx, call);
@@ -402,11 +459,8 @@ void bmc_pass::translateCallInst( unsigned bidx,
       llvm_bmc_error("bmc",
           "Only __VERIFIER_[assert,error,nondet_TY] functions are handled!");
     }
-  } else if(is_assert(call)) {
-    assert_to_spec(bidx, call);
-  } else if (is_assume(call)) {
-    assume_to_bmc( bidx, call);
   } else {
+    call->print( llvm::outs() );
     llvm_bmc_error("bmc", "function call is not recognized !!");
   }
 }
@@ -433,7 +487,6 @@ void bmc_pass::translateCastInst( unsigned bidx,
   if( llvm::isa<llvm::TruncInst>(cast) ) {
     expr ex_v = bmc_ds_ptr->m.get_term(v);
     if( ok_cast( c_ty, v_ty, 1, 8 ) ) {
-    // if( v_ty->isIntegerTy(8) && c_ty->isIntegerTy(1) ) {
       if( o.bit_precise ) {
         bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v.extract(0,0) );
       }else{
@@ -441,6 +494,16 @@ void bmc_pass::translateCastInst( unsigned bidx,
         // need to say that the integer was less than 1;
         bmc_ds_ptr->add_spec( ex_v <= 1 && ex_v >= 0,
                               spec_reason_t::OUT_OF_RANGE );
+        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v );
+      }
+    }else if( ok_cast( c_ty, v_ty, 8, 32 ) ) {
+      if( o.bit_precise ) {
+        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v.extract(0,8) );
+      }else{
+        expr ex_v = bmc_ds_ptr->m.get_term(v);
+        // todo: take care of signed/unsigned
+        // bmc_ds_ptr->add_spec( ex_v <= 256 && ex_v >= 0,
+        //                       spec_reason_t::OUT_OF_RANGE );
         bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v );
       }
     }else{
@@ -454,11 +517,9 @@ void bmc_pass::translateCastInst( unsigned bidx,
     }else{
       // Current policy allow extensions [ 1 -> 8, 8->32, 1->32, 32->64]
       if( ok_cast( c_ty, v_ty, 8, 1 ) || ok_cast( c_ty, v_ty, 32, 1 ) ||
-          ok_cast( c_ty, v_ty, 64, 32 ) || ok_cast( c_ty, v_ty, 32, 8 )
+          ok_cast( c_ty, v_ty, 64, 32 ) || ok_cast( c_ty, v_ty, 32, 8 ) ||
+          ok_cast( c_ty, v_ty, 64, 8 )
           ) {
-      // if( (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(8)) ||
-      //     (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(32)) ||
-      //     (v_ty->isIntegerTy(32) && c_ty->isIntegerTy(64)) ) {
         bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v );
       } else {
         llvm_bmc_error("bmc", "zero extn instruction of unsupported size");
@@ -472,11 +533,9 @@ void bmc_pass::translateCastInst( unsigned bidx,
     }else{
       // Current policy allow extensions [ 1 -> 8, 1->32, 32->64, 8->32 ]
       if( ok_cast( c_ty, v_ty, 8, 1 ) || ok_cast( c_ty, v_ty, 32, 1 ) ||
-          ok_cast( c_ty, v_ty, 64, 32 ) || ok_cast( c_ty, v_ty, 32, 8 )
+          ok_cast( c_ty, v_ty, 64, 32 ) || ok_cast( c_ty, v_ty, 32, 8 ) ||
+          ok_cast( c_ty, v_ty, 64, 8 )
           ) {
-      // if( (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(8)) ||
-      //     (v_ty->isIntegerTy(1) && c_ty->isIntegerTy(32)) ||
-      //     (v_ty->isIntegerTy(32) && c_ty->isIntegerTy(64)) ) {
         bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v );
       } else {
         cast->print( llvm::outs());
@@ -509,24 +568,29 @@ void bmc_pass::translateCastInst( unsigned bidx,
 
 void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
   assert( alloca );
+
+  // length calculation of dynamically allocated array needs tobe delayed
+  // until we have symbols for the array length
   auto typ = alloca->getAllocatedType();
-  if( llvm::isa<const llvm::IntegerType>(typ) ) {          
+  if( llvm::isa<const llvm::IntegerType>(typ) ) {
     auto val = alloca->getArraySize();
-    if( auto constInt = llvm::dyn_cast<const llvm::ConstantInt>(val) ) {          
+    if( auto constInt = llvm::dyn_cast<const llvm::ConstantInt>(val) ) {
         int constIntValue = (int)constInt->getSExtValue();
         expr const_expr = get_expr_const(solver_ctx,constIntValue);
-        array_lengths.push_back(const_expr);
-    }
-    else {
+        bmc_ds_ptr->set_array_length( alloca, const_expr );
+        // array_lengths.push_back(const_expr);
+    } else {
       auto val = alloca->getOperand(0);
       auto val_expr = bmc_ds_ptr->m.get_term( val );
-      array_lengths.push_back(val_expr);
+      bmc_ds_ptr->set_array_length( alloca, val_expr );
+      // array_lengths.push_back(val_expr);
     }
   }
   else if( llvm::isa<const llvm::ArrayType>(typ) ) {
     int siz = (int)typ->getArrayNumElements();
     expr const_expr = get_expr_const(solver_ctx,siz);
-    array_lengths.push_back(const_expr);
+    bmc_ds_ptr->set_array_length( alloca, const_expr );
+    // array_lengths.push_back(const_expr);
   }
   else {
     //todo : why this else is not implemented?
@@ -552,7 +616,17 @@ void bmc_pass::translateLoadInst( unsigned bidx,
   //load->print( llvm::outs() );
   //std::cout << "\n";
   auto addr = load->getOperand(0);
-  if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
+  if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
+    assert( gop->getNumIndices() <= 2);
+    llvm::Value * idx = NULL;
+    if(gop->getNumOperands() == 2) idx = gop->getOperand(1);
+    else if(gop->getNumOperands() == 3) {
+      // assert( gep->getOperand(1) == 0);
+      idx = gop->getOperand(2);
+    }
+    auto idx_expr = bmc_ds_ptr->m.get_term( idx );
+    loadFromArrayHelper(bidx, load, idx_expr);
+  }else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
     // TODO : Add more general support to parse gep instruction when supporting 
     // objects (struct's) and multidimensional arrays
     llvm::Value * idx = NULL;
@@ -624,7 +698,17 @@ void bmc_pass::translateStoreInst( unsigned bidx,
 
   auto val = store->getOperand(0);
   auto addr = store->getOperand(1);
-  if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
+  if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
+    assert( gop->getNumIndices() <= 2);
+    llvm::Value * idx = NULL;
+    if(gop->getNumOperands() == 2) idx = gop->getOperand(1);
+    else if(gop->getNumOperands() == 3) {
+      // assert( gep->getOperand(1) == 0);
+      idx = gop->getOperand(2);
+    }
+    auto idx_expr = bmc_ds_ptr->m.get_term( idx );
+    storeToArrayHelper(bidx, store, val, idx_expr);
+  }else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
     llvm::Value * idx = NULL;
     if(gep->getNumOperands() == 2) idx = gep->getOperand(1);
     else if(gep->getNumOperands() == 3) idx = gep->getOperand(2); 
@@ -1021,7 +1105,6 @@ void bmc_pass::populateArrAccMap(llvm::Function* f) {
   assert(f);
   int arrCntr = 0;
   ary_to_int.clear();
-  array_lengths.clear();
 
   // collect global arrays of the module
   for( auto& glb : f->getParent()->globals()) {

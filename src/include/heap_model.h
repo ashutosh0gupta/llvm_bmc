@@ -171,27 +171,28 @@ public:
   }
 
   //void set_array_num( unsigned len );
-  void set_array_num(std::vector<const llvm::Type*>& arr_type);
+  // void set_array_num(std::vector<const llvm::Type*>& arr_type);
+  void set_array_info(std::map< const llvm::Value*, unsigned >& ary_id);
 
-  inline void set_array_num( std::vector<sort>& sorts ) {
-    ar_sorts = sorts;
-    num_arrays = ar_sorts.size();
-  }
+  // inline void set_array_num( std::vector<sort>& sorts ) {
+  //   ar_sorts = sorts;
+  //   num_arrays = ar_sorts.size();
+  // }
 
   inline void
   set_access_map( std::map< const llvm::Instruction*, unsigned >& map ) {
     ary_access_to_index = map;
   }
 
-  inline void
-  set_lengths_vec( std::vector< expr >* array_lengths ) {
-    lengths = array_lengths;
-  }
+  // inline void
+  // set_lengths_vec( std::vector< expr >& array_lengths ) {
+  //   lengths = array_lengths;
+  // }
 
-  inline  std::vector<expr>
-  get_lengths_vec() {
-    return *lengths;
-  }
+  // inline  std::vector<expr>&
+  // get_lengths_vec() {
+  //   return lengths;
+  // }
 
   // void init_state( const bb* );
   void init_state( unsigned );
@@ -199,6 +200,7 @@ public:
   virtual expr get_fresh_ary_name( unsigned );
   //virtual
 
+  void set_array_length( unsigned, expr& len );
   arr_write_expr
   array_write( unsigned bidx, const llvm::StoreInst* I,
                expr& idx, expr& val );
@@ -210,17 +212,21 @@ public:
 
 private:
   unsigned num_arrays;
+  std::vector< std::string > ar_names;
   std::vector< sort > ar_sorts;
-  std::vector< expr >* lengths; // todo: change from pointer to object.
+  std::vector< expr > lengths; // length of arrays can be symbolic
+                               // todo: support tuples
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
 
   // converting llvm array sorts to solver sorts
   sort get_address_sort();
   sort get_solver_array_ty( const llvm::ArrayType* ty );
   sort get_solver_array_ty( const llvm::PointerType* ty );
+  expr get_array_length( const llvm::Value* arr );
 
   unsigned get_accessed_array( const llvm::Instruction* I );
   void dump_ary_access_to_index();
+
 };
 
 // class array_model_fixed_len : public array_model {

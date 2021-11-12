@@ -48,6 +48,9 @@ expr array_model::join_array_state( std::vector<expr>& conds,
   return _and( vec, solver_ctx );
 }
 
+//---------------------------------------------------------------
+// collect info about the arrays
+
 sort array_model_full::get_address_sort() {
   return solver_ctx.int_sort();
 }
@@ -82,16 +85,40 @@ sort array_model_full::get_solver_array_ty( const llvm::PointerType* ty ) {
   }
 }
 
-void array_model_full::set_array_num(std::vector<const llvm::Type*>& arr_type) {
-  num_arrays = arr_type.size();
+expr array_model_full::get_array_length( const llvm::Value* arr ) {
+  if( llvm::isa< const llvm::AllocaInst >(arr) ) {
+    return solver_ctx.int_val(1); // gets recomputed at the translation stage.
+  }
+  //todo: support for globals etc
+  
+  // dummy returned value
+  return solver_ctx.int_val(1);
+}
+
+void array_model_full::set_array_length( unsigned ar_num, expr& len ) {
+  lengths[ar_num] = len;
+}
+
+void array_model_full::
+set_array_info(std::map< const llvm::Value*, unsigned >& ary_ids) {
+  num_arrays = ary_ids.size();
+  std::vector<const llvm::Type*> ar_types;
+  ar_types.resize( num_arrays );
+  ar_names.resize( num_arrays );
+  lengths.clear();
+  for( unsigned i = 0; i < num_arrays; i++ ) {
+    lengths.push_back( solver_ctx.int_val(1) );
+  }
+  for( auto& ar_int_pair : ary_ids ) {
+    auto ar = ar_int_pair.first;
+    auto indx = ar_int_pair.second;
+    ar_types[indx] = ar->getType();
+    ar_names[indx] = ar->getName();
+    lengths[indx] = get_array_length( ar );
+  }
   for( unsigned i = 0; i < num_arrays; i++) {
-    if( auto pty = llvm::dyn_cast<llvm::PointerType>(arr_type[i]) ) {
+    if( auto pty = llvm::dyn_cast<llvm::PointerType>(ar_types[i]) ) {
       ar_sorts.push_back( get_solver_array_ty( pty ) );
-      // auto T = arr_type[i]->getPointerElementType();
-      // if( auto ar_ty = llvm::dyn_cast<llvm::ArrayType>(T)){
-      //   ar_sorts.push_back( get_solver_array_ty( ar_ty ) );
-      // }else if( T->isPointerTy() ) {
-      // }
     } else {
       //todo: why this path??
       ar_sorts.push_back( solver_ctx.array_sort( get_address_sort(),
@@ -100,12 +127,15 @@ void array_model_full::set_array_num(std::vector<const llvm::Type*>& arr_type) {
   }
 }
 
+//-----------------------------------------------------------------------
+
+
 expr array_model_full::get_fresh_ary_name( unsigned i ) {
   sort ar_sort = ar_sorts.at(i);
   if( !ar_sort.is_array() ) {
     llvm_bmc_error( "bmc", "bad sort is passed!!" );
   }
-  auto ar = get_fresh_const( solver_ctx, ar_sort, "arr" );
+  auto ar = get_fresh_const( solver_ctx, ar_sort, "arr_"+ar_names[i] );
   return ar;
 }
 
@@ -155,7 +185,7 @@ array_model_full::array_write( unsigned bidx, const llvm::StoreInst* I,
   expr new_ar = get_fresh_ary_name(i);
   vec[i] = new_ar;
   expr lower_bound_arr(idx >= 0);
-  expr upper_bound_arr(idx <= (get_lengths_vec().at(i) - 1));
+  expr upper_bound_arr(idx <= lengths.at(i) - 1);
   std::vector<expr> temp_vec;
   temp_vec.push_back(lower_bound_arr);
   temp_vec.push_back(upper_bound_arr);
@@ -171,14 +201,14 @@ array_model_full::array_read( unsigned bidx, const llvm::LoadInst* I,
   auto& vec = ar_st.get_name_vec();
   expr ar_name = vec.at(i);
   expr lower_bound_arr(idx >= 0);
-  //tddo: a trick to avoid bv/arith issue;; may need a fix in future
-  int idx_num = solver_ctx.int_val(idx);  //To convert idx from bv to int
-  expr upper_bound_arr(idx_num <= (get_lengths_vec().at(i) - 1));
+  //todo: a trick to avoid bv/arith issue;; may need a fix in future
+  //int idx_num = solver_ctx.int_val(idx);  //To convert idx from bv to int
+  expr upper_bound_arr(idx <= lengths.at(i)-1);
   std::vector<expr> temp_vec;
   temp_vec.push_back(lower_bound_arr);
   temp_vec.push_back(upper_bound_arr);
   expr bound_guard = _and(temp_vec);
-  return arr_read_expr( select( ar_name, idx_num), bound_guard );
+  return arr_read_expr( select( ar_name, idx), bound_guard );
 }
 
 void array_model_full::

@@ -42,7 +42,6 @@ public:
 
   bmc_ds( options& o_, //solver_context& solver_ctx_,
           std::map<const llvm::Value*, unsigned>& aim,
-          std::vector<expr>& alv,
           memory_model& m_model_ )
     : o(o_)
     , solver_ctx( o.solver_ctx )
@@ -51,7 +50,6 @@ public:
     , memory_global_events( solver_ctx )
     , ar_model_full( o )
     , ary_to_int(aim)
-    , array_lengths(alv)
 {}
   //--------------------------------------------------------------------------
   //interface to memory model
@@ -77,12 +75,12 @@ public:
 
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
   std::map< const llvm::Value*, unsigned >& ary_to_int;
-  std::vector<expr>& array_lengths;
 
+  void set_array_length( const llvm::Value*, expr& );
   arr_write_expr array_write( unsigned, const llvm::StoreInst*, expr&, expr& );
   arr_read_expr array_read( unsigned, const llvm::LoadInst*, expr& );
   expr join_array_state( std::vector<expr>&,
-                             std::vector<unsigned>&, unsigned );
+                         std::vector<unsigned>&, unsigned );
 
   array_state& get_array_state( const llvm::BasicBlock* b );
   void set_array_state( unsigned bidx, array_state& );
@@ -95,9 +93,10 @@ public:
   // once a model is initialized, call to the other initializations will throw
   // error.
   // void init_partition_array_model(std::vector<const llvm::Type*>&);
-  void init_full_array_model( std::vector<const llvm::Type*>&,
-                              std::map<const llvm::Instruction*,unsigned>&,
-                              std::vector<expr>& );
+  void init_full_array_model(std::map< const llvm::Instruction*, unsigned >& map);
+  // void init_full_array_model( std::vector<const llvm::Type*>&,
+  //                             std::map<const llvm::Instruction*,unsigned>&,
+  //                             std::vector<expr>& );
   // void init_fixed_len_array_model( std::vector<const llvm::Type*>&,
   //                                  std::map<const llvm::Instruction*,unsigned>&);
   void init_array_model( array_model_t );
@@ -194,9 +193,8 @@ class bmc_fun : public bmc_ds {
 public:
   bmc_fun( options& o,
            std::map<const llvm::Value*, unsigned>& aim,
-           std::vector<expr>& alv,
            memory_model& m_model)
-    : bmc_ds( o, aim, alv, m_model) {}
+    : bmc_ds( o, aim, m_model) {}
 
   // Call sites
   std::vector<const llvm::CallInst*> call_sites;
@@ -213,10 +211,9 @@ class bmc_loop : public bmc_ds {
 public:
   bmc_loop( options& o,
             std::map<const llvm::Value*, unsigned>& aim,
-            std::vector<expr>& alv,
             memory_model& m_model,
             loopdata* ld_ )
-    : bmc_ds( o, aim, alv, m_model)
+    : bmc_ds( o, aim,  m_model)
     , ld(ld_) {}
 
   loopdata* get_loopdata();
