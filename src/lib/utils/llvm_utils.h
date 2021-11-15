@@ -173,4 +173,7 @@ sort llvm_to_sort( options& , llvm::Type* );
 // expr read_const( const llvm::Value*, solver_context& );
 expr read_const( options&, const llvm::Value*);
 
+expr llvm_min_val( solver_context&, const llvm::Value*);
+expr llvm_max_val( solver_context&, const llvm::Value*);
+
 #endif

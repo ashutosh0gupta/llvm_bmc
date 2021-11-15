@@ -1561,3 +1561,15 @@ expr read_const( options& o, const llvm::Value* op ) {
   return e; // contains no expression;
 }
 
+
+expr llvm_min_val( solver_context& ctx, const llvm::Value* v) {
+  //todo : find max val
+  assert(false);
+  return ctx.bool_val(true);
+}
+
+expr llvm_max_val( solver_context& ctx, const llvm::Value* v) {
+  //todo : find min val
+  assert(false);
+  return ctx.bool_val(true);
+}

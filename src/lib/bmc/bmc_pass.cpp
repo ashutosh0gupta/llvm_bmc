@@ -107,11 +107,19 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   }
   if( o.include_overflow_specs ) {
     expr v = bmc_ds_ptr->m.get_term(bop);
-    // need to say that the integer was less than 1;
-    // expr lb = ?;
-    // expr ub = ?;
-    // expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
-    // bmc_ds_ptr->add_spec( !path_bit || v <= lb v >= ub, spec_reason_t::OUT_OF_BOUND );
+    expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+    if( o.bit_precise ) {
+      // check in z3 how to check for overflow in bitvectors.
+      // if 3 bits
+      // -8 =< a+b < 7
+      //
+      expr overflow_cons = solver_ctx.bool_val(true);
+      bmc_ds_ptr->add_spec( !path_bit || overflow_cons, spec_reason_t::OUT_OF_RANGE );
+    }else{
+      expr lb = llvm_min_val( solver_ctx, bop );
+      expr ub = llvm_max_val( solver_ctx, bop );
+      bmc_ds_ptr->add_spec( !path_bit || (v <= ub && v >= lb), spec_reason_t::OUT_OF_RANGE );
+    }
   }
 }
 
