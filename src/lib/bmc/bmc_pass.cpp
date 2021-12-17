@@ -319,7 +319,7 @@ bool match_function_names( const llvm::CallInst* call,
   if( fp != NULL && has_name( fp->getName(), names ) ) {
     return true;
   } else if (fp == NULL) {
-    const llvm::Value * val = call->getCalledValue();
+    const llvm::Value * val = call->getCalledOperand();
     if( auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val) ) {
       if(CE->isCast() && has_name( CE->getOperand(0)->getName(), names)) {
           return true;

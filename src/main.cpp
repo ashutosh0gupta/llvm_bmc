@@ -32,8 +32,8 @@ void prepare_module( options& o,
   if( o.unwind && o.llvm_unroll ) {
     // Work around due to a bug in interface since LLVM 4.0 =======
     // setting unroll count via commmand line parsing
-    std::string ustr = "-unroll-count=" + std::to_string(o.loop_unroll_count);
-    setLLVMConfigViaCommandLineOptions( ustr );
+    // std::string ustr = "-unroll-count=" + std::to_string(o.loop_unroll_count);
+    // setLLVMConfigViaCommandLineOptions( ustr );
     // ============================================================
     passMan.add( llvm::createLoopUnrollPass( 2,
                                              false, //OnlyWhenForced

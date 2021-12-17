@@ -43,7 +43,7 @@ void parse_spec_pass::init_parse(llvm::Module &m, options& o, bmc& b)
       //std::cout << "Entry Fn is " << EntryFnName << " Thread is " << ThName << "\n";
       for (auto mit = m.begin(); mit != m.end(); mit++) { //Iterate over functions in module
 
-      std::string Str1 = mit->getName();
+      std::string Str1 = mit->getName().str();
       if (Str1 == EntryFnName) {
 	for (auto i = pd.fn_thread_map.begin(); i != pd.fn_thread_map.end(); i++) {
       		if (Str1 == i->first) {
@@ -101,7 +101,7 @@ void parse_spec_pass::init_parse(llvm::Module &m, options& o, bmc& b)
 
     for (auto mit = m.begin(); mit != m.end(); mit++) { //Iterate over functions in module
 
-      std::string Str1 = mit->getName();
+      std::string Str1 = mit->getName().str();
       if (Str1 == EntryFnName) {
         //std::cout << "Str1 is " << Str1 <<"\n";
         InlineInsertInst(*mit, b);
@@ -249,7 +249,7 @@ void parse_spec_pass::CollectThreadInfo( llvm::Function &f, unsigned ThreadNumbe
 
 
 bool parse_spec_pass::runOnFunction( llvm::Function &f ) {
-	std::string FuncName = f.getName();
+	std::string FuncName = f.getName().str();
 	return true;
 }
 

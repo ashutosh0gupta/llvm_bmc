@@ -10,12 +10,12 @@
 std::string get_called_name(const llvm::CallInst* call ) {
   assert( call );
   llvm::Function* fp = call->getCalledFunction();
-  if( fp != NULL ) return fp->getName();
-  const llvm::Value * val = call->getCalledValue();
+  if( fp != NULL ) return fp->getName().str();
+  const llvm::Value * val = call->getCalledOperand();
   if( auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val) ) {
     if( CE->isCast() ) {
       //todo: check if this is correct traveral of LLVM IR
-      return CE->getOperand(0)->getName();
+      return CE->getOperand(0)->getName().str();
     }
   }else{
     llvm_bmc_error("bmc", "could not find the name of called function!");

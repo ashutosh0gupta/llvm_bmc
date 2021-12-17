@@ -28,14 +28,15 @@ message(STATUS "DEBUG : LLVM - ${LLVM_DEBUG}")
 IF(LLVM_DEBUG)
   SET( LLVM_DIR "${INSTALLED}/llvm-${LLVM_VERSION}")
   SET( CLANG_DIR "${INSTALLED}/llvm-${LLVM_VERSION}")
+  message(STATUS "CLANG_PATH ${LLVM_DIR}/lib/cmake/clang/")
   find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH HINTS "${LLVM_DIR}/lib/cmake/llvm/")
   find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "${CLANG_DIR}/lib/cmake/clang/")
 ELSE(LLVM_DEBUG)
   # change here to modify the relase version of LLVM
-  find_package(LLVM 10 REQUIRED CONFIG)
-  #find_package(Clang REQUIRED CONFIG)
-  # find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/llvm-10/lib/cmake/clang")
-  find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/cmake/clang-10/")
+  find_package(LLVM 12 REQUIRED CONFIG)
+  # find_package(Clang 12 REQUIRED CONFIG)
+  # find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/llvm-12/lib/cmake/clang")
+ find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/cmake/clang-12/")
   message(STATUS "LLVM INCLUDE DIR - ${LLVM_INCLUDE_DIRS}")
   message(STATUS "CLANG INCLUDE DIR - ${CLANG_INCLUDE_DIRS}")
   # find_package(Clang REQUIRED clangTooling libClang)
@@ -56,7 +57,9 @@ ELSE(Z3_DEBUG)
   LINK_DIRECTORIES("${PROJECT_BINARY_DIR}/../z3/buildr")
 ENDIF(Z3_DEBUG)
 
-ADD_DEFINITIONS(-std=c++14 -Wall)
+
+ADD_DEFINITIONS(-std=c++2a -Wall)
+# ADD_DEFINITIONS(-std=c++14 -Wall)
 
 
 include_directories (${CMAKE_CURRENT_BINARY_DIR} "${PROJECT_SOURCE_DIR}" "${PROJECT_BINARY_DIR}/../z3/src/api" "${PROJECT_BINARY_DIR}/../z3/src/api/c++")
@@ -67,13 +70,13 @@ add_definitions(${LLVM_DEFINITIONS})
 include_directories(${LLVM_INCLUDE_DIRS})
 include_directories(${CLANG_INCLUDE_DIRS})
 
-IF(LLVM_DEBUG)
-  # in debug llvm linkers take a lot of time
-  # For enabling specialized linker; 
-  # TODO: may be remove; breaks modularity
-  SET( CMAKE_LINKER "/usr/bin/ld.lld-9.0" )
-  add_definitions("-Wl,--threads -Wl,--thread-count,4")
-ENDIF(LLVM_DEBUG)
+# IF(LLVM_DEBUG)
+#   # in debug llvm linkers take a lot of time
+#   # For enabling specialized linker; 
+#   # TODO: may be remove; breaks modularity
+#   SET( CMAKE_LINKER "/usr/bin/ld.lld-9.0" )
+#   add_definitions("-Wl,--threads -Wl,--thread-count,4")
+# ENDIF(LLVM_DEBUG)
   message(STATUS "Linker In use : ${CMAKE_LINKER}")
 
 

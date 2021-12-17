@@ -200,7 +200,7 @@ memory_state bmc::populate_mem_state() {
 
       sort z_sort = llvm_to_sort( o, el_ty);
 
-      auto new_glb = m_model.get_fresh_name(z_sort, glb->getName());
+      auto new_glb = m_model.get_fresh_name(z_sort, glb->getName().str());
 
       datatype ty(z_sort);
       state_obj tem_state_obj(new_glb,ty);
@@ -250,11 +250,15 @@ bool bmc::run_solver(expr &spec, bmc_ds* bmc_ds_ptr) {
   }
   s.add(!spec);
   // std::cout << s;
-  if (s.check() == z3::sat) {
+  auto result = s.check();
+  if( result == z3::sat ) {
     model m = s.get_model();
     // produce_witness(m, bmc_ds_ptr);
     return true;
-  } else {
+  } else if( result == z3::unknown ){
+    std::cout << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
+    return false;
+  }else {
     return false;
   }
 }
@@ -265,12 +269,17 @@ bool bmc::verify_prop() {
   z3::solver s(o.solver_ctx);
   for(expr e : prop) {
     s.add(!e);
-    if (s.check() == z3::sat) {
+    auto result = s.check();
+    if ( result == z3::sat || result == z3::unknown ) {
       os << "\nSpecification that failed the check : \n";
       os << e;
-      os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
+      if( result == z3::sat ) {
+        os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
+      }else{
+        os << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
+      }
       return false;
-    } else { } // contine with other specifications
+    } else {} // contine with other specifications
   }
   os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
   return true;    
