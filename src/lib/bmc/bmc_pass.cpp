@@ -396,7 +396,9 @@ void bmc_pass::translateDebugInfo( unsigned bidx,
     // Ignore debug instructions
   }else if( auto dbg_label = llvm::dyn_cast<llvm::DbgLabelInst>(dbg) ) {
     // some extra info on labels
-    assert( dbg_label );
+    if( dbg_label == NULL ) { //to avoid warning
+      assert( dbg_label );
+    }
   }else{
     assert(false);
   } // not possible

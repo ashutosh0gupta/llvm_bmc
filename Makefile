@@ -65,9 +65,12 @@ deepclean: clean
 #-----------------------------------------------------------------------------
 # Z3 fetch and patch generation
 
+#feadfbf
+
 $(BUILDDIR)/z3/README.md :
 	mkdir -p $(BUILDDIR)
 	cd $(BUILDDIR);$(git) clone https://github.com/Z3Prover/z3.git
+	cd $(BUILDDIR);$(git) checkout feadfbf
 
 $(BUILDDIR)/z3/buildr/libz3.so : $(BUILDDIR)/z3/README.md
 	rm -rf $(BUILDDIR)/z3/buildr

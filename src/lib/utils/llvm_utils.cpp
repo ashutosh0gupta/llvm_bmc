@@ -369,7 +369,7 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   args.push_back( "-disable-llvm-passes" );
   args.push_back( "-debug-info-kind=standalone" );
   args.push_back( "-dwarf-version=2" );
-  args.push_back( "-dwarf-column-info" );
+  // args.push_back( "-dwarf-column-info" );
   // args.push_back( "-mdisable-fp-elim");
   args.push_back( "-femit-all-decls" );
   args.push_back( "-O1" );
@@ -451,20 +451,21 @@ void dump_dot_module( boost::filesystem::path& dump_path,
   std::cerr << "dumping llvm program files in folder:" << dump_path << "\n";
   auto c_path = boost::filesystem::current_path();
   current_path( dump_path );
-  //llvm::legacy::PassManager passMan;
-  //passMan.add( llvm::createCFGPrinterLegacyPassPass() );
-  //passMan.run( *module.get() );
+
+  // llvm::legacy::PassManager passMan;
+  // passMan.add( llvm::createCFGPrinterLegacyPassPass() );
+  // passMan.run( *module.get() );
+  
   llvm::FunctionPassManager FPM;
   llvm::FunctionAnalysisManager FAM;
-
   llvm::PassBuilder PB;
   PB.registerFunctionAnalyses(FAM);
-
   FPM.addPass( llvm::CFGPrinterPass() );
-
   for(llvm::Function& F : *module ){
-    FPM.run(F, FAM);
+    if( !F.empty() )
+      FPM.run(F, FAM);
   }
+  
   current_path( c_path );
 }
 

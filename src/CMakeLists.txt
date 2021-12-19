@@ -58,7 +58,7 @@ ELSE(Z3_DEBUG)
 ENDIF(Z3_DEBUG)
 
 
-ADD_DEFINITIONS(-std=c++2a -Wall)
+ADD_DEFINITIONS(-std=c++2a -Wall -Wno-comment)
 # ADD_DEFINITIONS(-std=c++14 -Wall)
 
 

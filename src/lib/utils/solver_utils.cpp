@@ -262,9 +262,10 @@ std::string display_app(expr e) {
 bool reportErrNThrow(std::string s, bool th)
 {
   if(th) {
-    std::cout << s;
+    std::cerr << s << "\n";
     throw "unsupported";
   }
+  return false;
 }
 
 bool has_quantified_formula(exprs es)

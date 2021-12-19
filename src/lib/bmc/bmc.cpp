@@ -42,9 +42,10 @@ bmc::~bmc() {
   }
 }
 
+
+
 void bmc::run_bmc_pass() {
 
-  llvm::legacy::PassManager passMan;
 
   for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
     // todo: remove dependency on demangle from llvm_utils
@@ -112,8 +113,11 @@ void bmc::run_bmc_pass() {
 
 
   }
-  passMan.add( llvm::createAlwaysInlinerLegacyPass() );
-  passMan.run( *module.get() );
+
+  // force inline
+  llvm::legacy::PassManager inline_passMan;
+  inline_passMan.add( llvm::createAlwaysInlinerLegacyPass() );
+  inline_passMan.run( *module.get() );
 
 
 //  for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
@@ -135,21 +139,23 @@ void bmc::run_bmc_pass() {
 //     }
 //    }
 
+  llvm::legacy::PassManager passMan;
+
   passMan.add( new build_name_map( o, localNameMap, revStartLocalNameMap,
                                    revEndLocalNameMap ) );
   passMan.add( new collect_loopdata(o, ld_map, localNameMap, module) );
 
-  //if( o.concurrent )
-    passMan.add( new collect_globals_pass(*module.get(), o.solver_ctx, o.mem_enc, o, *this) );
+  // //if( o.concurrent )
+  passMan.add( new collect_globals_pass(*module.get(), o.solver_ctx, o.mem_enc, o, *this) );
 
   if(o.loop_aggr) {
     passMan.add( new bmc_loop_pass(o,o.solver_ctx, def_map, *this));
-  } 
-  else {
+  } else {
     passMan.add( new bmc_fun_pass(o, o.solver_ctx,*this));
   }
 
   passMan.run( *module.get() );
+
 }
 
 
