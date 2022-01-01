@@ -4,7 +4,7 @@ LLVMBMC=llvmbmc
 HOME_INSTALLED=~/installed
 BUILDDIR = $(PWD)/build
 SRCDIR = $(PWD)/src
-LLVM_VERSION=10.0.0
+LLVM_VERSION=12.0.1
 # LLVM_VERSION=3.6.2
 LD=ld.gold
 
@@ -65,9 +65,12 @@ deepclean: clean
 #-----------------------------------------------------------------------------
 # Z3 fetch and patch generation
 
+#feadfbf
+
 $(BUILDDIR)/z3/README.md :
 	mkdir -p $(BUILDDIR)
 	cd $(BUILDDIR);$(git) clone https://github.com/Z3Prover/z3.git
+	cd $(BUILDDIR);$(git) checkout feadfbf
 
 $(BUILDDIR)/z3/buildr/libz3.so : $(BUILDDIR)/z3/README.md
 	rm -rf $(BUILDDIR)/z3/buildr
@@ -92,7 +95,7 @@ LLVM_HOST=https://github.com/llvm/llvm-project/releases/download/llvmorg-
 
 # $(HOME_INSTALLED)
 
-$(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/LLVMBuild.txt: | $(HOME_INSTALLED)
+$(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/CMakeLists.txt: | $(HOME_INSTALLED)
 	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/llvm-$(LLVM_VERSION).src.tar.xz
 	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/clang-$(LLVM_VERSION).src.tar.xz
 	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/clang-tools-extra-$(LLVM_VERSION).src.tar.xz
@@ -111,7 +114,7 @@ $(HOME_INSTALLED)/llvm-svn.src/LLVMBuild.txt:
 
 LLVM_CMAKE_OPTIONS= -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=DEBUG -DLLVM_ENABLE_RTTI:BOOL=TRUE -DLLVM_ENABLE_DUMP=TRUE -DLLVM_ENABLE_BINDINGS=FALSE -DCMAKE_INSTALL_PREFIX=../../llvm-$(LLVM_VERSION) ../
 
-$(HOME_INSTALLED)/llvm-$(LLVM_VERSION)/lib/libLLVMCore.a : $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/LLVMBuild.txt
+$(HOME_INSTALLED)/llvm-$(LLVM_VERSION)/lib/libLLVMCore.a : $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/CMakeLists.txt
 	cd $(HOME_INSTALLED); mkdir -p llvm-$(LLVM_VERSION).src/build; mkdir -p llvm-$(LLVM_VERSION)
 	cd $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/build;cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=DEBUG -DLLVM_ENABLE_RTTI:BOOL=TRUE -DLLVM_ENABLE_BINDINGS=FALSE -DLLVM_ENABLE_DUMP=TRUE -DCMAKE_INSTALL_PREFIX=../../llvm-$(LLVM_VERSION) ../
 	+make -C $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/build

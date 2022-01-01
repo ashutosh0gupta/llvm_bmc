@@ -42,9 +42,10 @@ bmc::~bmc() {
   }
 }
 
+
+
 void bmc::run_bmc_pass() {
 
-  llvm::legacy::PassManager passMan;
 
   for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
     // todo: remove dependency on demangle from llvm_utils
@@ -112,8 +113,11 @@ void bmc::run_bmc_pass() {
 
 
   }
-  passMan.add( llvm::createAlwaysInlinerLegacyPass() );
-  passMan.run( *module.get() );
+
+  // force inline
+  llvm::legacy::PassManager inline_passMan;
+  inline_passMan.add( llvm::createAlwaysInlinerLegacyPass() );
+  inline_passMan.run( *module.get() );
 
 
 //  for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
@@ -135,21 +139,23 @@ void bmc::run_bmc_pass() {
 //     }
 //    }
 
+  llvm::legacy::PassManager passMan;
+
   passMan.add( new build_name_map( o, localNameMap, revStartLocalNameMap,
                                    revEndLocalNameMap ) );
   passMan.add( new collect_loopdata(o, ld_map, localNameMap, module) );
 
-  //if( o.concurrent )
-    passMan.add( new collect_globals_pass(*module.get(), o.solver_ctx, o.mem_enc, o, *this) );
+  // //if( o.concurrent )
+  passMan.add( new collect_globals_pass(*module.get(), o.solver_ctx, o.mem_enc, o, *this) );
 
   if(o.loop_aggr) {
     passMan.add( new bmc_loop_pass(o,o.solver_ctx, def_map, *this));
-  } 
-  else {
+  } else {
     passMan.add( new bmc_fun_pass(o, o.solver_ctx,*this));
   }
 
   passMan.run( *module.get() );
+
 }
 
 
@@ -200,7 +206,7 @@ memory_state bmc::populate_mem_state() {
 
       sort z_sort = llvm_to_sort( o, el_ty);
 
-      auto new_glb = m_model.get_fresh_name(z_sort, glb->getName());
+      auto new_glb = m_model.get_fresh_name(z_sort, glb->getName().str());
 
       datatype ty(z_sort);
       state_obj tem_state_obj(new_glb,ty);
@@ -250,11 +256,15 @@ bool bmc::run_solver(expr &spec, bmc_ds* bmc_ds_ptr) {
   }
   s.add(!spec);
   // std::cout << s;
-  if (s.check() == z3::sat) {
+  auto result = s.check();
+  if( result == z3::sat ) {
     model m = s.get_model();
     // produce_witness(m, bmc_ds_ptr);
     return true;
-  } else {
+  } else if( result == z3::unknown ){
+    std::cout << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
+    return false;
+  }else {
     return false;
   }
 }
@@ -265,12 +275,17 @@ bool bmc::verify_prop() {
   z3::solver s(o.solver_ctx);
   for(expr e : prop) {
     s.add(!e);
-    if (s.check() == z3::sat) {
+    auto result = s.check();
+    if ( result == z3::sat || result == z3::unknown ) {
       os << "\nSpecification that failed the check : \n";
       os << e;
-      os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
+      if( result == z3::sat ) {
+        os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
+      }else{
+        os << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
+      }
       return false;
-    } else { } // contine with other specifications
+    } else {} // contine with other specifications
   }
   os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
   return true;    

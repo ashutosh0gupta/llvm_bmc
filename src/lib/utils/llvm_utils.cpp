@@ -10,6 +10,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#pragma GCC diagnostic ignored "-Wcomment"
 // pragam'ed to aviod warnings due to llvm included files
 #include "llvm/IR/DerivedTypes.h"
 // #include "llvm/IR/TypeBuilder.h"
@@ -28,7 +29,7 @@
 #pragma GCC diagnostic pop
 
 
-#define CLANG_VERSION "5.0"
+#define CLANG_VERSION "12.0"
 
 void dump( llvm::Value* v) {
   if(v)
@@ -111,7 +112,7 @@ public:
       if( d ) {
         unsigned l = d.getLine();
         unsigned c  = d.getCol();
-        std::string f =llvm::cast<llvm::DIScope>(d.getScope())->getFilename();
+        auto f =llvm::cast<llvm::DIScope>(d.getScope())->getFilename().str();
 
         src_loc curr(l,c,f);
         if( f != curr.file ) continue;
@@ -257,87 +258,87 @@ getLocFromClangSource( const clang::SourceLocation& loc,
                        const clang::SourceManager& sm) {
   unsigned line = sm.getPresumedLoc(loc).getLine();
   unsigned col = sm.getPresumedLoc(loc).getColumn();
-  std::string file = sm.getFilename(loc);
+  std::string file = sm.getFilename(loc).str();
   return src_loc(line,col,file);
 }
 
 //this function is a copy from CompilerInstance::ExecuteActuib
-bool ExecuteAction( clang::CompilerInstance& CI,
-                    clang::FrontendAction &Act,
-                    std::vector< comment >& comments_found) {
+// bool ExecuteAction( clang::CompilerInstance& CI,
+//                     clang::FrontendAction &Act,
+//                     std::vector< comment >& comments_found) {
 
-  // FIXME: Take this as an argument, once all the APIs we used have moved to
-  // taking it as an input instead of hard-coding llvm::errs.
-  llvm::raw_ostream &OS = llvm::errs();
+//   // FIXME: Take this as an argument, once all the APIs we used have moved to
+//   // taking it as an input instead of hard-coding llvm::errs.
+//   llvm::raw_ostream &OS = llvm::errs();
 
-  // Create the target instance.
-  CI.setTarget(clang::TargetInfo::CreateTargetInfo(CI.getDiagnostics(),
-                                            CI.getInvocation().TargetOpts));
-  if (!CI.hasTarget())
-    return false;
-  CI.getTarget().adjust(CI.getLangOpts());
-  CI.getTarget().adjustTargetOptions(CI.getCodeGenOpts(), CI.getTargetOpts());
+//   // Create the target instance.
+//   CI.setTarget(clang::TargetInfo::CreateTargetInfo(CI.getDiagnostics(),
+//                                             CI.getInvocation().TargetOpts));
+//   if (!CI.hasTarget())
+//     return false;
+//   CI.getTarget().adjust(CI.getLangOpts());
+//   CI.getTarget().adjustTargetOptions(CI.getCodeGenOpts(), CI.getTargetOpts());
 
-  for (const clang::FrontendInputFile &FIF : CI.getFrontendOpts().Inputs) {
-    // Reset the ID tables if we are reusing the SourceManager and parsing
-    // regular files.
-    if (CI.hasSourceManager() && !Act.isModelParsingAction())
-      CI.getSourceManager().clearIDTables();
+//   for (const clang::FrontendInputFile &FIF : CI.getFrontendOpts().Inputs) {
+//     // Reset the ID tables if we are reusing the SourceManager and parsing
+//     // regular files.
+//     if (CI.hasSourceManager() && !Act.isModelParsingAction())
+//       CI.getSourceManager().clearIDTables();
 
-    if (Act.BeginSourceFile( CI, FIF)) {
-      Act.Execute();
-      clang::ASTContext& ast_ctx = CI.getASTContext();
-      clang::SourceManager& sm = CI.getSourceManager();
-      auto FID = sm.getMainFileID();
-      clang::RawCommentList& comment_list = ast_ctx.getRawCommentList();
-      const std::map< unsigned, clang::RawComment * > * cmts = comment_list.getCommentsInFile(FID);
-      if( cmts ) {
-      // for( clang::RawComment* cmnt : comment_list.getComments() ) {
-        for( auto& pos_cmt_pair : *cmts ) {
-          clang::RawComment* cmnt = pos_cmt_pair.second;
-          // OS << comment->getRawText( sm ) << "\n";
-          //todo: check prefix of the comment
-          std::string multi_cmt = cmnt->getRawText( sm );
+//     if (Act.BeginSourceFile( CI, FIF)) {
+//       Act.Execute();
+//       clang::ASTContext& ast_ctx = CI.getASTContext();
+//       clang::SourceManager& sm = CI.getSourceManager();
+//       auto FID = sm.getMainFileID();
+//       clang::RawCommentList& comment_list = ast_ctx.getRawCommentList();
+//       const std::map< unsigned, clang::RawComment * > * cmts = comment_list.getCommentsInFile(FID);
+//       if( cmts ) {
+//       // for( clang::RawComment* cmnt : comment_list.getComments() ) {
+//         for( auto& pos_cmt_pair : *cmts ) {
+//           clang::RawComment* cmnt = pos_cmt_pair.second;
+//           // OS << comment->getRawText( sm ) << "\n";
+//           //todo: check prefix of the comment
+//           std::string multi_cmt = cmnt->getRawText( sm );
 
-          std::vector<std::string> cmts;
-          boost::split(cmts, multi_cmt, [](char c){return c == '\n';});
-          for( auto cmt : cmts ) {
-            comment c;
-            boost::algorithm::trim(cmt);
-            if(COMMENT_PREFIX == cmt.substr(0, COMMENT_PREFIX_LEN) ) {
-              auto txt =
-                cmt.substr(COMMENT_PREFIX_LEN, cmt.size()-COMMENT_PREFIX_LEN );
-              c.texts.push_back( txt );
-              c.start = getLocFromClangSource(cmnt->getSourceRange().getBegin(), sm);
-              c.end = getLocFromClangSource( cmnt->getSourceRange().getEnd(), sm);
-              comments_found.push_back(c);
-            }
-          }
-        }
-      }
-      Act.EndSourceFile();
-    }
-  }
+//           std::vector<std::string> cmts;
+//           boost::split(cmts, multi_cmt, [](char c){return c == '\n';});
+//           for( auto cmt : cmts ) {
+//             comment c;
+//             boost::algorithm::trim(cmt);
+//             if(COMMENT_PREFIX == cmt.substr(0, COMMENT_PREFIX_LEN) ) {
+//               auto txt =
+//                 cmt.substr(COMMENT_PREFIX_LEN, cmt.size()-COMMENT_PREFIX_LEN );
+//               c.texts.push_back( txt );
+//               c.start = getLocFromClangSource(cmnt->getSourceRange().getBegin(), sm);
+//               c.end = getLocFromClangSource( cmnt->getSourceRange().getEnd(), sm);
+//               comments_found.push_back(c);
+//             }
+//           }
+//         }
+//       }
+//       Act.EndSourceFile();
+//     }
+//   }
 
-  // Notify the diagnostic client that all files were processed.
-  CI.getDiagnostics().getClient()->finish();
+//   // Notify the diagnostic client that all files were processed.
+//   CI.getDiagnostics().getClient()->finish();
 
-  if ( CI.getDiagnosticOpts().ShowCarets) {
-    // We can have multiple diagnostics sharing one diagnostic client.
-    // Get the total number of warnings/errors from the client.
-    unsigned NumWarnings = CI.getDiagnostics().getClient()->getNumWarnings();
-    unsigned NumErrors = CI.getDiagnostics().getClient()->getNumErrors();
+//   if ( CI.getDiagnosticOpts().ShowCarets) {
+//     // We can have multiple diagnostics sharing one diagnostic client.
+//     // Get the total number of warnings/errors from the client.
+//     unsigned NumWarnings = CI.getDiagnostics().getClient()->getNumWarnings();
+//     unsigned NumErrors = CI.getDiagnostics().getClient()->getNumErrors();
 
-    if (NumWarnings)
-      OS << NumWarnings << " warning" << (NumWarnings == 1 ? "" : "s");
-    if (NumWarnings && NumErrors)
-      OS << " and ";
-    if (NumErrors)
-      OS << NumErrors << " error" << (NumErrors == 1 ? "" : "s");
-  }
+//     if (NumWarnings)
+//       OS << NumWarnings << " warning" << (NumWarnings == 1 ? "" : "s");
+//     if (NumWarnings && NumErrors)
+//       OS << " and ";
+//     if (NumErrors)
+//       OS << NumErrors << " error" << (NumErrors == 1 ? "" : "s");
+//   }
 
-  return !CI.getDiagnostics().getClient()->getNumErrors();
-}
+//   return !CI.getDiagnostics().getClient()->getNumErrors();
+// }
 
 
 //Direct translation via API clang
@@ -368,7 +369,7 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   args.push_back( "-disable-llvm-passes" );
   args.push_back( "-debug-info-kind=standalone" );
   args.push_back( "-dwarf-version=2" );
-  args.push_back( "-dwarf-column-info" );
+  // args.push_back( "-dwarf-column-info" );
   // args.push_back( "-mdisable-fp-elim");
   args.push_back( "-femit-all-decls" );
   args.push_back( "-O1" );
@@ -450,20 +451,21 @@ void dump_dot_module( boost::filesystem::path& dump_path,
   std::cerr << "dumping llvm program files in folder:" << dump_path << "\n";
   auto c_path = boost::filesystem::current_path();
   current_path( dump_path );
-  //llvm::legacy::PassManager passMan;
-  //passMan.add( llvm::createCFGPrinterLegacyPassPass() );
-  //passMan.run( *module.get() );
+
+  // llvm::legacy::PassManager passMan;
+  // passMan.add( llvm::createCFGPrinterLegacyPassPass() );
+  // passMan.run( *module.get() );
+  
   llvm::FunctionPassManager FPM;
   llvm::FunctionAnalysisManager FAM;
-
   llvm::PassBuilder PB;
   PB.registerFunctionAnalyses(FAM);
-
   FPM.addPass( llvm::CFGPrinterPass() );
-
   for(llvm::Function& F : *module ){
-    FPM.run(F, FAM);
+    if( !F.empty() )
+      FPM.run(F, FAM);
   }
+  
   current_path( c_path );
 }
 
@@ -661,17 +663,17 @@ llvm::Constant* geti8StrVal(llvm::Module& M, char const* str, llvm::Twine const&
 }
 
 void assertSingleNesting(llvm::Loop *L) {
-  if(!L->empty()) {
+  if(!L->getSubLoops().empty()) {
     L = *L->begin();
     auto it = L->begin();
     it++;
     assert(it == L->end());
-    assert(L->empty());
+    assert(L->getSubLoops().empty());
   }
 }
 
 void assertNonNesting(llvm::Loop *L) {
-  assert(L->empty());
+  assert(L->getSubLoops().empty());
 }
 
 bool isIncrOp(llvm::Value *V) {
@@ -977,7 +979,7 @@ bool is_assert_call(const llvm::CallInst* call ) {
       (fp->getName() == "_Z6assertb" || fp->getName() == "assert" ) ) {
     return true;
   } else if (fp == NULL) {
-    const llvm::Value * val = call->getCalledValue();
+    const llvm::Value * val = call->getCalledOperand();
     if( auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val) ) {
       if(CE->isCast()) {
         if(CE->getOperand(0)->getName() == "assert" ||
@@ -1011,27 +1013,27 @@ bool is_pointer( llvm::Value* v ) {
   return v->getType()->isPointerTy();
 }
 
-class bb_succ_iter : public llvm::succ_const_iterator {
+class bb_succ_iter : public llvm::const_succ_iterator {
 public:
-  bb_succ_iter( llvm::succ_const_iterator begin_,
-                llvm::succ_const_iterator end_,
+  bb_succ_iter( llvm::const_succ_iterator begin_,
+                llvm::const_succ_iterator end_,
                 std::set<const llvm::BasicBlock*>& back_edges ) :
-    llvm::succ_const_iterator( begin_ ), end(end_), b_edges( back_edges ) {
-    llvm::succ_const_iterator& it = (llvm::succ_const_iterator&)*this;
+    llvm::const_succ_iterator( begin_ ), end(end_), b_edges( back_edges ) {
+    llvm::const_succ_iterator& it = (llvm::const_succ_iterator&)*this;
     while( it != end && exists( b_edges, (const llvm::BasicBlock*)*it) ) ++it;
   };
 
-  bb_succ_iter( llvm::succ_const_iterator begin_,
-                llvm::succ_const_iterator end_ ) :
-    llvm::succ_const_iterator( begin_ ), end(end_) {};
+  bb_succ_iter( llvm::const_succ_iterator begin_,
+                llvm::const_succ_iterator end_ ) :
+    llvm::const_succ_iterator( begin_ ), end(end_) {};
 
-  bb_succ_iter( llvm::succ_const_iterator end_ ) :
-    llvm::succ_const_iterator( end_ ), end( end_ ) {};
+  bb_succ_iter( llvm::const_succ_iterator end_ ) :
+    llvm::const_succ_iterator( end_ ), end( end_ ) {};
 
-  llvm::succ_const_iterator end;
+  llvm::const_succ_iterator end;
   std::set<const llvm::BasicBlock*> b_edges;
   bb_succ_iter& operator++() {
-    llvm::succ_const_iterator& it = (llvm::succ_const_iterator&)*this;
+    llvm::const_succ_iterator& it = (llvm::const_succ_iterator&)*this;
     do{
       ++it;
     }while( it != end && exists( b_edges, (const llvm::BasicBlock*)*it) );
@@ -1345,7 +1347,7 @@ getLoc( const llvm::Instruction* I ) {
   if( d ) {
     unsigned l = d.getLine();
     unsigned c  = d.getCol();
-    std::string f =llvm::cast<llvm::DIScope>(d.getScope())->getFilename();
+    auto f =llvm::cast<llvm::DIScope>(d.getScope())->getFilename().str();
     return src_loc(l,c,f);
   }
   return src_loc();

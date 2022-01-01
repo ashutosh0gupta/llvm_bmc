@@ -67,7 +67,11 @@ expr bmc_ds::get_path_bit( unsigned bidx ) {
 
 void bmc_ds::set_path_bit( unsigned bidx, expr b ) {
   auto pair = std::make_pair( bidx, b);
-  block_to_path_bit.insert( pair );
+  auto itAndWasInserted = block_to_path_bit.insert( pair );
+  if (!itAndWasInserted.second) {
+    block_to_path_bit.erase( itAndWasInserted.first );
+    set_path_bit( bidx, b );
+  }
 }
 
 std::vector< expr >& bmc_ds::get_exit_bits( unsigned bidx ) {

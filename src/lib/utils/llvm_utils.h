@@ -9,6 +9,7 @@
 #include "include/llvm_decls.h"
 
 #pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcomment"
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/IntrinsicInst.h"

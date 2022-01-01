@@ -32,8 +32,8 @@ void prepare_module( options& o,
   if( o.unwind && o.llvm_unroll ) {
     // Work around due to a bug in interface since LLVM 4.0 =======
     // setting unroll count via commmand line parsing
-    std::string ustr = "-unroll-count=" + std::to_string(o.loop_unroll_count);
-    setLLVMConfigViaCommandLineOptions( ustr );
+    // std::string ustr = "-unroll-count=" + std::to_string(o.loop_unroll_count);
+    // setLLVMConfigViaCommandLineOptions( ustr );
     // ============================================================
     passMan.add( llvm::createLoopUnrollPass( 2,
                                              false, //OnlyWhenForced
@@ -118,10 +118,10 @@ int main(int argc, char** argv) {
   if( o.verbosity > 8 ) {
     module->print( llvm::outs(), nullptr );
   }
-  // try {
+  try {
     run_bmc( module, cmts, o );
-  // }catch(...){
-  //   llvm_bmc_error( "BMC", "some exception is thrown!" );
-  // }
+  }catch(...){
+    llvm_bmc_error( "BMC", "some exception is thrown!" );
+  }
  
 }
