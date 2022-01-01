@@ -131,6 +131,15 @@ void dump( sort e ) {
   print_sort( std::cerr, e );
 }
 
+void dump( std::map< unsigned, expr >& es ) {
+  for( auto& e_pair : es) {
+    unsigned i = e_pair.first;
+    expr e = e_pair.second;
+    std::cerr << i;
+    print_expr( std::cerr, e );
+  }
+}
+
 std::string display(expr e) {
   if(e.is_numeral()) {
     int64_t num, den;
@@ -253,9 +262,10 @@ std::string display_app(expr e) {
 bool reportErrNThrow(std::string s, bool th)
 {
   if(th) {
-    std::cout << s;
+    std::cerr << s << "\n";
     throw "unsupported";
   }
+  return false;
 }
 
 bool has_quantified_formula(exprs es)
