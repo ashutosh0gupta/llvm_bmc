@@ -104,7 +104,7 @@ expr store( expr&, expr&, expr& );
 bool matched_sort( const expr& l, const expr& r );
 expr switch_int_sort( expr& b, sort& s);
 expr switch_bv_sort( expr& b, sort& s);
-expr sbv_to_fpa(expr const& t, sort s);
+//expr sbv_to_fpa(expr const& t, sort s);
 int get_numeral_int(const expr& i);
 
 bool is_true( expr, model );

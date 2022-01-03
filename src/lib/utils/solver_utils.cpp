@@ -666,11 +666,11 @@ expr switch_bv_sort( expr& b, sort& s ) {
 
 
 
-expr sbv_to_fpa(expr const& t, sort s) {
-    assert(t.is_bv());
-    Z3_ast r = Z3_mk_fpa_to_fp_signed(t.ctx(), t.ctx().fpa_rounding_mode(), t, s);
-    return expr(t.ctx(), r);
-     }
+//expr sbv_to_fpa(expr const& t, sort s) {
+//    assert(t.is_bv());
+//    Z3_ast r = Z3_mk_fpa_to_fp_signed(t.ctx(), t.ctx().fpa_rounding_mode(), t, s);
+//    return expr(t.ctx(), r);
+//     }
 
 
 
