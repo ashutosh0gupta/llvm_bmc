@@ -20,6 +20,7 @@
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Analysis/CFGPrinter.h"
 #include "llvm/Passes/PassBuilder.h"
+#include "llvm/IR/Metadata.h"
 //clang related code
 #include <clang/CodeGen/CodeGenAction.h>
 #include <clang/Frontend/CompilerInstance.h>
@@ -372,6 +373,7 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   // args.push_back( "-dwarf-column-info" );
   // args.push_back( "-mdisable-fp-elim");
   args.push_back( "-femit-all-decls" );
+  args.push_back( "-funroll-loops" );
   args.push_back( "-O1" );
   args.push_back( "-disable-O0-optnone" );
   for( std::string& i_dir : include_dirs ) {
@@ -1062,6 +1064,7 @@ void computeTopologicalOrder( llvm::Function &F,
   topological_sort<const llvm::BasicBlock*, bb_succ_iter>( h, f, e, bs, o_map );
 }
 
+
 void collect_loop_backedges(llvm::Loop *L,
                         std::map< const bb*, bb_set_t>& loop_ignore_edge,
                         std::map< const bb*, bb_set_t>& rev_loop_ignore_edge) {
@@ -1073,6 +1076,7 @@ void collect_loop_backedges(llvm::Loop *L,
     rev_loop_ignore_edge[bb].insert(h);
   }
 }
+
 
 void collect_loop_backedges(llvm::Pass *p,
                         std::map< const bb*, bb_set_t>& loop_ignore_edge,
@@ -1103,7 +1107,8 @@ void collect_loop_backedges(llvm::Pass *p,
   }
 }
 
-void find_cutpoints(llvm::Pass* P, llvm::Function &f, std::vector< llvm::BasicBlock* >& cutPoints) {
+void find_cutpoints( llvm::Pass* P, llvm::Function &f,
+                     std::vector< llvm::BasicBlock* >& cutPoints ) {
   cutPoints.clear();
   cutPoints.push_back(&f.getEntryBlock());
   std::vector<llvm::Loop*> stack;
@@ -1117,6 +1122,8 @@ void find_cutpoints(llvm::Pass* P, llvm::Function &f, std::vector< llvm::BasicBl
     for(auto I = L->begin(), E = L->end(); I != E; ++I) stack.push_back(*I);
   }
 }
+
+
 
 //todo : check if we need the following code
 
@@ -1574,4 +1581,71 @@ expr llvm_max_val( solver_context& ctx, const llvm::Value* v) {
   //todo : find min val
   assert(false);
   return ctx.bool_val(true);
+}
+
+
+char set_unroll_counts::ID = 0;
+
+set_unroll_counts::set_unroll_counts( options& o_ )
+  : llvm::LoopPass(ID)
+  , o(o_)
+{}
+
+set_unroll_counts::~set_unroll_counts() {}
+
+bool set_unroll_counts::doInitialization(  llvm::Loop *L,
+                                          llvm::LPPassManager &LPM) {
+  return false; // did not modify the loop
+}
+
+
+bool set_unroll_counts::runOnLoop( llvm::Loop *L,
+                                   llvm::LPPassManager &LPM ) {
+  SE = &getAnalysis<llvm::ScalarEvolutionWrapperPass>().getSE();
+
+  // Computing trip count
+  unsigned TripCount = 0;
+  unsigned TripMultiple = 1;
+  llvm::BasicBlock *ExitingBlock = L->getLoopLatch();
+  auto& Ctx = ExitingBlock->getContext();
+  
+  if (!ExitingBlock || !L->isLoopExiting(ExitingBlock))
+    ExitingBlock = L->getExitingBlock();
+  if (ExitingBlock) {
+    TripCount = SE->getSmallConstantTripCount(L, ExitingBlock);
+    // TripMultiple = SE->getSmallConstantTripMultiple(L, ExitingBlock);
+  }
+
+  if( TripCount == 0 ) {
+    // We donot know the number of iterations according to the static analysis
+    if( !L->getLoopID() ) {
+      // L->getLoopID()->print( llvm::outs() );
+
+      llvm::SmallVector<llvm::Metadata *, 4> Args;
+      Args.push_back(nullptr);
+      llvm::Metadata *Vals[]
+        = { llvm::MDString::get(Ctx, "llvm.loop.unroll.count"),
+            llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), o.loop_unroll_count))};
+      Args.push_back( llvm::MDNode::get(Ctx, Vals));
+      auto *LoopID = llvm::MDNode::getDistinct(Ctx, Args);
+      LoopID->replaceOperandWith(0, LoopID);
+      L->setLoopID(LoopID);
+      return true;
+    }
+  }
+  return false; // did not modify the loop
+}
+
+bool set_unroll_counts::doFinalization() {
+  return false; // did not modify the loop
+}
+
+llvm::StringRef set_unroll_counts::getPassName() const {
+  return "set unroll counts";
+}
+
+void set_unroll_counts::getAnalysisUsage(llvm::AnalysisUsage &au) const {
+  au.setPreservesAll();
+  au.addRequired<llvm::LoopInfoWrapperPass>();
+  au.addRequired<llvm::ScalarEvolutionWrapperPass>();
 }

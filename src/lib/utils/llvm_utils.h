@@ -177,4 +177,26 @@ expr read_const( options&, const llvm::Value*);
 expr llvm_min_val( solver_context&, const llvm::Value*);
 expr llvm_max_val( solver_context&, const llvm::Value*);
 
+
+class set_unroll_counts : public llvm::LoopPass {
+
+public:
+  static char ID;
+  options& o;
+  llvm::ScalarEvolution* SE;
+  // may not be needed here
+  unsigned unroll_count;
+  std::map<std::string, int> loop_count;
+
+  set_unroll_counts( options& );
+  ~set_unroll_counts();
+
+
+  virtual bool doInitialization(llvm::Loop *, llvm::LPPassManager &);
+  virtual bool runOnLoop(llvm::Loop *, llvm::LPPassManager &);
+  virtual bool doFinalization();
+  virtual void getAnalysisUsage(llvm::AnalysisUsage &au) const;
+  llvm::StringRef getPassName() const;
+};
+
 #endif

@@ -24,25 +24,11 @@ void prepare_module( options& o,
                      comments& cmts,
                      std::map< const llvm::BasicBlock*, comments>&
                      block_comment_map ) {
+  // basic preprocessing
   llvm::legacy::PassManager passMan;
   passMan.add( llvm::createPromoteMemoryToRegisterPass() );
   passMan.add( llvm::createLoopRotatePass() ); // some params
-
-   //passMan.add( llvm::createAlwaysInlinerLegacyPass() );
-  if( o.unwind && o.llvm_unroll ) {
-    // Work around due to a bug in interface since LLVM 4.0 =======
-    // setting unroll count via commmand line parsing
-    // std::string ustr = "-unroll-count=" + std::to_string(o.loop_unroll_count);
-    // setLLVMConfigViaCommandLineOptions( ustr );
-    // ============================================================
-    passMan.add( llvm::createLoopUnrollPass( 2,
-                                             false, //OnlyWhenForced
-                                             false, // ForgetAllSCEV
-                                             30000,  // threshold
-                                             o.loop_unroll_count // Count
-                                             ) );
-  }
-
+  //passMan.add( llvm::createAlwaysInlinerLegacyPass() );
   for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
     // todo: remove dependency on demangle from llvm_utils
     std::string fname = demangle(fit->getName().str());
@@ -56,11 +42,30 @@ void prepare_module( options& o,
       }
     }
   }
-
   passMan.run( *module.get() );
 
-  estimate_comment_location( module, cmts, block_comment_map );
+  // basic
+  llvm::legacy::PassManager passMan_set_count;
+  passMan_set_count.add( new set_unroll_counts(o) ); // analyzing loops for unrolling
+  passMan_set_count.run( *module.get() );
 
+  llvm::legacy::PassManager passMan_unroll;
+  if( o.unwind && o.llvm_unroll ) {
+    // Work around due to a bug in interface since LLVM 4.0 =======
+    // setting unroll count via commmand line parsing
+    // std::string ustr = "-unroll-count=" + std::to_string(o.loop_unroll_count);
+    // setLLVMConfigViaCommandLineOptions( ustr );
+    // ============================================================
+    passMan_unroll.add( llvm::createLoopUnrollPass( 2,
+                                             false, //OnlyWhenForced
+                                             false, // ForgetAllSCEV
+                                             30000,  // threshold
+                                             o.loop_unroll_count // Count
+                                             ) );
+  }
+  passMan_unroll.run( *module.get() );
+
+  estimate_comment_location( module, cmts, block_comment_map );
   if( o.dump_cfg ) {
     dump_dot_module( o.outDirPath, module );
   }
