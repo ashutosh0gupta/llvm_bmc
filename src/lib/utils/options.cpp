@@ -38,8 +38,8 @@ void options::get_description_cmd(po::options_description& config,
     ("config,c", po::value<std::string>(), "Set config file")
     ("unwind,u", po::value<int>(&loop_unroll_count)->default_value(1), "Set loop unroll count")
     ("use-bv,b", po::bool_switch(&bit_precise), "Use bit-vectors to represent numbers!")
-    ("bounds-check", po::bool_switch(&include_out_of_bound_specs), "Enable array-index-out-of-bounds check")
-    ("overflow-check", po::bool_switch(&include_overflow_specs), "Enable over/underflow check")
+    ("bounds-check,n", po::bool_switch(&include_out_of_bound_specs), "Enable array-index-out-of-bounds check")
+    ("overflow-check,l", po::bool_switch(&include_overflow_specs), "Enable over/underflow check")
     ("include-dirs,I", po::value< std::vector<std::string> >(&include_dirs), "Location of include files")
     ("specifications,s", po::value(&specFilePath), "Set spec file")
     ;

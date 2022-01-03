@@ -105,6 +105,14 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
     llvm_bmc_error("bmc", "unsupported instruction \"" << opName << "\" occurred!!");
   }
   }
+
+//  std::vector <std::string> bop_names;
+//  std::vector <expr> bop_declarations;
+//  std::string name1 = op0 -> getName();
+//  std::string name2 = op1 -> getName();
+//  auto s1 = a.get_sort();
+//  auto s2 = b.get_sort();
+
   if( o.include_overflow_specs ) {
     expr v = bmc_ds_ptr->m.get_term(bop);
     expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
@@ -113,8 +121,38 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
       // if 3 bits
       // -8 =< a+b < 7
       //
-      expr overflow_cons = solver_ctx.bool_val(true);
-      bmc_ds_ptr->add_spec( !path_bit || overflow_cons, spec_reason_t::OUT_OF_RANGE );
+//      auto s1 = a.get_sort();
+//      auto s2 = b.get_sort();
+  expr overflow_cons1 = solver_ctx.bool_val(true);
+  expr overflow_cons2 = solver_ctx.bool_val(true);
+  expr underflow_cons1 = solver_ctx.bool_val(true);
+  expr underflow_cons2 = solver_ctx.bool_val(true);
+	switch( op ) {
+  case llvm::Instruction::Add :  { overflow_cons1 = bvadd_no_overflow(a,b,false);
+                                  overflow_cons2 = bvadd_no_overflow(a,b,true); 
+				  underflow_cons2 = bvadd_no_underflow(a,b); }
+ //break;
+  case llvm::Instruction::Sub : { overflow_cons2 = bvsub_no_overflow(a,b); 
+				  underflow_cons1 = bvsub_no_underflow(a,b,false);
+				  underflow_cons2 = bvsub_no_underflow(a,b,true); }
+ //break;
+  case llvm::Instruction::Mul : { overflow_cons1 = bvmul_no_overflow(a,b,false);
+                                  overflow_cons2 = bvmul_no_overflow(a,b,true); 
+				  underflow_cons2 = bvmul_no_underflow(a,b); }
+ // break;
+  case llvm::Instruction::SDiv:  overflow_cons2 = bvsdiv_no_overflow(a,b); // break; 
+
+  std::cout << "overflow_cons1 " << overflow_cons1 << "\n";
+std::cout << "overflow_cons2 " << overflow_cons2 << "\n";
+std::cout << "underflow_cons1 " << underflow_cons1 << "\n";
+std::cout << "underflow_cons2 " << underflow_cons2 << "\n";
+
+  } 
+      bmc_ds_ptr->add_spec( !path_bit || overflow_cons1, spec_reason_t::OUT_OF_RANGE );
+      bmc_ds_ptr->add_spec( !path_bit || overflow_cons2, spec_reason_t::OUT_OF_RANGE );
+      bmc_ds_ptr->add_spec( !path_bit || underflow_cons1, spec_reason_t::OUT_OF_RANGE );
+      bmc_ds_ptr->add_spec( !path_bit || underflow_cons2, spec_reason_t::OUT_OF_RANGE );
+
     }else{
       expr lb = llvm_min_val( solver_ctx, bop );
       expr ub = llvm_max_val( solver_ctx, bop );
@@ -418,7 +456,10 @@ void bmc_pass::translateIntrinsicInst( unsigned bidx,
     // do nothing
   }else if( I->getIntrinsicID() == llvm::Intrinsic::lifetime_end ) {
     // do nothing
-  }else{
+  }else if( I->getIntrinsicID() == llvm::Intrinsic::memcpy ) {
+    // do nothing - to be confirmed
+  }
+  else{
     BMC_UNSUPPORTED_INSTRUCTIONS( ConstrainedFPIntrinsic, I);
 #ifndef LLVM_SVN
     BMC_UNSUPPORTED_INSTRUCTIONS( AtomicMemCpyInst, I);
@@ -456,6 +497,8 @@ void bmc_pass::translateCallInst( unsigned bidx,
     assume_to_bmc( bidx, call);
   } else if( is_nondet(call) ) {
     translateNondet( bidx, call);
+  } else if( fp != NULL && fp->getName().startswith("__gnat") ) { //Do nothing - to be confirmed
+    std::cout << "These are Ada Runtime functions\n";
   } else if( fp != NULL && fp->getName().startswith("__VERIFIER") ) {
     if( fp->getName().startswith("__VERIFIER_nondet_") ) {
       translateNondet( bidx, call);
@@ -557,11 +600,14 @@ void bmc_pass::translateCastInst( unsigned bidx,
     llvm_bmc_warning("bmc", "Ignoring a bit bast! Be careful");
     // llvm_bmc_error("bmc", "cast instruction is not recognized !!");
   }
-  /*else if( llvm::isa<llvm::UItoFPInst>(cast) ) {
+  else if( llvm::isa<llvm::UIToFPInst>(cast) ) {
     expr ex_v = bmc_ds_ptr->m.get_term(v);
-      unsigned new_size = c_ty->getIntegerBitWidth();
-      bmc_ds_ptr->m.insert_term_map( cast, bidx, zext( ex_v, new_size ) );
-    } */ else{
+    expr ex_v_float = sbv_to_fpa(ex_v, solver_ctx.fpa_sort<32>() );
+    bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v_float );
+//sort s1 = ex_v.get_sort();  sort s2 = ex_v_float.get_sort();
+//std::cout << "s1 is " << s1 << " s2 is " << s2 << "\n";
+    }  
+   else{
     BMC_UNSUPPORTED_INSTRUCTIONS( FPTruncInst,       cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( FPExtInst,         cast);
     //BMC_UNSUPPORTED_INSTRUCTIONS( UIToFPInst,        cast);
