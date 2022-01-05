@@ -49,7 +49,9 @@ bool bmc_fun_pass::runOnFunction( llvm::Function &f ) {
   bmc_fun_ptr->setup_prevs_non_repeating();
 
   translateParams(f);
+  //translate pre condition here <<---
   do_bmc();
+  //translate post condition here
   return false;
 }
 
