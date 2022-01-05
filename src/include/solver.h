@@ -15,6 +15,7 @@ typedef z3::sort sort;
 typedef z3::expr expr;
 typedef z3::expr_vector expr_vector;
 typedef z3::model model;
+typedef z3::solver solver;
 
 #endif
 

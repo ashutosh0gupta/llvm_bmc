@@ -72,6 +72,7 @@ public:
   //----------------------------------------
   //module preprocess options
   bool dump_cfg = 0;
+  bool dump_solver_query = 0;
 
   //----------------------------------------
   //generic options

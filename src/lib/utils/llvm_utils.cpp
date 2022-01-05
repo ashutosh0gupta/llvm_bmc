@@ -449,7 +449,7 @@ void setLLVMConfigViaCommandLineOptions( std::string strs ) {
 
 
 void dump_dot_module( boost::filesystem::path& dump_path,
-                              std::unique_ptr<llvm::Module>& module ) {
+                      std::unique_ptr<llvm::Module>& module ) {
   std::cerr << "dumping llvm program files in folder:" << dump_path << "\n";
   auto c_path = boost::filesystem::current_path();
   current_path( dump_path );

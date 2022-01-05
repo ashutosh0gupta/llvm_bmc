@@ -57,7 +57,7 @@ public:
   // Checking Specs and Reporting results
   // void eliminate_vars(bmc_ds*);
   void check_all_spec(bmc_ds*);
-  bool run_solver(expr &, bmc_ds*);
+  bool run_solver(spec &, bmc_ds*);
 
   void produce_witness_call( model mdl, const llvm::CallInst* call );
   void produce_witness( model, bmc_ds*, unsigned call_count=0 );

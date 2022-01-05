@@ -842,6 +842,8 @@ void bmc_pass::translateRetInst(const llvm::ReturnInst *ret ) {
     //todo : handle all cases
     //llvm_bmc_error("bmc", "return instruction without a return value!");
   }
+  //todo : if you have specs, translate the spec to the current names
+  //bmc_ds_ptr->add_spec( !path_bit || translate_cons, spec_reason_t::FROM_SPEC_FILE );
 }
 
 void bmc_pass::translateSwitchInst( unsigned bidx,

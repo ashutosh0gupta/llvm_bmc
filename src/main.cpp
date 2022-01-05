@@ -28,7 +28,10 @@ void prepare_module( options& o,
   llvm::legacy::PassManager passMan;
   passMan.add( llvm::createPromoteMemoryToRegisterPass() );
   passMan.add( llvm::createLoopRotatePass() ); // some params
-  //passMan.add( llvm::createAlwaysInlinerLegacyPass() );
+  passMan.add( llvm::createAlwaysInlinerLegacyPass() );
+  passMan.add( llvm::createSCCPPass() );
+  passMan.run( *module.get() );
+
   for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
     // todo: remove dependency on demangle from llvm_utils
     std::string fname = demangle(fit->getName().str());
@@ -42,7 +45,6 @@ void prepare_module( options& o,
       }
     }
   }
-  passMan.run( *module.get() );
 
   // basic
   llvm::legacy::PassManager passMan_set_count;

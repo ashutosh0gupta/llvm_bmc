@@ -238,35 +238,45 @@ void bmc::check_all_spec( bmc_ds* bmc_ds_ptr ) {
       os << "Solving for specification\n";
       s.print( os );
     }
-    expr prop = s.get_formula();
-    if( run_solver( prop, bmc_ds_ptr) ) {
-      os << "\nSpecification that failed the check : \n";
-      s.print( os );
-      os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
+    // expr prop = s.get_formula();
+    if( run_solver( s, bmc_ds_ptr) ) {
       return;
     } else { } // contine with other specifications
   }
   os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
 }
 
-bool bmc::run_solver(expr &spec, bmc_ds* bmc_ds_ptr) {
-  z3::solver s(o.solver_ctx);
+bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
+  std::ostream& os = std::cout;
+
+  // setup solver
+  solver s(o.solver_ctx);
   for(expr e : bmc_ds_ptr->bmc_vec) {
     s.add(e);
   }
-  s.add(!spec);
-  // std::cout << s;
+  s.add( !spec.get_formula() );
+
+  if( o.dump_solver_query ) {
+    dump( o.outDirPath.string(), "test.smt2", s);
+    std::cout << s;
+  }
+
+  // solving
   auto result = s.check();
   if( result == z3::sat ) {
     model m = s.get_model();
     // produce_witness(m, bmc_ds_ptr);
+    os << "\nSpecification that failed the check : \n";
+    spec.print( os );
+    os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
     return true;
   } else if( result == z3::unknown ){
-    std::cout << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
-    return false;
+    os << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
+    return true;
   }else {
     return false;
   }
+
 }
 
 
