@@ -42,7 +42,7 @@ public:
   solver_context& solver_ctx;
   // TODO : change to a more general thing than GlobalVariable*
   std::map<const llvm::GlobalVariable*,unsigned> ind_in_mem_state;
-  std::map<unsigned,memory_state> store_state_map;
+  std::map<unsigned,memory_state> store_state_map; // block -> global state map
 
   //todo: thread name may change to a class reference
   std::vector<std::string> threads; // thread names

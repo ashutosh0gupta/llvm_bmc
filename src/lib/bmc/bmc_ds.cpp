@@ -118,6 +118,20 @@ void bmc_ds::add_spec( expr e ) {
   add_spec( e, spec_reason_t::UNKNOWN );
 }
 
+void bmc_ds::add_pre_cond(  expr e, spec_reason_t reason, src_loc& loc ) {
+  spec s( e, reason, loc );
+  pre_cond_vec.push_back( s );
+}
+
+void bmc_ds::add_pre_cond(  expr e, spec_reason_t reason ) {
+  src_loc loc;
+  add_pre_cond( e, reason, loc );
+}
+
+void bmc_ds::add_pre_cond( expr e ) {
+  add_pre_cond( e, spec_reason_t::UNKNOWN );
+}
+
 expr bmc_ds::get_expr(  const llvm::Value* v ) {
   if( auto alloc = llvm::dyn_cast<llvm::AllocaInst>(v) ) {
     return get_array_state_var( 0, alloc );

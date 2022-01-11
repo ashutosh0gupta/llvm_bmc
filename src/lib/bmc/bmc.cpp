@@ -251,10 +251,23 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
 
   // setup solver
   solver s(o.solver_ctx);
+
+  // adding pre conditions
+  for(auto& pre : bmc_ds_ptr->pre_cond_vec) {
+    s.add( pre.get_formula() );
+  }
+
+  //add function encoding
   for(expr e : bmc_ds_ptr->bmc_vec) {
     s.add(e);
   }
+
+  //add assertion
   s.add( !spec.get_formula() );
+
+  //
+  // todo: optimization other specs can be added as assume
+  //
 
   if( o.dump_solver_query ) {
     dump( o.outDirPath.string(), "test.smt2", s);

@@ -162,6 +162,10 @@ public:
   void add_spec( expr e, spec_reason_t reason );
   void add_spec( expr e );
 
+  void add_pre_cond( expr e, spec_reason_t reason, src_loc& );
+  void add_pre_cond( expr e, spec_reason_t reason );
+  void add_pre_cond( expr e );
+
   void setup_prevs_non_repeating();
   void copy_and_stich_segments( unsigned times );
   void copy_and_stich_segments( std::vector<const llvm::BasicBlock*>&,
@@ -171,7 +175,8 @@ public:
                                 unsigned times
                                 );
   std::vector<expr> bmc_vec;  //final result;
-  std::vector<spec> spec_vec; //specs from the code;
+  std::vector<spec> spec_vec;   //specs from the code;// postconditions
+  std::vector<spec> pre_cond_vec; // preconditions
   std::vector<expr> quant_elim_vars;
   std::vector<llvm::Value*> quant_elim_val;
 
