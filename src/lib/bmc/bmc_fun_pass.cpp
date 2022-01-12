@@ -69,6 +69,8 @@ bool bmc_fun_pass::runOnFunction( llvm::Function &f ) {
 	}
 	bidx++;
       }
+  do_bmc();
+  //translate post condition here
   return false;
 }
 
