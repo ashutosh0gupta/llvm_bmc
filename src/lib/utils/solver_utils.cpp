@@ -140,6 +140,15 @@ void dump( std::map< unsigned, expr >& es ) {
   }
 }
 
+
+void dump( std::string dump_path, std::string name, solver& s) {
+  std::cerr << "dumping solver query in:" << dump_path+name << "\n";
+  std::ofstream dump_file(dump_path + name);
+  dump_file << s;
+  dump_file << "(check-sat)\n";
+  dump_file.close();
+}
+
 std::string display(expr e) {
   if(e.is_numeral()) {
     int64_t num, den;
@@ -543,6 +552,7 @@ expr get_fresh_const( solver_context& c, sort s, std::string suff )
   if( s.is_bv()   ) return get_fresh_bv ( c, s.bv_size(), suff );
   if( s.is_int()  ) return get_fresh_int( c, suff );
   if( s.is_bool() ) return get_fresh_bool( c, suff );
+  if( s.is_fpa() ) return get_fresh_float( c, suff );
   //
   // functions types, array types etc
   //
@@ -1006,7 +1016,7 @@ void simple_polyhedron_substraction( exprs& dims,
     if( found ) {
       expr x_bound = x_bounds.at(i);
       if( !eq(x_bound,bound) ) {
-        assert( !diff_found );
+        if(diff_found) assert( false );
         diff_found = true;
         expr gap = (x_bound-bound).simplify();
         if( gap.is_numeral() ) {

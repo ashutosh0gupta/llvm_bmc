@@ -36,6 +36,12 @@ void parse_spec_pass::init_parse(llvm::Module &m, options& o, bmc& b)
      }
    }
 
+  if (!pd.list_precond.empty()) {
+    for (auto j = pd.list_precond.begin(); j != pd.list_precond.end(); j++) {
+      b.precond.push_back(j->second);
+     }
+   }
+
   if (pd.callseq_map.empty()) {
     for (auto j = pd.list_threads.begin(); j != pd.list_threads.end(); j++) {
       ThName = j->first;

@@ -6,10 +6,12 @@ void spec::print(std::ostream& os) {
   os << e << " % [";
   switch( reason ) {
   case UNKNOWN : os << "unknown "; break;
+  case SPEC_FILE : os << "property at "; break;
   case COMMENT : os << "comment at "; break;
   case ASSERT : os << "assert at "; break;
   case OUT_OF_BOUND : os << "array out of bound at "; break;
   case OUT_OF_RANGE : os << "(under/over)flow at "; break;
+  case ASSUME : os << "assume at "; break;
   default:
     llvm_bmc_error("spec", "unsupported reason found!!");
   }
@@ -116,6 +118,20 @@ void bmc_ds::add_spec(  expr e, spec_reason_t reason ) {
 
 void bmc_ds::add_spec( expr e ) {
   add_spec( e, spec_reason_t::UNKNOWN );
+}
+
+void bmc_ds::add_pre_cond(  expr e, spec_reason_t reason, src_loc& loc ) {
+  spec s( e, reason, loc );
+  pre_cond_vec.push_back( s );
+}
+
+void bmc_ds::add_pre_cond(  expr e, spec_reason_t reason ) {
+  src_loc loc;
+  add_pre_cond( e, reason, loc );
+}
+
+void bmc_ds::add_pre_cond( expr e ) {
+  add_pre_cond( e, spec_reason_t::UNKNOWN );
 }
 
 expr bmc_ds::get_expr(  const llvm::Value* v ) {

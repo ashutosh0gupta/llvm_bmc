@@ -55,6 +55,7 @@ void dump( exprs e );
 void dump( expr_vector e );
 void dump( sort e );
 void dump( std::map< unsigned, expr >& es );
+void dump( std::string, std::string, solver& );
 
 // other is_.. can be found in z3++.h
 bool reportErrNThrow(std::string s, bool th);

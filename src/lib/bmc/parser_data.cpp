@@ -205,14 +205,28 @@ void parser_data::read_thread( std::istream& in ) {
 }
 
 
-//void parser_data::read_precond( std::istream& in ) {
-//   std::string symb1 = read_symbol( in );
-//   std::string symb2 = read_symbol( in );
-//   const char* symb3 = symb2.c_str();
-//   expr e = smt2_parse_string( solver_ctx, symb3);
-//   auto pair = std::make_pair( symb1, e);
-//   list_precond.push_back(pair);
-//}
+void parser_data::read_precond( std::istream& in ) {
+   std::string symb1 = read_symbol( in );   
+   std::string symb2 = read_formula( in );
+   
+   if (symb2 == "assert") {
+	consume_spaces( in );
+	std::string symb3;
+	while( !in.eof() && ( in.peek() != '\n') && (in.peek() != '\r') )
+     	{
+       		symb3 = symb3.append( 1, in.get() );
+     	}
+	in.unget();
+	
+	symb3.erase(symb3.end()-1);
+	symb3.erase(symb3.end()-1);
+	const char* symb4 = symb3.c_str();
+		
+	expr e = parseFormula(solver_ctx, symb4, names, declarations);
+	auto pair = std::make_pair( symb1, e);
+	list_precond.push_back(pair);
+   }
+}
 
 
 void parser_data::read_postcond( std::istream& in ) {
@@ -305,8 +319,8 @@ void parser_data::read_file( std::istream& in ) {
       read_variable( in ); 
     }else if( cmd == "declare-thread" ) {
       read_thread( in );
-//    }else if( cmd == "pre-condition" ) {
-//      read_precond( in );
+    }else if( cmd == "pre-condition" ) {
+      read_precond( in );
     }else if( cmd == "post-condition" ) {
       read_postcond( in ); 
 //    }else if( cmd == "env-invariant" ) {

@@ -142,10 +142,10 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
  // break;
   case llvm::Instruction::SDiv:  overflow_cons2 = bvsdiv_no_overflow(a,b); // break; 
 
-  std::cout << "overflow_cons1 " << overflow_cons1 << "\n";
+  /* std::cout << "overflow_cons1 " << overflow_cons1 << "\n";
 std::cout << "overflow_cons2 " << overflow_cons2 << "\n";
 std::cout << "underflow_cons1 " << underflow_cons1 << "\n";
-std::cout << "underflow_cons2 " << underflow_cons2 << "\n";
+std::cout << "underflow_cons2 " << underflow_cons2 << "\n"; */
 
   } 
       bmc_ds_ptr->add_spec( !path_bit || overflow_cons1, spec_reason_t::OUT_OF_RANGE );
@@ -498,7 +498,7 @@ void bmc_pass::translateCallInst( unsigned bidx,
   } else if( is_nondet(call) ) {
     translateNondet( bidx, call);
   } else if( fp != NULL && fp->getName().startswith("__gnat") ) { //Do nothing - to be confirmed
-    std::cout << "These are Ada Runtime functions\n";
+    //std::cout << "These are Ada Runtime functions\n";
   } else if( fp != NULL && fp->getName().startswith("__VERIFIER") ) {
     if( fp->getName().startswith("__VERIFIER_nondet_") ) {
       translateNondet( bidx, call);
@@ -842,6 +842,8 @@ void bmc_pass::translateRetInst(const llvm::ReturnInst *ret ) {
     //todo : handle all cases
     //llvm_bmc_error("bmc", "return instruction without a return value!");
   }
+  //todo : if you have specs, translate the spec to the current names
+  //bmc_ds_ptr->add_spec( !path_bit || translate_cons, spec_reason_t::FROM_SPEC_FILE );
 }
 
 void bmc_pass::translateSwitchInst( unsigned bidx,
@@ -968,7 +970,6 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
 
 void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
   assert( b );
-
   for( const llvm::Instruction& Iobj : b->getInstList() ) {
     const llvm::Instruction* I = &(Iobj);
     if(auto bop = llvm::dyn_cast<llvm::BinaryOperator>(I) ) {
