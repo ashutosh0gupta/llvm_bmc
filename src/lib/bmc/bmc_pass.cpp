@@ -70,6 +70,8 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   expr a = bmc_ds_ptr->m.get_term( op0 );
   expr b = bmc_ds_ptr->m.get_term( op1 );
 
+ // bop->print( llvm::outs() ); std::cout << "\n";
+
 // a and b may have different types, due to llvm does not record clearly
   // if something is int. Our translation may incorrectly identify
   // sort of some constant number. The following code corrects the mismatch
@@ -128,30 +130,42 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   expr underflow_cons1 = solver_ctx.bool_val(true);
   expr underflow_cons2 = solver_ctx.bool_val(true);
 	switch( op ) {
-  case llvm::Instruction::Add :  { overflow_cons1 = bvadd_no_overflow(a,b,false);
+  case llvm::Instruction::Add :  { overflow_cons1 = bvadd_no_overflow(a,b,false); 
                                   overflow_cons2 = bvadd_no_overflow(a,b,true); 
-				  underflow_cons2 = bvadd_no_underflow(a,b); }
- //break;
-  case llvm::Instruction::Sub : { overflow_cons2 = bvsub_no_overflow(a,b); 
-				  underflow_cons1 = bvsub_no_underflow(a,b,false);
-				  underflow_cons2 = bvsub_no_underflow(a,b,true); }
- //break;
-  case llvm::Instruction::Mul : { overflow_cons1 = bvmul_no_overflow(a,b,false);
-                                  overflow_cons2 = bvmul_no_overflow(a,b,true); 
-				  underflow_cons2 = bvmul_no_underflow(a,b); }
- // break;
-  case llvm::Instruction::SDiv:  overflow_cons2 = bvsdiv_no_overflow(a,b); // break; 
-
-  /* std::cout << "overflow_cons1 " << overflow_cons1 << "\n";
-std::cout << "overflow_cons2 " << overflow_cons2 << "\n";
-std::cout << "underflow_cons1 " << underflow_cons1 << "\n";
-std::cout << "underflow_cons2 " << underflow_cons2 << "\n"; */
-
-  } 
-      bmc_ds_ptr->add_spec( !path_bit || overflow_cons1, spec_reason_t::OUT_OF_RANGE );
+				  underflow_cons2 = bvadd_no_underflow(a,b); 
+				  bmc_ds_ptr->add_spec( !path_bit || overflow_cons1, spec_reason_t::OUT_OF_RANGE );
       bmc_ds_ptr->add_spec( !path_bit || overflow_cons2, spec_reason_t::OUT_OF_RANGE );
       bmc_ds_ptr->add_spec( !path_bit || underflow_cons1, spec_reason_t::OUT_OF_RANGE );
       bmc_ds_ptr->add_spec( !path_bit || underflow_cons2, spec_reason_t::OUT_OF_RANGE );
+ break; }
+  case llvm::Instruction::Sub : { overflow_cons2 = bvsub_no_overflow(a,b); 
+				  underflow_cons1 = bvsub_no_underflow(a,b,false);
+				  underflow_cons2 = bvsub_no_underflow(a,b,true); 
+				  bmc_ds_ptr->add_spec( !path_bit || overflow_cons1, spec_reason_t::OUT_OF_RANGE );
+      bmc_ds_ptr->add_spec( !path_bit || overflow_cons2, spec_reason_t::OUT_OF_RANGE );
+      bmc_ds_ptr->add_spec( !path_bit || underflow_cons1, spec_reason_t::OUT_OF_RANGE );
+      bmc_ds_ptr->add_spec( !path_bit || underflow_cons2, spec_reason_t::OUT_OF_RANGE );
+ break; }
+  case llvm::Instruction::Mul : { overflow_cons1 = bvmul_no_overflow(a,b,false);
+                                  overflow_cons2 = bvmul_no_overflow(a,b,true); 
+				  underflow_cons2 = bvmul_no_underflow(a,b); 
+				  bmc_ds_ptr->add_spec( !path_bit || overflow_cons1, spec_reason_t::OUT_OF_RANGE );
+      bmc_ds_ptr->add_spec( !path_bit || overflow_cons2, spec_reason_t::OUT_OF_RANGE );
+      bmc_ds_ptr->add_spec( !path_bit || underflow_cons1, spec_reason_t::OUT_OF_RANGE );
+      bmc_ds_ptr->add_spec( !path_bit || underflow_cons2, spec_reason_t::OUT_OF_RANGE );
+  break; }
+  case llvm::Instruction::SDiv:  { overflow_cons2 = bvsdiv_no_overflow(a,b);  
+				   bmc_ds_ptr->add_spec( !path_bit || overflow_cons1, spec_reason_t::OUT_OF_RANGE );
+      bmc_ds_ptr->add_spec( !path_bit || overflow_cons2, spec_reason_t::OUT_OF_RANGE );
+      bmc_ds_ptr->add_spec( !path_bit || underflow_cons1, spec_reason_t::OUT_OF_RANGE );
+      bmc_ds_ptr->add_spec( !path_bit || underflow_cons2, spec_reason_t::OUT_OF_RANGE );
+	break; }
+  } 
+
+//      std::cout << "overflow_cons1 " << overflow_cons1 << "\n";
+//std::cout << "overflow_cons2 " << overflow_cons2 << "\n";
+//std::cout << "underflow_cons1 " << underflow_cons1 << "\n";
+//std::cout << "underflow_cons2 " << underflow_cons2 << "\n"; 
 
     }else{
       expr lb = llvm_min_val( solver_ctx, bop );
