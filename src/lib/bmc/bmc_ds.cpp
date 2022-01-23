@@ -355,6 +355,7 @@ identify_array( const llvm::Value* op) {
     if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr)) {
       return glb;
     }
+    gep->print( llvm::outs() );
     llvm_bmc_error("bmc", "unseen GEP pattern detected!");
     // op_gep_ptr->print( llvm::outs() );
   }else if( llvm::dyn_cast<const llvm::AllocaInst>(op) ) {

@@ -210,7 +210,8 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
 		expr e1 = parseFormula(o.solver_ctx, orig_postcond, postcond_var_names, postcond_declarations);
 		std::cout << "Modified postcond is " << e1 << "\n";
 		//b.prop.at(i) = e1;
-		bmc_ds_ptr->add_spec( e1, spec_reason_t::SPEC_FILE );
+		expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+		bmc_ds_ptr->add_spec( !path_bit || e1, spec_reason_t::SPEC_FILE );
   	}
 	glb_names.clear();
 	postcond_var_names.clear();
