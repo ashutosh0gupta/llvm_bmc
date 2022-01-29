@@ -222,7 +222,7 @@ void bmc_ds::setup_prevs_non_repeating() {
   unsigned bidx = 0;
   for( const bb* src : bb_vec ) {
     if( bidx < processed_bidx ) { bidx++; continue; }
-    pred_idxs[bidx].empty();
+    pred_idxs[bidx].empty(); // todo : why this instruction?
     for(auto PI = llvm::pred_begin(src),E = llvm::pred_end(src);PI != E;++PI) {
       const bb* prev = *PI;
       if( ignore_edge( src, prev ) ) continue;
@@ -337,26 +337,58 @@ expr bmc_ds::join_state( std::vector<expr>& cs,
 // manage array model
 
 const llvm::Value*
+identify_array_in_gep(const llvm::GetElementPtrInst* gep ) {
+  auto op_gep_ptr = gep->getPointerOperand();
+  if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
+    op_gep_ptr = cast->getOperand(0);
+  }
+  if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_gep_ptr)) {
+    return addr;
+  }
+  if(auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
+    return addr;
+  }
+  if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr)) {
+    return glb;
+  }
+  if(auto sub_gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_gep_ptr)) {
+    // auto sub_op_gep_ptr = sub_gep->getPointerOperand();
+    // todo: add conditions that all the positions are 0
+    // gep( gep( glb , 0), 3 ) === *(glb+3) << Good <<<
+    //
+    // gep( gep( glb , 1), 3 ) === *(glb+4) << Bad <<<
+    //
+    assert(false); // remove this assert only if the above condition is added;
+    if( false ) {
+      return identify_array_in_gep(sub_gep);
+    }
+  }
+  gep->print( llvm::outs() );
+  llvm_bmc_error("bmc", "unseen GEP pattern detected!");
+}
+
+const llvm::Value*
 identify_array( const llvm::Value* op) {
   if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
     op = cast->getOperand(0);
   }
   if(auto gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op)) {
-    auto op_gep_ptr = gep->getPointerOperand();
-    if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
-      op_gep_ptr = cast->getOperand(0);
-    }
-    if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_gep_ptr)) {
-      return addr;
-    }
-    if(auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
-      return addr;
-    }
-    if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr)) {
-      return glb;
-    }
-    gep->print( llvm::outs() );
-    llvm_bmc_error("bmc", "unseen GEP pattern detected!");
+    return identify_array_in_gep( gep );
+    // auto op_gep_ptr = gep->getPointerOperand();
+    // if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
+    //   op_gep_ptr = cast->getOperand(0);
+    // }
+    // if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_gep_ptr)) {
+    //   return addr;
+    // }
+    // if(auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
+    //   return addr;
+    // }
+    // if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr)) {
+    //   return glb;
+    // }
+    // gep->print( llvm::outs() );
+    // llvm_bmc_error("bmc", "unseen GEP pattern detected!");
     // op_gep_ptr->print( llvm::outs() );
   }else if( llvm::dyn_cast<const llvm::AllocaInst>(op) ) {
     // auto alloc =
