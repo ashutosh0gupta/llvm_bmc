@@ -74,6 +74,13 @@ private:
   void print_bb_exprs(const bb*);
   void print_bb_vecs();
 
+  //todo : concurrency support
+  void create_write_event( const llvm::StoreInst* store );
+  // void create_read_event( const llvm::StoreInst* store );
+  // void create_block_event( const llvm::StoreInst* store );
+  // void create_join_event( const llvm::StoreInst* store );
+  // void create_fork_event( const llvm::StoreInst* store );
+
 protected:
   void populateArrAccMap(llvm::Function*);
 
