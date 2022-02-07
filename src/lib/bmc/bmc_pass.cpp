@@ -639,27 +639,33 @@ void bmc_pass::translateCastInst( unsigned bidx,
 void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
   assert( alloca );
 
-  // length calculation of dynamically allocated array needs tobe delayed
+  // IMPORTANT
+  // 
+  // length calculation of dynamically allocated array needs to be delayed
   // until we have symbols for the array length
+  //
   auto typ = alloca->getAllocatedType();
   if( llvm::isa<const llvm::IntegerType>(typ) ) {
     auto val = alloca->getArraySize();
     if( auto constInt = llvm::dyn_cast<const llvm::ConstantInt>(val) ) {
         int constIntValue = (int)constInt->getSExtValue();
         expr const_expr = get_expr_const(solver_ctx,constIntValue);
-        bmc_ds_ptr->set_array_length( alloca, const_expr );
+        std::vector<expr> ls; ls.push_back( const_expr);
+        bmc_ds_ptr->set_array_length( alloca, ls );
         // array_lengths.push_back(const_expr);
     } else {
       auto val = alloca->getOperand(0);
       auto val_expr = bmc_ds_ptr->m.get_term( val );
-      bmc_ds_ptr->set_array_length( alloca, val_expr );
+      std::vector<expr> ls; ls.push_back( val_expr);
+      bmc_ds_ptr->set_array_length( alloca, ls );
       // array_lengths.push_back(val_expr);
     }
   }
   else if( llvm::isa<const llvm::ArrayType>(typ) ) {
     int siz = (int)typ->getArrayNumElements();
     expr const_expr = get_expr_const(solver_ctx,siz);
-    bmc_ds_ptr->set_array_length( alloca, const_expr );
+    std::vector<expr> ls; ls.push_back( const_expr);
+    bmc_ds_ptr->set_array_length( alloca, ls );
     // array_lengths.push_back(const_expr);
   }
   else {
