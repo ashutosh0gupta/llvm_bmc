@@ -337,8 +337,9 @@ expr bmc_ds::join_state( std::vector<expr>& cs,
 // manage array model
 
 const llvm::Value*
-identify_array_in_gep(const llvm::GetElementPtrInst* gep ) {
+identify_array_in_gep(const llvm::GEPOperator* gep ) {
   auto op_gep_ptr = gep->getPointerOperand();
+//  op_gep_ptr->print( llvm::outs() ); std::cout <<"\n";
   if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
     op_gep_ptr = cast->getOperand(0);
   }
@@ -351,19 +352,20 @@ identify_array_in_gep(const llvm::GetElementPtrInst* gep ) {
   if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr)) {
     return glb;
   }
-  if(auto sub_gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_gep_ptr)) {
+ // if(auto sub_gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_gep_ptr)) {
     // auto sub_op_gep_ptr = sub_gep->getPointerOperand();
     // todo: add conditions that all the positions are 0
     // gep( gep( glb , 0), 3 ) === *(glb+3) << Good <<<
     //
     // gep( gep( glb , 1), 3 ) === *(glb+4) << Bad <<<
     //
-    assert(false); // remove this assert only if the above condition is added;
-    if( false ) {
+    //assert(false); // remove this assert only if the above condition is added;
+    //if( false ) {
+  if( auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr) ) {
+     if (sub_gep->hasAllZeroIndices()) {
       return identify_array_in_gep(sub_gep);
     }
   }
-  gep->print( llvm::outs() );
   llvm_bmc_error("bmc", "unseen GEP pattern detected!");
 }
 
@@ -372,7 +374,7 @@ identify_array( const llvm::Value* op) {
   if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
     op = cast->getOperand(0);
   }
-  if(auto gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op)) {
+  if(auto gep = llvm::dyn_cast<const llvm::GEPOperator>(op)) {
     return identify_array_in_gep( gep );
     // auto op_gep_ptr = gep->getPointerOperand();
     // if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {

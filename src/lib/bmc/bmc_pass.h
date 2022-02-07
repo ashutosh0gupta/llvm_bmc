@@ -43,6 +43,7 @@ private:
   void translateSelectInst( unsigned, const llvm::SelectInst* );
   void translateBranch( unsigned, const llvm::BranchInst* );
   void translateCallInst( unsigned, const llvm::CallInst* );
+  void translateInvokeInst( unsigned, const llvm::InvokeInst* );
   void translateIntrinsicInst( unsigned, const llvm::IntrinsicInst* );
   void translateDebugInfo( unsigned, const llvm::DbgInfoIntrinsic* );
   void translateCastInst( unsigned, const llvm::CastInst*);

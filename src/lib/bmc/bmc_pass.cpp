@@ -492,7 +492,7 @@ void bmc_pass::translateIntrinsicInst( unsigned bidx,
     BMC_UNSUPPORTED_INSTRUCTIONS( InstrProfIncrementInst, I);
     // BMC_UNSUPPORTED_INSTRUCTIONS( InstrProfIncrementInstStep, I);
     BMC_UNSUPPORTED_INSTRUCTIONS( InstrProfValueProfileInst, I);
-    I->print( llvm::outs() );
+    //I->print( llvm::outs() );
     llvm_bmc_error("bmc", "Unsupported intrinsics!");
   }
 }
@@ -527,7 +527,7 @@ void bmc_pass::translateCallInst( unsigned bidx,
           "Only __VERIFIER_[assert,error,nondet_TY] functions are handled!");
     }
   } else {
-    call->print( llvm::outs() );
+    //call->print( llvm::outs() );
     llvm_bmc_error("bmc", "function call is not recognized !!");
   }
 }
@@ -605,7 +605,7 @@ void bmc_pass::translateCastInst( unsigned bidx,
           ) {
         bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v );
       } else {
-        cast->print( llvm::outs());
+        //cast->print( llvm::outs());
         llvm_bmc_error("bmc", "sign extn instruction of unsupported size");
       }
     }
@@ -683,8 +683,8 @@ void bmc_pass::loadFromArrayHelper( unsigned bidx,
 void bmc_pass::translateLoadInst( unsigned bidx,
                                   const llvm::LoadInst* load ) {
   assert( load );
-  //load->print( llvm::outs() );
-  //std::cout << "\n";
+  load->print( llvm::outs() );
+  std::cout << "\n";
   auto addr = load->getOperand(0);
   if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
     assert( gop->getNumIndices() <= 2);
@@ -777,6 +777,7 @@ void bmc_pass::translateStoreInst( unsigned bidx,
       idx = gop->getOperand(2);
     }
     auto idx_expr = bmc_ds_ptr->m.get_term( idx );
+
     storeToArrayHelper(bidx, store, val, idx_expr);
   }else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
     llvm::Value * idx = NULL;
