@@ -762,6 +762,9 @@ void bmc_pass::storeToArrayHelper( unsigned bidx,
   bmc_ds_ptr->m.insert_term_map( store, bidx, arr_wrt.new_name );
 }
 
+void bmc_pass::create_write_event( const llvm::StoreInst* store ) {
+  // todo: write here
+}
 void bmc_pass::translateStoreInst( unsigned bidx,
                                    const llvm::StoreInst* store ) {
   assert( store );
@@ -780,15 +783,20 @@ void bmc_pass::translateStoreInst( unsigned bidx,
 
     storeToArrayHelper(bidx, store, val, idx_expr);
   }else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
+    //todo: does it enter here?
+    // GEPOperator is more general case than GetElementPtrInst
     llvm::Value * idx = NULL;
     if(gep->getNumOperands() == 2) idx = gep->getOperand(1);
-    else if(gep->getNumOperands() == 3) idx = gep->getOperand(2); 
+    else if(gep->getNumOperands() == 3) idx = gep->getOperand(2);
     auto idx_expr = bmc_ds_ptr->m.get_term( idx );
-    storeToArrayHelper(bidx, store, val, idx_expr); 
+    storeToArrayHelper(bidx, store, val, idx_expr);
   } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto val_expr = bmc_ds_ptr->m.get_term( val );
     auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
+    if( true ) { //todo: add check if the grobal variable is truly global 
+      create_write_event(store);
+    }
     bmc_ds_ptr->bmc_vec.push_back( glb_wrt.first );
     bmc_ds_ptr->m.insert_term_map( store, bidx, glb_wrt.second );
   } else if(llvm::isa<const llvm::AllocaInst>(addr)) {
