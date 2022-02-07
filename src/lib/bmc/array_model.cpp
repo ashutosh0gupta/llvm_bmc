@@ -85,17 +85,22 @@ sort array_model_full::get_solver_array_ty( const llvm::PointerType* ty ) {
   }
 }
 
-expr array_model_full::get_array_length( const llvm::Value* arr ) {
+std::vector<expr>
+array_model_full::get_array_length( const llvm::Value* arr ) {
+  std::vector<expr> idxs;
   if( llvm::isa< const llvm::AllocaInst >(arr) ) {
-    return solver_ctx.int_val(1); // gets recomputed at the translation stage.
+    // since we can know symbol for the length of the array
+    // at the time of translatation we place a dummy
+    idxs.push_back( solver_ctx.int_val(1) );
+    return idxs;
   }
-  //todo: support for globals etc
-  
+  //todo: support for globals etc; implement array lengths
   // dummy returned value
-  return solver_ctx.int_val(1);
+  idxs.push_back( solver_ctx.int_val(1) );
+  return idxs;
 }
 
-void array_model_full::set_array_length( unsigned ar_num, expr& len ) {
+void array_model_full::set_array_length( unsigned ar_num, std::vector<expr>& len ) {
   lengths[ar_num] = len;
 }
 
@@ -106,9 +111,14 @@ set_array_info(std::map< const llvm::Value*, unsigned >& ary_ids) {
   ar_types.resize( num_arrays );
   ar_names.resize( num_arrays );
   lengths.clear();
+
+  // inserting dummy lengths
+  std::vector<expr> idxs;
   for( unsigned i = 0; i < num_arrays; i++ ) {
-    lengths.push_back( solver_ctx.int_val(1) );
+    lengths.push_back( idxs );
   }
+
+  //
   for( auto& ar_int_pair : ary_ids ) {
     auto ar = ar_int_pair.first;
     auto indx = ar_int_pair.second;
@@ -175,6 +185,21 @@ unsigned array_model_full::get_accessed_array( const llvm::Instruction* I ) {
   }
 }
 
+expr access_bound_cons( std::vector<expr>& idxs, std::vector<expr>& ls) {
+  // bounds constraints
+  std::vector<expr> temp_vec;
+  unsigned pos = 0;
+  for( auto& l : ls ) {
+    expr lower_bound_arr(idxs[pos] >= 0);
+    temp_vec.push_back(lower_bound_arr);
+    expr upper_bound_arr(idxs[pos] <= l - 1);
+    temp_vec.push_back(upper_bound_arr);
+    pos++;
+  }
+  expr bound_guard = _and(temp_vec);
+  return bound_guard;
+}
+
 arr_write_expr
 array_model_full::array_write( unsigned bidx, const llvm::StoreInst* I,
                                expr& idx, expr& val ) {
@@ -184,12 +209,23 @@ array_model_full::array_write( unsigned bidx, const llvm::StoreInst* I,
   expr ar_name = vec.at(i);
   expr new_ar = get_fresh_ary_name(i);
   vec[i] = new_ar;
-  expr lower_bound_arr(idx >= 0);
-  expr upper_bound_arr(idx <= lengths.at(i) - 1);
-  std::vector<expr> temp_vec;
-  temp_vec.push_back(lower_bound_arr);
-  temp_vec.push_back(upper_bound_arr);
-  expr bound_guard = _and(temp_vec);
+
+  // to be enabled
+  // auto& ls = lengths.at(i);
+  // auto bound_guard = access_bound_cons(idxs, ls);
+
+  // // bounds constraints
+  // std::vector<expr> temp_vec;
+  // expr lower_bound_arr(idx >= 0);
+  // temp_vec.push_back(lower_bound_arr);
+  // for( auto& l : ls ) {
+  //   expr upper_bound_arr(idx[pos] <= l - 1);
+  //   temp_vec.push_back(upper_bound_arr);
+  // }
+  // expr bound_guard = _and(temp_vec);
+  expr bound_guard(idx >= 0);//to be commented
+
+  //
   return arr_write_expr( (new_ar == store( ar_name, idx, val )), bound_guard, new_ar );
 }
 
@@ -200,14 +236,21 @@ array_model_full::array_read( unsigned bidx, const llvm::LoadInst* I,
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
   expr ar_name = vec.at(i);
-  expr lower_bound_arr(idx >= 0);
-  //todo: a trick to avoid bv/arith issue;; may need a fix in future
-  //int idx_num = solver_ctx.int_val(idx);  //To convert idx from bv to int
-  expr upper_bound_arr(idx <= lengths.at(i)-1);
-  std::vector<expr> temp_vec;
-  temp_vec.push_back(lower_bound_arr);
-  temp_vec.push_back(upper_bound_arr);
-  expr bound_guard = _and(temp_vec);
+
+  // to be enabled
+  // auto& ls = lengths.at(i);
+  // auto bound_guard = access_bound_cons(idxs, ls);
+
+  // expr lower_bound_arr(idx >= 0);
+  // //todo: a trick to avoid bv/arith issue;; may need a fix in future
+  // //int idx_num = solver_ctx.int_val(idx);  //To convert idx from bv to int
+  // expr upper_bound_arr(idx <= lengths.at(i)-1);
+  // std::vector<expr> temp_vec;
+  // temp_vec.push_back(lower_bound_arr);
+  // temp_vec.push_back(upper_bound_arr);
+  // expr bound_guard = _and(temp_vec);
+    expr bound_guard(idx >= 0);//to be commented
+
   return arr_read_expr( select( ar_name, idx), bound_guard );
 }
 

@@ -499,7 +499,7 @@ void bmc_ds::refresh_array_state( unsigned bidx,
   ar_model_full.update_name( bidx, ary_to_int[I] );
 }
 
-void bmc_ds::set_array_length( const llvm::Value* arr, expr& len ) {
+void bmc_ds::set_array_length( const llvm::Value* arr, std::vector<expr>& len ) {
   assert(arr);
   unsigned ar_num = ary_to_int.at(arr);
   switch( ar_model_init ) {

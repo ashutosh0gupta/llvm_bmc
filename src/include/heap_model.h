@@ -200,7 +200,7 @@ public:
   virtual expr get_fresh_ary_name( unsigned );
   //virtual
 
-  void set_array_length( unsigned, expr& len );
+  void set_array_length( unsigned, std::vector<expr>& len );
   arr_write_expr
   array_write( unsigned bidx, const llvm::StoreInst* I,
                expr& idx, expr& val );
@@ -214,7 +214,8 @@ private:
   unsigned num_arrays;
   std::vector< std::string > ar_names;
   std::vector< sort > ar_sorts;
-  std::vector< expr > lengths; // length of arrays can be symbolic
+  std::vector< std::vector<expr> > lengths; // a list of lengths for each array
+  // std::vector< expr > lengths; // length of arrays can be symbolic
                                // todo: support tuples
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
 
@@ -222,7 +223,7 @@ private:
   sort get_address_sort();
   sort get_solver_array_ty( const llvm::ArrayType* ty );
   sort get_solver_array_ty( const llvm::PointerType* ty );
-  expr get_array_length( const llvm::Value* arr );
+  std::vector<expr> get_array_length( const llvm::Value* arr );
 
   unsigned get_accessed_array( const llvm::Instruction* I );
   void dump_ary_access_to_index();
