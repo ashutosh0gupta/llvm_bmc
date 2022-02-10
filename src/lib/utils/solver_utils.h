@@ -99,8 +99,8 @@ expr neg_and( std::vector<expr> &vec, solver_context& sol_ctx );
 expr neg_and( std::vector<expr> &vec);
 expr _forall( expr_vector&, expr& );
 expr implies( expr&, expr& );
-expr select( expr&, expr& );
-expr store( expr&, expr&, expr& );
+expr select( expr&, exprs& );
+expr store( expr&, exprs&, expr& );
 
 bool matched_sort( const expr& l, const expr& r );
 expr switch_int_sort( expr& b, sort& s);

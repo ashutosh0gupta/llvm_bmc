@@ -674,16 +674,28 @@ void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
   }
 }
 
-// TODO : Add src_loc for instructions in add_spec 
+// TODO : Add src_loc for instructions in add_spec
 void bmc_pass::loadFromArrayHelper( unsigned bidx,
-                          const llvm::LoadInst* load,
-                          expr idx_expr ) {
-  auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_expr);
+                                    const llvm::LoadInst* load,
+                                    exprs& idx_exprs ) {
+  auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_exprs);
   if( o.include_out_of_bound_specs ) {
     expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
     bmc_ds_ptr->add_spec( !path_bit || arr_rd.size_bound_guard, spec_reason_t::OUT_OF_BOUND );
   }
   bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd.return_val );
+}
+
+void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
+  assert( gep->getNumIndices() <= 2);
+  llvm::Value * idx = NULL;
+  if(gep->getNumOperands() == 2) idx = gep->getOperand(1);
+  else if(gep->getNumOperands() == 3) {
+    // assert( gep->getOperand(1) == 0);
+    idx = gep->getOperand(2);
+  }
+  auto idx_expr = bmc_ds_ptr->m.get_term( idx );
+  idxs.push_back(idx_expr);
 }
 
 void bmc_pass::translateLoadInst( unsigned bidx,
@@ -693,24 +705,29 @@ void bmc_pass::translateLoadInst( unsigned bidx,
   //std::cout << "\n";
   auto addr = load->getOperand(0);
   if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
-    assert( gop->getNumIndices() <= 2);
-    llvm::Value * idx = NULL;
-    if(gop->getNumOperands() == 2) idx = gop->getOperand(1);
-    else if(gop->getNumOperands() == 3) {
-      // assert( gep->getOperand(1) == 0);
-      idx = gop->getOperand(2);
-    }
-    auto idx_expr = bmc_ds_ptr->m.get_term( idx );
-    loadFromArrayHelper(bidx, load, idx_expr);
-  }else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
-    // TODO : Add more general support to parse gep instruction when supporting 
-    // objects (struct's) and multidimensional arrays
-    llvm::Value * idx = NULL;
-    // added cases to distinguish between constant or dynamic sized 1d arrays 
-    if(gep->getNumOperands() == 2) idx = gep->getOperand(1);
-    else if(gep->getNumOperands() == 3) idx = gep->getOperand(2);
-    auto idx_expr = bmc_ds_ptr->m.get_term( idx );
-    loadFromArrayHelper(bidx, load, idx_expr);   
+    // assert( gop->getNumIndices() <= 2);
+    // llvm::Value * idx = NULL;
+    // if(gop->getNumOperands() == 2) idx = gop->getOperand(1);
+    // else if(gop->getNumOperands() == 3) {
+    //   // assert( gep->getOperand(1) == 0);
+    //   idx = gop->getOperand(2);
+    // }
+    // auto idx_expr = bmc_ds_ptr->m.get_term( idx );
+    exprs idxs;
+    translateGEP( gop, idxs);
+    loadFromArrayHelper(bidx, load, idxs);
+    // gop is more general than gep
+  // }else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
+  //   // TODO : Add more general support to parse gep instruction when supporting 
+  //   // // objects (struct's) and multidimensional arrays
+  //   // llvm::Value * idx = NULL;
+  //   // // added cases to distinguish between constant or dynamic sized 1d arrays 
+  //   // if(gep->getNumOperands() == 2) idx = gep->getOperand(1);
+  //   // else if(gep->getNumOperands() == 3) idx = gep->getOperand(2);
+  //   // auto idx_expr = bmc_ds_ptr->m.get_term( idx );
+  //   exprs idxs;
+  //   translateGEP( gep, idxs);
+  //   loadFromArrayHelper(bidx, load, idxs);
   } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
@@ -718,15 +735,17 @@ void bmc_pass::translateLoadInst( unsigned bidx,
   // } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
   } else if( llvm::isa<const llvm::AllocaInst>(addr) ) {
     // To handle a[0] when a is dynamic sized array
-    expr idx_expr = get_expr_const(solver_ctx,0);
-    loadFromArrayHelper(bidx, load, idx_expr);
+    // expr idx_expr = get_expr_const(solver_ctx,0);
+    exprs idxs; idxs.push_back( get_expr_const(solver_ctx,0) );
+    loadFromArrayHelper(bidx, load, idxs );
   } else if (auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
     // To handle the case of a pointer with a bitcast instruction as parameter
     auto a = bcast->getOperand(0);
     auto ty = a->getType();
     if( ty->isPointerTy() ) {
-      expr idx_expr = get_expr_const(solver_ctx,0);
-      loadFromArrayHelper(bidx, load, idx_expr);
+      // expr idx_expr = get_expr_const(solver_ctx,0);
+      exprs idxs; idxs.push_back( get_expr_const(solver_ctx,0) );
+      loadFromArrayHelper(bidx, load, idxs);
     }  
   } else {
     LLVM_DUMP( load );
@@ -757,9 +776,9 @@ void bmc_pass::translateUnaryInst( unsigned bidx,
 void bmc_pass::storeToArrayHelper( unsigned bidx,
                          const llvm::StoreInst* store,
                          const llvm::Value* val,
-                         expr idx_expr ) {
+                         exprs& idxs ) {
   auto val_expr = bmc_ds_ptr->m.get_term( val );
-  auto arr_wrt = bmc_ds_ptr->array_write(bidx, store, idx_expr, val_expr);
+  auto arr_wrt = bmc_ds_ptr->array_write(bidx, store, idxs, val_expr);
   bmc_ds_ptr->bmc_vec.push_back( arr_wrt.updated_expr );
   if( o.include_out_of_bound_specs ) {
     expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
@@ -778,23 +797,25 @@ void bmc_pass::translateStoreInst( unsigned bidx,
   auto val = store->getOperand(0);
   auto addr = store->getOperand(1);
   if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
-    assert( gop->getNumIndices() <= 2);
-    llvm::Value * idx = NULL;
-    if(gop->getNumOperands() == 2) idx = gop->getOperand(1);
-    else if(gop->getNumOperands() == 3) {
-      // assert( gep->getOperand(1) == 0);
-      idx = gop->getOperand(2);
-    }
-    auto idx_expr = bmc_ds_ptr->m.get_term( idx );
-    storeToArrayHelper(bidx, store, val, idx_expr);
-  }else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
-    //todo: does it enter here?
-    // GEPOperator is more general case than GetElementPtrInst
-    llvm::Value * idx = NULL;
-    if(gep->getNumOperands() == 2) idx = gep->getOperand(1);
-    else if(gep->getNumOperands() == 3) idx = gep->getOperand(2);
-    auto idx_expr = bmc_ds_ptr->m.get_term( idx );
-    storeToArrayHelper(bidx, store, val, idx_expr);
+    // assert( gop->getNumIndices() <= 2);
+    // llvm::Value * idx = NULL;
+    // if(gop->getNumOperands() == 2) idx = gop->getOperand(1);
+    // else if(gop->getNumOperands() == 3) {
+    //   // assert( gep->getOperand(1) == 0);
+    //   idx = gop->getOperand(2);
+    // }
+    // auto idx_expr = bmc_ds_ptr->m.get_term( idx );
+    exprs idxs;
+    translateGEP( gop, idxs);
+    storeToArrayHelper(bidx, store, val, idxs);
+  // }else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
+  //   //todo: does it enter here?
+  //   // GEPOperator is more general case than GetElementPtrInst
+  //   llvm::Value * idx = NULL;
+  //   if(gep->getNumOperands() == 2) idx = gep->getOperand(1);
+  //   else if(gep->getNumOperands() == 3) idx = gep->getOperand(2);
+  //   auto idx_expr = bmc_ds_ptr->m.get_term( idx );
+  //   storeToArrayHelper(bidx, store, val, idx_expr);
   } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto val_expr = bmc_ds_ptr->m.get_term( val );
@@ -807,8 +828,9 @@ void bmc_pass::translateStoreInst( unsigned bidx,
   } else if(llvm::isa<const llvm::AllocaInst>(addr)) {
   // } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
     // To handle a[0] when a is dynamic sized array
-    expr idx_expr = get_expr_const(solver_ctx,0);
-    storeToArrayHelper(bidx, store, val, idx_expr);
+    // expr idx_expr = get_expr_const(solver_ctx,0);
+    exprs idxs; idxs.push_back( get_expr_const(solver_ctx,0) );
+    storeToArrayHelper(bidx, store, val, idxs );
   } else if( llvm::isa<llvm::Constant>(addr) ) {
   // } else if( auto cons = llvm::dyn_cast<llvm::Constant>(addr) ) {
     llvm_bmc_error("bmc", "constant access to the memory!");
