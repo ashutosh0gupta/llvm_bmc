@@ -511,19 +511,19 @@ void bmc_ds::set_array_length( const llvm::Value* arr, std::vector<expr>& len ) 
 
 arr_write_expr
 bmc_ds::array_write( unsigned bidx, const llvm::StoreInst* I,
-                      expr& idx, expr& val ) {
+                      exprs& idxs, expr& val ) {
   assert( I );
   switch( ar_model_init ) {
-  case FULL : return ar_model_full.array_write( bidx, I, idx, val ); break;
+  case FULL : return ar_model_full.array_write( bidx, I, idxs, val ); break;
   default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
   }
 }
 
 arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::LoadInst* I,
-                               expr& idx ) {
+                               exprs& idxs ) {
   assert( I );
   switch( ar_model_init ) {
-  case FULL     : return ar_model_full.array_read( bidx, I, idx ); break;
+  case FULL     : return ar_model_full.array_read( bidx, I, idxs ); break;
   // case FIXED_LEN: return ar_model_full.array_read( bidx, I, idx ); break;
   default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
   }

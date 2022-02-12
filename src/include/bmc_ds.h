@@ -78,8 +78,8 @@ public:
   std::map< const llvm::Value*, unsigned >& ary_to_int;
 
   void set_array_length( const llvm::Value*, std::vector<expr>& );
-  arr_write_expr array_write( unsigned, const llvm::StoreInst*, expr&, expr& );
-  arr_read_expr array_read( unsigned, const llvm::LoadInst*, expr& );
+  arr_write_expr array_write( unsigned, const llvm::StoreInst*,exprs&, expr& );
+  arr_read_expr array_read( unsigned, const llvm::LoadInst*, exprs& );
   expr join_array_state( std::vector<expr>&,
                          std::vector<unsigned>&, unsigned );
 

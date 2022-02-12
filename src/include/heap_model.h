@@ -203,8 +203,8 @@ public:
   void set_array_length( unsigned, std::vector<expr>& len );
   arr_write_expr
   array_write( unsigned bidx, const llvm::StoreInst* I,
-               expr& idx, expr& val );
-  arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, expr& idx );
+               exprs& idx, expr& val );
+  arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
 
   void update_names( unsigned, std::vector<const llvm::Instruction*>&);
   void update_name( unsigned, unsigned );

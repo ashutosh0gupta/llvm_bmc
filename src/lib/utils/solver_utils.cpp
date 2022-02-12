@@ -630,12 +630,16 @@ expr implies( expr& e1, expr& e2) {
   return implies( e1, e2 );
 }
 
-expr select( expr& e1, expr& e2) {
-  return z3::select( e1, e2 );
+expr select( expr& e1, exprs& idxs) {
+  expr_vector sol_vec( e1.ctx() );
+  to_sol_vec( idxs, sol_vec);
+  return z3::select( e1, sol_vec );
 }
 
-expr store( expr& e1, expr& e2, expr& e3) {
-  return z3::store( e1, e2, e3 );
+expr store( expr& e1, exprs& idxs, expr& e3) {
+  expr_vector sol_vec( e1.ctx() );
+  to_sol_vec( idxs, sol_vec);
+  return z3::store( e1, sol_vec, e3 );
 }
 
 bool matched_sort( const expr& l, const expr& r ) {
@@ -701,7 +705,7 @@ void to_std_vec( expr_vector& vec, std::vector<expr>& o_vec ) {
   }
 }
 
-void to_sol_vec( std::vector<expr>& vec, expr_vector& o_vec ) {
+void to_sol_vec( exprs& vec, expr_vector& o_vec ) {
   o_vec.resize(0);
   for( unsigned i = 0; i < vec.size(); i++ ) {
     o_vec.push_back( vec[i] );

@@ -43,7 +43,6 @@ private:
   void translateSelectInst( unsigned, const llvm::SelectInst* );
   void translateBranch( unsigned, const llvm::BranchInst* );
   void translateCallInst( unsigned, const llvm::CallInst* );
-  void translateInvokeInst( unsigned, const llvm::InvokeInst* );
   void translateIntrinsicInst( unsigned, const llvm::IntrinsicInst* );
   void translateDebugInfo( unsigned, const llvm::DbgInfoIntrinsic* );
   void translateCastInst( unsigned, const llvm::CastInst*);
@@ -55,8 +54,10 @@ private:
   void translateUnreachableInst(unsigned, const llvm::UnreachableInst *);
   void init_path_exit_bit(bb_vec_t & //, const bb*
                           );
-  void loadFromArrayHelper(unsigned, const llvm::LoadInst*, expr);
-  void storeToArrayHelper(unsigned, const llvm::StoreInst*, const llvm::Value*, expr);
+  void translateGEP( const llvm::GEPOperator* gep, exprs& );
+  void loadFromArrayHelper(unsigned, const llvm::LoadInst*, exprs&);
+  void storeToArrayHelper(unsigned, const llvm::StoreInst*,
+                          const llvm::Value*, exprs&);
 
   void translateNondet(unsigned, const llvm::CallInst*);
   void assume_to_bmc(unsigned bidx, const llvm::CallInst*);

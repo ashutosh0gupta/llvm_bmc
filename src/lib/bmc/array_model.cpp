@@ -185,7 +185,7 @@ unsigned array_model_full::get_accessed_array( const llvm::Instruction* I ) {
   }
 }
 
-expr access_bound_cons( std::vector<expr>& idxs, std::vector<expr>& ls) {
+expr access_bound_cons( exprs& idxs, exprs& ls) {
   // bounds constraints
   std::vector<expr> temp_vec;
   unsigned pos = 0;
@@ -202,7 +202,7 @@ expr access_bound_cons( std::vector<expr>& idxs, std::vector<expr>& ls) {
 
 arr_write_expr
 array_model_full::array_write( unsigned bidx, const llvm::StoreInst* I,
-                               expr& idx, expr& val ) {
+                               exprs& idxs, expr& val ) {
   array_state& ar_st = get_state( bidx );
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
@@ -210,9 +210,8 @@ array_model_full::array_write( unsigned bidx, const llvm::StoreInst* I,
   expr new_ar = get_fresh_ary_name(i);
   vec[i] = new_ar;
 
-  // to be enabled
-  // auto& ls = lengths.at(i);
-  // auto bound_guard = access_bound_cons(idxs, ls);
+  auto& ls = lengths.at(i);
+  auto bound_guard = access_bound_cons(idxs, ls);
 
   // // bounds constraints
   // std::vector<expr> temp_vec;
@@ -223,23 +222,23 @@ array_model_full::array_write( unsigned bidx, const llvm::StoreInst* I,
   //   temp_vec.push_back(upper_bound_arr);
   // }
   // expr bound_guard = _and(temp_vec);
-  expr bound_guard(idx >= 0);//to be commented
+  // expr bound_guard(idx >= 0);//to be commented
 
   //
-  return arr_write_expr( (new_ar == store( ar_name, idx, val )), bound_guard, new_ar );
+  return arr_write_expr( (new_ar == store( ar_name, idxs, val )),
+                         bound_guard, new_ar );
 }
 
 arr_read_expr
 array_model_full::array_read( unsigned bidx, const llvm::LoadInst* I,
-                              expr& idx ) {
+                              exprs& idxs ) {
   array_state& ar_st = get_state( bidx );
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
   expr ar_name = vec.at(i);
 
-  // to be enabled
-  // auto& ls = lengths.at(i);
-  // auto bound_guard = access_bound_cons(idxs, ls);
+  auto& ls = lengths.at(i);
+  auto bound_guard = access_bound_cons(idxs, ls);
 
   // expr lower_bound_arr(idx >= 0);
   // //todo: a trick to avoid bv/arith issue;; may need a fix in future
@@ -249,9 +248,9 @@ array_model_full::array_read( unsigned bidx, const llvm::LoadInst* I,
   // temp_vec.push_back(lower_bound_arr);
   // temp_vec.push_back(upper_bound_arr);
   // expr bound_guard = _and(temp_vec);
-    expr bound_guard(idx >= 0);//to be commented
+    // expr bound_guard(idx >= 0);//to be commented
 
-  return arr_read_expr( select( ar_name, idx), bound_guard );
+  return arr_read_expr( select( ar_name, idxs), bound_guard );
 }
 
 void array_model_full::
