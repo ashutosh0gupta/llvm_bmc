@@ -52,6 +52,7 @@ expr array_model::join_array_state( std::vector<expr>& conds,
 // collect info about the arrays
 
 sort array_model_full::get_address_sort() {
+  //todo : saying that it is single dim <----
   return solver_ctx.int_sort();
 }
 
@@ -59,18 +60,6 @@ sort array_model_full::get_solver_array_ty( const llvm::ArrayType* ty ) {
   auto elemTy = ty->getArrayElementType();
   auto s  = llvm_to_sort( o, elemTy );
   return solver_ctx.array_sort( get_address_sort(), s );
-  // if( ElemTy->isFloatTy() ) {
-  //   return solver_ctx.array_sort( get_address_sort(),
-  //                                 solver_ctx.fpa_sort<32>() );
-  // }
-  // if (ElemTy->isDoubleTy()) {
-  //   return solver_ctx.array_sort( get_address_sort(),
-  //                                 solver_ctx.fpa_sort<64>() );
-  // }
-  // if( ElemTy->isCharTy() ) {
-  // }
-  // if( ElemTy->isIntegerTy() ) {
-  // }
 }
 
 sort array_model_full::get_solver_array_ty( const llvm::PointerType* ty ) {
