@@ -343,12 +343,18 @@ identify_array_in_gep(const llvm::GEPOperator* gep ) {
   if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
     op_gep_ptr = cast->getOperand(0);
   }
-  if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_gep_ptr)) {
+
+  // assuming alloc instruction
+  if( auto addr = llvm::dyn_cast<const llvm::AllocaInst>(op_gep_ptr) ) {
     return addr;
   }
+
+  // passed pointer in the function
   if(auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
     return addr;
   }
+
+  // accessing global variable
   if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr)) {
     return glb;
   }
@@ -362,9 +368,9 @@ identify_array_in_gep(const llvm::GEPOperator* gep ) {
     //assert(false); // remove this assert only if the above condition is added;
     //if( false ) {
   if( auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr) ) {
-     if (sub_gep->hasAllZeroIndices()) {
+     // if (sub_gep->hasAllZeroIndices()) {
       return identify_array_in_gep(sub_gep);
-    }
+    // }
   }
   llvm_bmc_error("bmc", "unseen GEP pattern detected!");
 }

@@ -573,6 +573,16 @@ void bmc_pass::translateCastInst( unsigned bidx,
         //                       spec_reason_t::OUT_OF_RANGE );
         bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v );
       }
+    }else if( ok_cast( c_ty, v_ty, 16, 32 ) ) {
+      if( o.bit_precise ) {
+        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v.extract(0,16) );
+      }else{
+        expr ex_v = bmc_ds_ptr->m.get_term(v);
+        // todo: take care of signed/unsigned
+        // bmc_ds_ptr->add_spec( ex_v <= 2^16 && ex_v >= 0,
+        //                       spec_reason_t::OUT_OF_RANGE );
+        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v );
+      }
     }else{
       llvm_bmc_error("bmc", "unexpected sized TruncInst found!");
     }
