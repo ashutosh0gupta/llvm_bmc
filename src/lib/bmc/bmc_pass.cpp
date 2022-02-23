@@ -575,7 +575,7 @@ void bmc_pass::translateCastInst( unsigned bidx,
       }
     }else if( ok_cast( c_ty, v_ty, 16, 32 ) ) {
       if( o.bit_precise ) {
-        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v.extract(0,16) );
+        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v.extract(15,0) );
       }else{
         expr ex_v = bmc_ds_ptr->m.get_term(v);
         // todo: take care of signed/unsigned
