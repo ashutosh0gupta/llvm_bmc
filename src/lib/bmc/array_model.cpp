@@ -52,14 +52,14 @@ expr array_model::join_array_state( std::vector<expr>& conds,
 // collect info about the arrays
 
 sort array_model_full::get_address_sort() {
-  //todo : saying that it is single dim <----
   return solver_ctx.int_sort();
 }
 
 sort array_model_full::get_solver_array_ty( const llvm::ArrayType* ty ) {
-  auto elemTy = ty->getArrayElementType();
-  auto s  = llvm_to_sort( o, elemTy );
-  return solver_ctx.array_sort( get_address_sort(), s );
+  return llvm_to_sort( o, ty);
+  // auto elemTy = ty->getArrayElementType();
+  // auto s  = llvm_to_sort( o, elemTy );
+  // return solver_ctx.array_sort( get_address_sort(ty), s );
 }
 
 sort array_model_full::get_solver_array_ty( const llvm::PointerType* ty ) {
@@ -67,6 +67,7 @@ sort array_model_full::get_solver_array_ty( const llvm::PointerType* ty ) {
   if( auto ar_ty = llvm::dyn_cast<llvm::ArrayType>(T)){
     return get_solver_array_ty( ar_ty );
   }else if( auto pty = llvm::dyn_cast<llvm::PointerType>(T) ) {
+    assert(false); //todo: fix it when hit it.
     return get_solver_array_ty( pty );
   }else{
     auto e_sort= llvm_to_sort( o, T);

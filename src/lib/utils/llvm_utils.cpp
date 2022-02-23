@@ -1419,7 +1419,7 @@ std::string getLocRange(const llvm::BasicBlock* b ) {
   return l_name;
 }
 
-sort llvm_to_sort( solver_context& c, llvm::Type* t ) {
+sort llvm_to_sort( solver_context& c, const llvm::Type* t ) {
   if( t->isIntegerTy() ) {
     if( t->isIntegerTy( 16 ) ) return c.int_sort();
     if( t->isIntegerTy( 32 ) ) return c.int_sort();
@@ -1442,7 +1442,7 @@ sort llvm_to_sort( solver_context& c, llvm::Type* t ) {
 
 #define DEFAULT_INDEX_SORT 64
 
-sort llvm_to_bv_sort( solver_context& c, llvm::Type* t ) {
+sort llvm_to_bv_sort( solver_context& c, const llvm::Type* t ) {
   if( t->isIntegerTy() ) {
     if( t->isIntegerTy( 16 ) ) return c.bv_sort(16);
     if( t->isIntegerTy( 32 ) ) return c.bv_sort(32);
@@ -1476,7 +1476,7 @@ sort llvm_to_bv_sort( solver_context& c, llvm::Type* t ) {
   return c.bv_sort(32); // dummy return
 }
 
-sort llvm_to_sort( options& o, llvm::Type* t) {
+sort llvm_to_sort( options& o, const llvm::Type* t) {
   if( o.bit_precise ) {
     return llvm_to_bv_sort( o.solver_ctx, t );
   }else{
