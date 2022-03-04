@@ -1429,6 +1429,7 @@ sort llvm_to_sort( solver_context& c, const llvm::Type* t ) {
   if( t->isArrayTy() ) {
     llvm::Type* te = t->getArrayElementType();
     sort z_te = llvm_to_sort(c, te);
+std::cout << "Sort is " << z_te << "\n";
     return c.array_sort( c.int_sort(), z_te );
   }
   if( t->isFloatingPointTy() ) {

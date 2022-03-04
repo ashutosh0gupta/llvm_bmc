@@ -86,7 +86,22 @@ array_model_full::get_array_length( const llvm::Value* arr ) {
   }
   //todo: support for globals etc; implement array lengths
   // dummy returned value
-  idxs.push_back( solver_ctx.int_val(1) );
+  //idxs.push_back( solver_ctx.int_val(1) );
+  if( auto pty = llvm::dyn_cast<llvm::PointerType>(arr->getType()) ) {
+	auto T1 = pty->getPointerElementType();
+  if( auto a1 = llvm::dyn_cast<llvm::ArrayType>(T1)){
+	int n1 = a1->getNumElements();
+	idxs.push_back( solver_ctx.int_val(n1) );
+	auto T2 = a1->getElementType();
+  if( auto a2 = llvm::dyn_cast<llvm::ArrayType>(T2)){
+	int n2 = a2->getNumElements();
+	idxs.push_back( solver_ctx.int_val(n2) );
+        std::cout << "Dim1 of array is " << n1 << "\n";
+	std::cout << "Dim2 of array is " << n2 << "\n";
+	}
+       }
+     }
+  
   return idxs;
 }
 
