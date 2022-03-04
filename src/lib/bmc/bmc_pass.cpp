@@ -706,6 +706,11 @@ void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
   }
   auto idx_expr = bmc_ds_ptr->m.get_term( idx );
   idxs.push_back(idx_expr);
+  // access multi-dim arrays
+  auto op_gep_ptr = gep->getPointerOperand();
+  if( auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr) ) {
+    translateGEP( sub_gep, idxs );
+  }
 }
 
 void bmc_pass::translateLoadInst( unsigned bidx,
@@ -714,6 +719,10 @@ void bmc_pass::translateLoadInst( unsigned bidx,
   load->print( llvm::outs() );
   std::cout << "\n";
   auto addr = load->getOperand(0);
+  // jump over casting
+  while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
+    addr = bcast->getOperand(0);
+  }
   if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
     // assert( gop->getNumIndices() <= 2);
     // llvm::Value * idx = NULL;
@@ -749,6 +758,8 @@ void bmc_pass::translateLoadInst( unsigned bidx,
     exprs idxs; idxs.push_back( get_expr_const(solver_ctx,0) );
     loadFromArrayHelper(bidx, load, idxs );
   } else if (auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
+    //todo: rethink about this
+    assert(false);
     // To handle the case of a pointer with a bitcast instruction as parameter
     auto a = bcast->getOperand(0);
     auto ty = a->getType();

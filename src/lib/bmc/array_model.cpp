@@ -75,6 +75,17 @@ sort array_model_full::get_solver_array_ty( const llvm::PointerType* ty ) {
   }
 }
 
+void
+array_model_full::
+get_array_length( const llvm::ArrayType* a1, std::vector<expr>& lengths) {
+  int n1 = a1->getNumElements();
+  lengths.push_back( solver_ctx.int_val(n1) );
+  auto T2 = a1->getElementType();
+  if( auto a2 = llvm::dyn_cast<llvm::ArrayType>(T2) ){
+    get_array_length( a2, lengths );
+  }
+}
+
 std::vector<expr>
 array_model_full::get_array_length( const llvm::Value* arr ) {
   std::vector<expr> idxs;
@@ -84,24 +95,23 @@ array_model_full::get_array_length( const llvm::Value* arr ) {
     idxs.push_back( solver_ctx.int_val(1) );
     return idxs;
   }
-  //todo: support for globals etc; implement array lengths
-  // dummy returned value
-  //idxs.push_back( solver_ctx.int_val(1) );
   if( auto pty = llvm::dyn_cast<llvm::PointerType>(arr->getType()) ) {
-	auto T1 = pty->getPointerElementType();
-  if( auto a1 = llvm::dyn_cast<llvm::ArrayType>(T1)){
-	int n1 = a1->getNumElements();
-	idxs.push_back( solver_ctx.int_val(n1) );
-	auto T2 = a1->getElementType();
-  if( auto a2 = llvm::dyn_cast<llvm::ArrayType>(T2)){
-	int n2 = a2->getNumElements();
-	idxs.push_back( solver_ctx.int_val(n2) );
-        std::cout << "Dim1 of array is " << n1 << "\n";
-	std::cout << "Dim2 of array is " << n2 << "\n";
-	}
-       }
-     }
-  
+    auto T1 = pty->getPointerElementType();
+    if( auto a1 = llvm::dyn_cast<llvm::ArrayType>(T1)) {
+      get_array_length( a1, idxs );
+    }
+    // if( auto a1 = llvm::dyn_cast<llvm::ArrayType>(T1)) {
+    //   int n1 = a1->getNumElements();
+    //   idxs.push_back( solver_ctx.int_val(n1) );
+    //   auto T2 = a1->getElementType();
+    //   if( auto a2 = llvm::dyn_cast<llvm::ArrayType>(T2)){
+    //     int n2 = a2->getNumElements();
+    //     idxs.push_back( solver_ctx.int_val(n2) );
+    //     // std::cout << "Dim1 of array is " << n1 << "\n";
+    //     // std::cout << "Dim2 of array is " << n2 << "\n";
+    //   }
+    // }
+  }
   return idxs;
 }
 
@@ -191,11 +201,13 @@ unsigned array_model_full::get_accessed_array( const llvm::Instruction* I ) {
 }
 
 expr access_bound_cons( exprs& idxs, exprs& ls) {
+  assert( idxs.size() == ls.size() );
   // bounds constraints
   std::vector<expr> temp_vec;
   unsigned pos = 0;
   for( auto& l : ls ) {
-    expr lower_bound_arr(idxs[pos] >= 0);
+    expr idx = idxs[pos];
+    expr lower_bound_arr(idx >= 0);// if (o.bit_precise)
     temp_vec.push_back(lower_bound_arr);
     expr upper_bound_arr(idxs[pos] <= l - 1);
     temp_vec.push_back(upper_bound_arr);

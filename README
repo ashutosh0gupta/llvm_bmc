@@ -36,3 +36,6 @@ Testing
 -------
 
 ./llvmbmc -f "algorithm__compangley" -b  examples/AssemblyFiles/merged.s -s examples/AssemblyFiles/Spec3.txt
+
+
+./llvmbmc -f "minor_cycle__post_output" -b examples/AssemblyFiles/merged.s
