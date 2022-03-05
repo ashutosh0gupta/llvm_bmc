@@ -225,7 +225,9 @@ private:
   sort get_solver_array_ty( const llvm::PointerType* ty );
   std::vector<expr> get_array_length( const llvm::Value* arr );
   void get_array_length( const llvm::ArrayType*, std::vector<expr>&);
- 
+
+  expr access_bound_cons( exprs& idxs, exprs& ls);
+
   unsigned get_accessed_array( const llvm::Instruction* I );
   void dump_ary_access_to_index();
 

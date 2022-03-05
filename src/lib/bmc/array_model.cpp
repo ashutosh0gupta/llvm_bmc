@@ -79,7 +79,11 @@ void
 array_model_full::
 get_array_length( const llvm::ArrayType* a1, std::vector<expr>& lengths) {
   int n1 = a1->getNumElements();
-  lengths.push_back( solver_ctx.int_val(n1) );
+  if(o.bit_precise ) {
+    lengths.push_back( solver_ctx.bv_val(n1, 64) ); // todo: why 64?
+  }else{
+    lengths.push_back( solver_ctx.int_val(n1) );
+  }
   auto T2 = a1->getElementType();
   if( auto a2 = llvm::dyn_cast<llvm::ArrayType>(T2) ){
     get_array_length( a2, lengths );
@@ -200,21 +204,21 @@ unsigned array_model_full::get_accessed_array( const llvm::Instruction* I ) {
   }
 }
 
-expr access_bound_cons( exprs& idxs, exprs& ls) {
+
+expr array_model_full::access_bound_cons( exprs& idxs, exprs& ls) {
   assert( idxs.size() == ls.size() );
   // bounds constraints
   std::vector<expr> temp_vec;
   unsigned pos = 0;
   for( auto& l : ls ) {
     expr idx = idxs[pos];
-    if (idx.is_bv()) {
-       int idx_num = bv2int(idx, true);  //To convert idx from bv to int
-       expr lower_bound_arr(idx_num >= 0);// if (o.bit_precise)
-       temp_vec.push_back(lower_bound_arr);
-       expr upper_bound_arr(idx_num <= l - 1);
-       temp_vec.push_back(upper_bound_arr);
-    }
-    else {
+    if( o.bit_precise ) {
+      expr zero = solver_ctx.bv_val(0,idx.get_sort().bv_size());
+      expr lower_bound_arr( idx >= zero );
+      temp_vec.push_back(lower_bound_arr);
+      expr upper_bound_arr( !(idx >= l) );
+      temp_vec.push_back(upper_bound_arr);
+    } else {
 	expr lower_bound_arr(idx >= 0);
     	temp_vec.push_back(lower_bound_arr);
     	expr upper_bound_arr(idx <= l - 1);

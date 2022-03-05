@@ -590,7 +590,8 @@ void bmc_pass::translateCastInst( unsigned bidx,
     expr ex_v = bmc_ds_ptr->m.get_term(v);
     if( o.bit_precise ) {
       unsigned new_size = c_ty->getIntegerBitWidth();
-      bmc_ds_ptr->m.insert_term_map( cast, bidx, zext( ex_v, new_size ) );
+      unsigned old_size = v->getType()->getIntegerBitWidth();
+      bmc_ds_ptr->m.insert_term_map( cast, bidx, zext( ex_v, new_size-old_size ) );
     }else{
       // Current policy allow extensions [ 1 -> 8, 8->32, 1->32, 32->64]
       if( ok_cast( c_ty, v_ty, 8, 1 ) || ok_cast( c_ty, v_ty, 32, 1 ) ||
@@ -606,7 +607,8 @@ void bmc_pass::translateCastInst( unsigned bidx,
     expr ex_v = bmc_ds_ptr->m.get_term(v);
     if( o.bit_precise ) {
       unsigned new_size = c_ty->getIntegerBitWidth();
-      bmc_ds_ptr->m.insert_term_map( cast, bidx, sext( ex_v, new_size ) );
+      unsigned old_size = v->getType()->getIntegerBitWidth();
+      bmc_ds_ptr->m.insert_term_map( cast, bidx, sext( ex_v, new_size-old_size ) );
     }else{
       // Current policy allow extensions [ 1 -> 8, 1->32, 32->64, 8->32 ]
       if( ok_cast( c_ty, v_ty, 8, 1 ) || ok_cast( c_ty, v_ty, 32, 1 ) ||
