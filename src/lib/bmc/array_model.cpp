@@ -207,10 +207,19 @@ expr access_bound_cons( exprs& idxs, exprs& ls) {
   unsigned pos = 0;
   for( auto& l : ls ) {
     expr idx = idxs[pos];
-    expr lower_bound_arr(idx >= 0);// if (o.bit_precise)
-    temp_vec.push_back(lower_bound_arr);
-    expr upper_bound_arr(idxs[pos] <= l - 1);
-    temp_vec.push_back(upper_bound_arr);
+    if (idx.is_bv()) {
+       int idx_num = bv2int(idx, true);  //To convert idx from bv to int
+       expr lower_bound_arr(idx_num >= 0);// if (o.bit_precise)
+       temp_vec.push_back(lower_bound_arr);
+       expr upper_bound_arr(idx_num <= l - 1);
+       temp_vec.push_back(upper_bound_arr);
+    }
+    else {
+	expr lower_bound_arr(idx >= 0);
+    	temp_vec.push_back(lower_bound_arr);
+    	expr upper_bound_arr(idx <= l - 1);
+    	temp_vec.push_back(upper_bound_arr);
+    }
     pos++;
   }
   expr bound_guard = _and(temp_vec);
