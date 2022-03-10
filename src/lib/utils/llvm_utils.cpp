@@ -1428,9 +1428,15 @@ sort llvm_to_sort( solver_context& c, const llvm::Type* t ) {
   }
   if( t->isArrayTy() ) {
     llvm::Type* te = t->getArrayElementType();
+    sort_vector domains(c);
+    domains.push_back( c.int_sort() );
+    while( te->isArrayTy() ) {
+      domains.push_back( c.int_sort() );
+      te = te->getArrayElementType();
+    }
     sort z_te = llvm_to_sort(c, te);
     // std::cout << "Sort is " << z_te << "\n";
-    return c.array_sort( c.int_sort(), z_te );
+    return c.array_sort( domains, z_te );
   }
   if( t->isFloatingPointTy() ) {
      if( t->isFloatTy() ) return c.fpa_sort<32>();
@@ -1458,8 +1464,21 @@ sort llvm_to_bv_sort( solver_context& c, const llvm::Type* t ) {
     llvm_bmc_error("llvm_utils", "pointer sorts are not supported");
   }else if( t->isArrayTy() || t->isVectorTy() ) {
     llvm::Type* te = t->getArrayElementType();
+    sort_vector domains(c);
+    domains.push_back( c.bv_sort(DEFAULT_INDEX_SORT) );
+    while( te->isArrayTy() ) {
+      domains.push_back( c.bv_sort(DEFAULT_INDEX_SORT) );
+      te = te->getArrayElementType();
+    }
     sort z_te = llvm_to_bv_sort(c, te);
-    return c.array_sort( c.bv_sort(DEFAULT_INDEX_SORT), z_te );
+    // sort domain = c.bv_sort(DEFAULT_INDEX_SORT);
+    // if( z_te.is_array() ) {
+    //   auto domains = z_te.array_domain();
+    //   auto range = z_te.array_range();
+    //   domains.push_back(domain);
+    //   return c.array_sort( domains, range );
+    // }
+    return c.array_sort( domains, z_te );
   }else if( t->isFloatingPointTy() ) {
      if( t->isFloatTy() ) return c.fpa_sort<32>();
      if( t->isDoubleTy() ) return c.fpa_sort<64>();

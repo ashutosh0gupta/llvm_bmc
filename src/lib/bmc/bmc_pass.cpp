@@ -710,6 +710,10 @@ void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
   idxs.push_back(idx_expr);
   // access multi-dim arrays
   auto op_gep_ptr = gep->getPointerOperand();
+  //todo: bit cast bug here
+  while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
+    op_gep_ptr = bcast->getOperand(0);
+  }
   if( auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr) ) {
     translateGEP( sub_gep, idxs );
   }

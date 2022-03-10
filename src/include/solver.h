@@ -12,6 +12,7 @@
 
 typedef z3::context solver_context;
 typedef z3::sort sort;
+typedef z3::sort_vector sort_vector;
 typedef z3::expr expr;
 typedef z3::expr_vector expr_vector;
 typedef z3::model model;
