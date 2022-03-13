@@ -206,6 +206,8 @@ unsigned array_model_full::get_accessed_array( const llvm::Instruction* I ) {
 
 
 expr array_model_full::access_bound_cons( exprs& idxs, exprs& ls) {
+auto s1 = idxs.size(); auto s2 = ls.size();
+std::cout << "idxs.size is " << s1 << " ls.size is " << s2 << "\n";
   assert( idxs.size() == ls.size() );
   // bounds constraints
   std::vector<expr> temp_vec;
@@ -266,7 +268,6 @@ array_model_full::array_read( unsigned bidx, const llvm::LoadInst* I,
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
   expr ar_name = vec.at(i);
-
   auto& ls = lengths.at(i);
   auto bound_guard = access_bound_cons(idxs, ls);
 

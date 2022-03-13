@@ -708,12 +708,14 @@ void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
   }
   auto idx_expr = bmc_ds_ptr->m.get_term( idx );
   idxs.push_back(idx_expr);
+      
   // access multi-dim arrays
   auto op_gep_ptr = gep->getPointerOperand();
   //todo: bit cast bug here
   while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
     op_gep_ptr = bcast->getOperand(0);
-  }
+    idxs.clear();
+   }
   if( auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr) ) {
     translateGEP( sub_gep, idxs );
   }
@@ -722,8 +724,8 @@ void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
 void bmc_pass::translateLoadInst( unsigned bidx,
                                   const llvm::LoadInst* load ) {
   assert( load );
-  load->print( llvm::outs() );
-  std::cout << "\n";
+  //load->print( llvm::outs() );
+  //std::cout << "\n";
   auto addr = load->getOperand(0);
   // jump over casting
   while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
