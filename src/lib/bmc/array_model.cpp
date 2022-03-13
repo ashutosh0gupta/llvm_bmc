@@ -206,9 +206,14 @@ unsigned array_model_full::get_accessed_array( const llvm::Instruction* I ) {
 
 
 expr array_model_full::access_bound_cons( exprs& idxs, exprs& ls) {
-auto s1 = idxs.size(); auto s2 = ls.size();
-std::cout << "idxs.size is " << s1 << " ls.size is " << s2 << "\n";
-  assert( idxs.size() == ls.size() );
+  // auto s1 = idxs.size(); auto s2 = ls.size();
+  // std::cout << "idxs.size is " << s1 << " ls.size is " << s2 << "\n";
+  assert( idxs.size() >= ls.size() );
+  //todo : HACK!!! removing dummy accesses at the end.
+  //       check if it is a correct fix
+  while( idxs.size() != ls.size() ){
+    idxs.pop_back();
+  }
   // bounds constraints
   std::vector<expr> temp_vec;
   unsigned pos = 0;
@@ -255,7 +260,6 @@ array_model_full::array_write( unsigned bidx, const llvm::StoreInst* I,
   // }
   // expr bound_guard = _and(temp_vec);
   // expr bound_guard(idx >= 0);//to be commented
-
   //
   return arr_write_expr( (new_ar == store( ar_name, idxs, val )),
                          bound_guard, new_ar );
