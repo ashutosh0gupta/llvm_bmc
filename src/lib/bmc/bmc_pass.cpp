@@ -830,6 +830,14 @@ void bmc_pass::translateStoreInst( unsigned bidx,
 
   auto val = store->getOperand(0);
   auto addr = store->getOperand(1);
+
+  //jumping over cast
+  // todo: to write a generic function that allows us to jump over cast
+  //       Should also checked ok casts in debug mode.
+  while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
+    addr = bcast->getOperand(0);
+  }
+
   if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
     // assert( gop->getNumIndices() <= 2);
     // llvm::Value * idx = NULL;
