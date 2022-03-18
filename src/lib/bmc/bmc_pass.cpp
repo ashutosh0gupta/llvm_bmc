@@ -591,7 +591,12 @@ void bmc_pass::translateCastInst( unsigned bidx,
     if( o.bit_precise ) {
       unsigned new_size = c_ty->getIntegerBitWidth();
       unsigned old_size = v->getType()->getIntegerBitWidth();
-      bmc_ds_ptr->m.insert_term_map( cast, bidx, zext( ex_v, new_size-old_size ) );
+      sort vs = ex_v.get_sort();
+      expr ex_vn = ex_v;
+      if( vs.is_bool() ) {
+	 ex_vn = ex_v.ctx().bv_val(ex_v,2);
+      }
+      bmc_ds_ptr->m.insert_term_map( cast, bidx, zext( ex_vn, new_size-old_size ) );
     }else{
       // Current policy allow extensions [ 1 -> 8, 8->32, 1->32, 32->64]
       if( ok_cast( c_ty, v_ty, 8, 1 ) || ok_cast( c_ty, v_ty, 32, 1 ) ||
