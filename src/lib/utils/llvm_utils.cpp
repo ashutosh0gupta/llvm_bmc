@@ -1504,6 +1504,7 @@ sort llvm_to_sort( options& o, const llvm::Type* t) {
   }
 }
 
+
 expr read_const( options& o, const llvm::Value* op ) {
 // expr read_const( const llvm::Value* op, solver_context& ctx ) {
   solver_context& ctx = o.solver_ctx;

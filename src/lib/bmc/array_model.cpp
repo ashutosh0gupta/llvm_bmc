@@ -220,28 +220,34 @@ expr array_model_full::access_bound_cons( exprs& idxs, exprs& ls) {
   for( auto& l : ls ) {
     expr idx = idxs[pos];
     if( o.bit_precise ) {
-      sort s1 = idx.get_sort(); sort s2 = l.get_sort();
-      std::cout << "idx sort is " << s1 << " l sort is " << s2 << "\n";
-      if (s1.is_bv()) {
-        expr zero = solver_ctx.bv_val(0,idx.get_sort().bv_size());
-        expr lower_bound_arr( idx >= zero );
-        temp_vec.push_back(lower_bound_arr);
-	expr upper_bound_arr( !(idx >= l) );
-        temp_vec.push_back(upper_bound_arr);
-      }
-      else {
-	expr idxn = idx;
-        if( s1.is_int() ) {
-	 idxn = idx.ctx().bv_val(idx,64);
-        }        
-        expr lower_bound_arr( idxn >= 0 );
-        temp_vec.push_back(lower_bound_arr);
-	expr l_bv = solver_ctx.bv_val(l,64);
-	expr upper_bound_arr( !(idxn >= l_bv) );
-        temp_vec.push_back(upper_bound_arr);
-	idxs[pos] = idxn;
-      }
-      
+      expr zero = solver_ctx.bv_val(0,idx.get_sort().bv_size());
+      expr lower_bound_arr( idx >= zero );
+      temp_vec.push_back(lower_bound_arr);
+      expr upper_bound_arr( !(idx >= l) );
+      temp_vec.push_back(upper_bound_arr);
+
+      // sort s1 = idx.get_sort(); sort s2 = l.get_sort();
+      // std::cout << "idx sort is " << s1 << " l sort is " << s2 << "\n";
+      // if (s1.is_bv()) {
+      //   expr zero = solver_ctx.bv_val(0,idx.get_sort().bv_size());
+      //   expr lower_bound_arr( idx >= zero );
+      //   temp_vec.push_back(lower_bound_arr);
+      //   expr upper_bound_arr( !(idx >= l) );
+      //   temp_vec.push_back(upper_bound_arr);
+      // }
+      // else {
+      //   expr idxn = idx;
+      //   if( s1.is_int() ) {
+      //    idxn = idx.ctx().bv_val(idx,64);
+      //   }        
+      //   expr lower_bound_arr( idxn >= 0 );
+      //   temp_vec.push_back(lower_bound_arr);
+      //   expr l_bv = solver_ctx.bv_val(l,64);
+      //   expr upper_bound_arr( !(idxn >= l_bv) );
+      //   temp_vec.push_back(upper_bound_arr);
+      //   idxs[pos] = idxn;
+      // }
+
     } else {
 	expr lower_bound_arr(idx >= 0);
     	temp_vec.push_back(lower_bound_arr);

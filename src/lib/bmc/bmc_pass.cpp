@@ -666,8 +666,11 @@ void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
     auto val = alloca->getArraySize();
     if( auto constInt = llvm::dyn_cast<const llvm::ConstantInt>(val) ) {
         int constIntValue = (int)constInt->getSExtValue();
-        expr const_expr = get_expr_const(solver_ctx,constIntValue);
-        std::vector<expr> ls; ls.push_back( const_expr);
+        std::vector<expr> ls;
+        if( o.bit_precise )
+          ls.push_back( get_expr_bv_const(solver_ctx,constIntValue,64)); //todo: why 64
+        else
+          ls.push_back( get_expr_const(solver_ctx,constIntValue));
         bmc_ds_ptr->set_array_length( alloca, ls );
         // array_lengths.push_back(const_expr);
     } else {
@@ -680,9 +683,14 @@ void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
   }
   else if( llvm::isa<const llvm::ArrayType>(typ) ) {
     int siz = (int)typ->getArrayNumElements();
-    expr const_expr = get_expr_const(solver_ctx,siz);
-    std::vector<expr> ls; ls.push_back( const_expr);
+    std::vector<expr> ls;
+    if( o.bit_precise )
+      ls.push_back( get_expr_bv_const(solver_ctx,siz,64)); //todo: why 64
+    else
+      ls.push_back( get_expr_const(solver_ctx,siz));
     bmc_ds_ptr->set_array_length( alloca, ls );
+    // expr const_expr = get_expr_const(solver_ctx,siz);
+    // std::vector<expr> ls; ls.push_back( const_expr);
     // array_lengths.push_back(const_expr);
   }
   else {
@@ -768,7 +776,12 @@ void bmc_pass::translateLoadInst( unsigned bidx,
   } else if( llvm::isa<const llvm::AllocaInst>(addr) ) {
     // To handle a[0] when a is dynamic sized array
     // expr idx_expr = get_expr_const(solver_ctx,0);
-    exprs idxs; idxs.push_back( get_expr_const(solver_ctx,0) );
+    exprs idxs;
+    if( o.bit_precise)
+      idxs.push_back( get_expr_bv_const( solver_ctx, 0, 64 ) );
+    else
+      idxs.push_back( get_expr_const( solver_ctx, 0 ) );
+
     loadFromArrayHelper(bidx, load, idxs );
   } else if (auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
     //todo: rethink about this
@@ -870,7 +883,11 @@ void bmc_pass::translateStoreInst( unsigned bidx,
   // } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
     // To handle a[0] when a is dynamic sized array
     // expr idx_expr = get_expr_const(solver_ctx,0);
-    exprs idxs; idxs.push_back( get_expr_const(solver_ctx,0) );
+    exprs idxs;
+    if( o.bit_precise)
+      idxs.push_back( get_expr_bv_const( solver_ctx, 0, 64 ) );
+    else
+      idxs.push_back( get_expr_const( solver_ctx, 0 ) );
     storeToArrayHelper(bidx, store, val, idxs );
   } else if( llvm::isa<llvm::Constant>(addr) ) {
   // } else if( auto cons = llvm::dyn_cast<llvm::Constant>(addr) ) {

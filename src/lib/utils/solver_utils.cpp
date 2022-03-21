@@ -489,6 +489,10 @@ expr get_expr_const( solver_context& c, int num ) {
   return c.int_val(num);
 }
 
+expr get_expr_bv_const( solver_context& c, int num, int bw ) {
+  return c.bv_val( num, bw );
+}
+
 expr get_fresh_bool( solver_context& c, std::string suff )
 {
   static unsigned count = 0;
