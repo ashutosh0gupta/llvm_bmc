@@ -827,7 +827,6 @@ void bmc_pass::create_write_event( const llvm::StoreInst* store ) {
 void bmc_pass::translateStoreInst( unsigned bidx,
                                    const llvm::StoreInst* store ) {
   assert( store );
-
   auto val = store->getOperand(0);
   auto addr = store->getOperand(1);
 
