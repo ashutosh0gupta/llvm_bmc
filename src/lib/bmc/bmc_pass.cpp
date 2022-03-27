@@ -628,7 +628,7 @@ void bmc_pass::translateCastInst( unsigned bidx,
     }
   // }else if( auto bitCast = llvm::dyn_cast<llvm::BitCastInst>(cast) ) {
   }else if( llvm::isa<llvm::BitCastInst>(cast) ) {
-    llvm_bmc_warning("bmc", "Ignoring a bit bast! Be careful");
+    llvm_bmc_warning("bmc", "Ignoring a bit cast! Be careful");
     // llvm_bmc_error("bmc", "cast instruction is not recognized !!");
   }
   else if( llvm::isa<llvm::UIToFPInst>(cast) ) {
@@ -720,6 +720,9 @@ void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
     idx = gep->getOperand(2);
   }
   auto idx_expr = bmc_ds_ptr->m.get_term( idx );
+  if( o.bit_precise ) {
+    // check if idx is not default bit length then extend it to that length
+  }
   idxs.push_back(idx_expr);
       
   // access multi-dim arrays
