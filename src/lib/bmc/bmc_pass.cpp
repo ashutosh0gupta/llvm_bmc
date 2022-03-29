@@ -628,7 +628,7 @@ void bmc_pass::translateCastInst( unsigned bidx,
     }
   // }else if( auto bitCast = llvm::dyn_cast<llvm::BitCastInst>(cast) ) {
   }else if( llvm::isa<llvm::BitCastInst>(cast) ) {
-    llvm_bmc_warning("bmc", "Ignoring a bit bast! Be careful");
+    llvm_bmc_warning("bmc", "Ignoring a bit cast! Be careful");
     // llvm_bmc_error("bmc", "cast instruction is not recognized !!");
   }
   else if( llvm::isa<llvm::UIToFPInst>(cast) ) {
@@ -720,7 +720,18 @@ void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
     idx = gep->getOperand(2);
   }
   auto idx_expr = bmc_ds_ptr->m.get_term( idx );
-  idxs.push_back(idx_expr);
+  if( o.bit_precise ) {
+    // check if idx is not default bit length then extend it to that length
+	sort si = idx_expr.get_sort();
+	if (si.is_bv()) {
+	  if (si.bv_size() != 64) {
+		expr idx_64 = idx_expr.ctx().bv_val(idx_expr,64);
+		idxs.push_back(idx_64);
+	  }
+	  else idxs.push_back(idx_expr);
+	}
+  }
+  //idxs.push_back(idx_expr);
       
   // access multi-dim arrays
   auto op_gep_ptr = gep->getPointerOperand();
@@ -840,6 +851,7 @@ void bmc_pass::create_write_event( const llvm::StoreInst* store ) {
 void bmc_pass::translateStoreInst( unsigned bidx,
                                    const llvm::StoreInst* store ) {
   assert( store );
+//store->print( llvm::outs() ); std::cout << "\n";
   auto val = store->getOperand(0);
   auto addr = store->getOperand(1);
 
