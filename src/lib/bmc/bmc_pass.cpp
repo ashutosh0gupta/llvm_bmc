@@ -721,18 +721,16 @@ void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
   }
   auto idx_expr = bmc_ds_ptr->m.get_term( idx );
   if( o.bit_precise ) {
+    // todo: HACK; fix it
     // check if idx is not default bit length then extend it to that length
-	sort si = idx_expr.get_sort();
-	if (si.is_bv()) {
-	  if (si.bv_size() != 64) {
-		expr idx_64 = idx_expr.ctx().bv_val(idx_expr,64);
-		idxs.push_back(idx_64);
-	  }
-	  else idxs.push_back(idx_expr);
-	}
+    sort si = idx_expr.get_sort();
+    if ( si.is_bv() && si.bv_size() != 64 ) {
+      idx_expr = idx_expr.ctx().bv_val(idx_expr,64);
+    }
   }
-  //idxs.push_back(idx_expr);
-      
+
+  idxs.push_back(idx_expr);
+
   // access multi-dim arrays
   auto op_gep_ptr = gep->getPointerOperand();
   //todo: bit cast bug here
@@ -863,25 +861,9 @@ void bmc_pass::translateStoreInst( unsigned bidx,
   }
 
   if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
-    // assert( gop->getNumIndices() <= 2);
-    // llvm::Value * idx = NULL;
-    // if(gop->getNumOperands() == 2) idx = gop->getOperand(1);
-    // else if(gop->getNumOperands() == 3) {
-    //   // assert( gep->getOperand(1) == 0);
-    //   idx = gop->getOperand(2);
-    // }
-    // auto idx_expr = bmc_ds_ptr->m.get_term( idx );
     exprs idxs;
     translateGEP( gop, idxs);
     storeToArrayHelper(bidx, store, val, idxs);
-  // }else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
-  //   //todo: does it enter here?
-  //   // GEPOperator is more general case than GetElementPtrInst
-  //   llvm::Value * idx = NULL;
-  //   if(gep->getNumOperands() == 2) idx = gep->getOperand(1);
-  //   else if(gep->getNumOperands() == 3) idx = gep->getOperand(2);
-  //   auto idx_expr = bmc_ds_ptr->m.get_term( idx );
-  //   storeToArrayHelper(bidx, store, val, idx_expr);
   } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto val_expr = bmc_ds_ptr->m.get_term( val );
@@ -891,10 +873,8 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     }
     bmc_ds_ptr->bmc_vec.push_back( glb_wrt.first );
     bmc_ds_ptr->m.insert_term_map( store, bidx, glb_wrt.second );
-  } else if(llvm::isa<const llvm::AllocaInst>(addr)) {
-  // } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
-    // To handle a[0] when a is dynamic sized array
-    // expr idx_expr = get_expr_const(solver_ctx,0);
+  } else if( llvm::isa<const llvm::AllocaInst>(addr) ||
+             llvm::isa<const llvm::Argument>(addr) ) {
     exprs idxs;
     if( o.bit_precise)
       idxs.push_back( get_expr_bv_const( solver_ctx, 0, 64 ) );
@@ -990,28 +970,19 @@ void bmc_pass::translateUnreachableInst( unsigned bidx,
   bmc_ds_ptr->add_spec(!unreach_path_bit);
 }
 
-// void bmc_pass::translateTerminatorInst( unsigned bidx,
-//                                         const llvm::TerminatorInst *I ) {
-//   assert( I );
+void bmc_pass::translateInvokeInst( unsigned bidx,
+                                    const llvm::InvokeInst *I) {
+  // for call to functions that may throw exceptions
+  // todo: needs careful implementation
 
-//   if( auto br = llvm::dyn_cast<llvm::BranchInst>(I) ) {
-//     translateBranch( bidx, br );
-//   } else if( auto ret = llvm::dyn_cast<llvm::ReturnInst>(I) ) {
-//     translateRetInst( ret );
-//   } else if( auto swch = llvm::dyn_cast<llvm::SwitchInst>(I) ) {
-//     translateSwitchInst(bidx, swch);
-//   } else if( auto unreach = llvm::dyn_cast<llvm::UnreachableInst>(I) ) {
-//     translateUnreachableInst(bidx, unreach);
-//   } else {
-//     BMC_UNSUPPORTED_INSTRUCTIONS( IndirectBrInst,    I );
-//     BMC_UNSUPPORTED_INSTRUCTIONS( InvokeInst,        I );
-//     BMC_UNSUPPORTED_INSTRUCTIONS( ResumeInst,        I );
-//     BMC_UNSUPPORTED_INSTRUCTIONS( CatchSwitchInst,   I );
-//     BMC_UNSUPPORTED_INSTRUCTIONS( CatchReturnInst,   I );
-//     BMC_UNSUPPORTED_INSTRUCTIONS( CleanupReturnInst, I );
-//     llvm_bmc_error( "bmc", "unsupported terminator instruction!");
-//   }
-// }
+  // // todo check who is invoked
+  // if( ) {
+  //   // if fuction name @__gnat_rcheck_CE_Index_Check matched
+  //   return;
+  // }
+  // assert(false);
+}
+
 
 void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
   assert( b );
@@ -1117,6 +1088,8 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
       translateSelectInst(bidx, sel);
     } else if( auto unreach = llvm::dyn_cast<llvm::UnreachableInst>(I) ) {
       translateUnreachableInst(bidx, unreach);
+    } else if( auto invoke = llvm::dyn_cast<llvm::InvokeInst>(I) ) {
+      translateInvokeInst(bidx, invoke);
     // } else if( auto terminate = llvm::dyn_cast<llvm::TerminatorInst>(I)) {
     //   translateTerminatorInst( bidx, terminate );
     } else {

@@ -42,6 +42,7 @@ private:
   void translatePhiNode(  unsigned, const llvm::PHINode* );
   void translateSelectInst( unsigned, const llvm::SelectInst* );
   void translateBranch( unsigned, const llvm::BranchInst* );
+  void translateInvokeInst( unsigned bidx, const llvm::InvokeInst *I);
   void translateCallInst( unsigned, const llvm::CallInst* );
   void translateIntrinsicInst( unsigned, const llvm::IntrinsicInst* );
   void translateDebugInfo( unsigned, const llvm::DbgInfoIntrinsic* );
