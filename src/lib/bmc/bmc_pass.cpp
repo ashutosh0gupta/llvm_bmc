@@ -971,7 +971,8 @@ void bmc_pass::translateUnreachableInst( unsigned bidx,
 }
 
 void bmc_pass::translateInvokeInst( unsigned bidx,
-                                    const llvm::InvokeInst *I) {
+                                    const llvm::InvokeInst *invoke) {
+  assert(invoke);
   // for call to functions that may throw exceptions
   // todo: needs careful implementation
 
@@ -980,6 +981,15 @@ void bmc_pass::translateInvokeInst( unsigned bidx,
   //   // if fuction name @__gnat_rcheck_CE_Index_Check matched
   //   return;
   // }
+
+  llvm::Function* fp = invoke->getCalledFunction();
+  
+  if( (fp != NULL) && ((fp->getName() == "__gnat_rcheck_CE_Index_Check") || (fp->getName() == "__gnat_rcheck_CE_Overflow_Check") )) { //Do nothing - to be confirmed
+    //std::cout << "These are Ada Runtime functions\n";
+  }
+  else {
+    llvm_bmc_error("bmc", "invoke is not recognized !!");
+  }
   // assert(false);
 }
 
