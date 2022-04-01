@@ -180,8 +180,8 @@ void bmc_pass::translateCmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
   // todo: two cases of cmp ICmpInst and FCmpInst
   // figure out which one is actually supported
   llvm::Value* lhs = cmp->getOperand( 0 ),* rhs = cmp->getOperand( 1 );
-  // expr l = get_term( solver_ctx, lhs, m ), r = get_term( solver_ctx, rhs, m );
-  expr l = bmc_ds_ptr->m.get_term( lhs ), r = bmc_ds_ptr->m.get_term( rhs );
+  expr l = bmc_ds_ptr->m.get_term( lhs );
+  expr r = bmc_ds_ptr->m.get_term( rhs );
 
   // l and r may have different types, due to llvm does not record clearly
   // if something is bool or int. Our translation may incorrectly identify
@@ -976,21 +976,21 @@ void bmc_pass::translateInvokeInst( unsigned bidx,
   // for call to functions that may throw exceptions
   // todo: needs careful implementation
 
-  // // todo check who is invoked
-  // if( ) {
-  //   // if fuction name @__gnat_rcheck_CE_Index_Check matched
-  //   return;
-  // }
-
   llvm::Function* fp = invoke->getCalledFunction();
-  
-  if( (fp != NULL) && ((fp->getName() == "__gnat_rcheck_CE_Index_Check") || (fp->getName() == "__gnat_rcheck_CE_Overflow_Check") )) { //Do nothing - to be confirmed
-    //std::cout << "These are Ada Runtime functions\n";
-  }
-  else {
+  auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
+  assert( exit_bits.size() == 2 );
+  // auto normal = invoke->getNormalDest();
+  // auto landing = invoke->getUnwindDest();
+
+  if( (fp != NULL) &&
+      ((fp->getName() == "__gnat_rcheck_CE_Index_Check") ||
+       (fp->getName() == "__gnat_rcheck_CE_Overflow_Check") )) {
+    //Do nothing - throws exception
+    // unwind is the second bit in the exit bits??
+    bmc_ds_ptr->bmc_vec.push_back( exit_bits[1] );
+  } else {
     llvm_bmc_error("bmc", "invoke is not recognized !!");
   }
-  // assert(false);
 }
 
 

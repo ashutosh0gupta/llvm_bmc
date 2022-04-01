@@ -597,9 +597,19 @@ expr _and( std::vector<expr> &vec ) {
 
 // we need this xor, since the default xor in c++ interface is for bvxor
 expr _xor( expr const &a, expr const &b ) {
-  check_context(a, b);
-  Z3_ast r = Z3_mk_xor(a.ctx(), a, b);
-  return expr(a.ctx(), r);
+  if( a.is_bv()) {
+    return a^b;
+  }else{
+    expr_vector sol_vec(a.ctx());
+    sol_vec.push_back(a);
+    sol_vec.push_back(b);
+    return mk_xor( sol_vec );
+  }
+  // check_context(a, b);
+  // Z3_ast r = Z3_mk_xor(a.ctx(), a, b);
+  // a.ctx().check_error();
+  // expr r_xor = expr(a.ctx(), r);
+  // return r_xor;
 }
 
 expr neg_and( std::vector<expr> &vec, solver_context& sol_ctx ) {
