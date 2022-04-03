@@ -239,7 +239,9 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
   unsigned num = phi->getNumIncomingValues();
 
   if( !phi->getType()->isIntegerTy() && !phi->getType()->isFloatTy() ) {
-    // phi->getParent()->dump();
+    //phi->getParent()->dump();
+    if( phi->getType()->isPointerTy()) std::cout << "Pointer type\n";
+    if( phi->getType()->isArrayTy()) std::cout << "Array type\n";
     llvm_bmc_error("bmc", "phi nodes with non integers not supported !!");
   }
 
@@ -972,7 +974,7 @@ void bmc_pass::translateUnreachableInst( unsigned bidx,
 
 void bmc_pass::translateInvokeInst( unsigned bidx,
                                     const llvm::InvokeInst *invoke) {
-  assert(invoke);
+  assert( invoke );
   // for call to functions that may throw exceptions
   // todo: needs careful implementation
 
@@ -991,6 +993,15 @@ void bmc_pass::translateInvokeInst( unsigned bidx,
   } else {
     llvm_bmc_error("bmc", "invoke is not recognized !!");
   }
+}
+
+
+void bmc_pass::translateLandingPadInst( unsigned bidx,
+                                         const llvm::LandingPadInst *lpad) {
+	assert( lpad );
+	if (lpad->isCleanup()) {
+		std::cout << "Landingpad cleanup\n";
+	}
 }
 
 
@@ -1098,6 +1109,8 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
       translateSelectInst(bidx, sel);
     } else if( auto unreach = llvm::dyn_cast<llvm::UnreachableInst>(I) ) {
       translateUnreachableInst(bidx, unreach);
+    } else if( auto lpad = llvm::dyn_cast<llvm::LandingPadInst>(I) ) {
+      translateLandingPadInst(bidx, lpad);
     } else if( auto invoke = llvm::dyn_cast<llvm::InvokeInst>(I) ) {
       translateInvokeInst(bidx, invoke);
     // } else if( auto terminate = llvm::dyn_cast<llvm::TerminatorInst>(I)) {
@@ -1105,7 +1118,7 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
     } else {
       //Unsupported terminator instructions
       BMC_UNSUPPORTED_INSTRUCTIONS( IndirectBrInst,    I );
-      BMC_UNSUPPORTED_INSTRUCTIONS( InvokeInst,        I );
+      //BMC_UNSUPPORTED_INSTRUCTIONS( InvokeInst,        I );
       BMC_UNSUPPORTED_INSTRUCTIONS( ResumeInst,        I );
       BMC_UNSUPPORTED_INSTRUCTIONS( CatchSwitchInst,   I );
       BMC_UNSUPPORTED_INSTRUCTIONS( CatchReturnInst,   I );
@@ -1123,7 +1136,7 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
       BMC_UNSUPPORTED_INSTRUCTIONS( InsertElementInst,  I);
       BMC_UNSUPPORTED_INSTRUCTIONS( ShuffleVectorInst,  I);
       BMC_UNSUPPORTED_INSTRUCTIONS( InsertValueInst,    I);
-      BMC_UNSUPPORTED_INSTRUCTIONS( LandingPadInst,     I);
+      //BMC_UNSUPPORTED_INSTRUCTIONS( LandingPadInst,     I);
       LLVM_DUMP( I );
       llvm_bmc_error("bmc", "unsupported instruction");
     }

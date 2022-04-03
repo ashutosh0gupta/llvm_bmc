@@ -53,6 +53,7 @@ private:
   void translateGetElementPtrInst(const llvm::GetElementPtrInst*);
   void translateSwitchInst(unsigned, const llvm::SwitchInst *);
   void translateUnreachableInst(unsigned, const llvm::UnreachableInst *);
+  void translateLandingPadInst( unsigned, const llvm::LandingPadInst *);
   void init_path_exit_bit(bb_vec_t & //, const bb*
                           );
   void translateGEP( const llvm::GEPOperator* gep, exprs& );
