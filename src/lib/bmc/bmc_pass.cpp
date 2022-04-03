@@ -1119,7 +1119,7 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
       //Unsupported terminator instructions
       BMC_UNSUPPORTED_INSTRUCTIONS( IndirectBrInst,    I );
       //BMC_UNSUPPORTED_INSTRUCTIONS( InvokeInst,        I );
-      BMC_UNSUPPORTED_INSTRUCTIONS( ResumeInst,        I );
+      BMC_UNSUPPORTED_INSTRUCTIONS( ResumeInst,        I ); // passing exception to caller
       BMC_UNSUPPORTED_INSTRUCTIONS( CatchSwitchInst,   I );
       BMC_UNSUPPORTED_INSTRUCTIONS( CatchReturnInst,   I );
       BMC_UNSUPPORTED_INSTRUCTIONS( CleanupReturnInst, I );
@@ -1136,7 +1136,7 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
       BMC_UNSUPPORTED_INSTRUCTIONS( InsertElementInst,  I);
       BMC_UNSUPPORTED_INSTRUCTIONS( ShuffleVectorInst,  I);
       BMC_UNSUPPORTED_INSTRUCTIONS( InsertValueInst,    I);
-      //BMC_UNSUPPORTED_INSTRUCTIONS( LandingPadInst,     I);
+      //BMC_UNSUPPORTED_INSTRUCTIONS( LandingPadInst,     I); // allocates exception object 
       LLVM_DUMP( I );
       llvm_bmc_error("bmc", "unsupported instruction");
     }
@@ -1214,6 +1214,9 @@ void bmc_pass::do_bmc() {
   for( const bb* src : bmc_ds_ptr->bb_vec ) {
     // support for stacked call. blocks before start_bidx have been processed
     if( bidx < bmc_ds_ptr->processed_bidx) { bidx++; continue; }
+    if( llvm::isa<llvm::ResumeInst>( src->getTerminator() ) ) {
+      continue; // todo: hack! We are ignoring returned exceptions.
+    }
     std::vector<expr> incoming_paths;
     std::vector<const bb*> prevs;
     for( auto& pre_bidx : bmc_ds_ptr->pred_idxs[bidx] ) {
