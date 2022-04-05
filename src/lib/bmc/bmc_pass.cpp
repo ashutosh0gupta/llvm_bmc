@@ -239,9 +239,7 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
   unsigned num = phi->getNumIncomingValues();
 
   if( !phi->getType()->isIntegerTy() && !phi->getType()->isFloatTy() ) {
-    //phi->getParent()->dump();
-    if( phi->getType()->isPointerTy()) std::cout << "Pointer type\n";
-    if( phi->getType()->isArrayTy()) std::cout << "Array type\n";
+    // phi->getParent()->dump();
     llvm_bmc_error("bmc", "phi nodes with non integers not supported !!");
   }
 
@@ -513,6 +511,10 @@ void bmc_pass::translateCallInst( unsigned bidx,
     assume_to_bmc( bidx, call);
   } else if( is_nondet(call) ) {
     translateNondet( bidx, call);
+  } else if( fp != NULL && fp->getName() == "fabsf" ) { 
+    auto arg = fp->getArg(0);
+    expr AbsArg = bmc_ds_ptr->m.get_term( arg );
+    bmc_ds_ptr->m.insert_term_map( call, bidx, AbsArg );
   } else if( fp != NULL && fp->getName().startswith("__gnat") ) { //Do nothing - to be confirmed
     //std::cout << "These are Ada Runtime functions\n";
   } else if( fp != NULL && fp->getName().startswith("__VERIFIER") ) {
@@ -714,12 +716,16 @@ void bmc_pass::loadFromArrayHelper( unsigned bidx,
 }
 
 void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
-  assert( gep->getNumIndices() <= 2);
+  //assert( gep->getNumIndices() <= 2);
+  assert( gep->getNumIndices() <= 3); //Confirm if correct
   llvm::Value * idx = NULL;
   if(gep->getNumOperands() == 2) idx = gep->getOperand(1);
   else if(gep->getNumOperands() == 3) {
     // assert( gep->getOperand(1) == 0);
     idx = gep->getOperand(2);
+  }
+  else if (gep->getNumOperands() == 4) {
+   idx = gep->getOperand(3);
   }
   auto idx_expr = bmc_ds_ptr->m.get_term( idx );
   if( o.bit_precise ) {
