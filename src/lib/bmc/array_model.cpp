@@ -208,7 +208,10 @@ unsigned array_model_full::get_accessed_array( const llvm::Instruction* I ) {
 expr array_model_full::access_bound_cons( exprs& idxs, exprs& ls) {
   // auto s1 = idxs.size(); auto s2 = ls.size();
   // std::cout << "idxs.size is " << s1 << " ls.size is " << s2 << "\n";
-  assert( idxs.size() >= ls.size() );
+  // assert( idxs.size() >= ls.size() );
+  if( idxs.size() < ls.size() ) {
+    assert( false );
+  }
   //todo : HACK!!! removing dummy accesses at the end.
   //       check if it is a correct fix
   while( idxs.size() != ls.size() ){

@@ -716,29 +716,33 @@ void bmc_pass::loadFromArrayHelper( unsigned bidx,
 }
 
 void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
+  //todo: what is the meaning of the second operand in GEP operator?
+
   //assert( gep->getNumIndices() <= 2);
   assert( gep->getNumIndices() <= 3); //Confirm if correct
-  llvm::Value * idx = NULL;
-  if(gep->getNumOperands() == 2) idx = gep->getOperand(1);
-  else if(gep->getNumOperands() == 3) {
-    // assert( gep->getOperand(1) == 0);
-    idx = gep->getOperand(2);
-  }
-  else if (gep->getNumOperands() == 4) {
-   idx = gep->getOperand(3);
-  }
-  auto idx_expr = bmc_ds_ptr->m.get_term( idx );
-  if( o.bit_precise ) {
-    // todo: HACK; fix it
-    // check if idx is not default bit length then extend it to that length
-    sort si = idx_expr.get_sort();
-    if ( si.is_bv() && si.bv_size() != 64 ) {
-      idx_expr = idx_expr.ctx().bv_val(idx_expr,64);
+  // llvm::Value * idx = NULL;
+  // if(gep->getNumOperands() == 2) idx = gep->getOperand(1);
+  // else if(gep->getNumOperands() == 3) {
+  //   // assert( gep->getOperand(1) == 0);
+  //   idx = gep->getOperand(2);
+  // }
+  // else if (gep->getNumOperands() == 4) {
+  //   idx = gep->getOperand(3);
+  // }
+  unsigned i= gep->getNumOperands() == 2 ? 1 : 2;
+  for( ; i < gep->getNumOperands(); i++ ) {
+    llvm::Value* idx = gep->getOperand(i);
+    auto idx_expr = bmc_ds_ptr->m.get_term( idx );
+    if( o.bit_precise ) {
+      // todo: HACK; fix it
+      // check if idx is not default bit length then extend it to that length
+      sort si = idx_expr.get_sort();
+      if ( si.is_bv() && si.bv_size() != 64 ) {
+        idx_expr = idx_expr.ctx().bv_val(idx_expr,64);
+      }
     }
+    idxs.push_back(idx_expr);
   }
-
-  idxs.push_back(idx_expr);
-
   // access multi-dim arrays
   auto op_gep_ptr = gep->getPointerOperand();
   //todo: bit cast bug here
