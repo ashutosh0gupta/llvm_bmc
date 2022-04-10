@@ -271,7 +271,7 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
 
   if( o.dump_solver_query ) {
     dump( o.outDirPath.string(), "test.smt2", s);
-    std::cout << s;
+    // std::cout << s;
   }
   //
   // if( o.use_solver == "z3" ) {
@@ -279,7 +279,7 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
     auto result = s.check();
     if( result == z3::sat ) {
       model m = s.get_model();
-      // produce_witness(m, bmc_ds_ptr);
+      produce_witness(m, bmc_ds_ptr);
       os << "\nSpecification that failed the check : \n";
       spec.print( os );
       os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
@@ -330,6 +330,7 @@ bmc::get_val_for_instruction( const llvm::Instruction* I, model& mdl,
   unsigned copy_count = 0;
   auto val = bmc_ds_ptr->m.read_term( I, copy_count );
   if( val ) {
+    val = mdl.eval( val );
     // auto it = bmc_ds_ptr->m.find( {I,copy_count} );
     // if( it != bmc_ds_ptr->m.end() ) {
     //   auto val = mdl.eval( it->second );
@@ -392,13 +393,13 @@ void bmc::produce_witness( model mdl, bmc_ds* bmc_ds_ptr,
       if( o.verbosity > 6 ) {
         std::cout << "-------------------------------------------\n";
         std::cout << "dumping block:" << getLocRange( b ) << "\n";
+        dump(b);
       }
       for( const llvm::Instruction& Iobj : b->getInstList() ) {
         const llvm::Instruction* I = &(Iobj);
         if( auto call = llvm::dyn_cast<llvm::CallInst>(I) ) {
           produce_witness_call( mdl, call );
         }
-        // if( bmc_ds_ptr->m.find({I,0}) == bmc_ds_ptr->m.end() ) continue;
         if( bmc_ds_ptr->m.read_term( I, 0 ) ) {} else continue;
         auto val = get_val_for_instruction( I, mdl, state, bmc_ds_ptr, call_count );
         std::string s = state_to_string( state );
@@ -416,5 +417,5 @@ void bmc::produce_witness( model mdl, bmc_ds* bmc_ds_ptr,
     bidx++;
   }
   // w.show_path();
-  w.generate_html();
+  // w.generate_html();
 }

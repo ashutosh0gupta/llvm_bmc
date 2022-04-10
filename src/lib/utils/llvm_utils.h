@@ -45,7 +45,7 @@ typedef std::vector<const inst*> inst_vec_t;
 // #define COMMENT_FIRST_TOKEN "(assert"
 
 
-void dump( llvm::Value* );
+void dump( const llvm::Value* );
 
 
 llvm::Instruction*

@@ -173,3 +173,8 @@ attributes #1 = { noreturn }
 !llvm.module.flags = !{!0}
 
 !0 = !{i32 7, !"PIE Level", i32 2}
+
+
+
+;; options: -f "_ada_mnguidancedriver" -b examples/AssemblyFiles/test-001.s -s examples/AssemblyFiles/test-001-spec.txt
+;; output: 

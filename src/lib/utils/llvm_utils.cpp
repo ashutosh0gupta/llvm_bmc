@@ -32,7 +32,7 @@
 
 #define CLANG_VERSION "12.0"
 
-void dump( llvm::Value* v) {
+void dump( const llvm::Value* v) {
   if(v)
     v->print(llvm::outs());
   else
