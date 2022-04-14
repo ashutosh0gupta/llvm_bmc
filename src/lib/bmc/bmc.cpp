@@ -321,6 +321,11 @@ bool bmc::verify_prop() {
 }
 
 
+//-----------------------------------------------------------------------------
+//
+// Witness management
+//
+
 std::string
 bmc::get_val_for_instruction( const llvm::Instruction* I, model& mdl,
                               std::map<std::string,std::string>& state,
