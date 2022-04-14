@@ -1568,6 +1568,10 @@ expr read_const( options& o, const llvm::Value* op ) {
     // double v = n.convertToDouble();
     //return ctx.real_val(v);
     //llvm_bmc_error("llvm_utils", "Floating point constant not implemented!!" );
+  }else if( llvm::isa<llvm::Instruction>(op) ) {
+	
+	std::cout <<"It's an inst\n";
+
   }else if( llvm::isa<llvm::Constant>(op) ) {
     llvm_bmc_error("llvm_utils", "non int constants are not implemented!!" );
     std::cerr << "un recognized constant!";

@@ -10,18 +10,18 @@ module asm ""
 module asm "\09.ident\09\22GCC: (Ubuntu 8.4.0-1ubuntu1~18.04) 8.4.0 LLVM: 6.0.0\22"
 
 @main__cyclecount = global i32 undef
-@main__outflag = unnamed_addr global i16 undef
+@main__outflag = unnamed_addr global i16 17
 @main__minorinmajor = global i16 undef
-@main__step2 = unnamed_addr global i16 undef
-@main__step1 = unnamed_addr global i16 undef
+@main__step2 = unnamed_addr global i16 0
+@main__step1 = unnamed_addr global i16 0
 @main__time = unnamed_addr global float undef
-@main__combinederrorflag = unnamed_addr global i16 undef
+@main__combinederrorflag = unnamed_addr global i16 0
 @main__stageflgc = global i16 undef
 @main__stageflg = global i16 undef
 @main_E = unnamed_addr global i16 0
 @.cst = private local_unnamed_addr constant [9 x i8] c"main.adb\00", align 8
-@minor_cycle__firstcycle_mnvre = global i16 undef
-@minor_cycle__firstcycle = global i16 undef
+@minor_cycle__firstcycle_mnvre = global i16 0
+@minor_cycle__firstcycle = unnamed_addr global i16 1
 @minor_cycle_E = unnamed_addr global i16 0
 
 ; Function Attrs: uwtable
@@ -127,19 +127,6 @@ return:                                           ; preds = %"6", %entry
 }
 
 ; Function Attrs: uwtable
-define void @main__firstinit() #0 align 2 {
-entry:
-  store i16 1, i16* @main__minorinmajor, align 2
-  store i16 1, i16* @minor_cycle__firstcycle, align 2
-  store i16 17, i16* @main__outflag, align 2
-  store i16 0, i16* @main__step1, align 2
-  store i16 0, i16* @main__step2, align 2
-  store i16 0, i16* @main__combinederrorflag, align 2
-  store i16 0, i16* @minor_cycle__firstcycle_mnvre, align 2
-  ret void
-}
-
-; Function Attrs: uwtable
 define void @minor_cycle__manoeuvre() #0 align 2 {
 entry:
   %0 = load i16, i16* @minor_cycle__firstcycle, align 2
@@ -148,7 +135,6 @@ entry:
 
 "3":                                              ; preds = %entry
   store i16 0, i16* @minor_cycle__firstcycle, align 2
-  call void @main__firstinit()
   br label %"4"
 
 "4":                                              ; preds = %"3", %entry
@@ -173,8 +159,3 @@ attributes #1 = { noreturn }
 !llvm.module.flags = !{!0}
 
 !0 = !{i32 7, !"PIE Level", i32 2}
-
-
-
-;; options: -f "_ada_mnguidancedriver" -b examples/AssemblyFiles/test-001.s -s examples/AssemblyFiles/test-001-spec.txt
-;; output: 

@@ -79,7 +79,7 @@ void bmc_fun_pass::translatePrecond( bmc& b ) {
   std::vector<std::string> glb_names;
   for(unsigned i = 0; i < b.precond.size(); i++) {
     expr e = b.precond.at(i);
-    std::cout << "Precond is " << to_string(e) << "\n";
+    //std::cout << "Precond is " << to_string(e) << "\n";
     std::string orig_precond = to_string(e);
     glb_names = read_variables(orig_precond);
     //std::cout << "size is " << glb_names.size(); 
@@ -135,7 +135,7 @@ void bmc_fun_pass::translatePrecond( bmc& b ) {
       }	    
     }
     expr e1 = parseFormula(o.solver_ctx, orig_precond, precond_var_names, precond_declarations);
-    std::cout << "Modified precond is " << e1 << "\n";
+    //std::cout << "Modified precond is " << e1 << "\n";
     //b.precond.at(i) = e1;
     bmc_ds_ptr->add_pre_cond( e1, spec_reason_t::ASSUME );
   }
@@ -149,7 +149,7 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
   std::vector<std::string> glb_names;
   for(unsigned i = 0; i < b.prop.size(); i++) {
     expr e = b.prop.at(i);
-    std::cout << "Postcond is " << to_string(e) << " Block num is " << bidx << "\n";
+    //std::cout << "Postcond is " << to_string(e) << " Block num is " << bidx << "\n";
     std::string orig_postcond = to_string(e);
     glb_names = read_variables(orig_postcond);
     //std::cout << "size is " << glb_names.size(); 
@@ -208,7 +208,7 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
   	    	}	    
             }
 		expr e1 = parseFormula(o.solver_ctx, orig_postcond, postcond_var_names, postcond_declarations);
-		std::cout << "Modified postcond is " << e1 << "\n";
+		//std::cout << "Modified postcond is " << e1 << "\n";
 		//b.prop.at(i) = e1;
 		expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
 		bmc_ds_ptr->add_spec( !path_bit || e1, spec_reason_t::SPEC_FILE );
