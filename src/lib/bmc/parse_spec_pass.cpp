@@ -110,7 +110,7 @@ void parse_spec_pass::init_parse(llvm::Module &m, options& o, bmc& b)
       std::string Str1 = mit->getName().str();
       if (Str1 == EntryFnName) {
         //std::cout << "Str1 is " << Str1 <<"\n";
-        InlineInsertInst(*mit, b);
+        InlineInsertInst(m, *mit, b);
       }
     }
 
@@ -163,7 +163,7 @@ void parse_spec_pass::insert_monitor(llvm::Module &m, std::string Fn1, std::stri
 }
 
 
-void parse_spec_pass::InlineInsertInst( llvm::Function &f, bmc& b ) {
+void parse_spec_pass::InlineInsertInst( llvm::Module &m, llvm::Function &f, bmc& b ) {
   for (auto bbit = f.begin(); bbit != f.end(); bbit++) { //Iterate over basic blocks in function
 
     auto bb = &(*bbit);
@@ -189,13 +189,19 @@ void parse_spec_pass::InlineInsertInst( llvm::Function &f, bmc& b ) {
 	b.fn_to_thread.insert( pair );
 	//std::cout << "Called fn is " << FuncName << "\n";
 
-        if (fname1 == FuncName) {
+	llvm::LLVMContext& ctx = m.getContext();
+        llvm::Type *i32_type = llvm::IntegerType::getInt32Ty(ctx);
 
-          llvm::Instruction *icmp = new llvm::ICmpInst(I,llvm::ICmpInst::ICMP_ULT, invokedFn_Val[callseq_num], i32_val2); // cmp_res_name);
+        if (fname1 == FuncName) {
 
           //icmp->print( llvm::outs() );     std::cout << "\n";
           llvm::Value *const_val2 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 2, true);
           llvm::Value *const_val1 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 1, true);  //Create an i32 constant with value 1
+
+	  llvm::Instruction *load = new llvm::LoadInst(i32_type, invokedFn_Val[callseq_num], "test", false, I); //Load the global monitor var
+
+	  //llvm::Instruction *icmp = new llvm::ICmpInst(I,llvm::ICmpInst::ICMP_ULT, invokedFn_Val[callseq_num], const_val2); // cmp_res_name);
+	  llvm::Instruction *icmp = new llvm::ICmpInst(I, llvm::ICmpInst::ICMP_ULT, load, const_val2);
 
           //llvm::SelectInst *select =
           llvm::SelectInst::Create (icmp, const_val1, const_val2, monitor_var_name[callseq_num], I);
@@ -204,17 +210,18 @@ void parse_spec_pass::InlineInsertInst( llvm::Function &f, bmc& b ) {
         }
 
         if (fname2 == FuncName) {
-          llvm::Instruction *icmp = new llvm::ICmpInst(I,llvm::ICmpInst::ICMP_EQ, invokedFn_Val[callseq_num], i32_val1); // cmp_res_name);
 
           //icmp->print( llvm::outs() );     std::cout << "\n";
           llvm::Value *const_val1 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 1, true);
           llvm::Value *const_val2 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 2, true);  //Create an i32 constant with value 1
+	  llvm::Instruction *load = new llvm::LoadInst(i32_type, invokedFn_Val[callseq_num], "test", false, I); //Load the global monitor var
+          llvm::Instruction *icmp = new llvm::ICmpInst(I,llvm::ICmpInst::ICMP_EQ, load, const_val1); // cmp_res_name);
 
           //llvm::SelectInst *select =
           llvm::SelectInst::Create (icmp, const_val1, const_val2, monitor_var_name[callseq_num], I);
           //select->print( llvm::outs() );     std::cout << "\n";
         }
-	InlineInsertInst(*fun, b);
+	InlineInsertInst(m, *fun, b);
       }
     }
 
