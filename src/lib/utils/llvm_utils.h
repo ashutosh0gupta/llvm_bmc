@@ -46,6 +46,7 @@ typedef std::vector<const inst*> inst_vec_t;
 
 
 void dump( const llvm::Value* );
+void dump( const llvm::Type* );
 
 
 llvm::Instruction*
@@ -198,5 +199,9 @@ public:
   virtual void getAnalysisUsage(llvm::AnalysisUsage &au) const;
   llvm::StringRef getPassName() const;
 };
+
+// passes for transforming the modules
+void prepare_module(std::unique_ptr<llvm::Module>& module );
+void forced_inliner_pass(std::unique_ptr<llvm::Module>& module);
 
 #endif

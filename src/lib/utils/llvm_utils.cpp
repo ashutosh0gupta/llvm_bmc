@@ -39,6 +39,20 @@ void dump( const llvm::Value* v) {
     llvm::outs() << "NULL\n";
 }
 
+void dump( const llvm::Type* v) {
+  if(v)
+    v->print(llvm::outs());
+  else
+    llvm::outs() << "NULL\n";
+}
+
+// void dump( const llvm::Module* module) {
+//   if(m)
+//     m->print(llvm::outs());
+//   else
+//     llvm::outs() << "NULL\n";
+// }
+
 
 void c2bc( const std::string& fileName, const std::string& outName )
 {
@@ -1672,3 +1686,32 @@ void set_unroll_counts::getAnalysisUsage(llvm::AnalysisUsage &au) const {
   au.addRequired<llvm::LoopInfoWrapperPass>();
   au.addRequired<llvm::ScalarEvolutionWrapperPass>();
 }
+
+
+void forced_inliner_pass( std::unique_ptr<llvm::Module>& module ) {
+  for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
+    // todo: remove dependency on demangle from llvm_utils
+    std::string fname = demangle(fit->getName().str());
+    if( !fit->isDeclaration() ) {
+      // function has a body available
+      fit->addFnAttr(llvm::Attribute::AlwaysInline);
+      //To ensure all functions are inlined even if the personalities do not match
+      llvm::Constant *FnPersonality = nullptr;
+      fit->setPersonalityFn(FnPersonality);
+    }
+  }
+
+  // force inline
+  llvm::legacy::PassManager inline_passMan;
+  inline_passMan.add( llvm::createAlwaysInlinerLegacyPass() );
+  inline_passMan.run( *module.get() );
+}
+
+void prepare_module(std::unique_ptr<llvm::Module>& module ) {
+  llvm::legacy::PassManager passMan;
+  passMan.add( llvm::createPromoteMemoryToRegisterPass() );
+  passMan.add( llvm::createLoopRotatePass() ); // some params
+  passMan.add( llvm::createSCCPPass() );
+  passMan.run( *module.get() );
+}
+

@@ -67,8 +67,12 @@ sort array_model_full::get_solver_array_ty( const llvm::PointerType* ty ) {
   if( auto ar_ty = llvm::dyn_cast<llvm::ArrayType>(T)){
     return get_solver_array_ty( ar_ty );
   }else if( auto pty = llvm::dyn_cast<llvm::PointerType>(T) ) {
-    assert(false); //todo: fix it when hit it.
-    return get_solver_array_ty( pty );
+    // todo: creating array of arrays; not multidim array; Z3 may complain
+    auto e_ty = get_solver_array_ty( pty );
+    return solver_ctx.array_sort( get_address_sort(), e_ty );
+    //dump(pty);
+    //assert(false); //todo: fix it when hit it.
+    //return get_solver_array_ty( pty );
   }else{
     auto e_sort= llvm_to_sort( o, T);
     return solver_ctx.array_sort( get_address_sort(), e_sort );
