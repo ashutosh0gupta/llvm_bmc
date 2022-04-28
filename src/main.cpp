@@ -84,11 +84,14 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
   prepare_module( o, module, cmts, bb_cmt_map );
   bmc b( module, bb_cmt_map, o );
 
+  // process the spec file
+  import_spec_file( module, o, b);
+
   // initialize bmc data structure
   b.init();
 
   // process the spec file
-  import_spec_file( module, o, b);
+  //import_spec_file( module, o, b);
 
   //translate function to formulas
   b.run_bmc_pass();
