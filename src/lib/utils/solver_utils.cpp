@@ -51,6 +51,9 @@ expr parseFormula(solver_context& sol_ctx, std::string str, const std::vector <s
   /*if( es.size() != 1 ) {
        std::cout << "Error non unique formula parsed!" <<  "\n";
   } */
+  if( es.size() == 0 ) {
+    llvm_bmc_error( "parsing", "failed to parse input: " << str );
+  }
   ast = es[0]; 
   
   // adjust reference counter for variable
