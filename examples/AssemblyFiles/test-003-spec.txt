@@ -24,5 +24,5 @@
 ;(invoke-behaviour minor synchronous unique can-be-killed (repeated 0ms 20ms) (priority high))
 (pre-condition minor (assert(= (bvadd @main__stageflg @main__stageflgc) #xffff)))
 ;
-(post-condition major (assert(=> (= @main__guidoutflag #x2222) (bvuge @main__stageflg #x0077))))
+(post-condition minor (assert(=> (= @main__guidoutflag #x2222) (bvuge @main__stageflg #x0077))))
 ;(post-condition minor (assert(=> (= @main__guidoutflag #x0022) (fp.gt @minor_cycle__velocitycoeff (fp #b0 #b10001011 #b01000111010000000000000)))))

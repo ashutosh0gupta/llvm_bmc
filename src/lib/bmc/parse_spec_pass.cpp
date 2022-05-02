@@ -65,22 +65,22 @@ void parse_spec_pass::init_parse(llvm::Module &m, options& o, bmc& b)
 
   else {
 
-  llvm::LLVMContext& ctx = m.getContext();
-  llvm::Type *i32_type = llvm::IntegerType::getInt32Ty(ctx);
+//  llvm::LLVMContext& ctx = m.getContext();
+//  llvm::Type *i32_type = llvm::IntegerType::getInt32Ty(ctx);
   //Create a new global variable named val0_var of I32 type and initialise it to 0
-  val0_var = new llvm::GlobalVariable(m, i32_type, false, llvm::GlobalValue::InternalLinkage, llvm::ConstantInt::get(i32_type, 0), var0_name);
+  //val0_var = new llvm::GlobalVariable(m, i32_type, false, llvm::GlobalValue::InternalLinkage, llvm::ConstantInt::get(i32_type, 0), var0_name);
 
-  i32_val0 = m.getOrInsertGlobal(var0_name, i32_type);
+  //i32_val0 = m.getOrInsertGlobal(var0_name, i32_type);
   //val0_var->print( llvm::outs() );     std::cout << "\n";
 
-  val1_var = new llvm::GlobalVariable(m, i32_type, false, llvm::GlobalValue::InternalLinkage, llvm::ConstantInt::get(i32_type, 1), var1_name);
+ // val1_var = new llvm::GlobalVariable(m, i32_type, false, llvm::GlobalValue::InternalLinkage, llvm::ConstantInt::get(i32_type, 1), var1_name);
 
-  i32_val1 = m.getOrInsertGlobal(var1_name, i32_type);
+  //i32_val1 = m.getOrInsertGlobal(var1_name, i32_type);
   //val1_var->print( llvm::outs() );     std::cout << "\n";
 
-  val2_var = new llvm::GlobalVariable(m, i32_type, false, llvm::GlobalValue::InternalLinkage, llvm::ConstantInt::get(i32_type, 2), var2_name);
+  //val2_var = new llvm::GlobalVariable(m, i32_type, false, llvm::GlobalValue::InternalLinkage, llvm::ConstantInt::get(i32_type, 2), var2_name);
 
-  i32_val2 = m.getOrInsertGlobal(var2_name, i32_type);
+  //i32_val2 = m.getOrInsertGlobal(var2_name, i32_type);
   //val2_var->print( llvm::outs() );     std::cout << "\n";
 
   callseq_num = -1;
