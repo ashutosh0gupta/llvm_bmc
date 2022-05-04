@@ -1,3 +1,9 @@
+//---------------------------------------------
+//
+// DEPRECATED : DELETE THE FILE
+//
+//--------------------------------------------
+
 #include "include/heap_model.h"
 #include "lib/utils/llvm_utils.h"
 #include "lib/utils/solver_utils.h"

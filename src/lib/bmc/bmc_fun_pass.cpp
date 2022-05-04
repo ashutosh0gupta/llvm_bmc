@@ -13,7 +13,9 @@ bool bmc_fun_pass::runOnFunction( llvm::Function &f ) {
   if(fname != o.funcName) {
     return false;
   }
-  populateArrAccMap(&f);
+
+  // collect all the declared arrays in the function
+  populate_array_name_map(&f);
 
   bmc_fun *bmc_fun_ptr = new bmc_fun(o, ary_to_int, bmc_obj.m_model); // local
   assert(bmc_fun_ptr);
@@ -29,23 +31,6 @@ bool bmc_fun_pass::runOnFunction( llvm::Function &f ) {
                           bmc_fun_ptr->bb_vec, bmc_fun_ptr->block_to_id);
   bmc_fun_ptr->eb = &f.getEntryBlock();
   bmc_ds_ptr->init_array_model( o.ar_model );
-  // unsigned bidx = 0;
-  // for( const bb* src : bmc_ds_ptr->bb_vec ) {
-  //   for(auto PI = llvm::pred_begin(src),E = llvm::pred_end(src);PI != E;++PI) {
-  //     const bb* prev = *PI;
-  //     if(bmc_ds_ptr->ignore_edge( src, prev )) continue;
-  //     if(std::find(bmc_ds_ptr->bb_vec.begin(), bmc_ds_ptr->bb_vec.end(), prev)
-  //        == bmc_ds_ptr->bb_vec.end())
-  //       continue;
-  //     unsigned pre_bidx = 0;
-  //     for( const bb* prev_candidate : bmc_ds_ptr->bb_vec ) {
-  //       if( prev_candidate == prev ) break;
-  //       pre_bidx++;
-  //     }
-  //     bmc_ds_ptr->pred_idxs[bidx].push_back( pre_bidx );
-  //   }
-  //   bidx++;
-  // }
   bmc_fun_ptr->setup_prevs_non_repeating();
 
   translateParams(f);
@@ -69,7 +54,7 @@ bool bmc_fun_pass::runOnFunction( llvm::Function &f ) {
     }
     bidx++;
   }
-  do_bmc();
+  do_bmc(); // todo: why? delete if not needed.
   //translate post condition here
   return false;
 }
@@ -146,6 +131,8 @@ void bmc_fun_pass::translatePrecond( bmc& b ) {
 
 
 void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
+  // ary_to_int[llvmValue] -> get an index
+
   std::vector<std::string> glb_names;
   for(unsigned i = 0; i < b.prop.size(); i++) {
     expr e = b.prop.at(i);
@@ -154,68 +141,68 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
     glb_names = read_variables(orig_postcond);
     //std::cout << "size is " << glb_names.size(); 
     for (unsigned j = 0; j < glb_names.size(); j++) {
-            //std::cout << "glb_name1 is " << glb_names.at(j) << "\n";
-	    std::string var_name = glb_names.at(j);
-	    for( auto glb_idx_pair : bmc_obj.m_model.ind_in_mem_state ) {
-    		auto g = glb_idx_pair.first;
-    		auto idx = glb_idx_pair.second;
-    		const std::string gvar = (std::string)(g->getName());
-		//std::cout << "glb_name2 is " << gvar << "\n";
-		if (gvar == var_name) {
-			//std::cout << "glb_name is " << gvar << " Index is " << idx << "\n";
-			//auto it = bmc_obj.m_model.store_state_map.end();
-			//it--;
-			//auto key1 = it->first;
-			std::vector<state_obj>& mem_st = bmc_obj.m_model.store_state_map[bidx].mem_state_vec;
-			//std::cout << "Init name is ";
-			//mem_st[idx].print(); std::cout << " key is " << key1 << "\n";
-			var_name = '@'+ var_name;
-			const size_t oldSize = var_name.length();
-			std::string init_name = to_string(mem_st[idx].e);
-			//std::cout << "Init name is " << init_name << "\n";
-			postcond_var_names.push_back(init_name);
-			if (mem_st[idx].t.type.is_fpa()) {
-				postcond_declarations.push_back(o.solver_ctx.fpa_const(init_name.c_str(),8,24));
-				std::string init_name1 = init_name + ".";
-				postcond_var_names.push_back(init_name1);
-				postcond_declarations.push_back(o.solver_ctx.fpa_const(init_name1.c_str(),8,24));
-			}
-			if (mem_st[idx].t.type.is_bv()) {
-				postcond_declarations.push_back(o.solver_ctx.bv_const(init_name.c_str(),16));
-				std::string init_name1 = init_name + ".";
-				postcond_var_names.push_back(init_name1);
-				postcond_declarations.push_back(o.solver_ctx.bv_const(init_name1.c_str(),16));
-			}
+      //std::cout << "glb_name1 is " << glb_names.at(j) << "\n";
+      std::string var_name = glb_names.at(j);
+      for( auto glb_idx_pair : bmc_obj.m_model.ind_in_mem_state ) {
+        auto g = glb_idx_pair.first;
+        auto idx = glb_idx_pair.second;
+        const std::string gvar = (std::string)(g->getName());
+        //std::cout << "glb_name2 is " << gvar << "\n";
+        if (gvar == var_name) {
+          //std::cout << "glb_name is " << gvar << " Index is " << idx << "\n";
+          //auto it = bmc_obj.m_model.store_state_map.end();
+          //it--;
+          //auto key1 = it->first;
+          std::vector<state_obj>& mem_st = bmc_obj.m_model.store_state_map[bidx].mem_state_vec;
+          //std::cout << "Init name is ";
+          //mem_st[idx].print(); std::cout << " key is " << key1 << "\n";
+          var_name = '@'+ var_name;
+          const size_t oldSize = var_name.length();
+          std::string init_name = to_string(mem_st[idx].e);
+          //std::cout << "Init name is " << init_name << "\n";
+          postcond_var_names.push_back(init_name);
+          if (mem_st[idx].t.type.is_fpa()) {
+            postcond_declarations.push_back(o.solver_ctx.fpa_const(init_name.c_str(),8,24));
+            std::string init_name1 = init_name + ".";
+            postcond_var_names.push_back(init_name1);
+            postcond_declarations.push_back(o.solver_ctx.fpa_const(init_name1.c_str(),8,24));
+          }
+          if (mem_st[idx].t.type.is_bv()) {
+            postcond_declarations.push_back(o.solver_ctx.bv_const(init_name.c_str(),16));
+            std::string init_name1 = init_name + ".";
+            postcond_var_names.push_back(init_name1);
+            postcond_declarations.push_back(o.solver_ctx.bv_const(init_name1.c_str(),16));
+          }
 
-               	        const size_t newSize = init_name.length();
-			  for( size_t pos = 0; ; pos += newSize ) {
-			    // Locate the substring to replace
-			    pos = orig_postcond.find( var_name, pos );
-			    if( oldSize == newSize ) {
-			      // if they're same size, use std::string::replace
-			      orig_postcond.replace( pos, oldSize, init_name );
-			      break;
-			    } else {
-			      // if not same size, replace by erasing and inserting
-			      orig_postcond.erase( pos, oldSize );
-			      orig_postcond.insert( pos, init_name );
-			      //std::cout << "New postcond is " << orig_postcond << "\n";
-			      break;
-			    }
-			  }
-			 break;
-			}
-  	    	}	    
+          const size_t newSize = init_name.length();
+          for( size_t pos = 0; ; pos += newSize ) {
+            // Locate the substring to replace
+            pos = orig_postcond.find( var_name, pos );
+            if( oldSize == newSize ) {
+              // if they're same size, use std::string::replace
+              orig_postcond.replace( pos, oldSize, init_name );
+              break;
+            } else {
+              // if not same size, replace by erasing and inserting
+              orig_postcond.erase( pos, oldSize );
+              orig_postcond.insert( pos, init_name );
+              //std::cout << "New postcond is " << orig_postcond << "\n";
+              break;
             }
-		expr e1 = parseFormula(o.solver_ctx, orig_postcond, postcond_var_names, postcond_declarations);
-		//std::cout << "Modified postcond is " << e1 << "\n";
-		//b.prop.at(i) = e1;
-		expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
-		bmc_ds_ptr->add_spec( !path_bit || e1, spec_reason_t::SPEC_FILE );
-  	}
-	glb_names.clear();
-	postcond_var_names.clear();
-	postcond_declarations.clear();
+          }
+          break;
+        }
+      }	    
+    }
+    expr e1 = parseFormula(o.solver_ctx, orig_postcond, postcond_var_names, postcond_declarations);
+    //std::cout << "Modified postcond is " << e1 << "\n";
+    //b.prop.at(i) = e1;
+    expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+    bmc_ds_ptr->add_spec( !path_bit || e1, spec_reason_t::SPEC_FILE );
+  }
+  glb_names.clear();
+  postcond_var_names.clear();
+  postcond_declarations.clear();
 }
 
 

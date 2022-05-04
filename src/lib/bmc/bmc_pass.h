@@ -6,7 +6,7 @@
 #include "lib/utils/llvm_utils.h"
 #include "include/bmc_ds.h"
 #include "include/bmc.h"
-#include "include/heap_model.h"
+#include "include/array_model.h"
 
 class bmc;       // forward declaration of the bmc class
 
@@ -86,7 +86,7 @@ private:
   // void create_fork_event( const llvm::StoreInst* store );
 
 protected:
-  void populateArrAccMap(llvm::Function*);
+  void populate_array_name_map(llvm::Function*);
 
 public:
   bmc_pass( options&, solver_context&, bmc&);

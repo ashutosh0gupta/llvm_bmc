@@ -2,7 +2,7 @@
 #include "witness.h"
 #include "lib/utils/solver_utils.h"
 // TODO : remove reference to heap model and access of public class variables
-#include "include/heap_model.h"
+#include "include/array_model.h"
 
 //todo: remove reference to bmc_obj which is due to global variables
 
@@ -1287,7 +1287,7 @@ void bmc_pass::print_bb_vecs() {
   std::cout << "----------------------------------------------\n";
 }
 
-void bmc_pass::populateArrAccMap(llvm::Function* f) {
+void bmc_pass::populate_array_name_map(llvm::Function* f) {
   assert(f);
   int arrCntr = 0;
   ary_to_int.clear();
