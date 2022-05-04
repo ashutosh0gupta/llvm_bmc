@@ -199,7 +199,7 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
 			      // if not same size, replace by erasing and inserting
 			      orig_postcond.erase( pos, oldSize );
 			      orig_postcond.insert( pos, init_name );
-			      //std::cout << "New precond is " << orig_precond << "\n";
+			      //std::cout << "New postcond is " << orig_postcond << "\n";
 			      break;
 			    }
 			  }

@@ -186,9 +186,10 @@ void parse_spec_pass::InlineInsertInst( llvm::Module &m, llvm::Function &f, bmc&
 	  //llvm::Instruction *icmp = new llvm::ICmpInst(I,llvm::ICmpInst::ICMP_ULT, invokedFn_Val[callseq_num], const_val2); // cmp_res_name);
 	  llvm::Instruction *icmp = new llvm::ICmpInst(I, llvm::ICmpInst::ICMP_ULT, load, const_val2);
 
-          //llvm::SelectInst *select =
+          llvm::SelectInst *select =
           llvm::SelectInst::Create (icmp, const_val1, const_val2, monitor_var_name[callseq_num], I);
           //select->print( llvm::outs() );     std::cout << "\n";
+	  llvm::Instruction *store = new llvm::StoreInst(select,invokedFn_Val[callseq_num], I); //Store the global monitor var
           //break;
         }
 
@@ -200,9 +201,10 @@ void parse_spec_pass::InlineInsertInst( llvm::Module &m, llvm::Function &f, bmc&
 	  llvm::Instruction *load = new llvm::LoadInst(i32_type, invokedFn_Val[callseq_num], "test", false, I); //Load the global monitor var
           llvm::Instruction *icmp = new llvm::ICmpInst(I,llvm::ICmpInst::ICMP_EQ, load, const_val1); // cmp_res_name);
 
-          //llvm::SelectInst *select =
+          llvm::SelectInst *select =
           llvm::SelectInst::Create (icmp, const_val1, const_val2, monitor_var_name[callseq_num], I);
           //select->print( llvm::outs() );     std::cout << "\n";
+	  llvm::Instruction *store = new llvm::StoreInst(select,invokedFn_Val[callseq_num], I); //Store the global monitor var
         }
 	InlineInsertInst(m, *fun, b);
       }
