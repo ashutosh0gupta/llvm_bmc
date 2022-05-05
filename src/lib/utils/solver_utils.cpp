@@ -8,7 +8,7 @@
 #include "solver_utils.h"
 
 expr smt2_parse_string( solver_context& sol_ctx, const char* str ) {
-  //std::cout << "Str is " << str <<"\n";
+  // std::cout << "Str is " << str <<"\n";
   expr_vector es = sol_ctx.parse_string( str );
   assert( es.size() == 1 );
   expr e = es[0];
@@ -51,9 +51,6 @@ expr parseFormula(solver_context& sol_ctx, std::string str, const std::vector <s
   /*if( es.size() != 1 ) {
        std::cout << "Error non unique formula parsed!" <<  "\n";
   } */
-  if( es.size() == 0 ) {
-    llvm_bmc_error( "parsing", "failed to parse input: " << str );
-  }
   ast = es[0]; 
   
   // adjust reference counter for variable
@@ -492,10 +489,6 @@ expr get_expr_const( solver_context& c, int num ) {
   return c.int_val(num);
 }
 
-expr get_expr_bv_const( solver_context& c, int num, int bw ) {
-  return c.bv_val( num, bw );
-}
-
 expr get_fresh_bool( solver_context& c, std::string suff )
 {
   static unsigned count = 0;
@@ -600,19 +593,9 @@ expr _and( std::vector<expr> &vec ) {
 
 // we need this xor, since the default xor in c++ interface is for bvxor
 expr _xor( expr const &a, expr const &b ) {
-  if( a.is_bv()) {
-    return a^b;
-  }else{
-    expr_vector sol_vec(a.ctx());
-    sol_vec.push_back(a);
-    sol_vec.push_back(b);
-    return mk_xor( sol_vec );
-  }
-  // check_context(a, b);
-  // Z3_ast r = Z3_mk_xor(a.ctx(), a, b);
-  // a.ctx().check_error();
-  // expr r_xor = expr(a.ctx(), r);
-  // return r_xor;
+  check_context(a, b);
+  Z3_ast r = Z3_mk_xor(a.ctx(), a, b);
+  return expr(a.ctx(), r);
 }
 
 expr neg_and( std::vector<expr> &vec, solver_context& sol_ctx ) {
@@ -1271,3 +1254,616 @@ void eliminate_vars( expr f, std::vector<expr>& rm_vars,
   }
 }
 
+// Student change(Shivam,Sachin)
+
+std::unordered_map<int, std::string> umap;
+std::unordered_map<std::string, int> smap;
+
+std::string getDT(std::string s) {
+  // std::cout<<s;
+  if (isNumber(s) || s == "Int") return "Int";
+  if (isBool(s) || s == "Bool") return "Bool";
+  if (s == "Array") return "Array";
+  return "UndefinedDataType";
+}
+
+std::string balancehelper(std::string line)
+{
+  int op = 0;
+  int or_idx = line.find("or");
+  int and_idx = line.find("and");
+
+  if(or_idx == -1)
+    or_idx = line.size();
+  if(and_idx == -1)
+    and_idx = line.size();
+
+  int l1 = std::min(and_idx,or_idx);
+
+  std::string prefix , suffix , middle;
+
+  prefix = line.substr(0,l1-1);
+  middle = line.substr(l1-1); /// remove bracktes left
+
+  for(auto ch : prefix)
+  {
+    if(ch == '(')
+    op++;
+  }
+
+  while(op--)
+  {
+    suffix += ')';
+    middle.pop_back();
+  }
+  // std::cout<<"Prefix: "<<prefix<<"\n";
+  return "";
+  // return prefix+balanceOrAnd(middle)+suffix;  
+}
+
+std::string balanceUtil(int first, std::string line) {
+    std::string temp = line.substr(1, line.size() - 2);
+    // cout<<temp;
+    int idx = temp.find(" ");
+    std::string op = temp.substr(0, idx);
+    std::string args = temp.substr(idx);
+    // cout<<idx<<temp<<args<<endl;
+    std::string arg1, arg2;
+    if (op == "and" || op == "or") {
+        int start = idx + 1;
+        // cout<<start + first<<"Here"<<endl;
+        if (umap.find(start + first + 1) != umap.end()) {
+            arg1 = umap.at(start + first + 1);
+            start += smap[arg1];
+            // std::cout <<"arg1 extracted "<<arg1<<start + first + 1<<endl;
+            if (umap.find(start + first + 2) != umap.end()) {
+                arg2 = umap.at(start + first + 2);
+                // std::cout<<"arg2 extracted "<<arg2<<endl;
+            } else {
+                arg2 = temp.substr(start);
+                // std::cout<<"arg2 substr " << "a"<<arg2<<"a"<<endl;
+                if (arg2.size() == 0) {
+                    // std::cout << "arg2 T/F"<<endl;
+                    if (op == "and") {
+                        arg2 = "true";
+                    } else {
+                        arg2 = "false";
+                    }
+                }
+            }
+        } else {
+            // cout<<start<<endl;
+            idx = temp.find(" ", start);
+            // cout << "left " << temp.substr(start, idx - start)<<endl;
+            arg1 = temp.substr(start, idx - start);
+            // cout << "right " <<"A"<< temp.substr(start)<<"A";
+            if (idx == -1) {
+                if (op == "and") {
+                    arg2 = "true";
+                } else {
+                    arg2 = "false";
+                }
+            } else {
+                std::string temp1 = temp.substr(idx + 1);
+                if (temp1[0] == '(' && umap.find(start + idx + 2) != umap.end()) {
+                    arg2 = umap.at(start + idx + 2);
+                } else {
+                    arg2 = temp1;
+                }
+            }
+                
+        }
+        return "(" + op + " " + arg1 + " " + arg2 + ")";
+    }
+    return line;
+}
+
+std::string balanceOrAnd(std::string line) {
+    std::stack<int> st;
+    // cout<<endl;
+    for (int i = 0; i < line.size(); i++) {
+        if (line[i] == '(') {
+            st.push(i);
+            // cout<<i<<endl;
+        } else if (line[i] == ')') {
+            int start = st.top();
+            st.pop();
+            int end = i + 1;
+            std::string temp = line.substr(start, end-start);
+            // cout<<temp<<" called " << start << " " << i << endl;
+            std::string res = balanceUtil(start, temp);
+            // cout<<res<<" retured " << start << " " << i << endl;
+            umap[start] = res;
+            smap[res] = temp.size();
+            // cout<<"pushed"<<endl;
+        }
+    }
+    
+    return umap[0];
+}
+
+void dumpmodel(std::string dump_path, std::string name, std::string solver) {
+  std::ifstream ifile ("tempFile");
+  std::ofstream ofile (dump_path + name);
+  std::string line;
+
+  if (ifile.is_open() && ofile.is_open())
+  {
+    int count = 0;
+    while ( getline (ifile,line) )
+    {
+      if(count == 0)
+      {
+        if(line != "sat")
+        {
+          std::cout<<line<<"\n";
+          while ( getline (ifile,line))
+            std::cout<<line<<"\n";
+          ifile.close();
+          ofile.close();
+          std::string argument = "tempFile";
+          int status = remove(argument.c_str());
+          if(status)
+          std::cout<<"\nError Occurred in deleting model temp file!\n";
+          return;
+        }
+        else
+        {
+          count++;
+          std::cout<<line<<"\n";
+          std::cerr << "dumping "+solver + " model in:" << dump_path+name << "\n";
+        }       
+      }
+      else
+        ofile << line << "\n";
+    }
+    ifile.close();
+    ofile.close();
+  }
+  else if (ifile.is_open()) std::cout << "Unable to open ofile\n";
+  else if (ofile.is_open()) std::cout << "Unable to open ifile\n";
+  else std::cout << "Unable to open any file\n";
+
+  if(remove("tempFile") == -1)
+          std::cout<<"\nError Occurred in deleting model temp file!\n";
+}
+
+bool isNumber(const std::string& s)
+{
+  for(auto c : s)
+  {
+    if(isdigit(c) == 0)
+    return false;
+  }
+  return true;
+}
+
+bool isBool(const std::string& s) {
+  return s == "false" || s == "true";
+}
+
+std::vector<std::string> tokenize_cvc5(std::string s, std::string del = " ")
+{
+  std::vector<std::string> exp;
+  int end = s.find(del);
+  int start = end + del.size();
+  end = s.find(del, start);
+  std::string sign = "";
+  std::string var = s.substr(start, end - start);
+  std::string dataType = "NULL";
+
+  while (end != -1) {   
+      start = end + del.size();
+      end = s.find(del, start);
+      std::string temp = s.substr(start, end - start);
+      if (temp != "()") {
+        int l = 0, r = temp.size() - 1;
+        while (temp[l] == '(') {
+          l++;
+        }
+        while (temp[r] == ')') {
+          r--;
+        }
+        temp = temp.substr(l, r - l + 1); //===================
+        if (dataType == "NULL") {
+          dataType = getDT(temp);
+          if(dataType == "Array") {
+            start = end + del.size();
+            start = s.find_first_of("01", start);
+            end = s.find(del, start);
+          }
+        } else {
+          if (temp == "-") {
+            sign = "-";
+            continue;
+          } else {
+            exp.push_back(sign + temp);
+            sign = "";
+          }
+        }
+      }
+  }
+  
+  exp.insert(exp.begin(), var);
+  exp.insert(exp.begin(), dataType);
+
+  return exp;
+}
+
+std::vector<std::vector<std::string>> getExpressions(std::string filePath, std::string solvertype) {
+  // std::cout<<filePath<<"\n";
+  std::ifstream ifile (filePath);
+  int i = 0;
+  std::string line;
+  std::vector<std::vector<std::string>> allExps;
+  if (ifile.is_open())
+  {
+    while ( getline (ifile,line) )
+    {
+      boost::trim(line);
+      if (i == 0) {//<-----------remove (assert and)----
+        i++;
+        continue;
+      } else {
+        boost::trim(line);
+        if(line.substr(0, line.find(" ")) != "(define-fun")
+        break;
+        std::vector<std::string> exp;
+        // std::cout<<solvertype<<"\n";
+        if(solvertype == "cvc5")
+          exp = tokenize_cvc5(line," ");
+        else
+          exp = tokenize_boolector(line," ");
+        allExps.push_back(exp);
+      }
+    }
+    ifile.close();
+  } else {
+    std::cout << "Unable to open ifile\n";
+  }
+  return allExps;
+}
+
+void Z3compatible(std::string path,std::string solvertype)
+{
+  // std::cout<<"in z3comp\n";
+  std::vector<std::vector<std::string>> v = getExpressions(path+solvertype+"-model.smt2",solvertype);
+  // for(auto i : v)
+  // {
+  //   for(auto c : i)
+  //   std::cout<<c<<" ";
+  //   std::cout<<"\n";
+  // }
+  z3::context ctx;
+  solver s(ctx);
+  z3::sort arr_sort = ctx.array_sort(ctx.int_sort(), ctx.int_sort());
+  z3::expr base = expr(ctx);
+  bool initializer = true;
+  for(long unsigned int i = 0; i < v.size(); i++)
+  {
+    if(v[i][0] == "Int")   // Int type
+      {
+        int value = stoi(v[i][2]);
+        s.add(ctx.int_const(v[i][1].c_str()) == value);
+      }
+    else if((v[i][0] == "Bool") )
+      {
+        bool value = true;
+        if(v[i][2] == "false")
+        value = false;
+        
+        s.add(ctx.bool_const(v[i][1].c_str()) == ctx.bool_val(value));
+
+      }
+    else
+      {
+        if(initializer)
+        {
+          initializer = false;
+          base = ctx.constant(v[i][1].c_str(), arr_sort);
+          s.add((select(base,1) == 0));
+        }
+        else
+        {
+          expr thisarray = ctx.constant(v[i][1].c_str(), arr_sort);
+          expr constaint = base;
+          for(long unsigned int j = 2; j < v[i].size(); j += 2)
+          {
+            int idx = std::stoi(v[i][j]);
+            int value = std::stoi(v[i][j+1]);
+            constaint = store(constaint,idx,value); 
+          }
+
+          constaint = thisarray == constaint;
+          s.add(constaint);
+        }
+      }
+  }
+
+  s.check();
+  model m = s.get_model();
+  std::string name = solvertype+"-Z3-model.smt2";
+  std::cerr << "dumping Z3compatible-"<<solvertype<< " model in:" << path+name << "\n";
+  dump_model(m,path,name);
+
+}
+
+void dump_model(model m, std::string path, std::string name)
+{
+  std::ofstream dump_file(path + name);
+  dump_file << m;
+  dump_file.close();
+}
+
+int binToInt(std::string n)
+{
+  // std::cout<<n<<"BIN";
+  std::string num = n;
+  int dec_value = 0;
+  int base = 1;
+  int len = num.length();
+  for (int i = len - 1; i >= 0; i--)
+  {
+    if (num[i] == '1')
+      dec_value += base;
+    base = base * 2;
+  }
+
+  return dec_value;
+  return 0;
+}
+
+std::vector<std::string> tokenize_boolector(std::string s, std::string del = " ")
+{
+  // std::cout<<"in token\n"<<s<<"\n";
+  std::vector<std::string> exp;
+  int end = s.find(del);
+  int start = end + del.size();
+  end = s.find(del, start);
+  std::string sign = "";
+  std::string var = s.substr(start, end - start);
+  std::string dataType = "NULL";
+
+  while (end != -1)
+  {
+    start = end + del.size();
+    end = s.find(del, start);
+    std::string temp = s.substr(start, end - start);
+    // std::cout<<temp << " in token \n";
+    if (temp == "()" || temp == "(_") continue;
+    else
+    {
+      // std::cout<<"in if "<< temp <<"\n";
+      int l = 0, r = temp.size() - 1;
+      while (temp[l] == '(')
+      {
+        l++;
+      }
+      while (temp[r] == ')')
+        {
+          r--;
+        }
+      temp = temp.substr(l, r - l + 1); //===================
+      if (dataType == "NULL")
+      {
+        // std::cout<<"DT " << temp;
+        if (temp == "BitVec")
+        {
+          dataType = "BitVec";
+          start = end + del.size()+1;
+          // std::cout<<"BItvec start " << start <<"\n";
+          end = s.find(del, start);
+          // std::cout<<start<<" "<<end<<"\n";
+        }
+        else
+        {
+          dataType = getDT(temp);
+          if (dataType == "Array")
+          {
+            start = end + del.size();
+            start = s.find_first_of("01", start);
+            end = s.find(del, start);
+          }
+        }
+      }
+      else
+      {
+        if (dataType == "BitVec")
+        {
+          // std::cout<<"DT:: " << temp;
+          exp.push_back(std::to_string(binToInt(temp)));
+        }
+        else
+        {
+          if (temp == "-")
+          {
+            sign = "-";
+            continue;
+          }
+          else
+          {
+            exp.push_back(sign + temp);
+            sign = "";
+          }
+        }
+      }
+    }
+  }
+
+  // std::string val = s.substr(start);
+  // val.pop_back();
+  //  std::cout<<var<<"\n";
+  // std::cout<<val<<"\n";
+  // if (dataType == "NULL") {
+  //   exp.insert(exp.begin(), val);
+  //   dataType = getDT(val);
+  // }
+  exp.insert(exp.begin(), var);
+  if (dataType == "BitVec")
+  {
+    // for (auto i : exp) std::cout<<":: " << i <<"\n";
+    dataType = "Int";
+  }
+  exp.insert(exp.begin(), dataType);
+  // exp.push_back(dataType);
+  // exp.push_back(var);
+  // exp.push_back(val);
+  // std::cout<<"DONEEEEEEEEEEEEEEEEE\n";
+  return exp;
+}
+
+//----------------------------------------------------------------------------------------------------------
+// Cvc5 code //
+
+int cleancvc5(std::string argument1 , std::string argument2)
+{
+  //reading from test.smt2 and cleaning it
+  std::string line = "(set-logic ALL)";
+  std::string file1 = argument1;
+  std::string file2 = argument2;
+  std::fstream file;
+  file.open(argument2,std::ios::out);
+  if(!file)
+   {
+       std::cout<<"Error in creating temp file!!!";
+       return 0;
+   }
+  
+  file.close();
+  std::ifstream ifile (file1);
+  std::ofstream ofile (file2);
+  if (ofile.is_open()) {
+    ofile << line << "\n"; //<-------(set-logic ALL)-------------
+  }
+  if (ifile.is_open() && ofile.is_open())
+  {
+    while ( getline (ifile,line) )
+    {
+      if (line != "(assert and)") //<-----------remove (assert and)----
+        ofile << line << "\n";
+    }
+    ifile.close();
+    ofile.close();
+  }
+
+  else if (ifile.is_open()) std::cout << "Unable to open ofile\n";
+  else if (ofile.is_open()) std::cout << "Unable to open ifile\n";
+  else std::cout << "Unable to open any file\n";
+
+	const char * a1 = argument1.c_str();
+  const char * a2 = argument2.c_str();
+	/*	Deletes the file if exists */
+	if (rename(a2, a1) != 0)
+		perror("Error renaming file");
+  return 1;
+}
+
+
+void check_cvc5(solver& s , std::string outDirPath , bool dump_model)
+{
+    std::string cmd ="./cvc5 --lang=smt2 --dump-models "+outDirPath+"test.smt2 >> tempFile";
+    std::string sDirectory = "build/cvc5/build/bin";
+    
+    cleancvc5(outDirPath+"/test.smt2",outDirPath+"/temp.smt2"); //Clean smt2 file
+    
+    if(chdir(sDirectory.c_str()) == -1)
+    std::cout<<"Error in Cvc5 change Dir\n";
+
+    if(system(cmd.c_str()) == -1)
+    std::cout<<"Error in Cvc5\n";
+
+    if(dump_model)
+    {
+        dumpmodel(outDirPath,"cvc5-model.smt2","cvc5");
+        Z3compatible(outDirPath,"cvc5");
+    }
+     else
+    {
+        if(remove("tempFile") == -1)
+            std::cout<<"\nError Occurred in deleting model temp file!\n";
+    }
+}
+//----------------------------------------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------------------------------------
+// Boolector code //
+
+int cleanboolector(std::string argument1 , std::string argument2)
+{
+  //reading from test.smt2 and cleaning it
+  std::string line = "(set-logic QF_BV)";
+  std::string file1 = argument1;
+  std::string file2 = argument2;
+  std::fstream file;
+  std::string exit = "(exit)";
+  file.open(argument2,std::ios::out);
+  if(!file)
+   {
+       std::cout<<"Error in creating temp file!!!";
+       return 0;
+   }
+  
+  file.close();
+  std::ifstream ifile (file1);
+  std::ofstream ofile (file2);
+  if (ofile.is_open()) {
+    ofile << line << "\n"; //<-------(set-logic QF_BV)-------------
+  }
+  if (ifile.is_open() && ofile.is_open())
+  {
+    while ( getline (ifile,line) )
+    {
+      if (line != "(assert and)") //<-----------remove (assert and)----
+        {
+          if((line.find("and") != -1) || (line.find("or") != -1))
+          {
+            line = balancehelper(line);
+          }
+          ofile << line << "\n";
+          // std::cout<<line<<"\n";
+        }
+    }
+    ofile << exit << "\n";
+    ifile.close();
+    ofile.close();
+  }
+
+  else if (ifile.is_open()) std::cout << "Unable to open ofile\n";
+  else if (ofile.is_open()) std::cout << "Unable to open ifile\n";
+  else std::cout << "Unable to open any file\n";
+
+  // char oldname[] = argument2;
+	// char newname[] = argument1;
+	const char * a1 = argument1.c_str();
+  const char * a2 = argument2.c_str();
+	/*	Deletes the file if exists */
+	if (rename(a2, a1) != 0)
+		perror("Error renaming file");
+  return 1;
+}
+
+void check_boolector(solver& s , std::string outDirPath , bool dump_model)
+{
+    std::string cmd ="./boolector --smt2 -m "+outDirPath+"test.smt2 >> tempFile";
+    std::string sDirectory = "build/boolector/build/bin";
+    
+    cleanboolector(outDirPath+"/test.smt2",outDirPath+"/temp.smt2"); //Clean smt2 file
+    
+    if(chdir(sDirectory.c_str()) == -1)
+    std::cout<<"Error in Boolector change Dir\n";
+
+    if(system(cmd.c_str()) == -1)
+    std::cout<<"Error in Boolector\n";
+
+    if(dump_model)
+    {
+        dumpmodel(outDirPath,"boolector-model.smt2","boolector");
+        Z3compatible(outDirPath,"boolector");
+    }
+    else
+    {
+        if(remove("tempFile") == -1)
+            std::cout<<"\nError Occurred in deleting model temp file!\n";
+    }
+}
+//----------------------------------------------------------------------------------------------------------

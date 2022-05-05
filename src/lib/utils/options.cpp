@@ -43,6 +43,8 @@ void options::get_description_cmd(po::options_description& config,
     ("overflow-check,l", po::bool_switch(&include_overflow_specs), "Enable over/underflow check")
     ("include-dirs,I", po::value< std::vector<std::string> >(&include_dirs), "Location of include files")
     ("specifications,s", po::value(&specFilePath), "Set spec file")
+    ("use-solver,S",  po::value(&use_solver)->default_value("z3") ,"Use cvc5 or boolector (z3 is default)")
+    ("get-Solver-model,M",  po::bool_switch(&get_model), "Debug Utility")
     ;
   hidden.add_options()
     ("input,i", po::value(&filePath), "Set source files")
