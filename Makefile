@@ -10,7 +10,7 @@ LD=ld.gold
 
 all : release
 
-.PHONY : release debug run clean patch test llvm-svn llvm-up deepclean
+.PHONY : release debug run clean patch test llvm-svn llvm-up deepclean boolector cvc5
 
 release : $(BUILDDIR)/buildr/Makefile
 	+make -C $(BUILDDIR)/buildr
@@ -70,7 +70,7 @@ deepclean: clean
 $(BUILDDIR)/z3/README.md :
 	mkdir -p $(BUILDDIR)
 	cd $(BUILDDIR);$(git) clone https://github.com/Z3Prover/z3.git
-	cd $(BUILDDIR);$(git) checkout feadfbf
+	cd $(BUILDDIR)/z3;$(git) checkout feadfbf
 
 $(BUILDDIR)/z3/buildr/libz3.so : $(BUILDDIR)/z3/README.md
 	rm -rf $(BUILDDIR)/z3/buildr
@@ -137,3 +137,35 @@ testrule: $(HOME_INSTALLED)
 
 
 test: release runtest
+
+#---------------------------------------------------------------------------
+#script's to install cvc5 
+#---------------------------------------------------------------------------
+cvc5 : $(BUILDDIR)/cvc5/README.md
+	cd $(BUILDDIR)/cvc5; ./configure.sh --auto-download
+	cd $(BUILDDIR)/cvc5/build; make
+
+
+$(BUILDDIR)/cvc5/README.md :
+	mkdir -p $(BUILDDIR)
+	cd $(BUILDDIR);$(git) clone https://github.com/cvc5/cvc5.git
+	cd $(BUILDDIR)/cvc5;$(git) fetch
+	cd $(BUILDDIR)/cvc5;$(git) checkout 6c0a7c8
+
+
+#---------------------------------------------------------------------------
+#script's to install boolector
+#---------------------------------------------------------------------------
+
+boolector : $(BUILDDIR)/boolector/README.md
+	cd $(BUILDDIR)/boolector; ./contrib/setup-lingeling.sh
+	cd $(BUILDDIR)/boolector; ./contrib/setup-btor2tools.sh
+	cd $(BUILDDIR)/boolector; ./configure.sh --python
+	cd $(BUILDDIR)/boolector/build; make
+
+$(BUILDDIR)/boolector/README.md :
+	mkdir -p $(BUILDDIR)
+	cd $(BUILDDIR);$(git) clone https://github.com/Boolector/boolector.git
+	cd $(BUILDDIR)/boolector;$(git) fetch
+	cd $(BUILDDIR)/boolector;$(git) checkout e7aba96
+#---------------------------------------------------------------------------
