@@ -157,4 +157,12 @@ expr parseFormula(solver_context&, std::string, const std::vector <std::string>&
 void eliminate_vars( expr, std::vector<expr>&,
                      std::vector<expr>& );
 
+
+// Boolector and CVC5 support
+check_result check_boolector(solver &, std::string, bool);
+check_result check_cvc5(solver &, std::string, bool);
+
+// int cleancvc5(std::string, std::string);
+// int cleanboolector(std::string, std::string);
+
 #endif  // Z3UTILS_H

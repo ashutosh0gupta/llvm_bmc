@@ -30,6 +30,7 @@ void options::get_description_cmd(po::options_description& config,
   bmc.add_options()
     ("function,f", po::value(&funcName)->default_value("main"), "Set main function")
     ("mode,m", po::value<int>(&mode)->default_value(3), "Set mode")
+    ("get-witness",  po::bool_switch(&witness), "Report error trace if a specification fails")
     ("output-dir,o", po::value(&outDirPath)->default_value("/tmp/"), "Set output directory")
     // ("loop,l", po::value<int>(&loopNum)->default_value(1), "Set loop")
     // ("total-loops,t", po::value<int>(&totalLoops)->default_value(1), "Set total number of loops")
@@ -151,5 +152,8 @@ bool options::parse_cmdline(int argc, char** argv) {
     llvm_bmc_error("command-line options", e.what());
     return false;
   }
+
+  if( use_solver == "boolector" && bit_precise == false)
+    llvm_bmc_error( "BMC", "Boolector works only with bitvectors, run with -b" );
   return true;
 }

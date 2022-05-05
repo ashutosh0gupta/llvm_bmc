@@ -75,6 +75,7 @@ public:
   bool dump_cfg = 0;
   bool dump_solver_query = 0;
   bool get_solver_model = 0;
+  bool witness = 0;
 
   //----------------------------------------
   //generic options
