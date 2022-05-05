@@ -1642,7 +1642,7 @@ bool set_unroll_counts::runOnLoop( llvm::Loop *L,
 
   // Computing trip count
   unsigned TripCount = 0;
-  unsigned TripMultiple = 1;
+  // unsigned TripMultiple = 1;
   llvm::BasicBlock *ExitingBlock = L->getLoopLatch();
   auto& Ctx = ExitingBlock->getContext();
   
