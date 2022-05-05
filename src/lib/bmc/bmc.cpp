@@ -8,8 +8,6 @@
 #include "include/collect_globals.h"
 #include "bmc_utils.h"
 #include "witness.h"
-#include "cvc5.h" // student change
-#include "boolector.h" // student change
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -195,42 +193,18 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
   //
   // todo: optimization other specs can be added as assume
   //
+
   if( o.dump_solver_query ) {
     dump( o.outDirPath.string(), "test.smt2", s);
     // std::cout << s;
   }
   //
-  // // if( o.use_solver == "z3" ) {
-  // //   // solving
-  //   auto result = s.check();
-  //   if( result == z3::sat ) {
-  //     model m = s.get_model();
-  //     //produce_witness(m, bmc_ds_ptr);
-  //     os << "\nSpecification that failed the check : \n";
-  //     spec.print( os );
-  //     os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
-  //   return true;
-  //   } else if( result == z3::unknown ){
-  //     os << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
-  //     return true;
-  //   }else {
-  //     return false;
-  //   }
-  // // }else if( o.use_solver == "cvc5" ) {
-  // //   // do some thing
-  // // }else{
-  // //   llvm_bmc_error( "bmc", "no solver identified!!" );
-  // //   return false;// dummy return
-  // // }
-  if( o.use_solver == "z3" ) {
-    // solving
+  // if( o.use_solver == "z3" ) {
+  //   // solving
     auto result = s.check();
     if( result == z3::sat ) {
       model m = s.get_model();
-      if(o.get_model) {
-        dump_model(m,o.outDirPath.string(),"z3-model.smt2");
-      } 
-      produce_witness(m, bmc_ds_ptr);
+      //produce_witness(m, bmc_ds_ptr);
       os << "\nSpecification that failed the check : \n";
       spec.print( os );
       os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
@@ -241,20 +215,12 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
     }else {
       return false;
     }
-  }else if( o.use_solver == "cvc5" ) {
-
-    dump( o.outDirPath.string(), "test.smt2", s); //Force dump z3 SMT2 file
-    check_cvc5(s,o.outDirPath.string(),o.get_model);
-    return true;
-
-  }else if( o.use_solver == "boolector" ) {
-    dump( o.outDirPath.string(), "test.smt2", s);
-    check_boolector(s,o.outDirPath.string(),o.get_model);  //Force dump z3 SMT2 file
-    return true;
-  }else{
-    llvm_bmc_error( "bmc", "no solver identified!!" );
-    return false;// dummy return
-  }
+  // }else if( o.use_solver == "cvc5" ) {
+  //   // do some thing
+  // }else{
+  //   llvm_bmc_error( "bmc", "no solver identified!!" );
+  //   return false;// dummy return
+  // }
 }
 
 

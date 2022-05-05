@@ -19,32 +19,33 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/LinkAllPasses.h"
 
-void prepare_module( options& o,
-                     std::unique_ptr<llvm::Module>& module,
-                     comments& cmts,
-                     std::map< const llvm::BasicBlock*, comments>&
-                     block_comment_map ) {
-  // basic preprocessing
-  llvm::legacy::PassManager passMan;
-  passMan.add( llvm::createPromoteMemoryToRegisterPass() );
-  passMan.add( llvm::createLoopRotatePass() ); // some params
-  //passMan.add( llvm::createAlwaysInlinerLegacyPass() );
-  passMan.add( llvm::createSCCPPass() );
-  passMan.run( *module.get() );
 
-  for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
-    // todo: remove dependency on demangle from llvm_utils
-    std::string fname = demangle(fit->getName().str());
-    if(fname == o.funcName) {
-      // Do nothing
-    }else{
-      // declare all non entry functions can be inlined
-      if( !fit->isDeclaration() ) {
-        // function has a body available
-        //fit->addFnAttr(llvm::Attribute::AlwaysInline);
-      }
-    }
-  }
+
+void forced_unroll_pass( options& o,
+                     std::unique_ptr<llvm::Module>& module
+                     // comments& cmts,
+                     // std::map< const llvm::BasicBlock*, comments>&
+                     // block_comment_map
+                     ) {
+  // basic preprocessing
+  // llvm::legacy::PassManager passMan;
+  // // passMan.add( llvm::createPromoteMemoryToRegisterPass() );
+  // // passMan.add( llvm::createLoopRotatePass() ); // some params
+  // // passMan.add( llvm::createAlwaysInlinerLegacyPass() );
+  // passMan.add( llvm::createSCCPPass() );
+  // passMan.run( *module.get() );
+
+  // for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
+  //   // todo: remove dependency on demangle from llvm_utils
+  //   std::string fname = demangle(fit->getName().str());
+  //   if(fname != o.funcName) {
+  //     // declare all non entry functions can be inlined
+  //     if( !fit->isDeclaration() ) {
+  //       // function has a body available
+  //       // fit->addFnAttr(llvm::Attribute::AlwaysInline);
+  //     }
+  //   }
+  // }
 
   // basic
   llvm::legacy::PassManager passMan_set_count;
@@ -67,10 +68,6 @@ void prepare_module( options& o,
   }
   passMan_unroll.run( *module.get() );
 
-  estimate_comment_location( module, cmts, block_comment_map );
-  if( o.dump_cfg ) {
-    dump_dot_module( o.outDirPath, module );
-  }
 }
 
 
@@ -81,16 +78,29 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
 {
 
   std::map<const llvm::BasicBlock*, comments > bb_cmt_map;
-  prepare_module( o, module, cmts, bb_cmt_map );
   bmc b( module, bb_cmt_map, o );
+
+  prepare_module( module );
+
+  // process the spec file
+  import_spec_file( module, o, b);
+
+  //transform code
+  forced_unroll_pass( o, module );
+  estimate_comment_location( module, cmts, bb_cmt_map );
+  forced_inliner_pass( module );
 
   // initialize bmc data structure
   b.init();
 
   // process the spec file
-  import_spec_file( module, o, b);
+  //import_spec_file( module, o, b);
 
   //translate function to formulas
+  if( o.dump_cfg ) {
+    dump_dot_module( o.outDirPath, module );
+  }
+
   b.run_bmc_pass();
 
  for( auto& it : b.func_formula_map ) {
@@ -111,10 +121,6 @@ int main(int argc, char** argv) {
 
   if (!o.parse_cmdline(argc, argv)) return 0; // help was called
 
-  if(o.use_solver == "boolector" && o.bit_precise == false)
-  llvm_bmc_error( "BMC", "boolector needs input SMT in bitvector form, Try running with -b enabled" );
-  // Student change(Shivam,Sachin)
-    
   std::unique_ptr<llvm::Module> module;
   comments cmts;
 

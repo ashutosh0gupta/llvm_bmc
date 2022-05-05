@@ -55,7 +55,6 @@ public:
   std::string fileName;
   std::string filePath;
   std::string funcName;
-  std::string use_solver = "z3";
   std::string specFileName;
   std::string specFilePath;
   std::vector<std::string> include_dirs;
@@ -74,7 +73,6 @@ public:
   //module preprocess options
   bool dump_cfg = 0;
   bool dump_solver_query = 0;
-  bool get_model = 0;
 
   //----------------------------------------
   //generic options
