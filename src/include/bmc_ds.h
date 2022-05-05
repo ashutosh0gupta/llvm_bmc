@@ -2,7 +2,7 @@
 #define TILER_BMC_DS_H
 
 #include <unordered_map>
-#include "include/heap_model.h"
+#include "include/array_model.h"
 #include "include/memory_cons.h"
 #include "include/memory_model.h"
 #include "include/value_expr_map.h"
@@ -77,9 +77,9 @@ public:
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
   std::map< const llvm::Value*, unsigned >& ary_to_int;
 
-  void set_array_length( const llvm::Value*, expr& );
-  arr_write_expr array_write( unsigned, const llvm::StoreInst*, expr&, expr& );
-  arr_read_expr array_read( unsigned, const llvm::LoadInst*, expr& );
+  void set_array_length( const llvm::Value*, std::vector<expr>& );
+  arr_write_expr array_write( unsigned, const llvm::StoreInst*,exprs&, expr& );
+  arr_read_expr array_read( unsigned, const llvm::LoadInst*, exprs& );
   expr join_array_state( std::vector<expr>&,
                          std::vector<unsigned>&, unsigned );
 
@@ -95,11 +95,6 @@ public:
   // error.
   // void init_partition_array_model(std::vector<const llvm::Type*>&);
   void init_full_array_model(std::map< const llvm::Instruction*, unsigned >& map);
-  // void init_full_array_model( std::vector<const llvm::Type*>&,
-  //                             std::map<const llvm::Instruction*,unsigned>&,
-  //                             std::vector<expr>& );
-  // void init_fixed_len_array_model( std::vector<const llvm::Type*>&,
-  //                                  std::map<const llvm::Instruction*,unsigned>&);
   void init_array_model( array_model_t );
   void init_array_model( array_model_t ar_model_local, array_state& );
   void refresh_array_state( unsigned, std::vector<const llvm::Instruction*>& );

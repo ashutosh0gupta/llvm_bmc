@@ -45,7 +45,8 @@ typedef std::vector<const inst*> inst_vec_t;
 // #define COMMENT_FIRST_TOKEN "(assert"
 
 
-void dump( llvm::Value* );
+void dump( const llvm::Value* );
+void dump( const llvm::Type* );
 
 
 llvm::Instruction*
@@ -168,9 +169,9 @@ std::string demangle( std::string );
 std::string getLocRange(const llvm::BasicBlock* b );
 
 src_loc getLoc( const llvm::Instruction* I );
-sort llvm_to_sort( solver_context& , llvm::Type* );
-sort llvm_to_bv_sort( solver_context& , llvm::Type* );
-sort llvm_to_sort( options& , llvm::Type* );
+sort llvm_to_sort( solver_context& , const llvm::Type* );
+sort llvm_to_bv_sort( solver_context& , const llvm::Type* );
+sort llvm_to_sort( options& , const llvm::Type* );
 // expr read_const( const llvm::Value*, solver_context& );
 expr read_const( options&, const llvm::Value*);
 
@@ -198,5 +199,9 @@ public:
   virtual void getAnalysisUsage(llvm::AnalysisUsage &au) const;
   llvm::StringRef getPassName() const;
 };
+
+// passes for transforming the modules
+void prepare_module(std::unique_ptr<llvm::Module>& module );
+void forced_inliner_pass(std::unique_ptr<llvm::Module>& module);
 
 #endif

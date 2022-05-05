@@ -51,6 +51,9 @@ expr parseFormula(solver_context& sol_ctx, std::string str, const std::vector <s
   /*if( es.size() != 1 ) {
        std::cout << "Error non unique formula parsed!" <<  "\n";
   } */
+  if( es.size() == 0 ) {
+    llvm_bmc_error( "parsing", "failed to parse input: " << str );
+  }
   ast = es[0]; 
   
   // adjust reference counter for variable
@@ -489,6 +492,10 @@ expr get_expr_const( solver_context& c, int num ) {
   return c.int_val(num);
 }
 
+expr get_expr_bv_const( solver_context& c, int num, int bw ) {
+  return c.bv_val( num, bw );
+}
+
 expr get_fresh_bool( solver_context& c, std::string suff )
 {
   static unsigned count = 0;
@@ -593,9 +600,19 @@ expr _and( std::vector<expr> &vec ) {
 
 // we need this xor, since the default xor in c++ interface is for bvxor
 expr _xor( expr const &a, expr const &b ) {
-  check_context(a, b);
-  Z3_ast r = Z3_mk_xor(a.ctx(), a, b);
-  return expr(a.ctx(), r);
+  if( a.is_bv()) {
+    return a^b;
+  }else{
+    expr_vector sol_vec(a.ctx());
+    sol_vec.push_back(a);
+    sol_vec.push_back(b);
+    return mk_xor( sol_vec );
+  }
+  // check_context(a, b);
+  // Z3_ast r = Z3_mk_xor(a.ctx(), a, b);
+  // a.ctx().check_error();
+  // expr r_xor = expr(a.ctx(), r);
+  // return r_xor;
 }
 
 expr neg_and( std::vector<expr> &vec, solver_context& sol_ctx ) {
@@ -630,12 +647,16 @@ expr implies( expr& e1, expr& e2) {
   return implies( e1, e2 );
 }
 
-expr select( expr& e1, expr& e2) {
-  return z3::select( e1, e2 );
+expr select( expr& e1, exprs& idxs) {
+  expr_vector sol_vec( e1.ctx() );
+  to_sol_vec( idxs, sol_vec);
+  return z3::select( e1, sol_vec );
 }
 
-expr store( expr& e1, expr& e2, expr& e3) {
-  return z3::store( e1, e2, e3 );
+expr store( expr& e1, exprs& idxs, expr& e3) {
+  expr_vector sol_vec( e1.ctx() );
+  to_sol_vec( idxs, sol_vec);
+  return z3::store( e1, sol_vec, e3 );
 }
 
 bool matched_sort( const expr& l, const expr& r ) {
@@ -701,7 +722,7 @@ void to_std_vec( expr_vector& vec, std::vector<expr>& o_vec ) {
   }
 }
 
-void to_sol_vec( std::vector<expr>& vec, expr_vector& o_vec ) {
+void to_sol_vec( exprs& vec, expr_vector& o_vec ) {
   o_vec.resize(0);
   for( unsigned i = 0; i < vec.size(); i++ ) {
     o_vec.push_back( vec[i] );

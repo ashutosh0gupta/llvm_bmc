@@ -42,102 +42,27 @@ bmc::~bmc() {
   }
 }
 
+// void forced_inliner_pass() {
+//   for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
+//     // todo: remove dependency on demangle from llvm_utils
+//     std::string fname = demangle(fit->getName().str());
+//     if( !fit->isDeclaration() ) {
+//       // function has a body available
+//       fit->addFnAttr(llvm::Attribute::AlwaysInline);
+//       //To ensure all functions are inlined even if the personalities do not match
+//       llvm::Constant *FnPersonality = nullptr;
+//       fit->setPersonalityFn(FnPersonality);
+//     }
+//   }
 
+//   // force inline
+//   llvm::legacy::PassManager inline_passMan;
+//   inline_passMan.add( llvm::createAlwaysInlinerLegacyPass() );
+//   inline_passMan.run( *module.get() );
+// }
 
 void bmc::run_bmc_pass() {
 
-
-  for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
-    // todo: remove dependency on demangle from llvm_utils
-    std::string fname = demangle(fit->getName().str());
-    //if(fname == o.funcName) {
-      // Do nothing
-    //}else{
-      // declare all non entry functions can be inlined
-       if( !fit->isDeclaration() ) {
-        // function has a body available
-        fit->addFnAttr(llvm::Attribute::AlwaysInline);
-        //To ensure all functions are inlined even if the personalities do not match
-        llvm::Constant *FnPersonality = nullptr;
-        fit->setPersonalityFn(FnPersonality);
-      }
-    //}
-
-//    for (auto bbit = fit->begin(); bbit != fit->end(); bbit++) { //Iterate over basic blocks in function
-
-//    auto bb = &(*bbit);
-//    for( auto it = bb->begin(), e = bb->end(); it != e; ++it) {
-//      auto I = &(*it);
-//      //I->print( llvm::outs() );     std::cout << "\n";
-//  	auto call = llvm::dyn_cast<llvm::CallInst>(I);
-//	auto invoke = llvm::dyn_cast<llvm::InvokeInst>(I);
-//      if ((call) || (invoke)) {
-//       // I->print( llvm::outs() );     std::cout << "\n";
-//	std::string FuncName;	
-//	llvm::Function *fun;
-//        if (call) {
-//		fun = call->getCalledFunction();
-//		FuncName = fun->getName(); }
-
-//	else if (invoke) {
-//		fun = invoke->getCalledFunction();
-//		FuncName = fun->getName();
-//	}
-
-//        // Get the personality function from the callee if it contains a landing pad.
-//  Constant *CalledPersonality =
-//      CalledFunc->hasPersonalityFn()
-//          ? CalledFunc->getPersonalityFn()->stripPointerCasts()
-//          : nullptr;
-
-//  // Find the personality function used by the landing pads of the caller. If it
-//  // exists, then check to see that it matches the personality function used in
-//  // the callee.
-//  Constant *CallerPersonality =
-//      Caller->hasPersonalityFn()
-//          ? Caller->getPersonalityFn()->stripPointerCasts()
-//          : nullptr;
-//  if (CalledPersonality) {
-//    if (!CallerPersonality)
-//      Caller->setPersonalityFn(CalledPersonality);
-//    // If the personality functions match, then we can perform the
-//    // inlining. Otherwise, we can't inline.
-//    // TODO: This isn't 100% true. Some personality functions are proper
-//    //       supersets of others and can be used in place of the other.
-//    else if (CalledPersonality != CallerPersonality)
-//      return "incompatible personality";
-//  }
-// }
-// }
-//}
-
-
-  }
-
-  // force inline
-  llvm::legacy::PassManager inline_passMan;
-  inline_passMan.add( llvm::createAlwaysInlinerLegacyPass() );
-  inline_passMan.run( *module.get() );
-
-
-//  for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
-//  std::string fname = demangle(fit->getName().str());
-//  if ((fname == "_ada_mjguidancedriver") || (fname == "_ada_mnguidancedriver")) {
-
-//    for (auto bbit = fit->begin(); bbit != fit->end(); bbit++) { //Iterate over basic blocks in function       
-//		       
-//      auto bb = &(*bbit);
-//      for( auto it = bb->begin();  it != bb->end(); ++it) {
-//        auto I = &(*it);
-////	auto call = llvm::dyn_cast<llvm::CallInst>(I);
-////      auto invoke = llvm::dyn_cast<llvm::InvokeInst>(I);
-////      if ((call) || (invoke)) {
-//          I->print( llvm::outs() );     std::cout << "\n";
-//	  //}
-//	}
-//      }
-//     }
-//    }
 
   llvm::legacy::PassManager passMan;
 
@@ -271,25 +196,31 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
 
   if( o.dump_solver_query ) {
     dump( o.outDirPath.string(), "test.smt2", s);
-    std::cout << s;
+    // std::cout << s;
   }
-
-  // solving
-  auto result = s.check();
-  if( result == z3::sat ) {
-    model m = s.get_model();
-    // produce_witness(m, bmc_ds_ptr);
-    os << "\nSpecification that failed the check : \n";
-    spec.print( os );
-    os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
+  //
+  // if( o.use_solver == "z3" ) {
+  //   // solving
+    auto result = s.check();
+    if( result == z3::sat ) {
+      model m = s.get_model();
+      //produce_witness(m, bmc_ds_ptr);
+      os << "\nSpecification that failed the check : \n";
+      spec.print( os );
+      os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
     return true;
-  } else if( result == z3::unknown ){
-    os << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
-    return true;
-  }else {
-    return false;
-  }
-
+    } else if( result == z3::unknown ){
+      os << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
+      return true;
+    }else {
+      return false;
+    }
+  // }else if( o.use_solver == "cvc5" ) {
+  //   // do some thing
+  // }else{
+  //   llvm_bmc_error( "bmc", "no solver identified!!" );
+  //   return false;// dummy return
+  // }
 }
 
 
@@ -315,6 +246,11 @@ bool bmc::verify_prop() {
 }
 
 
+//-----------------------------------------------------------------------------
+//
+// Witness management
+//
+
 std::string
 bmc::get_val_for_instruction( const llvm::Instruction* I, model& mdl,
                               std::map<std::string,std::string>& state,
@@ -324,6 +260,7 @@ bmc::get_val_for_instruction( const llvm::Instruction* I, model& mdl,
   unsigned copy_count = 0;
   auto val = bmc_ds_ptr->m.read_term( I, copy_count );
   if( val ) {
+    val = mdl.eval( val );
     // auto it = bmc_ds_ptr->m.find( {I,copy_count} );
     // if( it != bmc_ds_ptr->m.end() ) {
     //   auto val = mdl.eval( it->second );
@@ -386,13 +323,13 @@ void bmc::produce_witness( model mdl, bmc_ds* bmc_ds_ptr,
       if( o.verbosity > 6 ) {
         std::cout << "-------------------------------------------\n";
         std::cout << "dumping block:" << getLocRange( b ) << "\n";
+        dump(b);
       }
       for( const llvm::Instruction& Iobj : b->getInstList() ) {
         const llvm::Instruction* I = &(Iobj);
         if( auto call = llvm::dyn_cast<llvm::CallInst>(I) ) {
           produce_witness_call( mdl, call );
         }
-        // if( bmc_ds_ptr->m.find({I,0}) == bmc_ds_ptr->m.end() ) continue;
         if( bmc_ds_ptr->m.read_term( I, 0 ) ) {} else continue;
         auto val = get_val_for_instruction( I, mdl, state, bmc_ds_ptr, call_count );
         std::string s = state_to_string( state );
@@ -410,5 +347,75 @@ void bmc::produce_witness( model mdl, bmc_ds* bmc_ds_ptr,
     bidx++;
   }
   // w.show_path();
-  w.generate_html();
+  // w.generate_html();
 }
+
+
+
+//    for (auto bbit = fit->begin(); bbit != fit->end(); bbit++) { //Iterate over basic blocks in function
+
+//    auto bb = &(*bbit);
+//    for( auto it = bb->begin(), e = bb->end(); it != e; ++it) {
+//      auto I = &(*it);
+//      //I->print( llvm::outs() );     std::cout << "\n";
+//  	auto call = llvm::dyn_cast<llvm::CallInst>(I);
+//	auto invoke = llvm::dyn_cast<llvm::InvokeInst>(I);
+//      if ((call) || (invoke)) {
+//       // I->print( llvm::outs() );     std::cout << "\n";
+//	std::string FuncName;	
+//	llvm::Function *fun;
+//        if (call) {
+//		fun = call->getCalledFunction();
+//		FuncName = fun->getName(); }
+
+//	else if (invoke) {
+//		fun = invoke->getCalledFunction();
+//		FuncName = fun->getName();
+//	}
+
+//        // Get the personality function from the callee if it contains a landing pad.
+//  Constant *CalledPersonality =
+//      CalledFunc->hasPersonalityFn()
+//          ? CalledFunc->getPersonalityFn()->stripPointerCasts()
+//          : nullptr;
+
+//  // Find the personality function used by the landing pads of the caller. If it
+//  // exists, then check to see that it matches the personality function used in
+//  // the callee.
+//  Constant *CallerPersonality =
+//      Caller->hasPersonalityFn()
+//          ? Caller->getPersonalityFn()->stripPointerCasts()
+//          : nullptr;
+//  if (CalledPersonality) {
+//    if (!CallerPersonality)
+//      Caller->setPersonalityFn(CalledPersonality);
+//    // If the personality functions match, then we can perform the
+//    // inlining. Otherwise, we can't inline.
+//    // TODO: This isn't 100% true. Some personality functions are proper
+//    //       supersets of others and can be used in place of the other.
+//    else if (CalledPersonality != CallerPersonality)
+//      return "incompatible personality";
+//  }
+// }
+// }
+//}
+
+
+//  for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
+//  std::string fname = demangle(fit->getName().str());
+//  if ((fname == "_ada_mjguidancedriver") || (fname == "_ada_mnguidancedriver")) {
+
+//    for (auto bbit = fit->begin(); bbit != fit->end(); bbit++) { //Iterate over basic blocks in function       
+//		       
+//      auto bb = &(*bbit);
+//      for( auto it = bb->begin();  it != bb->end(); ++it) {
+//        auto I = &(*it);
+////	auto call = llvm::dyn_cast<llvm::CallInst>(I);
+////      auto invoke = llvm::dyn_cast<llvm::InvokeInst>(I);
+////      if ((call) || (invoke)) {
+//          I->print( llvm::outs() );     std::cout << "\n";
+//	  //}
+//	}
+//      }
+//     }
+//    }

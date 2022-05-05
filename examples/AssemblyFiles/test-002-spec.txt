@@ -5,16 +5,6 @@
 ;; list all the variables that are read
 (declare-var @algorithm__exhaustvel float32)
 (declare-var @algorithm__velocityradial float32)  ;init
-(declare-var @lookup__distance_incr float32)  ;input
-(declare-var @lookup__distance float32 array 60)  ;init
-(declare-var @lookup__rotangle float32 array 60)  ;init
-(declare-var @lookup__dircosl float32 array 60)  ;init
-(declare-var @lookup__dircosm float32 array 60)  ;init
-(declare-var @lookup__dircosn float32 array 60)  ;init
-(declare-var @lookup__cmdquaternion1 float32 array 60)  ;init
-(declare-var @lookup__cmdquaternion2 float32 array 60)  ;init
-(declare-var @lookup__cmdquaternion3 float32 array 60)  ;init
-(declare-var @lookup__cmdquaternion4 float32 array 60)  ;init
 (declare-var @main__cyclecount i32); input
 (declare-var @main__minorinmajor i16); input
 (declare-var @main__step12 i16); output
@@ -33,8 +23,7 @@
 (declare-var @main__guidoutflag  flag); output
 (declare-var @main__stageflg flag); input
 (declare-var @main__stageflgc  flag); input
-(declare-var @main__altitudeinfo float32); input
-(declare-var @main__qc float32 array 4)  ;output
+(declare-var @main__qc float32 array 5)  ;output
 (declare-var @main__stage_time float32)  ;output
 (declare-var @main__effectivegravity float32)  ;output 
 (declare-var @main__angler float32)  ;output 
@@ -52,10 +41,7 @@
 (declare-var @main__matrix11 float32)  ;output
 (declare-var @main__matrix12 float32)  ;output
 (declare-var @main__matrix22 float32)  ;output
-(declare-var @main__BRate float32 array 3)  ;output
-(declare-var @minor_cycle__velocitycoeff float32)  ;output
-(declare-var @main__test i16 array 3)  ;output
-
+(declare-var @main__BRate float32 array 5)  ;output
 
 ;; -----------------------------------------
 ;; Declare major thread
@@ -65,28 +51,7 @@
 ;(invoke-behaviour major synchronous unique can-be-killed (repeated 0ms 500ms) (priority low))
 ;; model when a thread can be killed.
 ;(post-condition major (CallSequence main__stageflags major_cycle__manoeuvre))
-;(post-condition major (CallSequence main__stageflags major_cycle__manoeuvre))
-(post-condition major (assert(=> (= @main__guidoutflag #x2222) (bvuge @main__stageflg #x0077))))
-;(post-condition major (CallSequence main__stageflags major_cycle__stage3_major))
-;(post-condition major (CallSequence major_cycle__stage2_major  major_cycle__stage3_major))
 ;(post-condition major (CallSequence main__stageflags  major_cycle__stage2_major))		
 ;(post-condition major (assert(=> (not(= (select @main__BRate 1) (fp #b0 #b00000000 #b00000000000000000000000))) (bvuge @main__stageflg #x0044))))
+(post-condition major (assert(= (select @main__BRate 1) (select @main__BRate 2))))
 ;(post-condition major (assert(=> (and (= @main__stageflg #x0044) (= (select @main__BRate 1) (fp #b0 #b00000000 #b00000000000000000000000))) (not(= @main__minorinmajor 1)))))
-
-;; -----------------------------------------
-;; Declare minor thread
-;; -----------------------------------------
-
-(declare-thread minor _ada_mnguidancedriver)
-
-;(invoke-behaviour minor synchronous unique can-be-killed (repeated 0ms 20ms) (priority high))
-(pre-condition minor (assert(= (bvadd @main__stageflg @main__stageflgc) #xffff)))
-;
-(post-condition minor (assert(= @main__combinederrorflag #x0000)))
-;(post-condition minor (assert(=> (= @main__guidoutflag #x0022) (fp.gt @minor_cycle__velocitycoeff (fp #b0 #b10001011 #b01000111010000000000000)))))
-;(post-condition minor (CallSequence main__stageflags minor_cycle__manoeuvre))
-;(post-condition minor (CallSequence main__stageflags minor_cycle__stage3_minor))
-;(post-condition minor (CallSequence main__stageflags minor_cycle__stage2_minor))
-;(post-condition minor (CallSequence main__stageflags minor_cycle__stage1_minor))
-;(post-condition minor (CallSequence minor_cycle__stage1_minor minor_cycle__stage2_minor))
-;(post-condition minor (CallSequence minor_cycle__stage2_minor minor_cycle__stage3_minor))

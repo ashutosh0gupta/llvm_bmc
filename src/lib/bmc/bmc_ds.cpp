@@ -337,33 +337,41 @@ expr bmc_ds::join_state( std::vector<expr>& cs,
 // manage array model
 
 const llvm::Value*
-identify_array_in_gep(const llvm::GetElementPtrInst* gep ) {
+identify_array_in_gep(const llvm::GEPOperator* gep ) {
   auto op_gep_ptr = gep->getPointerOperand();
+//  op_gep_ptr->print( llvm::outs() ); std::cout <<"\n";
   if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
     op_gep_ptr = cast->getOperand(0);
   }
-  if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_gep_ptr)) {
+
+  // assuming alloc instruction
+  if( auto addr = llvm::dyn_cast<const llvm::AllocaInst>(op_gep_ptr) ) {
     return addr;
   }
+
+  // passed pointer in the function
   if(auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
     return addr;
   }
+
+  // accessing global variable
   if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr)) {
     return glb;
   }
-  if(auto sub_gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_gep_ptr)) {
+ // if(auto sub_gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_gep_ptr)) {
     // auto sub_op_gep_ptr = sub_gep->getPointerOperand();
     // todo: add conditions that all the positions are 0
     // gep( gep( glb , 0), 3 ) === *(glb+3) << Good <<<
     //
     // gep( gep( glb , 1), 3 ) === *(glb+4) << Bad <<<
     //
-    assert(false); // remove this assert only if the above condition is added;
-    if( false ) {
+    //assert(false); // remove this assert only if the above condition is added;
+    //if( false ) {
+  if( auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr) ) {
+     // if (sub_gep->hasAllZeroIndices()) {
       return identify_array_in_gep(sub_gep);
-    }
+    // }
   }
-  gep->print( llvm::outs() );
   llvm_bmc_error("bmc", "unseen GEP pattern detected!");
 }
 
@@ -372,7 +380,7 @@ identify_array( const llvm::Value* op) {
   if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
     op = cast->getOperand(0);
   }
-  if(auto gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op)) {
+  if(auto gep = llvm::dyn_cast<const llvm::GEPOperator>(op)) {
     return identify_array_in_gep( gep );
     // auto op_gep_ptr = gep->getPointerOperand();
     // if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
@@ -497,7 +505,7 @@ void bmc_ds::refresh_array_state( unsigned bidx,
   ar_model_full.update_name( bidx, ary_to_int[I] );
 }
 
-void bmc_ds::set_array_length( const llvm::Value* arr, expr& len ) {
+void bmc_ds::set_array_length( const llvm::Value* arr, std::vector<expr>& len ) {
   assert(arr);
   unsigned ar_num = ary_to_int.at(arr);
   switch( ar_model_init ) {
@@ -509,19 +517,19 @@ void bmc_ds::set_array_length( const llvm::Value* arr, expr& len ) {
 
 arr_write_expr
 bmc_ds::array_write( unsigned bidx, const llvm::StoreInst* I,
-                      expr& idx, expr& val ) {
+                      exprs& idxs, expr& val ) {
   assert( I );
   switch( ar_model_init ) {
-  case FULL : return ar_model_full.array_write( bidx, I, idx, val ); break;
+  case FULL : return ar_model_full.array_write( bidx, I, idxs, val ); break;
   default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
   }
 }
 
 arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::LoadInst* I,
-                               expr& idx ) {
+                               exprs& idxs ) {
   assert( I );
   switch( ar_model_init ) {
-  case FULL     : return ar_model_full.array_read( bidx, I, idx ); break;
+  case FULL     : return ar_model_full.array_read( bidx, I, idxs ); break;
   // case FIXED_LEN: return ar_model_full.array_read( bidx, I, idx ); break;
   default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
   }

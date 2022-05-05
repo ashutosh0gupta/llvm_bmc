@@ -32,12 +32,26 @@
 
 #define CLANG_VERSION "12.0"
 
-void dump( llvm::Value* v) {
+void dump( const llvm::Value* v) {
   if(v)
     v->print(llvm::outs());
   else
     llvm::outs() << "NULL\n";
 }
+
+void dump( const llvm::Type* v) {
+  if(v)
+    v->print(llvm::outs());
+  else
+    llvm::outs() << "NULL\n";
+}
+
+// void dump( const llvm::Module* module) {
+//   if(m)
+//     m->print(llvm::outs());
+//   else
+//     llvm::outs() << "NULL\n";
+// }
 
 
 void c2bc( const std::string& fileName, const std::string& outName )
@@ -1419,7 +1433,7 @@ std::string getLocRange(const llvm::BasicBlock* b ) {
   return l_name;
 }
 
-sort llvm_to_sort( solver_context& c, llvm::Type* t ) {
+sort llvm_to_sort( solver_context& c, const llvm::Type* t ) {
   if( t->isIntegerTy() ) {
     if( t->isIntegerTy( 16 ) ) return c.int_sort();
     if( t->isIntegerTy( 32 ) ) return c.int_sort();
@@ -1428,8 +1442,15 @@ sort llvm_to_sort( solver_context& c, llvm::Type* t ) {
   }
   if( t->isArrayTy() ) {
     llvm::Type* te = t->getArrayElementType();
+    sort_vector domains(c);
+    domains.push_back( c.int_sort() );
+    while( te->isArrayTy() ) {
+      domains.push_back( c.int_sort() );
+      te = te->getArrayElementType();
+    }
     sort z_te = llvm_to_sort(c, te);
-    return c.array_sort( c.int_sort(), z_te );
+    // std::cout << "Sort is " << z_te << "\n";
+    return c.array_sort( domains, z_te );
   }
   if( t->isFloatingPointTy() ) {
      if( t->isFloatTy() ) return c.fpa_sort<32>();
@@ -1442,7 +1463,7 @@ sort llvm_to_sort( solver_context& c, llvm::Type* t ) {
 
 #define DEFAULT_INDEX_SORT 64
 
-sort llvm_to_bv_sort( solver_context& c, llvm::Type* t ) {
+sort llvm_to_bv_sort( solver_context& c, const llvm::Type* t ) {
   if( t->isIntegerTy() ) {
     if( t->isIntegerTy( 16 ) ) return c.bv_sort(16);
     if( t->isIntegerTy( 32 ) ) return c.bv_sort(32);
@@ -1457,8 +1478,21 @@ sort llvm_to_bv_sort( solver_context& c, llvm::Type* t ) {
     llvm_bmc_error("llvm_utils", "pointer sorts are not supported");
   }else if( t->isArrayTy() || t->isVectorTy() ) {
     llvm::Type* te = t->getArrayElementType();
+    sort_vector domains(c);
+    domains.push_back( c.bv_sort(DEFAULT_INDEX_SORT) );
+    while( te->isArrayTy() ) {
+      domains.push_back( c.bv_sort(DEFAULT_INDEX_SORT) );
+      te = te->getArrayElementType();
+    }
     sort z_te = llvm_to_bv_sort(c, te);
-    return c.array_sort( c.bv_sort(DEFAULT_INDEX_SORT), z_te );
+    // sort domain = c.bv_sort(DEFAULT_INDEX_SORT);
+    // if( z_te.is_array() ) {
+    //   auto domains = z_te.array_domain();
+    //   auto range = z_te.array_range();
+    //   domains.push_back(domain);
+    //   return c.array_sort( domains, range );
+    // }
+    return c.array_sort( domains, z_te );
   }else if( t->isFloatingPointTy() ) {
      if( t->isFloatTy() ) return c.fpa_sort<32>();
      if( t->isDoubleTy() ) return c.fpa_sort<64>();
@@ -1476,13 +1510,14 @@ sort llvm_to_bv_sort( solver_context& c, llvm::Type* t ) {
   return c.bv_sort(32); // dummy return
 }
 
-sort llvm_to_sort( options& o, llvm::Type* t) {
+sort llvm_to_sort( options& o, const llvm::Type* t) {
   if( o.bit_precise ) {
     return llvm_to_bv_sort( o.solver_ctx, t );
   }else{
     return llvm_to_sort( o.solver_ctx, t );
   }
 }
+
 
 expr read_const( options& o, const llvm::Value* op ) {
 // expr read_const( const llvm::Value* op, solver_context& ctx ) {
@@ -1547,6 +1582,8 @@ expr read_const( options& o, const llvm::Value* op ) {
     // double v = n.convertToDouble();
     //return ctx.real_val(v);
     //llvm_bmc_error("llvm_utils", "Floating point constant not implemented!!" );
+  }else if( llvm::isa<llvm::Instruction>(op) ) {
+
   }else if( llvm::isa<llvm::Constant>(op) ) {
     llvm_bmc_error("llvm_utils", "non int constants are not implemented!!" );
     std::cerr << "un recognized constant!";
@@ -1649,3 +1686,32 @@ void set_unroll_counts::getAnalysisUsage(llvm::AnalysisUsage &au) const {
   au.addRequired<llvm::LoopInfoWrapperPass>();
   au.addRequired<llvm::ScalarEvolutionWrapperPass>();
 }
+
+
+void forced_inliner_pass( std::unique_ptr<llvm::Module>& module ) {
+  for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
+    // todo: remove dependency on demangle from llvm_utils
+    std::string fname = demangle(fit->getName().str());
+    if( !fit->isDeclaration() ) {
+      // function has a body available
+      fit->addFnAttr(llvm::Attribute::AlwaysInline);
+      //To ensure all functions are inlined even if the personalities do not match
+      llvm::Constant *FnPersonality = nullptr;
+      fit->setPersonalityFn(FnPersonality);
+    }
+  }
+
+  // force inline
+  llvm::legacy::PassManager inline_passMan;
+  inline_passMan.add( llvm::createAlwaysInlinerLegacyPass() );
+  inline_passMan.run( *module.get() );
+}
+
+void prepare_module(std::unique_ptr<llvm::Module>& module ) {
+  llvm::legacy::PassManager passMan;
+  passMan.add( llvm::createPromoteMemoryToRegisterPass() );
+  passMan.add( llvm::createLoopRotatePass() ); // some params
+  passMan.add( llvm::createSCCPPass() );
+  passMan.run( *module.get() );
+}
+

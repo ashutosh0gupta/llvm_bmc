@@ -175,7 +175,7 @@ bool bmc_loop_pass::runOnFunction( llvm::Function &f ) {
     return false;
   }
 
-  populateArrAccMap(&f);
+  populate_array_name_map(&f);
 
   auto &LIWP = getAnalysis<llvm::LoopInfoWrapperPass>();
   auto LI = &LIWP.getLoopInfo();

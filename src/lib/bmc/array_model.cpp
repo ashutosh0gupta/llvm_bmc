@@ -1,4 +1,4 @@
-#include "include/heap_model.h"
+#include "include/array_model.h"
 #include "lib/utils/llvm_utils.h"
 #include "lib/utils/solver_utils.h"
 
@@ -56,21 +56,10 @@ sort array_model_full::get_address_sort() {
 }
 
 sort array_model_full::get_solver_array_ty( const llvm::ArrayType* ty ) {
-  auto elemTy = ty->getArrayElementType();
-  auto s  = llvm_to_sort( o, elemTy );
-  return solver_ctx.array_sort( get_address_sort(), s );
-  // if( ElemTy->isFloatTy() ) {
-  //   return solver_ctx.array_sort( get_address_sort(),
-  //                                 solver_ctx.fpa_sort<32>() );
-  // }
-  // if (ElemTy->isDoubleTy()) {
-  //   return solver_ctx.array_sort( get_address_sort(),
-  //                                 solver_ctx.fpa_sort<64>() );
-  // }
-  // if( ElemTy->isCharTy() ) {
-  // }
-  // if( ElemTy->isIntegerTy() ) {
-  // }
+  return llvm_to_sort( o, ty);
+  // auto elemTy = ty->getArrayElementType();
+  // auto s  = llvm_to_sort( o, elemTy );
+  // return solver_ctx.array_sort( get_address_sort(ty), s );
 }
 
 sort array_model_full::get_solver_array_ty( const llvm::PointerType* ty ) {
@@ -78,24 +67,63 @@ sort array_model_full::get_solver_array_ty( const llvm::PointerType* ty ) {
   if( auto ar_ty = llvm::dyn_cast<llvm::ArrayType>(T)){
     return get_solver_array_ty( ar_ty );
   }else if( auto pty = llvm::dyn_cast<llvm::PointerType>(T) ) {
-    return get_solver_array_ty( pty );
+    // todo: creating array of arrays; not multidim array; Z3 may complain
+    auto e_ty = get_solver_array_ty( pty );
+    return solver_ctx.array_sort( get_address_sort(), e_ty );
+    //dump(pty);
+    //assert(false); //todo: fix it when hit it.
+    //return get_solver_array_ty( pty );
   }else{
     auto e_sort= llvm_to_sort( o, T);
     return solver_ctx.array_sort( get_address_sort(), e_sort );
   }
 }
 
-expr array_model_full::get_array_length( const llvm::Value* arr ) {
-  if( llvm::isa< const llvm::AllocaInst >(arr) ) {
-    return solver_ctx.int_val(1); // gets recomputed at the translation stage.
+void
+array_model_full::
+get_array_length( const llvm::ArrayType* a1, std::vector<expr>& lengths) {
+  int n1 = a1->getNumElements();
+  if(o.bit_precise ) {
+    lengths.push_back( solver_ctx.bv_val(n1, 64) ); // todo: why 64?
+  }else{
+    lengths.push_back( solver_ctx.int_val(n1) );
   }
-  //todo: support for globals etc
-  
-  // dummy returned value
-  return solver_ctx.int_val(1);
+  auto T2 = a1->getElementType();
+  if( auto a2 = llvm::dyn_cast<llvm::ArrayType>(T2) ){
+    get_array_length( a2, lengths );
+  }
 }
 
-void array_model_full::set_array_length( unsigned ar_num, expr& len ) {
+std::vector<expr>
+array_model_full::get_array_length( const llvm::Value* arr ) {
+  std::vector<expr> idxs;
+  if( llvm::isa< const llvm::AllocaInst >(arr) ) {
+    // since we can know symbol for the length of the array
+    // at the time of translatation we place a dummy
+    idxs.push_back( solver_ctx.int_val(1) );
+    return idxs;
+  }
+  if( auto pty = llvm::dyn_cast<llvm::PointerType>(arr->getType()) ) {
+    auto T1 = pty->getPointerElementType();
+    if( auto a1 = llvm::dyn_cast<llvm::ArrayType>(T1)) {
+      get_array_length( a1, idxs );
+    }
+    // if( auto a1 = llvm::dyn_cast<llvm::ArrayType>(T1)) {
+    //   int n1 = a1->getNumElements();
+    //   idxs.push_back( solver_ctx.int_val(n1) );
+    //   auto T2 = a1->getElementType();
+    //   if( auto a2 = llvm::dyn_cast<llvm::ArrayType>(T2)){
+    //     int n2 = a2->getNumElements();
+    //     idxs.push_back( solver_ctx.int_val(n2) );
+    //     // std::cout << "Dim1 of array is " << n1 << "\n";
+    //     // std::cout << "Dim2 of array is " << n2 << "\n";
+    //   }
+    // }
+  }
+  return idxs;
+}
+
+void array_model_full::set_array_length( unsigned ar_num, std::vector<expr>& len ) {
   lengths[ar_num] = len;
 }
 
@@ -106,9 +134,14 @@ set_array_info(std::map< const llvm::Value*, unsigned >& ary_ids) {
   ar_types.resize( num_arrays );
   ar_names.resize( num_arrays );
   lengths.clear();
+
+  // inserting dummy lengths
+  std::vector<expr> idxs;
   for( unsigned i = 0; i < num_arrays; i++ ) {
-    lengths.push_back( solver_ctx.int_val(1) );
+    lengths.push_back( idxs );
   }
+
+  //
   for( auto& ar_int_pair : ary_ids ) {
     auto ar = ar_int_pair.first;
     auto indx = ar_int_pair.second;
@@ -175,40 +208,114 @@ unsigned array_model_full::get_accessed_array( const llvm::Instruction* I ) {
   }
 }
 
+
+expr array_model_full::access_bound_cons( exprs& idxs, exprs& ls) {
+  // auto s1 = idxs.size(); auto s2 = ls.size();
+  // std::cout << "idxs.size is " << s1 << " ls.size is " << s2 << "\n";
+  // assert( idxs.size() >= ls.size() );
+  if( idxs.size() < ls.size() ) {
+    assert( false );
+  }
+  //todo : HACK!!! removing dummy accesses at the end.
+  //       check if it is a correct fix
+  while( idxs.size() != ls.size() ){
+    idxs.pop_back();
+  }
+  // bounds constraints
+  std::vector<expr> temp_vec;
+  unsigned pos = 0;
+  for( auto& l : ls ) {
+    expr idx = idxs[pos];
+    if( o.bit_precise ) {
+      expr zero = solver_ctx.bv_val(0,idx.get_sort().bv_size());
+      expr lower_bound_arr( idx >= zero );
+      temp_vec.push_back(lower_bound_arr);
+      expr upper_bound_arr( !(idx >= l) );
+      temp_vec.push_back(upper_bound_arr);
+
+      // sort s1 = idx.get_sort(); sort s2 = l.get_sort();
+      // std::cout << "idx sort is " << s1 << " l sort is " << s2 << "\n";
+      // if (s1.is_bv()) {
+      //   expr zero = solver_ctx.bv_val(0,idx.get_sort().bv_size());
+      //   expr lower_bound_arr( idx >= zero );
+      //   temp_vec.push_back(lower_bound_arr);
+      //   expr upper_bound_arr( !(idx >= l) );
+      //   temp_vec.push_back(upper_bound_arr);
+      // }
+      // else {
+      //   expr idxn = idx;
+      //   if( s1.is_int() ) {
+      //    idxn = idx.ctx().bv_val(idx,64);
+      //   }        
+      //   expr lower_bound_arr( idxn >= 0 );
+      //   temp_vec.push_back(lower_bound_arr);
+      //   expr l_bv = solver_ctx.bv_val(l,64);
+      //   expr upper_bound_arr( !(idxn >= l_bv) );
+      //   temp_vec.push_back(upper_bound_arr);
+      //   idxs[pos] = idxn;
+      // }
+
+    } else {
+	expr lower_bound_arr(idx >= 0);
+    	temp_vec.push_back(lower_bound_arr);
+    	expr upper_bound_arr(idx <= l - 1);
+    	temp_vec.push_back(upper_bound_arr);
+    }
+    pos++;
+  }
+  expr bound_guard = _and(temp_vec);
+  return bound_guard;
+}
+
 arr_write_expr
 array_model_full::array_write( unsigned bidx, const llvm::StoreInst* I,
-                               expr& idx, expr& val ) {
+                               exprs& idxs, expr& val ) {
   array_state& ar_st = get_state( bidx );
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
   expr ar_name = vec.at(i);
   expr new_ar = get_fresh_ary_name(i);
   vec[i] = new_ar;
-  expr lower_bound_arr(idx >= 0);
-  expr upper_bound_arr(idx <= lengths.at(i) - 1);
-  std::vector<expr> temp_vec;
-  temp_vec.push_back(lower_bound_arr);
-  temp_vec.push_back(upper_bound_arr);
-  expr bound_guard = _and(temp_vec);
-  return arr_write_expr( (new_ar == store( ar_name, idx, val )), bound_guard, new_ar );
+
+  auto& ls = lengths.at(i);
+  auto bound_guard = access_bound_cons(idxs, ls);
+
+  // // bounds constraints
+  // std::vector<expr> temp_vec;
+  // expr lower_bound_arr(idx >= 0);
+  // temp_vec.push_back(lower_bound_arr);
+  // for( auto& l : ls ) {
+  //   expr upper_bound_arr(idx[pos] <= l - 1);
+  //   temp_vec.push_back(upper_bound_arr);
+  // }
+  // expr bound_guard = _and(temp_vec);
+  // expr bound_guard(idx >= 0);//to be commented
+  //
+  return arr_write_expr( (new_ar == store( ar_name, idxs, val )),
+                         bound_guard, new_ar );
 }
 
 arr_read_expr
 array_model_full::array_read( unsigned bidx, const llvm::LoadInst* I,
-                              expr& idx ) {
+                              exprs& idxs ) {
   array_state& ar_st = get_state( bidx );
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
   expr ar_name = vec.at(i);
-  expr lower_bound_arr(idx >= 0);
-  //todo: a trick to avoid bv/arith issue;; may need a fix in future
-  //int idx_num = solver_ctx.int_val(idx);  //To convert idx from bv to int
-  expr upper_bound_arr(idx <= lengths.at(i)-1);
-  std::vector<expr> temp_vec;
-  temp_vec.push_back(lower_bound_arr);
-  temp_vec.push_back(upper_bound_arr);
-  expr bound_guard = _and(temp_vec);
-  return arr_read_expr( select( ar_name, idx), bound_guard );
+  auto& ls = lengths.at(i);
+  auto bound_guard = access_bound_cons(idxs, ls);
+
+  // expr lower_bound_arr(idx >= 0);
+  // //todo: a trick to avoid bv/arith issue;; may need a fix in future
+  // //int idx_num = solver_ctx.int_val(idx);  //To convert idx from bv to int
+  // expr upper_bound_arr(idx <= lengths.at(i)-1);
+  // std::vector<expr> temp_vec;
+  // temp_vec.push_back(lower_bound_arr);
+  // temp_vec.push_back(upper_bound_arr);
+  // expr bound_guard = _and(temp_vec);
+    // expr bound_guard(idx >= 0);//to be commented
+
+  return arr_read_expr( select( ar_name, idxs), bound_guard );
 }
 
 void array_model_full::
