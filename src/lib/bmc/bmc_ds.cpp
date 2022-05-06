@@ -222,7 +222,7 @@ void bmc_ds::setup_prevs_non_repeating() {
   unsigned bidx = 0;
   for( const bb* src : bb_vec ) {
     if( bidx < processed_bidx ) { bidx++; continue; }
-    pred_idxs[bidx].empty(); // todo : why this instruction?
+    // pred_idxs[bidx].empty(); // todo : why this instruction?
     for(auto PI = llvm::pred_begin(src),E = llvm::pred_end(src);PI != E;++PI) {
       const bb* prev = *PI;
       if( ignore_edge( src, prev ) ) continue;

@@ -135,7 +135,7 @@ void bmc_loop_pass::populate_bmc_ds(  bmc_loop* bmc_loop_ptr ) {
           continue;
         }
       }
-      bmc_loop_ptr->pred_idxs[bidx].empty();
+      // bmc_loop_ptr->pred_idxs[bidx].empty();
       for(auto PI = llvm::pred_begin(src),E = llvm::pred_end(src);PI!=E;++PI) {
         const bb* prev = *PI;
         if( bmc_loop_ptr->ignore_edge( src, prev ) ) continue;

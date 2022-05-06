@@ -199,51 +199,99 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
     // std::cout << s;
   }
   //
+
+  
   // if( o.use_solver == "z3" ) {
   //   // solving
-    auto result = s.check();
-    if( result == z3::sat ) {
-      model m = s.get_model();
-      //produce_witness(m, bmc_ds_ptr);
-      os << "\nSpecification that failed the check : \n";
-      spec.print( os );
-      os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
-    return true;
-    } else if( result == z3::unknown ){
-      os << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
-      return true;
-    }else {
-      return false;
-    }
+  //   auto result = s.check();
+  //   if( result == z3::sat ) {
+  //     model m = s.get_model();
+  //     //produce_witness(m, bmc_ds_ptr);
+  //     os << "\nSpecification that failed the check : \n";
+  //     spec.print( os );
+  //     os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
+  //   return true;
+  //   } else if( result == z3::unknown ){
+  //     os << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
+  //     return true;
+  //   }else {
+  //     return false;
+  //   }
   // }else if( o.use_solver == "cvc5" ) {
+  //   // dump( o.outDirPath.string(), "test.smt2", s );
+  //   check_cvc5(s,o.outDirPath.string(),o.get_model);
   //   // do some thing
+  // }else if( o.use_solver == "boolector" ) {
+  //   check_boolector(s,o.outDirPath.string(),o.get_model);
   // }else{
   //   llvm_bmc_error( "bmc", "no solver identified!!" );
   //   return false;// dummy return
   // }
-}
 
-
-bool bmc::verify_prop() {
-  std::ostream& os = std::cout;
-  z3::solver s(o.solver_ctx);
-  for(expr e : prop) {
-    s.add(!e);
-    auto result = s.check();
-    if ( result == z3::sat || result == z3::unknown ) {
-      os << "\nSpecification that failed the check : \n";
-      os << e;
-      if( result == z3::sat ) {
-        os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
-      }else{
-        os << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
-      }
-      return false;
-    } else {} // contine with other specifications
+  check_result result;
+  if( o.use_solver == "z3" ) {
+    result = s.check();
+  }else if( o.use_solver == "cvc5" ) {
+    // dump( o.outDirPath.string(), "test.smt2", s );
+    result = check_cvc5( s, o.outDirPath.string(), o.get_solver_model );
+    // do some thing
+  }else if( o.use_solver == "boolector" ) {
+    result = check_boolector( s, o.outDirPath.string(), o.get_solver_model );
+  }else{
+    llvm_bmc_error( "bmc", "no solver identified!!" );
+    return false;// dummy return
   }
-  os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
-  return true;    
+
+  if( result == z3::sat && o.witness == 1 ) {
+    model m(o.solver_ctx);
+    if( o.use_solver == "z3" ) {
+      m = s.get_model();
+    }else if( o.use_solver == "cvc5" ) {
+      m = get_cvc5_model();
+    }else if( o.use_solver == "boolector" ) {
+      m = get_boolector_model();
+    }else{
+      llvm_bmc_error( "bmc", "no solver identified!!" );
+    }
+    produce_witness(m, bmc_ds_ptr);
+  }
+
+  // report if specification check is failed or not
+  if( result == z3::sat ) {
+    os << "\nSpecification that failed the check : \n";
+    spec.print( os );
+    os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
+    return true;
+  } else if( result == z3::unknown ){
+    os << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
+    return true;
+  }else {
+    return false;
+  }
+
 }
+
+
+// bool bmc::verify_prop() {
+//   std::ostream& os = std::cout;
+//   z3::solver s(o.solver_ctx);
+//   for(expr e : prop) {
+//     s.add(!e);
+//     auto result = s.check();
+//     if ( result == z3::sat || result == z3::unknown ) {
+//       os << "\nSpecification that failed the check : \n";
+//       os << e;
+//       if( result == z3::sat ) {
+//         os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
+//       }else{
+//         os << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
+//       }
+//       return false;
+//     } else {} // contine with other specifications
+//   }
+//   os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
+//   return true;    
+// }
 
 
 //-----------------------------------------------------------------------------
