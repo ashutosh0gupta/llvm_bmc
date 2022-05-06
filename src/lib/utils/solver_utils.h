@@ -160,7 +160,9 @@ void eliminate_vars( expr, std::vector<expr>&,
 
 // Boolector and CVC5 support
 check_result check_boolector(solver &, std::string, bool);
+model get_cvc5_model();
 check_result check_cvc5(solver &, std::string, bool);
+model get_boolector_model();
 
 // int cleancvc5(std::string, std::string);
 // int cleanboolector(std::string, std::string);

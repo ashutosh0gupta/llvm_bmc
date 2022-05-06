@@ -243,8 +243,17 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
   }
 
   if( result == z3::sat && o.witness == 1 ) {
-    model m = s.get_model();
-    //produce_witness(m, bmc_ds_ptr);
+    model m(o.solver_ctx);
+    if( o.use_solver == "z3" ) {
+      m = s.get_model();
+    }else if( o.use_solver == "cvc5" ) {
+      m = get_cvc5_model();
+    }else if( o.use_solver == "boolector" ) {
+      m = get_boolector_model();
+    }else{
+      llvm_bmc_error( "bmc", "no solver identified!!" );
+    }
+    produce_witness(m, bmc_ds_ptr);
   }
 
   // report if specification check is failed or not

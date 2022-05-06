@@ -1810,6 +1810,11 @@ check_cvc5(solver& s , std::string outDirPath , bool dump_model) {
     }
   return z3::unknown;
 }
+
+z3::model get_cvc5_model() {
+  // read the model
+}
+
 //----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
@@ -1869,9 +1874,13 @@ int cleanboolector(std::string argument1 , std::string argument2) {
   return 1;
 }
 
+// returns z3::unknown if some failure
+//         z3::sat if the formula is sat
+//         z3::unsat if the formula is unsat
+// In case of sat, save model somewhere
+
 check_result
-check_boolector(solver& s , std::string outDirPath , bool dump_model)
-{
+check_boolector(solver& s , std::string outDirPath , bool dump_model) {
   dump( outDirPath, "test.smt2", s );
 
   std::string cmd ="./boolector --smt2 -m "+outDirPath+"test.smt2 >> tempFile";
@@ -1895,5 +1904,10 @@ check_boolector(solver& s , std::string outDirPath , bool dump_model)
     }
   return z3::unknown;
 }
+
+z3::model get_boolector_model() {
+  // read the model
+}
+
 //--------------------------------------------------------------------------------
 
