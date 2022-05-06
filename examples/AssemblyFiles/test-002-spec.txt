@@ -41,7 +41,7 @@
 (declare-var @main__matrix11 float32)  ;output
 (declare-var @main__matrix12 float32)  ;output
 (declare-var @main__matrix22 float32)  ;output
-(declare-var @main__BRate float32 array 5)  ;output
+(declare-var @main__brate float32 array 5)  ;output
 
 ;; -----------------------------------------
 ;; Declare major thread
@@ -52,6 +52,6 @@
 ;; model when a thread can be killed.
 ;(post-condition major (CallSequence main__stageflags major_cycle__manoeuvre))
 ;(post-condition major (CallSequence main__stageflags  major_cycle__stage2_major))		
-;(post-condition major (assert(=> (not(= (select @main__BRate 1) (fp #b0 #b00000000 #b00000000000000000000000))) (bvuge @main__stageflg #x0044))))
-(post-condition major (assert(= (select @main__BRate 1) (select @main__BRate 2))))
-;(post-condition major (assert(=> (and (= @main__stageflg #x0044) (= (select @main__BRate 1) (fp #b0 #b00000000 #b00000000000000000000000))) (not(= @main__minorinmajor 1)))))
+;(post-condition major (assert(=> (not(= (select @main__brate 1) (fp #b0 #b00000000 #b00000000000000000000000))) (bvuge @main__stageflg #x0044))))
+(post-condition major (assert(= (select @main__brate 1) (select @main__brate 2))))
+;(post-condition major (assert(=> (and (= @main__stageflg #x0044) (= (select @main__brate 1) (fp #b0 #b00000000 #b00000000000000000000000))) (not(= @main__minorinmajor 1)))))

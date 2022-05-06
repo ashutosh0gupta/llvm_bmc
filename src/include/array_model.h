@@ -51,7 +51,7 @@ class array_model{
 public:
   array_model( options& o_ ) :
     o(o_), solver_ctx(o.solver_ctx) {}
-
+std::map< unsigned, array_state > exit_ary_map;
   expr join_array_state( std::vector<expr>&,
                          std::vector<unsigned>& prevs,
                          unsigned src );
@@ -65,7 +65,7 @@ private:
   options& o;
   solver_context& solver_ctx;
   array_model_t model = NONE;
-  std::map< unsigned, array_state > exit_ary_map;
+  //std::map< unsigned, array_state > exit_ary_map;
 
   friend array_model_full;
   friend array_model_fixed_len;
@@ -77,7 +77,8 @@ public:
   array_model_full( options& o ) : array_model(o) {
     model = FULL;
   }
-
+std::vector< std::string > ar_names;
+  std::vector< sort > ar_sorts;
   //void set_array_num( unsigned len );
   // void set_array_num(std::vector<const llvm::Type*>& arr_type);
   void set_array_info(std::map< const llvm::Value*, unsigned >& ary_id);
@@ -120,8 +121,8 @@ public:
 
 private:
   unsigned num_arrays;
-  std::vector< std::string > ar_names;
-  std::vector< sort > ar_sorts;
+  //std::vector< std::string > ar_names;
+  //std::vector< sort > ar_sorts;
   std::vector< std::vector<expr> > lengths; // a list of lengths for each array
   // std::vector< expr > lengths; // length of arrays can be symbolic
                                // todo: support tuples
