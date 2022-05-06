@@ -47,10 +47,10 @@ expr parseFormula(solver_context& sol_ctx, std::string str, const std::vector <s
   Z3_ast_vector es_ast =  Z3_parse_smtlib2_string(sol_ctx, cmd.c_str(), 0, NULL, NULL, s, symbols, decls);
   delete[] symbols;
   delete[] decls;
+  if( es_ast == NULL ) {
+    llvm_bmc_error( "parsing", "failed to parse input: " << str );
+  }
   expr_vector es = expr_vector( sol_ctx, es_ast );
-  /*if( es.size() != 1 ) {
-       std::cout << "Error non unique formula parsed!" <<  "\n";
-  } */
   if( es.size() == 0 ) {
     llvm_bmc_error( "parsing", "failed to parse input: " << str );
   }
