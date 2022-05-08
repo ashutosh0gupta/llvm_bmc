@@ -1894,3 +1894,7 @@ attributes #3 = { argmemonly nounwind }
 !llvm.module.flags = !{!0}
 
 !0 = !{i32 7, !"PIE Level", i32 2}
+
+
+;; options: -f "_ada_mjguidancedriver" -b examples/AssemblyFiles/test-002.s -s examples/AssemblyFiles/test-002-spec.txt
+;; output: 

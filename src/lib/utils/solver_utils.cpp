@@ -44,17 +44,21 @@ expr parseFormula(solver_context& sol_ctx, std::string str, const std::vector <s
   std::string cmd = str.find_first_of(' ')!=std::string::npos ? "(assert (" + str + "))" : "(assert " + str + ")";
   expr ast(sol_ctx);
   //std::cout << "Cmd is " << cmd << "\n";
-  Z3_ast_vector es_ast =  Z3_parse_smtlib2_string(sol_ctx, cmd.c_str(), 0, NULL, NULL, s, symbols, decls);
-  delete[] symbols;
-  delete[] decls;
-  if( es_ast == NULL ) {
-    llvm_bmc_error( "parsing", "failed to parse input: " << str );
+  try {
+    Z3_ast_vector es_ast =  Z3_parse_smtlib2_string(sol_ctx, cmd.c_str(), 0, NULL, NULL, s, symbols, decls);
+    delete[] symbols;
+    delete[] decls;
+    if( es_ast == NULL ) {
+      llvm_bmc_error( "parsing", "failed to parse input: " << str );
+    }
+    expr_vector es = expr_vector( sol_ctx, es_ast );
+    if( es.size() == 0 ) {
+      llvm_bmc_error( "parsing", "failed to parse input: " << str );
+    }
+    ast = es[0];
+  } catch (...) {
+    llvm_bmc_error( "parsing", "exception thrown while parsing: " << str );
   }
-  expr_vector es = expr_vector( sol_ctx, es_ast );
-  if( es.size() == 0 ) {
-    llvm_bmc_error( "parsing", "failed to parse input: " << str );
-  }
-  ast = es[0]; 
   
   // adjust reference counter for variable
   for (unsigned j=0; j<i; j++) {
