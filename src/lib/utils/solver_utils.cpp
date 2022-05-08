@@ -60,7 +60,6 @@ expr parseFormula(solver_context& sol_ctx, std::string str, const std::vector <s
   for (unsigned j=0; j<i; j++) {
     Z3_dec_ref(sol_ctx, (Z3_ast)decls[j]);
   }
-  
   return ast;
 } 
 

@@ -1,0 +1,23 @@
+; This is a comment
+
+
+;; Declare variable
+;; list all the variables that are read
+(declare-var @main__cyclecount i32); input
+(declare-var @main__minorinmajor i16); input
+(declare-var @main__step1 i16); output
+(declare-var @main__step2 i16); output
+(declare-var @main__combinederrorflag flag); output
+(declare-var @main__stageflg flag); input
+(declare-var @main__stageflgc  flag); input
+
+;; -----------------------------------------
+;; Declare minor thread
+;; -----------------------------------------
+
+(declare-thread minor _ada_mnguidancedriver)
+
+;(invoke-behaviour minor synchronous unique can-be-killed (repeated 0ms 20ms) (priority high))
+(pre-condition minor (assert(= (bvadd @main__stageflg @main__stageflgc) #xffff)))
+;
+(post-condition minor (CallSequence minor_cycle__manoeuvre main__stageflags))

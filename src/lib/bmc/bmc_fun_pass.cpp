@@ -207,9 +207,9 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
 	  auto& s_names = bmc_ds_ptr->ar_model_full.exit_ary_map[e_size-1].get_name_vec(); // get the last state
   	  unsigned ar_size = s_names.size();
 	  //std::cout << "Name vec size is " << ar_size << "\n";
-	  //for( unsigned k=0; k < ar_size; k++ ) {
-    		//std::cout << "Array in map is " << to_string(s_names.at(k)) << "\n";		
-         // }
+	  for( unsigned k=0; k < ar_size; k++ ) {
+    	//std::cout << "Array in map is " << to_string(s_names.at(k)) << "\n";		
+         }
                     
           var_name = '@'+ var_name;
           //oldSize = var_name.length();
@@ -248,10 +248,10 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
     //b.prop.at(i) = e1;
     expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
     bmc_ds_ptr->add_spec( !path_bit || e1, spec_reason_t::SPEC_FILE );
-  }
-  glb_names.clear();
+      glb_names.clear();
   postcond_var_names.clear();
   postcond_declarations.clear();
+  }
 }
 
 
