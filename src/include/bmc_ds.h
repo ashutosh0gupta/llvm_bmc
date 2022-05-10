@@ -121,6 +121,14 @@ public:
   std::map< unsigned, expr > block_to_path_bit;
   std::map< unsigned, std::vector<expr> > block_to_exit_bits;
 
+  //-------------------------------------------------------
+  // concurrency support
+  unsigned thread_id = 0;
+  void set_thread_id( unsigned );
+  unsigned get_thread_id();
+ 
+  //-------------------------------------------------------
+
   void print_formulas( unsigned print_from = 0, unsigned print_spec_from = 0);
 
   void insert_prev_idx( unsigned bidx, unsigned prev_bidx);

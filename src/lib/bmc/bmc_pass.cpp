@@ -857,23 +857,18 @@ void bmc_pass::storeToArrayHelper( unsigned bidx,
   bmc_ds_ptr->m.insert_term_map( store, bidx, arr_wrt.new_name );
 }
 
-void bmc_pass::create_write_event( const llvm::StoreInst* store ) {
+//
+// concurrency support
+//
+void bmc_pass::create_write_event( unsigned bidx,
+                                   const llvm::StoreInst* store,
+                                   expr val_expr ) {
   // todo: write here
 
-  // mk_me_ptr( memory_cons& mem_enc, unsigned tid, me_set prev_es, expr& path_cond, std::vector<expr>& history_,
-  //            const llvm::GlobalVariable* prog_v, src_loc& loc, event_t _et, o_tag_t ord_tag )
-
-  // mk_me_ptr( memory_cons& mem_enc, unsigned tid, me_set prev_es,
-  //            expr& path_cond, std::vector<expr>& history_,
-  //            src_loc& loc, //std::string loc,
-  //            event_t et, o_tag_t ord_tag = o_tag_t::na )
-  
-  auto val = store->getOperand(0);
-  auto val_expr = bmc_ds_ptr->m.get_term( val );
   src_loc loc = getLoc( store );
-  expr path_cond = solver_ctx.bool_val(true);
+  expr path_cond = bmc_ds_ptr->get_path_bit( bidx ); //solver_ctx.bool_val(true);
   std::vector<expr> history;
-  unsigned tid = 0;
+  unsigned tid = bmc_ds_ptr->get_thread_id();
   auto evt = mk_me_ptr(o.mem_enc, tid, {}, path_cond, history, loc, event_t::w, o_tag_t::na ); //NULL, true, NULL, val_expr, loc.
   // collect_globals_pass cgp_obj;
   // cgp_obj.add_event(tid, evt);
@@ -903,7 +898,7 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     auto val_expr = bmc_ds_ptr->m.get_term( val );
     auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
     if( true ) { //todo: add check if the grobal variable is truly global 
-      create_write_event(store);
+      create_write_event( bidx, store, val_expr );
     }
     bmc_ds_ptr->bmc_vec.push_back( glb_wrt.first );
     bmc_ds_ptr->m.insert_term_map( store, bidx, glb_wrt.second );
