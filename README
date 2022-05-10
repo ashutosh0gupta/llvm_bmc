@@ -39,3 +39,5 @@ Testing
 
 
 ./llvmbmc -f "minor_cycle__post_output" -b examples/AssemblyFiles/merged.s
+
+./llvmbmc -f "lookup__output_lookup" -b examples/AssemblyFiles/merged.s

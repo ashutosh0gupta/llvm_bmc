@@ -6,7 +6,7 @@
 #include "lib/utils/llvm_utils.h"
 #include "include/bmc_ds.h"
 #include "include/bmc.h"
-#include "include/heap_model.h"
+#include "include/array_model.h"
 
 class bmc;       // forward declaration of the bmc class
 
@@ -42,6 +42,7 @@ private:
   void translatePhiNode(  unsigned, const llvm::PHINode* );
   void translateSelectInst( unsigned, const llvm::SelectInst* );
   void translateBranch( unsigned, const llvm::BranchInst* );
+  void translateInvokeInst( unsigned bidx, const llvm::InvokeInst *I);
   void translateCallInst( unsigned, const llvm::CallInst* );
   void translateIntrinsicInst( unsigned, const llvm::IntrinsicInst* );
   void translateDebugInfo( unsigned, const llvm::DbgInfoIntrinsic* );
@@ -52,6 +53,7 @@ private:
   void translateGetElementPtrInst(const llvm::GetElementPtrInst*);
   void translateSwitchInst(unsigned, const llvm::SwitchInst *);
   void translateUnreachableInst(unsigned, const llvm::UnreachableInst *);
+  void translateLandingPadInst( unsigned, const llvm::LandingPadInst *);
   void init_path_exit_bit(bb_vec_t & //, const bb*
                           );
   void translateGEP( const llvm::GEPOperator* gep, exprs& );
@@ -84,7 +86,7 @@ private:
   // void create_fork_event( const llvm::StoreInst* store );
 
 protected:
-  void populateArrAccMap(llvm::Function*);
+  void populate_array_name_map(llvm::Function*);
 
 public:
   bmc_pass( options&, solver_context&, bmc&);

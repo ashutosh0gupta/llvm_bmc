@@ -1,0 +1,57 @@
+; This is a comment
+
+
+;; Declare variable
+;; list all the variables that are read
+(declare-var @algorithm__exhaustvel float32)
+(declare-var @algorithm__velocityradial float32)  ;init
+(declare-var @main__cyclecount i32); input
+(declare-var @main__minorinmajor i16); input
+(declare-var @main__step12 i16); output
+(declare-var @main__step8 i16); output
+(declare-var @main__step7 i16); output
+(declare-var @main__apogee float32); input
+(declare-var @main__radialdist float32); input
+(declare-var @main__velu float32); input
+(declare-var @main__velv float32); input
+(declare-var @main__velw float32); input
+(declare-var @main__posx float32); input
+(declare-var @main__posy float32); input
+(declare-var @main__posz float32); input
+(declare-var @main__combinederrorflag flag); output
+(declare-var @main__guidoutflagc  flag); output
+(declare-var @main__guidoutflag  flag); output
+(declare-var @main__stageflg flag); input
+(declare-var @main__stageflgc  flag); input
+(declare-var @main__qc float32 array 5)  ;output
+(declare-var @main__stage_time float32)  ;output
+(declare-var @main__effectivegravity float32)  ;output 
+(declare-var @main__angler float32)  ;output 
+(declare-var @main__angley float32)  ;output
+(declare-var @main__guidvel_u float32)  ;output 
+(declare-var @main__guidvel_v float32)  ;output 
+(declare-var @main__guidvel_w float32)  ;output 
+(declare-var @main__steercoeffa float32)  ;output 
+(declare-var @main__steercoeffb float32)  ;output 
+(declare-var @main__steercoeffc float32)  ;output 
+(declare-var @main__steercoeffd float32)  ;output
+(declare-var @main__posdefoutofplane float32)  ;output
+(declare-var @main__defpos float32)  ;output
+(declare-var @main__defvel float32)  ;output 
+(declare-var @main__matrix11 float32)  ;output
+(declare-var @main__matrix12 float32)  ;output
+(declare-var @main__matrix22 float32)  ;output
+(declare-var @main__brate float32 array 5)  ;output
+
+;; -----------------------------------------
+;; Declare major thread
+;; -----------------------------------------
+;; Declare threads
+(declare-thread major _ada_mjguidancedriver) ; param name entry_function
+;(invoke-behaviour major synchronous unique can-be-killed (repeated 0ms 500ms) (priority low))
+;; model when a thread can be killed.
+;(post-condition major (CallSequence main__stageflags major_cycle__manoeuvre))
+;(post-condition major (CallSequence main__stageflags  major_cycle__stage2_major))		
+;(post-condition major (assert(=> (not(= (select @main__brate 1) (fp #b0 #b00000000 #b00000000000000000000000))) (bvuge @main__stageflg #x0044))))
+(post-condition major (assert(= (select @main__brate 1) (select @main__brate 2))))
+;(post-condition major (assert(=> (and (= @main__stageflg #x0044) (= (select @main__brate 1) (fp #b0 #b00000000 #b00000000000000000000000))) (not(= @main__minorinmajor 1)))))

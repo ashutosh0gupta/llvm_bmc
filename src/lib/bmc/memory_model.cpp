@@ -23,7 +23,7 @@ memory_model::write( unsigned bidx, const llvm::StoreInst* I,
   memory_state& mem_st = store_state_map[bidx];
   // print();
   if(auto g_var = llvm::dyn_cast<llvm::GlobalVariable>(I->getPointerOperand())) {
-    auto i = ind_in_mem_state[g_var];
+    auto i = ind_in_mem_state.at(g_var);
     expr new_expr = get_fresh_name(mem_st.mem_state_vec[i].t.type,g_var->getName().str());
 
     datatype ty(mem_st.mem_state_vec[i].t.type);
@@ -39,7 +39,7 @@ memory_model::write( unsigned bidx, const llvm::StoreInst* I,
 expr memory_model::read( unsigned bidx, const llvm::LoadInst* I ) {
   memory_state& mem_st = store_state_map[bidx];
   if(auto g_var = llvm::dyn_cast<llvm::GlobalVariable>(I->getPointerOperand())) {
-    auto i = ind_in_mem_state[g_var];
+    auto i = ind_in_mem_state.at(g_var);
     expr name = mem_st.mem_state_vec[i].e;
     return name;
   } else {

@@ -81,7 +81,9 @@ bool isMul( expr e, std::string s="", bool th=false);
 bool is_const( expr& b );
 bool is_false( expr );
 bool is_true( expr );
+
 expr get_expr_const( solver_context&, int num);
+expr get_expr_bv_const( solver_context&, int num, int sz);
 expr get_fresh_bool( solver_context&, std::string = "");
 expr get_fresh_real( solver_context&, std::string = "");
 expr get_fresh_int( solver_context&, std::string = "");
@@ -154,5 +156,15 @@ expr parseFormula(solver_context&, std::string, const std::vector <std::string>&
 
 void eliminate_vars( expr, std::vector<expr>&,
                      std::vector<expr>& );
+
+
+// Boolector and CVC5 support
+check_result check_boolector(solver &, std::string, bool);
+model get_cvc5_model();
+check_result check_cvc5(solver &, std::string, bool);
+model get_boolector_model();
+
+// int cleancvc5(std::string, std::string);
+// int cleanboolector(std::string, std::string);
 
 #endif  // Z3UTILS_H

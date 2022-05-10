@@ -256,7 +256,7 @@ void parser_data::read_postcond( std::istream& in ) {
 	symb3.erase(symb3.end()-1);
 	symb3.erase(symb3.end()-1);
 	const char* symb4 = symb3.c_str();
-	//std::cout << "Symb3 is " << symb3 << "\n";
+	//std::cout << "Symb4 is " << symb4 << "\n";
 	//smt_assert = true;
 	//read_close_parentheses(in);
 	//expr e = smt2_parse_string( solver_ctx, symb4);

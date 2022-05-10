@@ -65,22 +65,22 @@ void parse_spec_pass::init_parse(llvm::Module &m, options& o, bmc& b)
 
   else {
 
-  llvm::LLVMContext& ctx = m.getContext();
-  llvm::Type *i32_type = llvm::IntegerType::getInt32Ty(ctx);
+//  llvm::LLVMContext& ctx = m.getContext();
+//  llvm::Type *i32_type = llvm::IntegerType::getInt32Ty(ctx);
   //Create a new global variable named val0_var of I32 type and initialise it to 0
-  val0_var = new llvm::GlobalVariable(m, i32_type, false, llvm::GlobalValue::InternalLinkage, llvm::ConstantInt::get(i32_type, 0), var0_name);
+  //val0_var = new llvm::GlobalVariable(m, i32_type, false, llvm::GlobalValue::InternalLinkage, llvm::ConstantInt::get(i32_type, 0), var0_name);
 
-  i32_val0 = m.getOrInsertGlobal(var0_name, i32_type);
+  //i32_val0 = m.getOrInsertGlobal(var0_name, i32_type);
   //val0_var->print( llvm::outs() );     std::cout << "\n";
 
-  val1_var = new llvm::GlobalVariable(m, i32_type, false, llvm::GlobalValue::InternalLinkage, llvm::ConstantInt::get(i32_type, 1), var1_name);
+ // val1_var = new llvm::GlobalVariable(m, i32_type, false, llvm::GlobalValue::InternalLinkage, llvm::ConstantInt::get(i32_type, 1), var1_name);
 
-  i32_val1 = m.getOrInsertGlobal(var1_name, i32_type);
+  //i32_val1 = m.getOrInsertGlobal(var1_name, i32_type);
   //val1_var->print( llvm::outs() );     std::cout << "\n";
 
-  val2_var = new llvm::GlobalVariable(m, i32_type, false, llvm::GlobalValue::InternalLinkage, llvm::ConstantInt::get(i32_type, 2), var2_name);
+  //val2_var = new llvm::GlobalVariable(m, i32_type, false, llvm::GlobalValue::InternalLinkage, llvm::ConstantInt::get(i32_type, 2), var2_name);
 
-  i32_val2 = m.getOrInsertGlobal(var2_name, i32_type);
+  //i32_val2 = m.getOrInsertGlobal(var2_name, i32_type);
   //val2_var->print( llvm::outs() );     std::cout << "\n";
 
   callseq_num = -1;
@@ -110,28 +110,10 @@ void parse_spec_pass::init_parse(llvm::Module &m, options& o, bmc& b)
       std::string Str1 = mit->getName().str();
       if (Str1 == EntryFnName) {
         //std::cout << "Str1 is " << Str1 <<"\n";
-        InlineInsertInst(*mit, b);
+        InlineInsertInst(m, *mit, b); 
+        insert_assert_call(m, *mit);
       }
     }
-
-    //The icmp and call instructions should be inserted at the end of the module
-    llvm::Instruction *icmp1 = new llvm::ICmpInst(llvm::ICmpInst::ICMP_EQ, invokedFn_Val[callseq_num], i32_val1, cmp_res_name[callseq_num]);
-    //icmp1->print( llvm::outs() );     std::cout << "\n";
-
-    llvm::LLVMContext& ctx = m.getContext();
-    llvm::Type *i1_type = llvm::IntegerType::getInt1Ty(ctx);
-
-    auto ret_type = llvm::Type::getVoidTy(ctx);
-    auto assert_type = llvm::FunctionType::get(ret_type , i1_type, false );
-
-    auto attr_list = llvm::AttributeList().addAttribute(m.getContext(), 1U, llvm::Attribute::NoAlias);
-
-    auto assertfunc = m.getOrInsertFunction("__VERIFIER_assert_CallSeqCheck", assert_type, attr_list);
-  //llvm::CallInst *call = 
-   llvm::CallInst::Create(assertfunc, icmp1, "assertfunc");
-   //call->print( llvm::outs() );     std::cout << "\n";
-   //auto assertfunc = m.getOrInsertFunction("__VERIFIER_assert_CallSeqCheck", i1_type);
-
   }
  }
       for (auto mit = m.begin(); mit != m.end(); mit++) { //Iterate over functions in module
@@ -163,7 +145,7 @@ void parse_spec_pass::insert_monitor(llvm::Module &m, std::string Fn1, std::stri
 }
 
 
-void parse_spec_pass::InlineInsertInst( llvm::Function &f, bmc& b ) {
+void parse_spec_pass::InlineInsertInst( llvm::Module &m, llvm::Function &f, bmc& b ) {
   for (auto bbit = f.begin(); bbit != f.end(); bbit++) { //Iterate over basic blocks in function
 
     auto bb = &(*bbit);
@@ -172,6 +154,7 @@ void parse_spec_pass::InlineInsertInst( llvm::Function &f, bmc& b ) {
       //I->print( llvm::outs() );     std::cout << "\n";
   	auto call = llvm::dyn_cast<llvm::CallInst>(I);
 	auto invoke = llvm::dyn_cast<llvm::InvokeInst>(I);
+
       if ((call) || (invoke)) {
        // I->print( llvm::outs() );     std::cout << "\n";
 	std::string FuncName;	
@@ -189,37 +172,104 @@ void parse_spec_pass::InlineInsertInst( llvm::Function &f, bmc& b ) {
 	b.fn_to_thread.insert( pair );
 	//std::cout << "Called fn is " << FuncName << "\n";
 
-        if (fname1 == FuncName) {
+	llvm::LLVMContext& ctx = m.getContext();
+        llvm::Type *i32_type = llvm::IntegerType::getInt32Ty(ctx);
 
-          llvm::Instruction *icmp = new llvm::ICmpInst(I,llvm::ICmpInst::ICMP_ULT, invokedFn_Val[callseq_num], i32_val2); // cmp_res_name);
+        if (fname1 == FuncName) {
 
           //icmp->print( llvm::outs() );     std::cout << "\n";
           llvm::Value *const_val2 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 2, true);
           llvm::Value *const_val1 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 1, true);  //Create an i32 constant with value 1
 
-          //llvm::SelectInst *select =
+	  llvm::Instruction *load = new llvm::LoadInst(i32_type, invokedFn_Val[callseq_num], "test", false, I); //Load the global monitor var
+
+	  //llvm::Instruction *icmp = new llvm::ICmpInst(I,llvm::ICmpInst::ICMP_ULT, invokedFn_Val[callseq_num], const_val2); // cmp_res_name);
+	  llvm::Instruction *icmp = new llvm::ICmpInst(I, llvm::ICmpInst::ICMP_ULT, load, const_val2);
+
+          llvm::SelectInst *select =
           llvm::SelectInst::Create (icmp, const_val1, const_val2, monitor_var_name[callseq_num], I);
           //select->print( llvm::outs() );     std::cout << "\n";
+	  // llvm::Instruction *store =
+            new llvm::StoreInst(select,invokedFn_Val[callseq_num], I); //Store the global monitor var
           //break;
         }
 
         if (fname2 == FuncName) {
-          llvm::Instruction *icmp = new llvm::ICmpInst(I,llvm::ICmpInst::ICMP_EQ, invokedFn_Val[callseq_num], i32_val1); // cmp_res_name);
 
           //icmp->print( llvm::outs() );     std::cout << "\n";
           llvm::Value *const_val1 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 1, true);
           llvm::Value *const_val2 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 2, true);  //Create an i32 constant with value 1
+	  llvm::Instruction *load = new llvm::LoadInst(i32_type, invokedFn_Val[callseq_num], "test", false, I); //Load the global monitor var
+          llvm::Instruction *icmp = new llvm::ICmpInst(I,llvm::ICmpInst::ICMP_EQ, load, const_val1); // cmp_res_name);
 
-          //llvm::SelectInst *select =
+          llvm::SelectInst *select =
           llvm::SelectInst::Create (icmp, const_val1, const_val2, monitor_var_name[callseq_num], I);
           //select->print( llvm::outs() );     std::cout << "\n";
+	  //llvm::Instruction *store =
+            new llvm::StoreInst(select,invokedFn_Val[callseq_num], I); //Store the global monitor var
         }
-	InlineInsertInst(*fun, b);
+	InlineInsertInst(m, *fun, b);
       }
     }
-
   }
 }
+
+
+
+void parse_spec_pass::insert_assert_call( llvm::Module &m, llvm::Function &f ) {
+
+//      for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
+//  std::string fname = demangle(fit->getName().str());
+//  if ((fname == "_ada_mjguidancedriver") || (fname == "_ada_mnguidancedriver")) {
+
+//    for (auto bbit = fit->begin(); bbit != fit->end(); bbit++) { //Iterate over basic blocks in function       
+//		       
+//      auto bb = &(*bbit);
+//      for( auto it = bb->begin();  it != bb->end(); ++it) {
+//        auto I = &(*it);
+////	auto call = llvm::dyn_cast<llvm::CallInst>(I);
+////      auto invoke = llvm::dyn_cast<llvm::InvokeInst>(I);
+////      if ((call) || (invoke)) {
+//          I->print( llvm::outs() );     std::cout << "\n";
+//	  //}
+//	}
+//      }
+//     }
+//    }
+    for (auto bbit = f.begin(); bbit != f.end(); bbit++) { //Iterate over basic blocks in function
+
+    auto bb = &(*bbit);
+    for( auto it = bb->begin(), e = bb->end(); it != e; ++it) {
+      auto I = &(*it);
+      auto ret = llvm::dyn_cast<llvm::ReturnInst>(I);
+	if (ret) {
+
+//The icmp and call instructions should be inserted at the end of the entry function, just before return
+    llvm::LLVMContext& ctx = m.getContext();
+    llvm::Type *i32_type = llvm::IntegerType::getInt32Ty(ctx);
+    llvm::Value *const_val1 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 1, true);
+    llvm::Instruction *load = new llvm::LoadInst(i32_type, invokedFn_Val[callseq_num], "test1", false, I); //Load the global monitor var
+    //llvm::Instruction *icmp1 = new llvm::ICmpInst(llvm::ICmpInst::ICMP_EQ, invokedFn_Val[callseq_num], i32_val1, cmp_res_name[callseq_num]);
+    llvm::Instruction *icmp1 = new llvm::ICmpInst(I, llvm::ICmpInst::ICMP_EQ, load, const_val1);
+//    //icmp1->print( llvm::outs() );     std::cout << "\n";
+
+    llvm::Type *i1_type = llvm::IntegerType::getInt1Ty(ctx);
+
+    auto ret_type = llvm::Type::getVoidTy(ctx);
+    auto assert_type = llvm::FunctionType::get(ret_type , i1_type, false );
+
+    auto attr_list = llvm::AttributeList().addAttribute(m.getContext(), 1U, llvm::Attribute::NoAlias);
+
+    auto assertfunc = m.getOrInsertFunction("__VERIFIER_assert_CallSeqCheck", assert_type, attr_list);
+  //llvm::CallInst *call = 
+   llvm::CallInst::Create(assertfunc, icmp1, "assertfunc", I);
+   //call->print( llvm::outs() );     std::cout << "\n";
+   //auto assertfunc = m.getOrInsertFunction("__VERIFIER_assert_CallSeqCheck", i1_type);
+	}
+    }
+   }
+} 
+
 
 
 void parse_spec_pass::CollectThreadInfo( llvm::Function &f, unsigned ThreadNumber, bmc& b ) {

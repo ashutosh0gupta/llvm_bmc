@@ -55,7 +55,8 @@ public:
   void init_parse(llvm::Module &m, options& o, bmc& b);
   void insert_monitor(llvm::Module &m, std::string Fn1, std::string Fn2);
   //virtual bool runOnModule(llvm::Module &m); //when there is a Module
-  void InlineInsertInst(llvm::Function &f, bmc& b); //called by runOnModule
+  void InlineInsertInst(llvm::Module &m, llvm::Function &f, bmc& b); //called by runOnModule
+  void insert_assert_call( llvm::Module &m, llvm::Function &f );
   void CollectThreadInfo( llvm::Function &f, unsigned ThreadNumber, bmc& b );
   virtual bool runOnFunction(llvm::Function &f);
 
