@@ -6,6 +6,7 @@
 #include "include/memory_cons.h"
 #include "include/memory_model.h"
 #include "include/value_expr_map.h"
+#include "include/memory_event.h"
 
 enum spec_reason_t{
   UNKNOWN,      // unspecified
@@ -111,6 +112,8 @@ public:
   expr get_expr( const llvm::Value* v );
 
   const llvm::BasicBlock* eb; //todo: deprecate
+
+  std::map< unsigned, me_ptr > all_events;
 
   unsigned processed_bidx = 0;
   std::vector<const llvm::BasicBlock*> bb_vec; // index in this vector is the block id

@@ -3,7 +3,8 @@
 #include "lib/utils/solver_utils.h"
 // TODO : remove reference to heap model and access of public class variables
 #include "include/heap_model.h"
-
+#include "include/memory_event.h"
+#include "include/collect_globals.h"
 //todo: remove reference to bmc_obj which is due to global variables
 
 #define BMC_UNSUPPORTED_INSTRUCTIONS( InstTYPE, Inst )                  \
@@ -812,7 +813,27 @@ void bmc_pass::storeToArrayHelper( unsigned bidx,
 
 void bmc_pass::create_write_event( const llvm::StoreInst* store ) {
   // todo: write here
+
+  // mk_me_ptr( memory_cons& mem_enc, unsigned tid, me_set prev_es, expr& path_cond, std::vector<expr>& history_,
+  //            const llvm::GlobalVariable* prog_v, src_loc& loc, event_t _et, o_tag_t ord_tag )
+
+  // mk_me_ptr( memory_cons& mem_enc, unsigned tid, me_set prev_es,
+  //            expr& path_cond, std::vector<expr>& history_,
+  //            src_loc& loc, //std::string loc,
+  //            event_t et, o_tag_t ord_tag = o_tag_t::na )
+  
+  auto val = store->getOperand(0);
+  auto val_expr = bmc_ds_ptr->m.get_term( val );
+  src_loc loc = getLoc( store );
+  expr path_cond = solver_ctx.bool_val(true);
+  std::vector<expr> history;
+  unsigned tid = 0;
+  auto evt = mk_me_ptr(o.mem_enc, tid, {}, path_cond, history, loc, event_t::w, o_tag_t::na ); //NULL, true, NULL, val_expr, loc.
+  // collect_globals_pass cgp_obj;
+  // cgp_obj.add_event(tid, evt);
+  bmc_ds_ptr->all_events.insert( std::make_pair( tid, evt ) );
 }
+
 void bmc_pass::translateStoreInst( unsigned bidx,
                                    const llvm::StoreInst* store ) {
   assert( store );

@@ -151,7 +151,8 @@ if ((f.getName().str() == fname1) ||(f.getName().str() == fname2)) {
   me_set prev_events;
   expr start_bit = get_fresh_bool(solver_ctx,"start");
   std::vector< expr > history = { start_bit };
-  source_loc loc( name );
+  // src_loc loc( name );
+  src_loc loc;
   
   auto start = mk_me_ptr( mem_enc, thr_id, prev_events, start_bit, history,
                           loc, event_t::barr );
@@ -252,9 +253,9 @@ collect_globals_pass::translate_ordering_tags( llvm::AtomicOrdering ord ) {
 }
 
 
-source_loc collect_globals_pass::getInstructionLocation(const llvm::Instruction* I ) {
+src_loc collect_globals_pass::getInstructionLocation(const llvm::Instruction* I ) {
   const llvm::DebugLoc d = I->getDebugLoc();
-  source_loc l;
+  src_loc l;
   if( d ) {
     l.line = d.getLine();
     l.col  = d.getCol();
