@@ -77,7 +77,7 @@ public:
       set_start_event( e, cond );
     }
 
-  source_loc getInstructionLocation(const llvm::Instruction* I );
+  src_loc getInstructionLocation(const llvm::Instruction* I );
 
   void add_event( unsigned i, me_ptr e );
 

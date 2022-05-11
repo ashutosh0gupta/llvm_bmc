@@ -6,6 +6,7 @@
 #include "include/memory_cons.h"
 #include "include/memory_model.h"
 #include "include/value_expr_map.h"
+#include "include/memory_event.h"
 
 enum spec_reason_t{
   UNKNOWN,      // unspecified
@@ -107,6 +108,8 @@ public:
 
   const llvm::BasicBlock* eb; //todo: deprecate
 
+  std::map< unsigned, me_ptr > all_events;
+
   unsigned processed_bidx = 0;
   std::vector<const llvm::BasicBlock*> bb_vec; // index in this vector is the block id
   std::map< unsigned, std::vector<unsigned> > pred_idxs;
@@ -117,6 +120,14 @@ public:
 
   std::map< unsigned, expr > block_to_path_bit;
   std::map< unsigned, std::vector<expr> > block_to_exit_bits;
+
+  //-------------------------------------------------------
+  // concurrency support
+  unsigned thread_id = 0;
+  void set_thread_id( unsigned );
+  unsigned get_thread_id();
+ 
+  //-------------------------------------------------------
 
   void print_formulas( unsigned print_from = 0, unsigned print_spec_from = 0);
 

@@ -5,6 +5,7 @@
 // #include "lib/utils/solver_utils.h"
 #include "include/memory_cons.h"
 #include <boost/concept_check.hpp>
+#include "include/llvm_decls.h"
 
 #include "llvm/IR/Constants.h"
 
@@ -126,27 +127,29 @@ public:
   // This object has dual use
   // - identify events originated from specific location
   // - give events pretty names. For example ''the_launcher''
-struct source_loc{
-  // (0,0,"") is unknown location
-  // (0,0,something) is an unknown location with a pretty name!!!
-  source_loc() {};
-  source_loc( unsigned l, unsigned c, std::string s) :
-    line(l), col(c), file(s) {}; // constructor for locations in a file
-  source_loc( std::string s) : file(s) {}; // constructor for pretty named locs
-  unsigned line = 0;
-  unsigned col = 0;
-  std::string file;
-  std::string& pretty_name = file; // used as unique event name(user ensured)!!
-  std::string position_name();
-  std::string gen_name();
+// struct src_loc{
+// // class src_loc{  //It was struct without
+// // public:
+//   // (0,0,"") is unknown location
+//   // (0,0,something) is an unknown location with a pretty name!!!
+//   src_loc() {};
+//   src_loc( unsigned l, unsigned c, std::string s) :
+//     line(l), col(c), file(s) {}; // constructor for locations in a file
+//   src_loc( std::string s) : file(s) {}; // constructor for pretty named locs
+//   unsigned line = 0;
+//   unsigned col = 0;
+//   std::string file;
+//   std::string& pretty_name = file; // used as unique event name(user ensured)!!
+//   std::string position_name();
+//   std::string gen_name();
 
-  source_loc& operator=(const source_loc &n_loc) {
-    line = n_loc.line;
-    col = n_loc.col;
-    file = n_loc.file;
-    return *this;  // Return a reference to myself.
-  }
-};
+//   src_loc& operator=(const src_loc &n_loc) {
+//     line = n_loc.line;
+//     col = n_loc.col;
+//     file = n_loc.file;
+//     return *this;  // Return a reference to myself.
+//   }
+// };
 
 
  // In memory model, there may be several kind of timing constraints
@@ -265,12 +268,12 @@ private:
                     me_set& _prev_events, //const tara::variable& _prog_v,
 		    const llvm::GlobalVariable* _prog_v,
                     expr& path_cond, std::vector<expr>& history_,
-                    source_loc& _loc, event_t _et, o_tag_t ord_tag );
+                    src_loc& _loc, event_t _et, o_tag_t ord_tag );
 
     memory_event(   solver_context& sol_ctx, unsigned _tid,
                     me_set& _prev_events, expr& path_cond,
                     std::vector<expr>& _history,
-                    source_loc& _loc, event_t _et, o_tag_t _o_tag );
+                    src_loc& _loc, event_t _et, o_tag_t _o_tag );
   public:
     unsigned tid;
     //tara::variable v;
@@ -287,7 +290,7 @@ private:
     variable rd_v() { return v; }
     //tara::variable wr_v() { return v_copy; }
     variable wr_v() { return v_copy; }
-    source_loc loc;
+    src_loc loc;
     me_ptr rmw_other=NULL;
   private:
     unsigned topological_order;
@@ -477,7 +480,7 @@ private:
   inline me_ptr
   mk_me_ptr( memory_cons& mem_enc, unsigned tid, me_set prev_es,
              expr& path_cond, std::vector<expr>& history_,
-             const llvm::GlobalVariable* prog_v, source_loc& loc,
+             const llvm::GlobalVariable* prog_v, src_loc& loc,
              event_t _et, o_tag_t ord_tag ) {
     std::map<const me_ptr, expr > bconds;
     for( auto& ep : prev_es ) {
@@ -499,7 +502,7 @@ private:
   inline me_ptr
   mk_me_ptr( memory_cons& mem_enc, unsigned tid, me_set prev_es,
              expr& path_cond, std::vector<expr>& history_,
-             source_loc& loc, event_t et,
+             src_loc& loc, event_t et,
              std::map<const me_ptr, expr>& bconds,
              o_tag_t ord_tag = o_tag_t::na  ) {
 
@@ -510,7 +513,7 @@ private:
 
     // std::string lname;
     // if( et == event_t::block ) {
-    //   source_loc loc_d;
+    //   src_loc loc_d;
     //   lname = "block__" + std::to_string(tid) + "__"+ loc_d.gen_name();
     // }else{
     //   lname = loc.gen_name();
@@ -524,7 +527,7 @@ private:
   inline me_ptr
   mk_me_ptr( memory_cons& mem_enc, unsigned tid, me_set prev_es,
              expr& path_cond, std::vector<expr>& history_,
-             source_loc& loc, //std::string loc,
+             src_loc& loc, //std::string loc,
              event_t et, o_tag_t ord_tag = o_tag_t::na ) {
     std::map<const me_ptr, expr> branch_conds;
     for( auto& ep : prev_es ) {

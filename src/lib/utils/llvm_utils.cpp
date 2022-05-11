@@ -85,6 +85,30 @@ void src_loc::print_short( std::ostream& os ) {
   }
 }
 
+std::string src_loc::position_name() {
+  if( line == 0 && col == 0 )
+    // return pretty_name;
+    return file;
+    // return NULL;
+  else
+    return "_l" + std::to_string(line) + "_c" + std::to_string(col);
+}
+
+std::string src_loc::gen_name() {
+  static std::map< std::pair<unsigned, unsigned>, unsigned > seen_before;
+  auto l_name = position_name();
+  if( line == 0 && col == 0 && l_name != "" ) {
+    return l_name;
+  }else{
+    auto line_col = std::make_pair(line, col);
+    if( exists( seen_before, line_col ) ) {
+      return l_name + "_u" + std::to_string( seen_before[line_col]++ );
+    }else{
+      seen_before[line_col] = 0;
+    }
+    return l_name;
+  }
+}
 // --------------------------------------------------------------------------
 
 // best guess of location

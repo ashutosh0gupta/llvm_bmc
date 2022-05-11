@@ -83,28 +83,29 @@ std::string event_t_name( event_t et ) {
     }
 }
 
-std::string source_loc::position_name() {
-  if( line == 0 && col == 0 )
-    return pretty_name;
-  else
-    return "_l" + std::to_string(line) + "_c" + std::to_string(col);
-}
+// std::string src_loc::position_name() {
+//   if( line == 0 && col == 0 )
+//     // return pretty_name;
+//     return NULL;
+//   else
+//     return "_l" + std::to_string(line) + "_c" + std::to_string(col);
+// }
 
-std::string source_loc::gen_name() {
-  static std::map< std::pair<unsigned, unsigned>, unsigned > seen_before;
-  auto l_name = position_name();
-  if( line == 0 && col == 0 && l_name != "" ) {
-    return l_name;
-  }else{
-    auto line_col = std::make_pair(line, col);
-    if( exists( seen_before, line_col ) ) {
-      return l_name + "_u" + std::to_string( seen_before[line_col]++ );
-    }else{
-      seen_before[line_col] = 0;
-    }
-    return l_name;
-  }
-}
+// std::string src_loc::gen_name() {
+//   static std::map< std::pair<unsigned, unsigned>, unsigned > seen_before;
+//   auto l_name = position_name();
+//   if( line == 0 && col == 0 && l_name != "" ) {
+//     return l_name;
+//   }else{
+//     auto line_col = std::make_pair(line, col);
+//     if( exists( seen_before, line_col ) ) {
+//       return l_name + "_u" + std::to_string( seen_before[line_col]++ );
+//     }else{
+//       seen_before[line_col] = 0;
+//     }
+//     return l_name;
+//   }
+// }
 
 tstamp_var_ptr
 memory_event::create_internal_event( solver_context& sol_ctx,
@@ -237,7 +238,7 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
                                 const llvm::GlobalVariable* _prog_v,
                                 expr& path_cond,
                                 std::vector<expr>& _history,
-                                source_loc& _loc, event_t _et,
+                                src_loc& _loc, event_t _et,
                                 o_tag_t _o_tag )
   : tid(_tid)
   , v(sol_ctx)      // temp init
@@ -274,7 +275,7 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
                                 me_set& _prev_events,
                                 expr& path_cond,
                                 std::vector<expr>& _history,
-                                source_loc& _loc, event_t _et,
+                                src_loc& _loc, event_t _et,
                                 o_tag_t _o_tag )
   : tid(_tid)
   , v("dummy",sol_ctx)
@@ -290,7 +291,7 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
   std::string e_t_name = event_t_name( et );
 
   if( et == event_t::block ) {
-    source_loc loc_d;
+    src_loc loc_d;
     loc_name = "block__" + std::to_string(tid) + "__"+ loc_d.gen_name();
   }else{
     loc_name = loc.gen_name();

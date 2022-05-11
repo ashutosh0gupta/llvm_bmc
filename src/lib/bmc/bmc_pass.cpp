@@ -3,6 +3,8 @@
 #include "lib/utils/solver_utils.h"
 // TODO : remove reference to heap model and access of public class variables
 #include "include/array_model.h"
+#include "include/memory_event.h"
+#include "include/collect_globals.h"
 
 //todo: remove reference to bmc_obj which is due to global variables
 
@@ -855,9 +857,24 @@ void bmc_pass::storeToArrayHelper( unsigned bidx,
   bmc_ds_ptr->m.insert_term_map( store, bidx, arr_wrt.new_name );
 }
 
-void bmc_pass::create_write_event( const llvm::StoreInst* store ) {
+//
+// concurrency support
+//
+void bmc_pass::create_write_event( unsigned bidx,
+                                   const llvm::StoreInst* store,
+                                   expr val_expr ) {
   // todo: write here
+
+  src_loc loc = getLoc( store );
+  expr path_cond = bmc_ds_ptr->get_path_bit( bidx ); //solver_ctx.bool_val(true);
+  std::vector<expr> history;
+  unsigned tid = bmc_ds_ptr->get_thread_id();
+  auto evt = mk_me_ptr(o.mem_enc, tid, {}, path_cond, history, loc, event_t::w, o_tag_t::na ); //NULL, true, NULL, val_expr, loc.
+  // collect_globals_pass cgp_obj;
+  // cgp_obj.add_event(tid, evt);
+  bmc_ds_ptr->all_events.insert( std::make_pair( tid, evt ) );
 }
+
 void bmc_pass::translateStoreInst( unsigned bidx,
                                    const llvm::StoreInst* store ) {
   assert( store );
@@ -881,7 +898,7 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     auto val_expr = bmc_ds_ptr->m.get_term( val );
     auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
     if( true ) { //todo: add check if the grobal variable is truly global 
-      create_write_event(store);
+      create_write_event( bidx, store, val_expr );
     }
     bmc_ds_ptr->bmc_vec.push_back( glb_wrt.first );
     bmc_ds_ptr->m.insert_term_map( store, bidx, glb_wrt.second );
