@@ -50,5 +50,6 @@
 (declare-thread major _ada_mjguidancedriver) ; param name entry_function
 ;(invoke-behaviour major synchronous unique can-be-killed (repeated 0ms 500ms) (priority low))
 ;; model when a thread can be killed.
+;(post-condition major (assert(fp.eq (select @main__brate 1) (select @main__brate 2))))
 (post-condition major (assert(= (select @main__brate 1) (select @main__brate 2))))
 ;(post-condition major (assert(= (select @main__brate (_ bv0 64) ) (select @main__brate (_ bv1 64) ))))

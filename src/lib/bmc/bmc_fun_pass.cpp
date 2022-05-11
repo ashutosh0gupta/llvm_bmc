@@ -217,12 +217,13 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
           //std::cout << "Init name is " << init_name << "\n";
 	  sort s = bmc_ds_ptr->ar_model_full.ar_sorts.at(m);
 	  //std::cout << "Sort is " << s << "\n";
-          postcond_var_names.push_back(init_name);
-          postcond_declarations.push_back(o.solver_ctx.constant( var_name.c_str(), s ));
-          std::string init_name1 = init_name + ".";
-          postcond_var_names.push_back(init_name1);
-          postcond_declarations.push_back(o.solver_ctx.constant(init_name1.c_str(),s));
-
+	  if (find(postcond_var_names.begin(), postcond_var_names.end(), init_name) == postcond_var_names.end()) {
+            postcond_var_names.push_back(init_name);
+            postcond_declarations.push_back(o.solver_ctx.constant( var_name.c_str(), s ));
+            std::string init_name1 = init_name + ".";
+            postcond_var_names.push_back(init_name1);
+            postcond_declarations.push_back(o.solver_ctx.constant(init_name1.c_str(),s));
+	 }
           const size_t newSize = init_name.length();
           for( size_t pos = 0; ; pos += newSize ) {
             // Locate the substring to replace
@@ -248,9 +249,9 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
     //b.prop.at(i) = e1;
     expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
     bmc_ds_ptr->add_spec( !path_bit || e1, spec_reason_t::SPEC_FILE );
-      glb_names.clear();
-  postcond_var_names.clear();
-  postcond_declarations.clear();
+    glb_names.clear();
+    postcond_var_names.clear();
+    postcond_declarations.clear();
   }
 }
 
