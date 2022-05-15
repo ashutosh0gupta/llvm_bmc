@@ -5,6 +5,10 @@
 #include "lib/utils/solver_utils.h"
 #include "lib/bmc/bmc_pass.h"
 
+// -- high level architecture
+// -- create all read write events
+// -- encode constraints
+
 class bmc_concurrency : public bmc_pass{
 
 public:
@@ -16,8 +20,8 @@ public:
   std::vector <expr> postcond_declarations;
 
 public:
-  bmc_fun_pass( options&, solver_context& ctx_, bmc&);
-  ~bmc_fun_pass();
+  bmc_concurrency( options&, solver_context& ctx_, bmc&);
+  ~bmc_concurrency();
 
   virtual bool runOnFunction( llvm::Function & );
   void translatePrecond( bmc& );

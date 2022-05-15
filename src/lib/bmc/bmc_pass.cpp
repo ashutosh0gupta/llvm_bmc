@@ -86,9 +86,13 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
       b = switch_sort( o, b, s );
     }
   }
-  
+  // if( false && o.abstract_floats ) {
+  //   // floating point calculation
+  //   // auto result = get fresh name with appropriate sort
+  // }
   unsigned op = bop->getOpcode();
   switch( op ) {
+    // Fixed point operations
   case llvm::Instruction::Add : bmc_ds_ptr->m.insert_term_map( bop, bidx, a+b     ); break;
   case llvm::Instruction::Sub : bmc_ds_ptr->m.insert_term_map( bop, bidx, a-b     ); break;
   case llvm::Instruction::Mul : bmc_ds_ptr->m.insert_term_map( bop, bidx, a*b     ); break;
@@ -99,11 +103,25 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   case llvm::Instruction::UDiv: bmc_ds_ptr->m.insert_term_map( bop, bidx, a/b     ); break;
   case llvm::Instruction::SRem: bmc_ds_ptr->m.insert_term_map( bop, bidx, rem(a,b)); break;
   case llvm::Instruction::URem: bmc_ds_ptr->m.insert_term_map( bop, bidx, rem(a,b)); break;
+    // Floating point operations
+    // Abstraction choices
+    // 1. treat them as unknown non-det functions
+    // 2. treat them as unknown functions <<---
+    // 3. tream them as functions over reals
+    //       x \in [a,b]  a and b are real numbers
+    //       y \in [c,d]
+    //       x*y  \in [a,b]*[c,d] -> [min(a*c,b*c,a*d,b*d),min(a*c,b*c,a*d,b*d)]
+    //  h = initial_h(float) +step_size(float)*steps(fixedpoint)
+    //    interaction with boolean
   case llvm::Instruction::FAdd: bmc_ds_ptr->m.insert_term_map( bop, bidx, a+b     ); break;
   case llvm::Instruction::FSub: bmc_ds_ptr->m.insert_term_map( bop, bidx, a-b     ); break;
   case llvm::Instruction::FMul: bmc_ds_ptr->m.insert_term_map( bop, bidx, a*b     ); break;
   case llvm::Instruction::FDiv: bmc_ds_ptr->m.insert_term_map( bop, bidx, a/b     ); break;
-  case llvm::Instruction::FRem:
+  // case llvm::Instruction::FAdd: bmc_ds_ptr->m.insert_term_map( bop, bidx, result ); break;
+  // case llvm::Instruction::FSub: bmc_ds_ptr->m.insert_term_map( bop, bidx, result ); break;
+  // case llvm::Instruction::FMul: bmc_ds_ptr->m.insert_term_map( bop, bidx, result ); break;
+  // case llvm::Instruction::FDiv: bmc_ds_ptr->m.insert_term_map( bop, bidx, result ); break;
+  case llvm::Instruction::FRem: assert(false); //todo : implement FRem
   default: {
     const char* opName = bop->getOpcodeName();
     llvm_bmc_error("bmc", "unsupported instruction \"" << opName << "\" occurred!!");

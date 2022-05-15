@@ -156,6 +156,7 @@ $(BUILDDIR)/cvc5/README.md :
 #---------------------------------------------------------------------------
 #script's to install boolector
 #---------------------------------------------------------------------------
+# some dependencies: curl, cython
 
 boolector : $(BUILDDIR)/boolector/README.md
 	cd $(BUILDDIR)/boolector; ./contrib/setup-lingeling.sh
