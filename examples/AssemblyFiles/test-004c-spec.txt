@@ -1,0 +1,30 @@
+; This is a comment
+
+
+;; Declare variable
+;; list all the variables that are read
+(declare-var @main__cyclecount i32); input
+(declare-var @main__minorinmajor i16); input
+(declare-var @main__step13 i16); output
+(declare-var @main__step14 i16); output
+(declare-var @main__radialdist float32); input
+(declare-var @main__velu float32); input
+(declare-var @main__velv float32); input
+(declare-var @main__velw float32); input
+(declare-var @main__posx float32); input
+(declare-var @main__posy float32); input
+(declare-var @main__posz float32); input
+(declare-var @main__combinederrorflag flag); output
+(declare-var @main__stageflg flag); input
+(declare-var @main__stageflgc  flag); input
+(declare-var @main__brate float32 array 3)  ;output
+
+;; -----------------------------------------
+;; Declare major thread
+;; -----------------------------------------
+;; Declare threads
+(declare-thread major _ada_mjguidancedriver) ; param name entry_function
+;(invoke-behaviour major synchronous unique can-be-killed (repeated 0ms 500ms) (priority low))
+;; model when a thread can be killed.		
+(post-condition major (assert (not(= (select @main__brate #x0000000000000001) (fp #b0 #b00000000 #b00000000000000000000000)))))
+;(post-condition major (assert (= (select @main__brate #x0000000000000001) (fp #b0 #x00 #b00000000000000000000000))))
