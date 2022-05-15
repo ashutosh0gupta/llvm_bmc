@@ -216,10 +216,10 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
           init_name = to_string(s_names.at(m));
           //std::cout << "Init name is " << init_name << "\n";
 	  sort s = bmc_ds_ptr->ar_model_full.ar_sorts.at(m);
-	  //std::cout << "Sort is " << s << "\n";
+	  //std::cout << "Sort1 is " << s << "\n";
 	  if (find(postcond_var_names.begin(), postcond_var_names.end(), init_name) == postcond_var_names.end()) {
             postcond_var_names.push_back(init_name);
-            postcond_declarations.push_back(o.solver_ctx.constant( var_name.c_str(), s ));
+            postcond_declarations.push_back(o.solver_ctx.constant( init_name.c_str(), s ));
             std::string init_name1 = init_name + ".";
             postcond_var_names.push_back(init_name1);
             postcond_declarations.push_back(o.solver_ctx.constant(init_name1.c_str(),s));
