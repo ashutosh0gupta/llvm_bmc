@@ -229,27 +229,31 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
   // }
 
   check_result result;
+  Z3CompClass z3compObj;
   if( o.use_solver == "z3" ) {
     result = s.check();
   }else if( o.use_solver == "cvc5" ) {
     // dump( o.outDirPath.string(), "test.smt2", s );
-    result = check_cvc5( s, o.outDirPath.string(), o.get_solver_model );
+    result = z3compObj.check_cvc5( s, o.outDirPath.string(), o.get_solver_model );
     // do some thing
   }else if( o.use_solver == "boolector" ) {
-    result = check_boolector( s, o.outDirPath.string(), o.get_solver_model );
+    result = z3compObj.check_boolector( s, o.outDirPath.string(), o.get_solver_model );
   }else{
     llvm_bmc_error( "bmc", "no solver identified!!" );
     return false;// dummy return
   }
-
   if( result == z3::sat && o.witness == 1 ) {
     model m(o.solver_ctx);
     if( o.use_solver == "z3" ) {
       m = s.get_model();
     }else if( o.use_solver == "cvc5" ) {
-      m = get_cvc5_model();
+      m = z3compObj.get_cvc5_model();
+      std::cout<< "\nPrinting cvc5 model with witness\n";
+      std::cout << m;
     }else if( o.use_solver == "boolector" ) {
-      m = get_boolector_model();
+      m = z3compObj.get_boolector_model();
+      std::cout<< "\nPrinting boolector model with witness\n";
+      std::cout << m;
     }else{
       llvm_bmc_error( "bmc", "no solver identified!!" );
     }
