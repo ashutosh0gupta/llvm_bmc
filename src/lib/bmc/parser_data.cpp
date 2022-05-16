@@ -78,8 +78,8 @@ bool parser_data::read_close_parentheses( std::istream& in ) {
 std::string parser_data::read_symbol( std::istream& in ) {
    consume_spaces( in );
    std::string word;
-   while( !peek_space(in) && peek_alpha_numeric_or_underscore(in) && 
-!in.eof() || (in.peek() == '@') )
+   while( ((!peek_space(in)) && (peek_alpha_numeric_or_underscore(in)) && 
+(!in.eof())) || (in.peek() == '@') )
      {
        word = word.append( 1, in.get() );
      }
@@ -174,7 +174,7 @@ void parser_data::read_variable( std::istream& in ) {
 		sort z_te = solver_ctx.int_sort();        
 		if (var_type == "float32") z_te = solver_ctx.fpa_sort<32>();
 		if (var_type == "float64") z_te = solver_ctx.fpa_sort<64>();     
-		sort s = solver_ctx.array_sort( solver_ctx.int_sort(), z_te );
+		sort s = solver_ctx.array_sort( solver_ctx.bv_sort(64), z_te );
 		expr e = solver_ctx.constant( var_name.c_str(), s );
 
 		names.push_back(var_name);
@@ -256,7 +256,7 @@ void parser_data::read_postcond( std::istream& in ) {
 	symb3.erase(symb3.end()-1);
 	symb3.erase(symb3.end()-1);
 	const char* symb4 = symb3.c_str();
-	//std::cout << "Symb3 is " << symb3 << "\n";
+	//std::cout << "Symb4 is " << symb4 << "\n";
 	//smt_assert = true;
 	//read_close_parentheses(in);
 	//expr e = smt2_parse_string( solver_ctx, symb4);

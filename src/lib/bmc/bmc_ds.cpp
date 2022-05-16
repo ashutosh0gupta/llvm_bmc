@@ -587,3 +587,14 @@ unsigned bmc_fun::get_call_count( const llvm::CallInst* call ) {
 
 loopdata* bmc_loop::get_loopdata() { return ld; }
 
+//---------------------------------------------------------------------
+// concurrency support
+
+unsigned bmc_ds::get_thread_id() {
+  return thread_id;
+}
+
+void bmc_ds::set_thread_id( unsigned tid ) {
+  thread_id = tid;
+}
+//---------------------------------------------------------------------

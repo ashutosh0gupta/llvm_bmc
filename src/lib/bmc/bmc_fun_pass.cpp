@@ -54,7 +54,7 @@ bool bmc_fun_pass::runOnFunction( llvm::Function &f ) {
     }
     bidx++;
   }
-  do_bmc(); // todo: why? delete if not needed.
+  //do_bmc(); // todo: why? delete if not needed.
   //translate post condition here
   return false;
 }
@@ -142,7 +142,10 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
     //std::cout << "size is " << glb_names.size(); 
     for (unsigned j = 0; j < glb_names.size(); j++) {
       //std::cout << "glb_name1 is " << glb_names.at(j) << "\n";
+      std::string init_name; 
       std::string var_name = glb_names.at(j);
+      std::string var_name1 = '@'+ var_name;
+      const size_t oldSize = var_name1.length();
       for( auto glb_idx_pair : bmc_obj.m_model.ind_in_mem_state ) {
         auto g = glb_idx_pair.first;
         auto idx = glb_idx_pair.second;
@@ -157,8 +160,8 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
           //std::cout << "Init name is ";
           //mem_st[idx].print(); std::cout << " key is " << key1 << "\n";
           var_name = '@'+ var_name;
-          const size_t oldSize = var_name.length();
-          std::string init_name = to_string(mem_st[idx].e);
+          //oldSize = var_name.length();
+          init_name = to_string(mem_st[idx].e);
           //std::cout << "Init name is " << init_name << "\n";
           postcond_var_names.push_back(init_name);
           if (mem_st[idx].t.type.is_fpa()) {
@@ -192,17 +195,64 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
           }
           break;
         }
-      }	    
-    }
+      }
+
+     for(unsigned m=0; m < bmc_ds_ptr->ar_model_full.ar_names.size(); m++) {
+        auto a_var = bmc_ds_ptr->ar_model_full.ar_names.at(m);
+        //std::cout << "Array name is " << a_var <<  " Var name is " << var_name <<"\n";
+         if (a_var == var_name) {
+          //std::cout << "Array_name is " << a_var << " Index is " << m << "\n";
+	  unsigned e_size = bmc_ds_ptr->ar_model_full.exit_ary_map.size(); 
+	  //std::cout << "Exit_ary_map size is " << e_size << "\n";
+	  auto& s_names = bmc_ds_ptr->ar_model_full.exit_ary_map[e_size-1].get_name_vec(); // get the last state
+  	  unsigned ar_size = s_names.size();
+	  //std::cout << "Name vec size is " << ar_size << "\n";
+	  for( unsigned k=0; k < ar_size; k++ ) {
+    	//std::cout << "Array in map is " << to_string(s_names.at(k)) << "\n";		
+         }
+                    
+          var_name = '@'+ var_name;
+          //oldSize = var_name.length();
+          init_name = to_string(s_names.at(m));
+          //std::cout << "Init name is " << init_name << "\n";
+	  sort s = bmc_ds_ptr->ar_model_full.ar_sorts.at(m);
+	  //std::cout << "Sort1 is " << s << "\n";
+	  if (find(postcond_var_names.begin(), postcond_var_names.end(), init_name) == postcond_var_names.end()) {
+            postcond_var_names.push_back(init_name);
+            postcond_declarations.push_back(o.solver_ctx.constant( init_name.c_str(), s ));
+            std::string init_name1 = init_name + ".";
+            postcond_var_names.push_back(init_name1);
+            postcond_declarations.push_back(o.solver_ctx.constant(init_name1.c_str(),s));
+	 }
+          const size_t newSize = init_name.length();
+          for( size_t pos = 0; ; pos += newSize ) {
+            // Locate the substring to replace
+            pos = orig_postcond.find( var_name, pos );
+            if( oldSize == newSize ) {
+              // if they're same size, use std::string::replace
+              orig_postcond.replace( pos, oldSize, init_name );
+              break;
+            } else {
+              // if not same size, replace by erasing and inserting
+              orig_postcond.erase( pos, oldSize );
+              orig_postcond.insert( pos, init_name );
+              //std::cout << "New postcond is " << orig_postcond << "\n";
+              break;
+            }
+          } 
+          break; 
+        } 
+      }
+     }
     expr e1 = parseFormula(o.solver_ctx, orig_postcond, postcond_var_names, postcond_declarations);
-    //std::cout << "Modified postcond is " << e1 << "\n";
+    //std::cout << "Modified postcond is " << to_string(e1) << "\n";
     //b.prop.at(i) = e1;
     expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
     bmc_ds_ptr->add_spec( !path_bit || e1, spec_reason_t::SPEC_FILE );
+    glb_names.clear();
+    postcond_var_names.clear();
+    postcond_declarations.clear();
   }
-  glb_names.clear();
-  postcond_var_names.clear();
-  postcond_declarations.clear();
 }
 
 

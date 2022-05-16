@@ -5,6 +5,7 @@
 #include "llvm/IR/Instructions.h"
 
 #include <boost/filesystem.hpp>
+#include "options.h"
 
 typedef std::map<const llvm::Value*, std::string> name_map;
 typedef std::map<std::string, const llvm::Value*> rev_name_map;
@@ -18,6 +19,8 @@ public:
   unsigned col;
   std::string file;
 
+  std::string position_name();
+  std::string gen_name();
   void dump();
   void print(std::ostream&);
   void print_short(std::ostream&);

@@ -79,7 +79,7 @@ private:
   void print_bb_vecs();
 
   //todo : concurrency support
-  void create_write_event( const llvm::StoreInst* store );
+  void create_write_event( unsigned, const llvm::StoreInst* store, expr );
   // void create_read_event( const llvm::StoreInst* store );
   // void create_block_event( const llvm::StoreInst* store );
   // void create_join_event( const llvm::StoreInst* store );
