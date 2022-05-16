@@ -45,22 +45,22 @@ expr parseFormula(solver_context &sol_ctx, std::string str, const std::vector<st
 
   std::string cmd = str.find_first_of(' ') != std::string::npos ? "(assert (" + str + "))" : "(assert " + str + ")";
   expr ast(sol_ctx);
-<<<<<<< HEAD
-  // std::cout << "Cmd is " << cmd << "\n";
-  Z3_ast_vector es_ast = Z3_parse_smtlib2_string(sol_ctx, cmd.c_str(), 0, NULL, NULL, s, symbols, decls);
-  delete[] symbols;
-  delete[] decls;
-  expr_vector es = expr_vector(sol_ctx, es_ast);
-  /*if( es.size() != 1 ) {
-       std::cout << "Error non unique formula parsed!" <<  "\n";
-  } */
-  if (es.size() == 0)
-  {
-    llvm_bmc_error("parsing", "failed to parse input: " << str);
-  }
-  ast = es[0];
 
-=======
+  // std::cout << "Cmd is " << cmd << "\n";
+  // Z3_ast_vector es_ast = Z3_parse_smtlib2_string(sol_ctx, cmd.c_str(), 0, NULL, NULL, s, symbols, decls);
+  // delete[] symbols;
+  // delete[] decls;
+  // expr_vector es = expr_vector(sol_ctx, es_ast);
+  // /*if( es.size() != 1 ) {
+  //      std::cout << "Error non unique formula parsed!" <<  "\n";
+  // } */
+  // if (es.size() == 0)
+  // {
+  //   llvm_bmc_error("parsing", "failed to parse input: " << str);
+  // }
+  // ast = es[0];
+
+
   //std::cout << "Cmd is " << cmd << "\n";
   try {
     Z3_ast_vector es_ast =  Z3_parse_smtlib2_string(sol_ctx, cmd.c_str(), 0, NULL, NULL, s, symbols, decls);
@@ -78,17 +78,11 @@ expr parseFormula(solver_context &sol_ctx, std::string str, const std::vector<st
     llvm_bmc_error( "parsing", "exception thrown while parsing: " << str );
   }
   
->>>>>>> 55ef9a2aa9a585ba276b7fa8366b321a5b0a9ae9
   // adjust reference counter for variable
   for (unsigned j = 0; j < i; j++)
   {
     Z3_dec_ref(sol_ctx, (Z3_ast)decls[j]);
   }
-<<<<<<< HEAD
-=======
-  return ast;
-} 
->>>>>>> 55ef9a2aa9a585ba276b7fa8366b321a5b0a9ae9
 
   return ast;
 }
