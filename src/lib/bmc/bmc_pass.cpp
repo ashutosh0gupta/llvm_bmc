@@ -86,11 +86,9 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
       b = switch_sort( o, b, s );
     }
   }
-  // if( false && o.abstract_floats ) {
-  //   // floating point calculation
-  //   // auto result = get fresh name with appropriate sort
-  // }
+   
   unsigned op = bop->getOpcode();
+  expr result = solver_ctx.bool_val(true);
   switch( op ) {
     // Fixed point operations
   case llvm::Instruction::Add : bmc_ds_ptr->m.insert_term_map( bop, bidx, a+b     ); break;
@@ -113,19 +111,40 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
     //       x*y  \in [a,b]*[c,d] -> [min(a*c,b*c,a*d,b*d),min(a*c,b*c,a*d,b*d)]
     //  h = initial_h(float) +step_size(float)*steps(fixedpoint)
     //    interaction with boolean
-  case llvm::Instruction::FAdd: bmc_ds_ptr->m.insert_term_map( bop, bidx, a+b     ); break;
-  case llvm::Instruction::FSub: bmc_ds_ptr->m.insert_term_map( bop, bidx, a-b     ); break;
-  case llvm::Instruction::FMul: bmc_ds_ptr->m.insert_term_map( bop, bidx, a*b     ); break;
-  case llvm::Instruction::FDiv: bmc_ds_ptr->m.insert_term_map( bop, bidx, a/b     ); break;
-  // case llvm::Instruction::FAdd: bmc_ds_ptr->m.insert_term_map( bop, bidx, result ); break;
-  // case llvm::Instruction::FSub: bmc_ds_ptr->m.insert_term_map( bop, bidx, result ); break;
-  // case llvm::Instruction::FMul: bmc_ds_ptr->m.insert_term_map( bop, bidx, result ); break;
-  // case llvm::Instruction::FDiv: bmc_ds_ptr->m.insert_term_map( bop, bidx, result ); break;
+  
+  case llvm::Instruction::FAdd: {
+	if( o.abstract_floats ) {
+		result = bmc_ds_ptr->m_model.get_fresh_name(a.get_sort(), "fp_abst");
+		bmc_ds_ptr->m.insert_term_map( bop, bidx, result ); break;
+		}
+	else {bmc_ds_ptr->m.insert_term_map( bop, bidx, a+b     ); break; }
+	}
+  case llvm::Instruction::FSub: {
+	if( o.abstract_floats ) {
+		result = bmc_ds_ptr->m_model.get_fresh_name(a.get_sort(), "fp_abst");
+		bmc_ds_ptr->m.insert_term_map( bop, bidx, result ); break;
+		}
+	else {bmc_ds_ptr->m.insert_term_map( bop, bidx, a-b     ); break; }
+	}
+  case llvm::Instruction::FMul: {
+	if( o.abstract_floats ) {
+		result = bmc_ds_ptr->m_model.get_fresh_name(a.get_sort(), "fp_abst");
+		bmc_ds_ptr->m.insert_term_map( bop, bidx, result ); break;
+		}
+	else {bmc_ds_ptr->m.insert_term_map( bop, bidx, a*b     ); break; }
+	}
+  case llvm::Instruction::FDiv: {
+	if( o.abstract_floats ) {
+		result = bmc_ds_ptr->m_model.get_fresh_name(a.get_sort(), "fp_abst");
+		bmc_ds_ptr->m.insert_term_map( bop, bidx, result ); break;
+		}
+	else {bmc_ds_ptr->m.insert_term_map( bop, bidx, a/b     ); break; }
+	}
   case llvm::Instruction::FRem: assert(false); //todo : implement FRem
   default: {
     const char* opName = bop->getOpcodeName();
     llvm_bmc_error("bmc", "unsupported instruction \"" << opName << "\" occurred!!");
-  }
+   }
   }
 
 //  std::vector <std::string> bop_names;

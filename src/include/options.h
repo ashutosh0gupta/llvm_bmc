@@ -92,6 +92,7 @@ public:
   array_model_t ar_model = FULL;
   bool bit_precise = false; // model integers as true "int" or bit vectors
   bool check_spec = false;
+  bool abstract_floats = false; //abstract away floating point computations
   //----------------------------------------
 
   llvm::LLVMContext globalContext;

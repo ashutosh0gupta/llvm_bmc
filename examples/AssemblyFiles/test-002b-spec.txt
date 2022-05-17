@@ -51,4 +51,4 @@
 (declare-thread major _ada_mjguidancedriver) ; param name entry_function
 ;(invoke-behaviour major synchronous unique can-be-killed (repeated 0ms 500ms) (priority low))
 ;; model when a thread can be killed.
-(post-condition major (CallSequence main__stageflags major_cycle__manoeuvre))
+(post-condition major (CallSequence major_cycle__manoeuvre main__stageflags))
