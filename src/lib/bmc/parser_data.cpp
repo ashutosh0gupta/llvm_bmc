@@ -151,10 +151,12 @@ void parser_data::read_variable( std::istream& in ) {
 		expr e = solver_ctx.int_const(var_name.c_str()); 
 	   	list_readvar.push_back(e);
 		names.push_back(var_name);
-		declarations.push_back(solver_ctx.int_const(var_name.c_str()));
+		//declarations.push_back(solver_ctx.int_const(var_name.c_str()));
+		declarations.push_back(solver_ctx.bv_const(var_name.c_str(),16));
 		var_name = var_name + ".";
 		names.push_back(var_name);
-		declarations.push_back(solver_ctx.int_const(var_name.c_str())); }
+		//declarations.push_back(solver_ctx.int_const(var_name.c_str()));
+		declarations.push_back(solver_ctx.bv_const(var_name.c_str(),16)); }
 
 	     if (var_type == "flag") {
 		expr e = solver_ctx.bv_const(var_name.c_str(), 16); 

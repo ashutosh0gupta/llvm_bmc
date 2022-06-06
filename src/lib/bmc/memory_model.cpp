@@ -29,7 +29,6 @@ memory_model::write( unsigned bidx, const llvm::StoreInst* I,
     datatype ty(mem_st.mem_state_vec[i].t.type);
     state_obj tem_state_obj(new_expr,ty);
     mem_st.mem_state_vec[i] = tem_state_obj;
-
     return std::make_pair( (new_expr == val), new_expr);
   } else {
     llvm_bmc_error("bmc","Unable to determine the global variable!");

@@ -1282,6 +1282,14 @@ double readDbl( const llvm::ConstantFP* c ) {
   return v;
 }
 
+
+int readReal( const llvm::ConstantFP* c ) {
+  const llvm::APFloat& n = c->getValueAPF();
+  auto int_v = n.bitcastToAPInt();
+  const uint64_t *v = int_v.getRawData();
+  return *v;
+}
+
 // Remove a loop
 bool deleteLoop(llvm::Loop *L, llvm::DominatorTree &DT, llvm::ScalarEvolution &SE,
                 llvm::LoopInfo &LI) {
@@ -1477,8 +1485,9 @@ sort llvm_to_sort( solver_context& c, const llvm::Type* t ) {
     return c.array_sort( domains, z_te );
   }
   if( t->isFloatingPointTy() ) {
-     if( t->isFloatTy() ) return c.fpa_sort<32>();
-     if( t->isDoubleTy() ) return c.fpa_sort<64>();
+     //if( t->isFloatTy() ) return c.fpa_sort<32>();
+     //if( t->isDoubleTy() ) return c.fpa_sort<64>();
+     return c.real_sort();
   }
  
   llvm_bmc_error("llvm_utils", "only int and bool sorts are supported");
@@ -1550,11 +1559,10 @@ expr read_const( options& o, const llvm::Value* op ) {
   if( const llvm::ConstantInt* c = llvm::dyn_cast<llvm::ConstantInt>(op) ) {
     int i = readInt( c );
     unsigned bw = c->getBitWidth();
-
     if( o.bit_precise ){
       return ctx.bv_val( i, bw );
     }else {
-      if( bw == 32 || bw == 64 || bw == 8 ) {
+      if( bw == 32 || bw == 64 || bw == 8 || bw == 16 ) {
         return ctx.int_val(i);
       }else if(bw == 1 ) {
         assert( i == 0 || i == 1 );
@@ -1579,7 +1587,7 @@ expr read_const( options& o, const llvm::Value* op ) {
         // todo: add support for signed an unsigned
         return get_fresh_bv(ctx,bw);
       }else{
-        if( bw == 32 || bw == 64 || bw == 16 ) { return get_fresh_int(ctx);
+        if( bw == 32 || bw == 64 || bw == 16 || bw == 8 ) { return get_fresh_int(ctx);
         }else if( bw == 1  ) { return get_fresh_bool(ctx);
         }
       }
@@ -1598,10 +1606,24 @@ expr read_const( options& o, const llvm::Value* op ) {
    //const llvm::APFloat& n = c->getValueAPF();
     if( const llvm::ConstantFP* c = llvm::dyn_cast<llvm::ConstantFP>(op) ) {
      llvm::Type* ty = op->getType();
-     if (ty->isFloatTy() ) {float i = readFlt( c );
-                            return ctx.fpa_val(i);
-     } else  if (ty->isDoubleTy() ) {double i = readDbl( c );
-                                     return ctx.fpa_val(i);
+     if (ty->isFloatTy() ) {
+			    if (o.bit_precise) {
+ 			     float i = readFlt( c );
+			     return ctx.fpa_val(i);
+			    }
+			    else {
+			     int i = readReal( c );
+			     return ctx.real_val(i);
+			    }
+     } else  if (ty->isDoubleTy() ) {
+			    if (o.bit_precise) {
+ 			     double i = readDbl( c );
+			     return ctx.fpa_val(i);
+			    }
+			    else {
+			     int i = readReal( c );
+			     return ctx.real_val(i);
+			    }
      }
     // double v = n.convertToDouble();
     //return ctx.real_val(v);
