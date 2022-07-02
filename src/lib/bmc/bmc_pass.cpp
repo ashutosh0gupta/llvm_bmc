@@ -95,7 +95,7 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   case llvm::Instruction::Sub : bmc_ds_ptr->m.insert_term_map( bop, bidx, a-b     ); break;
   case llvm::Instruction::Mul : bmc_ds_ptr->m.insert_term_map( bop, bidx, a*b     ); break;
   case llvm::Instruction::And : bmc_ds_ptr->m.insert_term_map( bop, bidx, a && b  ); break;
-  case llvm::Instruction::Or  : bmc_ds_ptr->m.insert_term_map( bop, bidx, a || b  ); break;
+  case llvm::Instruction::Or  : bmc_ds_ptr->m.insert_term_map( bop, bidx,_bvor(a,b) ); break;
   case llvm::Instruction::Xor : bmc_ds_ptr->m.insert_term_map( bop, bidx,_xor(a,b)); break;
   case llvm::Instruction::SDiv: bmc_ds_ptr->m.insert_term_map( bop, bidx, a/b     ); break;
   case llvm::Instruction::UDiv: bmc_ds_ptr->m.insert_term_map( bop, bidx, a/b     ); break;
@@ -219,6 +219,7 @@ void bmc_pass::translateCmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
   // todo: two cases of cmp ICmpInst and FCmpInst
   // figure out which one is actually supported
   llvm::Value* lhs = cmp->getOperand( 0 ),* rhs = cmp->getOperand( 1 );
+//lhs->print( llvm::outs() ); std::cout << "\n";
   expr l = bmc_ds_ptr->m.get_term( lhs );
   expr r = bmc_ds_ptr->m.get_term( rhs );
 
@@ -661,7 +662,7 @@ void bmc_pass::translateCastInst( unsigned bidx,
       // Current policy allow extensions [ 1 -> 8, 1->32, 32->64, 8->32 ]
       if( ok_cast( c_ty, v_ty, 8, 1 ) || ok_cast( c_ty, v_ty, 32, 1 ) ||
           ok_cast( c_ty, v_ty, 64, 32 ) || ok_cast( c_ty, v_ty, 32, 8 ) ||
-          ok_cast( c_ty, v_ty, 64, 8 )
+          ok_cast( c_ty, v_ty, 64, 8 ) || ok_cast( c_ty, v_ty, 64, 16 )
           ) {
         bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v );
       } else {
@@ -676,8 +677,18 @@ void bmc_pass::translateCastInst( unsigned bidx,
   }
   else if( llvm::isa<llvm::UIToFPInst>(cast) ) {
     expr ex_v = bmc_ds_ptr->m.get_term(v);
+    if ( o.bit_precise ) {
     expr ex_v_float = sbv_to_fpa(ex_v, solver_ctx.fpa_sort<32>() );
     bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v_float );
+    }
+    else {
+     //unsigned int_size = v->getType()->getIntegerBitWidth();
+     //expr ex_bv = int2bv(int_size, ex_v);
+     //expr ex_v_float = sbv_to_fpa(ex_bv, solver_ctx.fpa_sort<32>() );
+     expr ex_v_real = to_real(ex_v);
+     bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v_real );
+    }
+    
 //sort s1 = ex_v.get_sort();  sort s2 = ex_v_float.get_sort();
 //std::cout << "s1 is " << s1 << " s2 is " << s2 << "\n";
     }  

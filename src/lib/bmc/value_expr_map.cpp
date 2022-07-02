@@ -111,10 +111,10 @@ expr value_expr_map::create_fresh_name( const llvm::Value* op  ) {
       }
     }
   }else{
-    if( o.bit_precise ) {
+    //if( o.bit_precise ) {
       sort s = llvm_to_sort( o, op->getType() );
       return get_fresh_const( ctx, s, op->getName().str() );
-    }
+    //}
   }
   op->print( llvm::errs() ); llvm::errs() << "\n";
   ty->print( llvm::errs() ); llvm::errs() << "\n";

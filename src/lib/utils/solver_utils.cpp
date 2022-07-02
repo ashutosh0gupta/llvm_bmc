@@ -678,6 +678,8 @@ expr get_fresh_const(solver_context &c, sort s, std::string suff)
     return get_fresh_bool(c, suff);
   if (s.is_fpa())
     return get_fresh_float(c, suff);
+  if (s.is_real())
+    return get_fresh_real(c, suff);
   //
   // functions types, array types etc
   //
@@ -729,10 +731,20 @@ expr _xor(expr const &a, expr const &b)
   }
   else
   {
+    if (a.is_int())
+    {
+	auto a_bv = int2bv(8,a);
+	auto b_bv = int2bv(8,b);
+	auto res = a_bv ^ b_bv;
+	auto res_bv = bv2int(res, true);
+	return res_bv;
+    }
+    else {
     expr_vector sol_vec(a.ctx());
     sol_vec.push_back(a);
     sol_vec.push_back(b);
     return mk_xor(sol_vec);
+    }
   }
   // check_context(a, b);
   // Z3_ast r = Z3_mk_xor(a.ctx(), a, b);
@@ -740,6 +752,16 @@ expr _xor(expr const &a, expr const &b)
   // expr r_xor = expr(a.ctx(), r);
   // return r_xor;
 }
+
+
+expr _bvor( expr const &a, expr const &b ) {
+  if( a.is_bool()) {
+    return a||b;
+  }else{
+    return a|b;
+  } 
+}
+
 
 expr neg_and(std::vector<expr> &vec, solver_context &sol_ctx)
 {
