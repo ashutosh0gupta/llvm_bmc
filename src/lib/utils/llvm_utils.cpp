@@ -379,7 +379,7 @@ getLocFromClangSource( const clang::SourceLocation& loc,
 //   return !CI.getDiagnostics().getClient()->getNumErrors();
 // }
 
-
+ 
 //Direct translation via API clang
 std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   const std::string filename = o.get_input_file();
@@ -427,6 +427,7 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   args.push_back( "-funroll-loops" );
   args.push_back( "-O1" );
   args.push_back( "-disable-O0-optnone" );
+  args.push_back( "-fcxx-exceptions" );
   for( std::string& i_dir : include_dirs ) {
     i_dir = "-I" + i_dir;
     args.push_back( i_dir.c_str() );

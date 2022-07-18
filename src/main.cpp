@@ -81,7 +81,8 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
   bmc b( module, bb_cmt_map, o );
 
   prepare_module( module );
-
+  // dump_dot_module( o.outDirPath, module );
+  // std::cout << "Dumped model after ModulePreparation\n";
   // process the spec file
   import_spec_file( module, o, b);
 
