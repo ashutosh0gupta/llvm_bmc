@@ -127,8 +127,8 @@ void collect_globals_pass::insert_concurrent( std::string FnName1,
       } 
     }
   }
-  //for(int i=0; i < concurrent_list.size(); i++)
-    //std::cout << "Concurrent variable number " << i << " is " << (std::string)//((concurrent_list.at(i))->getName()) << "\n";
+  /* for(int i=0; i < concurrent_list.size(); i++)
+    std::cout << "Concurrent variable number " << i << " is " << (std::string)((concurrent_list.at(i))->getName()) << "\n"; */
 	
 }
 
@@ -182,6 +182,7 @@ if ((f.getName().str() == fname1) ||(f.getName().str() == fname2)) {
                                  translate_ordering_tags( store->getOrdering()) );
 
             new_events.insert( wr );
+//I->print( llvm::outs() );     std::cout << "\n";
             /*const auto& data_dep_set = get_depends( store->getOperand(0) );
               wr->set_data_dependency( data_dep_set );
               wr->set_ctrl_dependency( get_ctrl(b) );
@@ -207,6 +208,8 @@ if ((f.getName().str() == fname1) ||(f.getName().str() == fname2)) {
             auto rd = mk_me_ptr( mem_enc, thr_id, prev_events, path_cond,  //thread_id to be passed correctly
                                  history, g, loc, event_t::r,
                                  translate_ordering_tags( load->getOrdering()) );
+new_events.insert( rd );
+//I->print( llvm::outs() );     std::cout << "\n";
             /* local_map[I].insert( hb_enc::depends( rd, z3.mk_true() ) );
                rd->set_ctrl_dependency( get_ctrl(b) );
                if(p->is_mm_power())

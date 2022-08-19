@@ -18,6 +18,8 @@ typedef z3::expr_vector expr_vector;
 typedef z3::model model;
 typedef z3::solver solver;
 typedef z3::check_result check_result;
+typedef z3::params params;
+typedef z3::tactic tactic;
 
 #endif
 

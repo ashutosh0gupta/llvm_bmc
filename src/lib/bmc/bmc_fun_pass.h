@@ -15,6 +15,8 @@ public:
   std::vector <std::string> postcond_var_names;
   std::vector <expr> postcond_declarations;
 
+  std::string thread_name, EntryFn;
+
 public:
   bmc_fun_pass( options&, solver_context& ctx_, bmc&);
   ~bmc_fun_pass();

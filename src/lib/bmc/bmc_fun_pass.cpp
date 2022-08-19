@@ -9,10 +9,28 @@ bmc_fun_pass::bmc_fun_pass( options& o_, solver_context& ctx_, bmc& b_)
 bmc_fun_pass::~bmc_fun_pass() {}
 
 bool bmc_fun_pass::runOnFunction( llvm::Function &f ) {
+  bool EntryFnFound = false;
   std::string fname = demangle(f.getName().str());
-  if(fname != o.funcName) {
-    return false;
+  if (o.check_spec) {
+	for (auto j = bmc_obj.thread_list.begin(); j != bmc_obj.thread_list.end(); j++) {
+		thread_name = j -> first;
+	        EntryFn = j->second;
+		if (fname != EntryFn) {
+    		  continue;
+    		}
+		else { 
+		  EntryFnFound = true;
+		}
+    	}
   }
+  else {
+	if (fname != o.funcName) {
+	   return false;
+    	}
+	else { EntryFnFound = true; }
+  }
+
+  if (EntryFnFound) {
 
   // collect all the declared arrays in the function
   populate_array_name_map(&f);
@@ -54,6 +72,7 @@ bool bmc_fun_pass::runOnFunction( llvm::Function &f ) {
     }
     bidx++;
   }
+ }
   //do_bmc(); // todo: why? delete if not needed.
   //translate post condition here
   return false;
@@ -62,8 +81,11 @@ bool bmc_fun_pass::runOnFunction( llvm::Function &f ) {
 
 void bmc_fun_pass::translatePrecond( bmc& b ) {
   std::vector<std::string> glb_names;
-  for(unsigned i = 0; i < b.precond.size(); i++) {
-    expr e = b.precond.at(i);
+  for (auto i = b.precond.begin(); i != b.precond.end(); i++) {
+  //for(unsigned i = 0; i < b.precond.size(); i++) {
+    if (i -> first == thread_name) {
+    expr e = i -> second;
+    //expr e = b.precond.at(i);
     //std::cout << "Precond is " << to_string(e) << "\n";
     std::string orig_precond = to_string(e);
     glb_names = read_variables(orig_precond);
@@ -123,6 +145,7 @@ void bmc_fun_pass::translatePrecond( bmc& b ) {
     //std::cout << "Modified precond is " << e1 << "\n";
     //b.precond.at(i) = e1;
     bmc_ds_ptr->add_pre_cond( e1, spec_reason_t::ASSUME );
+   }
   }
   glb_names.clear();
   precond_var_names.clear();
@@ -134,8 +157,11 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
   // ary_to_int[llvmValue] -> get an index
 
   std::vector<std::string> glb_names;
-  for(unsigned i = 0; i < b.prop.size(); i++) {
-    expr e = b.prop.at(i);
+  for (auto i = b.prop.begin(); i != b.prop.end(); i++) {
+  //for(unsigned i = 0; i < b.prop.size(); i++) {
+    if (i -> first == thread_name) {
+    expr e = i -> second;
+    //expr e = b.prop.at(i);
     //std::cout << "Postcond is " << to_string(e) << " Block num is " << bidx << "\n";
     std::string orig_postcond = to_string(e);
     glb_names = read_variables(orig_postcond);
@@ -252,6 +278,7 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
     glb_names.clear();
     postcond_var_names.clear();
     postcond_declarations.clear();
+   }
   }
 }
 

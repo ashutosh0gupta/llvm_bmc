@@ -102,6 +102,8 @@ expr _and(std::vector<expr> &, solver_context &);
 expr _and(std::vector<expr> &);
 expr _xor(expr const &, expr const &);
 expr _bvor(expr const &, expr const &);
+expr _bvand(expr const &, expr const &);
+expr LogShR(expr const &, expr const &);
 expr neg_and(std::vector<expr> &vec, solver_context &sol_ctx);
 expr neg_and(std::vector<expr> &vec);
 expr _forall(expr_vector &, expr &);

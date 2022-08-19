@@ -94,13 +94,14 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   case llvm::Instruction::Add : bmc_ds_ptr->m.insert_term_map( bop, bidx, a+b     ); break;
   case llvm::Instruction::Sub : bmc_ds_ptr->m.insert_term_map( bop, bidx, a-b     ); break;
   case llvm::Instruction::Mul : bmc_ds_ptr->m.insert_term_map( bop, bidx, a*b     ); break;
-  case llvm::Instruction::And : bmc_ds_ptr->m.insert_term_map( bop, bidx, a && b  ); break;
+  case llvm::Instruction::And : bmc_ds_ptr->m.insert_term_map( bop, bidx, _bvand(a,b)  ); break;
   case llvm::Instruction::Or  : bmc_ds_ptr->m.insert_term_map( bop, bidx,_bvor(a,b) ); break;
   case llvm::Instruction::Xor : bmc_ds_ptr->m.insert_term_map( bop, bidx,_xor(a,b)); break;
   case llvm::Instruction::SDiv: bmc_ds_ptr->m.insert_term_map( bop, bidx, a/b     ); break;
   case llvm::Instruction::UDiv: bmc_ds_ptr->m.insert_term_map( bop, bidx, a/b     ); break;
   case llvm::Instruction::SRem: bmc_ds_ptr->m.insert_term_map( bop, bidx, rem(a,b)); break;
   case llvm::Instruction::URem: bmc_ds_ptr->m.insert_term_map( bop, bidx, rem(a,b)); break;
+  case llvm::Instruction::LShr: bmc_ds_ptr->m.insert_term_map( bop, bidx, LogShR(a,b)); break;
     // Floating point operations
     // Abstraction choices
     // 1. treat them as unknown non-det functions
@@ -678,7 +679,7 @@ void bmc_pass::translateCastInst( unsigned bidx,
   else if( llvm::isa<llvm::UIToFPInst>(cast) ) {
     expr ex_v = bmc_ds_ptr->m.get_term(v);
     if ( o.bit_precise ) {
-    expr ex_v_float = sbv_to_fpa(ex_v, solver_ctx.fpa_sort<32>() );
+    expr ex_v_float = ubv_to_fpa(ex_v, solver_ctx.fpa_sort<32>() );
     bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v_float );
     }
     else {
@@ -691,14 +692,47 @@ void bmc_pass::translateCastInst( unsigned bidx,
     
 //sort s1 = ex_v.get_sort();  sort s2 = ex_v_float.get_sort();
 //std::cout << "s1 is " << s1 << " s2 is " << s2 << "\n";
-    }  
+    }
+   else if( llvm::isa<llvm::SIToFPInst>(cast) ) {
+    expr ex_v = bmc_ds_ptr->m.get_term(v);
+    if ( o.bit_precise ) {
+    expr ex_v_float = sbv_to_fpa(ex_v, solver_ctx.fpa_sort<32>() );
+    bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v_float );
+    }
+    else {
+     expr ex_v_real = to_real(ex_v);
+     bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v_real );
+     }
+    }
+   else if( llvm::isa<llvm::FPToUIInst>(cast) ) {
+    expr ex_v = bmc_ds_ptr->m.get_term(v);
+    expr ex_v_u16 = fpa_to_ubv( ex_v, 16 );
+    if ( o.bit_precise ) {
+    bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v_u16 );
+    }
+    else {
+     expr ex_v_int = bv2int(ex_v_u16, false);
+     bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v_int );
+     }
+    }
+   else if( llvm::isa<llvm::FPToSIInst>(cast) ) {
+    expr ex_v = bmc_ds_ptr->m.get_term(v);
+    expr ex_v_s16 = fpa_to_sbv( ex_v, 16 );
+    if ( o.bit_precise ) {
+    bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v_s16 );
+    }
+    else {
+     expr ex_v_int = bv2int(ex_v_s16, false);
+     bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v_int );
+     }
+    }     
    else{
     BMC_UNSUPPORTED_INSTRUCTIONS( FPTruncInst,       cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( FPExtInst,         cast);
     //BMC_UNSUPPORTED_INSTRUCTIONS( UIToFPInst,        cast);
-    BMC_UNSUPPORTED_INSTRUCTIONS( SIToFPInst,        cast);
-    BMC_UNSUPPORTED_INSTRUCTIONS( FPToUIInst,        cast);
-    BMC_UNSUPPORTED_INSTRUCTIONS( FPToSIInst,        cast);
+    //BMC_UNSUPPORTED_INSTRUCTIONS( SIToFPInst,        cast);
+    //BMC_UNSUPPORTED_INSTRUCTIONS( FPToUIInst,        cast);
+    //BMC_UNSUPPORTED_INSTRUCTIONS( FPToSIInst,        cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( IntToPtrInst,      cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( PtrToIntInst,      cast);
     BMC_UNSUPPORTED_INSTRUCTIONS( AddrSpaceCastInst, cast);

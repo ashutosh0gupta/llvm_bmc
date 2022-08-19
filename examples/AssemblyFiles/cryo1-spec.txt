@@ -1,0 +1,89 @@
+; This is a comment
+
+
+;; Declare variable
+;; list all the variables that are read
+(declare-var @palgorithmf1__minprlimitlox float32) ;init
+(declare-var @palgorithmf1__maxprlimitlox float32) ;init
+(declare-var @palgorithmf1__posepcv21_c i16) ;init
+(declare-var @palgorithmf1__posepcv21_o i16) ;init
+(declare-var @palgorithmf1__f1cntrlm1 float32) ;init
+(declare-var @palgorithmf2__poslh2vv_o i16) ;init
+(declare-var @palgorithmf2__poslh2vv_c i16) ;init
+(declare-var @palgorithmf2__f2cntrlm1 float32) ;init
+(declare-var @palgorithmf2__minprlmtlh2ph1 float32) ;init
+(declare-var @palgorithmf2__maxprlmtlh2ph1 float32) ;init
+(declare-var @pcryoiodata__lh2_pr_errcnt i16) ;output
+(declare-var @pcryoiodata__lox_pr_errcnt i16) ;output
+(declare-var @pcryoiodata__algselectflagc i16) ;input
+(declare-var @pcryoiodata__algselectflag i16) ;input
+(declare-var @pcryoiodata__prtmrh_u3 float32) ;output
+(declare-var @pcryoiodata__prtmrh_u2 float32) ;output
+(declare-var @pcryoiodata__prtmrh_u1 float32) ;output
+(declare-var @pcryoiodata__prtmrh_p float32) ;output
+(declare-var @pcryoiodata__prtmrh float32) ;output
+(declare-var @pcryoiodata__prtmro_u3 float32) ;output
+(declare-var @pcryoiodata__prtmro_u2 float32) ;output
+(declare-var @pcryoiodata__prtmro_u1 float32) ;output
+(declare-var @pcryoiodata__prtmro_p float32) ;output
+(declare-var @pcryoiodata__prtmro float32) ;output
+(declare-var @pcryoiodata__alg_erf i16) ;output
+(declare-var @pcryoiodata__epcv_cmdc i16) ;output
+(declare-var @pcryoiodata__epcv_cmd i16) ;output
+(declare-var @pcryoiodata__tankpr_upperlt_lh2 float32) ;init
+(declare-var @pcryoiodata__tankpr_upperlt_lox float32) ;init
+(declare-var @pcryoiodata__upperlimit2 i16) ;init
+(declare-var @pcryoiodata__lowerlimit2 i16) ;init
+(declare-var @pcryoiodata__upperlimit1 i16) ;init
+(declare-var @pcryoiodata__lowerlimit1 i16) ;init
+(declare-var @pcryoiodata__algf2seqcmdc i16) ;input
+(declare-var @pcryoiodata__algf2seqcmd i16) ;input
+(declare-var @pcryoiodata__algf1seqcmdc i16) ;input
+(declare-var @pcryoiodata__algf1seqcmd i16) ;input
+(declare-var @pcryoiodata__algselectc i16) ;input
+(declare-var @pcryoiodata__algselect i16) ;input
+(declare-var @pcryoiodata__lh2err_cntlmt i16) ;init
+(declare-var @pcryoiodata__loxerr_cntlmt i16) ;init
+(declare-var @pcryoiodata__spsus_err_cntlmt i16) ;init
+(declare-var @pcryoiodata__spsus_errcnt i16) ;output
+(declare-var @pcryoiodata__sps_us3_msg_sts i16) ;input
+(declare-var @pcryoiodata__sps_us2_msg_sts i16) ;input
+(declare-var @pcryoiodata__sps_us1_msg_sts i16) ;input
+(declare-var @pcryoiodata__minoridc i16) ;input
+(declare-var @pcryoiodata__minorid i16) ;input
+(declare-var @pcryoiodata__lh2prdata3_u3 i16) ;input
+(declare-var @pcryoiodata__lh2prdata2_u3 i16) ;input 
+(declare-var @pcryoiodata__lh2prdata1_u3 i16) ;input 
+(declare-var @pcryoiodata__loxprdata3_u3 i16) ;input 
+(declare-var @pcryoiodata__loxprdata2_u3 i16) ;input 
+(declare-var @pcryoiodata__loxprdata1_u3 i16) ;input 
+(declare-var @pcryoiodata__lh2prdata3_u2 i16) ;input 
+(declare-var @pcryoiodata__lh2prdata2_u2 i16) ;input 
+(declare-var @pcryoiodata__lh2prdata1_u2 i16) ;input 
+(declare-var @pcryoiodata__loxprdata3_u2 i16) ;input 
+(declare-var @pcryoiodata__loxprdata2_u2 i16) ;input 
+(declare-var @pcryoiodata__loxprdata1_u2 i16) ;input 
+(declare-var @pcryoiodata__lh2prdata3_u1 i16) ;input 
+(declare-var @pcryoiodata__lh2prdata2_u1 i16) ;input 
+(declare-var @pcryoiodata__lh2prdata1_u1 i16) ;input 
+(declare-var @pcryoiodata__loxprdata3_u1 i16) ;input 
+(declare-var @pcryoiodata__loxprdata2_u1 i16) ;input
+(declare-var @pcryoiodata__loxprdata1_u1 i16) ;input
+;; -----------------------------------------
+;; Declare minor thread
+;; -----------------------------------------
+;
+(declare-thread minor _ada_cryo_driver)
+;(invoke-behaviour minor synchronous unique can-be-killed (repeated 0ms 20ms) (priority high))
+;(pre-condition minor (assert(= (bvadd @main__stageflg @main__stageflgc) #xffff)))
+;
+(post-condition minor (assert(and (fp.gt @pcryoiodata__prtmro (fp #b0 #b01111100 #b11000010100011110101110)) (fp.lt @pcryoiodata__prtmro (fp #b0 #b01111101 #b00001010001111010111000)))))
+;(post-condition minor (assert(and (fp.gt @pcryoiodata__prtmrh (fp #b0 #b01111101 #b00111000010100011110110)) (fp.lt @pcryoiodata__prtmrh fp #b0 #b01111101 #b01001100110011001100110))))
+;(post-condition minor (assert(=> (= @pcryoiodata__algselectflag #x0000) (= @pcryoiodata__spsus_errcnt #x0032))))
+;(post-condition minor (assert(=> (= @pcryoiodata__spsus_errcnt #x0000) (or (= @pcryoiodata__sps_us1_msg_sts #x5555) (= @pcryoiodata__sps_us2_msg_sts #x5555) (= @pcryoiodata__sps_us3_msg_sts #x5555)))))
+;(post-condition minor (assert(=> (not (=(bvadd @pcryoiodata__minorid @pcryoiodata__minoridc) #xffff)) (= @pcryoiodata__lox_pr_errcnt #x0000))))
+;(post-condition minor (assert(=> (not (=(bvadd @pcryoiodata__minorid @pcryoiodata__minoridc) #xffff)) (= @pcryoiodata__lh2_pr_errcnt #x0000))))
+;(post-condition minor (assert(=> (not (=(bvadd @pcryoiodata__algf1seqcmd @pcryoiodata__algf1seqcmdc) #xffff)) (= @pcryoiodata__lox_pr_errcnt #x0000))))
+;(post-condition minor (assert(=> (not (=(bvadd @pcryoiodata__algf2seqcmd @pcryoiodata__algf2seqcmdc) #xffff)) (= @pcryoiodata__lh2_pr_errcnt #x0000))))
+;(post-condition minor (assert(=> (= @pcryoiodata__epcv_cmd #x0100) (= @pcryoiodata__prtmro (fp #b0 #b01111101 #b00001010001111010111000)))))
+(post-condition minor (assert(=> (= @pcryoiodata__epcv_cmd #x0200) (= @pcryoiodata__prtmrh (fp #b0 #b01111101 #b00001010001111010111000)))))

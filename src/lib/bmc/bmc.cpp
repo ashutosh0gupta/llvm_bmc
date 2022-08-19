@@ -98,12 +98,23 @@ void bmc::init() {
 
   for (auto fit=module->begin(), endit=module->end(); fit!=endit; ++fit) {
     std::string fname = demangle(fit->getName().str());
+
+    if (o.check_spec) {
+	for (auto j = thread_list.begin(); j != thread_list.end(); j++) {
+	        std::string EntryFn = j->second;
+		if (fname == EntryFn) {
+	  		m_model.store_state_map[0] = mem_st;
+    		}
+    	}
+    }
+    else {
     if(fname == o.funcName) {
       // TODO : Is 0 the correct block number?
       m_model.store_state_map[0] = mem_st;
     }else{
       // all non entry functions are already inlined
     }
+   }
   }
 }
 
@@ -173,6 +184,16 @@ void bmc::check_all_spec( bmc_ds* bmc_ds_ptr ) {
 
 bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
   std::ostream& os = std::cout;
+
+  /* params p(o.solver_ctx);
+  //p.set("mul2concat", true);
+  tactic t = 
+        tactic(o.solver_ctx, "simplify") &
+        tactic(o.solver_ctx, "solve-eqs") &
+        tactic(o.solver_ctx, "elim-term-ite") &
+        tactic(o.solver_ctx, "psmt"); 
+  solver s = t.mk_solver();
+  z3::set_param("parallel.enable", true); */
 
   // setup solver
   solver s(o.solver_ctx);
@@ -275,6 +296,12 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
 
 }
 
+
+bool bmc::is_file_exist(std::string fileName)
+{
+    std::ifstream infile(fileName);
+    return infile.good();
+}
 
 // bool bmc::verify_prop() {
 //   std::ostream& os = std::cout;
@@ -401,8 +428,6 @@ void bmc::produce_witness( model mdl, bmc_ds* bmc_ds_ptr,
   // w.show_path();
   // w.generate_html();
 }
-
-
 
 //    for (auto bbit = fit->begin(); bbit != fit->end(); bbit++) { //Iterate over basic blocks in function
 

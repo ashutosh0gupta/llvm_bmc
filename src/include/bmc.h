@@ -34,9 +34,10 @@ public:
   // from specification file
   std::map< std::string, unsigned > fn_to_thread;
   typedef std::pair<std::string, std::string> threads;
+  typedef std::pair<std::string, expr> condition;
   std::vector <threads> thread_list;
-  std::vector<expr> prop;
-  std::vector<expr> precond;
+  std::vector<condition> prop;
+  std::vector<condition> precond;
   bool verify_prop();
   //--------------------------------------------
 
@@ -59,6 +60,7 @@ public:
   // void eliminate_vars(bmc_ds*);
   void check_all_spec(bmc_ds*);
   bool run_solver(spec &, bmc_ds*);
+  bool is_file_exist(std::string fileName);
 
   void produce_witness_call( model mdl, const llvm::CallInst* call );
   void produce_witness( model, bmc_ds*, unsigned call_count=0 );

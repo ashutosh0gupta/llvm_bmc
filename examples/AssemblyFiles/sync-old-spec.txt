@@ -1,0 +1,46 @@
+; This is a comment
+
+
+;; Declare variable
+;; list all the variables that are read
+(declare-var @synchronization__err_cnt flag); input
+(declare-var @synchronization__sync_disable_flg flag); output
+(declare-var @synchronization__sync_out_wndw_err_cnt flag); input
+(declare-var @synchronization__other_ngcp_sync_err_cnt flag); input
+(declare-var @synchronization__sync_err_cnt flag); input
+(declare-var @synchronization__tm_syncflg flag); output
+(declare-var @synchronization__tm_sync_corrct_cnt flag); output
+(declare-var @synchronization__sync_time_stamp flag); input
+(declare-var @synchronization__syncflag flag); output
+(declare-var @synchronization__sync_corrct_cnt flag); input
+(declare-var @synchronization__tm_sync_time_stamp flag); output
+(declare-var @synchronization__ngcp_sync_out flag); output
+(declare-var @synchronization__absskew flag); input
+(declare-var @synchronization__temp_skew flag); input
+(declare-var @synchronization__correct_flg flag); output
+(declare-var @synchronization__src_of_timestamp flag); input
+(declare-var @synchronization__syncflg flag); output
+(declare-var @synchronization__corrected_time flag); output
+(declare-var @synchronization__syncevntflg flag); put
+(declare-var @synchronization__time_stamp flag); input
+(declare-var @synchronization__bc_rtstat flag); input
+(declare-var @synchronization__rt_bcstat flag); input
+(declare-var @synchronization__bswrt_bcmess flag); input
+;; -----------------------------------------
+;; Declare minor thread
+;; -----------------------------------------
+;
+(declare-thread minor synchronization__rsyncdriver)
+;(invoke-behaviour minor synchronous unique can-be-killed (repeated 0ms 20ms) (priority high))
+;(pre-condition minor (assert(= (bvadd @main__stageflg @main__stageflgc) #xffff)))
+;
+(post-condition minor (assert(=> (= @synchronization__corrected_time #x1387) (or (bvsge @synchronization__absskew #x002D) (bvsle @synchronization__absskew #x0014)))))
+;(post-condition minor (assert(= (bvsgt @synchronization__absskew #x002D) (= @synchronization__corrected_time #x1387))))
+;(post-condition minor (assert(=> (= @synchronization__corrected_time #x1387) (bvslt @synchronization__absskew #x0014))))
+;(post-condition minor (assert(=> (= @synchronization__sync_disable_flg #xAAAA) (or (bvsge @synchronization__sync_out_wndw_err_cnt #x000F) (bvsge @synchronization__other_ngcp_sync_err_cnt #x000F)))))
+;(post-condition minor (assert(=> (= @synchronization__syncflg #x0400) (bvsge @synchronization__sync_out_wndw_err_cnt #x000F))))
+;(post-condition minor (assert(=> (= @synchronization__syncflg #x0100) (bvsge @synchronization__other_ngcp_sync_err_cnt #x000F))))
+;(post-condition minor (assert(=> (= @synchronization__sync_disable_flg #x5555) (and (bvslt @synchronization__sync_out_wndw_err_cnt #x000F) (bvslt @synchronization__other_ngcp_sync_err_cnt #x000F)))))
+;(post-condition minor (assert(bvsle @synchronization__absskew #x002D)))
+;(post-condition minor (assert(=> (= @synchronization__corrected_time #x1384) (bvsge @synchronization__temp_skew #x0000))))
+;(post-condition minor (assert(=> (= @synchronization__corrected_time #x138A) (bvsle @synchronization__temp_skew #x0000))))

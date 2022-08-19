@@ -762,6 +762,22 @@ expr _bvor( expr const &a, expr const &b ) {
   } 
 }
 
+expr _bvand( expr const &a, expr const &b ) {
+  if( a.is_bool()) {
+    return a && b;
+  }else{
+    return a & b;
+  } 
+}
+
+
+expr LogShR(expr const &a, expr const &b) {
+  if (a.is_bv())
+  {
+    return lshr(a, b);
+  }
+}
+
 
 expr neg_and(std::vector<expr> &vec, solver_context &sol_ctx)
 {
