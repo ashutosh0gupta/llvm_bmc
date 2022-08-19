@@ -395,6 +395,11 @@ void bmc::produce_witness( model mdl, bmc_ds* bmc_ds_ptr,
   witness w(o);
   std::map<std::string,std::string> state;
   unsigned bidx =0;
+  if( o.verbosity > 6 ) {
+    std::cout << "\n\n-------------------------------------------\n";
+    std::cout << "Dumping witness"  "\n";
+    std::cout << "-------------------------------------------\n\n";
+  }
   for( auto b : bmc_ds_ptr->bb_vec ) {
     expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
     // expr path_bit = bmc_ds_ptr->block_to_path_bit.at(b);
@@ -402,6 +407,7 @@ void bmc::produce_witness( model mdl, bmc_ds* bmc_ds_ptr,
       if( o.verbosity > 6 ) {
         std::cout << "-------------------------------------------\n";
         std::cout << "dumping block:" << getLocRange( b ) << "\n";
+        std::cout << "Block path bit:" << path_bit << "\n";
         dump(b);
       }
       for( const llvm::Instruction& Iobj : b->getInstList() ) {
@@ -425,7 +431,7 @@ void bmc::produce_witness( model mdl, bmc_ds* bmc_ds_ptr,
     }
     bidx++;
   }
-  // w.show_path();
+  w.show_path();
   // w.generate_html();
 }
 

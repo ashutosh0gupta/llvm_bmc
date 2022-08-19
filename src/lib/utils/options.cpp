@@ -30,7 +30,7 @@ void options::get_description_cmd(po::options_description& config,
   bmc.add_options()
     ("function,f", po::value(&funcName)->default_value("main"), "Set main function")
     ("mode,m", po::value<int>(&mode)->default_value(3), "Set mode")
-    ("get-witness",  po::bool_switch(&witness), "Report error trace if a specification fails")
+    ("get-witness,w",  po::bool_switch(&witness), "Report error trace if a specification fails")
     ("output-dir,o", po::value(&outDirPath)->default_value("/tmp/"), "Set output directory")
     // ("loop,l", po::value<int>(&loopNum)->default_value(1), "Set loop")
     // ("total-loops,t", po::value<int>(&totalLoops)->default_value(1), "Set total number of loops")
