@@ -379,7 +379,7 @@ getLocFromClangSource( const clang::SourceLocation& loc,
 //   return !CI.getDiagnostics().getClient()->getNumErrors();
 // }
 
-
+ 
 //Direct translation via API clang
 std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   const std::string filename = o.get_input_file();
@@ -391,9 +391,22 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   llvm::LLVMContext& llvm_ctx = o.get_llvm_context();
 
   std::vector<std::string> include_dirs;
+
   //standard include directories
-  // include_dirs.push_back( "/usr/include/");
-  // include_dirs.push_back( "/usr/include/linux");
+  include_dirs.push_back( "/usr/include/x86_64-linux-gnu/c++/11/");    // bits/c++config.h
+  include_dirs.push_back( "/usr/include/");               // for features.h, locale.h, pthread.h
+  // include_dirs.push_back( "/usr/include/linux");          // for stddef.h
+  include_dirs.push_back( "/usr/include/c++/11/");         // for iostream
+  // include_dirs.push_back( "/usr/include/x86_64-linux-gnu/bits/");      // for wchar.h
+  
+  include_dirs.push_back( "/usr/lib/gcc/x86_64-linux-gnu/11/include/");   // for stdarg.h
+  include_dirs.push_back( "/usr/include/c++/11/tr1");      // for stdarg.h, wchar.h
+  include_dirs.push_back( "/usr/lib/llvm-12/lib/clang/12.0.0/include/");  // for stddef.h
+
+  // include_dirs.push_back( "/usr/include/c++/11/parallel/");         // for features.h
+  // include_dirs.push_back( "/usr/include/x86_64-linux-gnu/bits/");  // for locale.h
+  // include_dirs.push_back( "/usr/local/include/");
+  
   // additional include directories
   for( auto& dir : o.get_include_dirs() ) {
     include_dirs.push_back( dir );
@@ -414,6 +427,7 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   args.push_back( "-funroll-loops" );
   args.push_back( "-O1" );
   args.push_back( "-disable-O0-optnone" );
+  args.push_back( "-fcxx-exceptions" );
   for( std::string& i_dir : include_dirs ) {
     i_dir = "-I" + i_dir;
     args.push_back( i_dir.c_str() );
@@ -1489,7 +1503,15 @@ sort llvm_to_sort( solver_context& c, const llvm::Type* t ) {
      //if( t->isDoubleTy() ) return c.fpa_sort<64>();
      return c.real_sort();
   }
- 
+  if(t->isStructTy()){
+    // t->print(llvm::outs()); std::cout << "\n";  // << t->getStructName() << "\n";
+    return c.bool_sort();
+  }
+  if(t->isPointerTy()){
+    // t->print(llvm::outs()); std::cout << "\n";  // << t->getPointerElementType() << "\n";
+    return c.int_sort();
+  }
+  // t->print(llvm::outs());
   llvm_bmc_error("llvm_utils", "only int and bool sorts are supported");
   return c.int_sort(); // dummy return
 }
@@ -1600,6 +1622,9 @@ expr read_const( options& o, const llvm::Value* op ) {
       }else{
         return get_fresh_real(ctx);
       }
+    }
+    else if(ty->isStructTy()){
+      return get_fresh_bool(ctx);
     }
     llvm_bmc_error("llvm_utils", "unsupported type: "<< ty << "!!");
   }//else if( llvm::isa<llvm::ConstantFP>(op) ) {
