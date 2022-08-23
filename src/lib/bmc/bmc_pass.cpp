@@ -1079,7 +1079,7 @@ void bmc_pass::translateSwitchInst( unsigned bidx,
 void bmc_pass::translateUnreachableInst( unsigned bidx,
                                          const llvm::UnreachableInst *I) {
   expr unreach_path_bit = bmc_ds_ptr->get_path_bit(bidx);
-  bmc_ds_ptr->add_spec(!unreach_path_bit);
+  bmc_ds_ptr->add_spec(!unreach_path_bit, spec_reason_t::UNREACHABLE);
 }
 
 void bmc_pass::translateInvokeInst( unsigned bidx,

@@ -10,6 +10,7 @@
 
 enum spec_reason_t{
   UNKNOWN,      // unspecified
+  UNREACHABLE,  // unreachable istruction in LLVM IR;
   SPEC_FILE,    // spec file;
   COMMENT,      // property found in a comment
   ASSERT,       // property occured in code
@@ -31,6 +32,9 @@ public:
   expr get_formula() {return e; }
   src_loc get_location() {return loc; }
 
+  //checkers
+  bool is_unreach() {return reason == UNREACHABLE; }
+  
   //printers
   void dump();
   void print(std::ostream& os);

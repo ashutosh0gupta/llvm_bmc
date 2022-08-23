@@ -185,6 +185,10 @@ void bmc::check_all_spec( bmc_ds* bmc_ds_ptr ) {
 bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
   std::ostream& os = std::cout;
 
+  // skipping specifications due to unreachable instructions
+  if( !o.include_unreach_specs &&  spec.is_unreach() )
+    return false;
+ 
   /* params p(o.solver_ctx);
   //p.set("mul2concat", true);
   tactic t = 
@@ -273,12 +277,12 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
       m = s.get_model();
     }else if( o.use_solver == "cvc5" ) {
       m = z3compObj.get_cvc5_model();
-      std::cout<< "\nPrinting cvc5 model with witness\n";
-      std::cout << m;
+      os << "\nPrinting cvc5 model with witness\n";
+      os << m;
     }else if( o.use_solver == "boolector" ) {
       m = z3compObj.get_boolector_model();
-      std::cout<< "\nPrinting boolector model with witness\n";
-      std::cout << m;
+      os << "\nPrinting boolector model with witness\n";
+      os << m;
     }else{
       llvm_bmc_error( "bmc", "no solver identified!!" );
     }
