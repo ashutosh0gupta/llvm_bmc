@@ -779,6 +779,14 @@ expr LogShR(expr const &a, expr const &b) {
 }
 
 
+expr bv_shl(expr const &a, expr const &b) {
+  if (a.is_bv())
+  {
+    return shl(a, b);
+  }
+}
+
+
 expr neg_and(std::vector<expr> &vec, solver_context &sol_ctx)
 {
   expr_vector sol_vec(sol_ctx);

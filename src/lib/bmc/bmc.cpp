@@ -191,6 +191,10 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
         tactic(o.solver_ctx, "simplify") &
         tactic(o.solver_ctx, "solve-eqs") &
         tactic(o.solver_ctx, "elim-term-ite") &
+        tactic(o.solver_ctx, "fpa2bv") &
+        tactic(o.solver_ctx, "aig") &
+        tactic(o.solver_ctx, "bvarray2uf") &
+	tactic(o.solver_ctx, "ctx_simplify") &
         tactic(o.solver_ctx, "psmt"); 
   solver s = t.mk_solver();
   z3::set_param("parallel.enable", true); */

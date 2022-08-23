@@ -1,0 +1,146 @@
+; This is a comment
+
+
+;; Declare variable
+;; list all the variables that are read
+(declare-var @prgpddualproc__firstcycle flag);
+(declare-var @prgpddualproc__rgpdsts_cochar_mjrtm flag);
+(declare-var @prgpddualproc__rgpd_fdi_sts_mjr_tm flag);
+(declare-var @prgpddualproc__maxresrgpd_tm float32 array 5);
+(declare-var @prgpddualproc__comp_rgpd2_ypr_tm float32 array 5);
+(declare-var @prgpddualproc__comp_rgpd1_ypr_tm float32 array 5);
+(declare-var @prgpddualproc__rgpd_fdists_tm flag);
+(declare-var @prgpddualproc__rgpd_rate_ypr_tm float32 array 5);
+(declare-var @prgpddualproc__bothrgpd_nok3 flag);
+(declare-var @prgpddualproc__bothrgpd_nok2 flag);
+(declare-var @prgpddualproc__bothrgpd_nok1 flag);
+(declare-var @prgpddualproc__rgpdsts_cochar flag);
+(declare-var @prgpddualproc__rgpd_fail_flag flag);
+(declare-var @prgpddualproc__rgpd_rate_ypr float32 array 5);
+(declare-var @prgpddualproc__raw_rgpd2_ypr3 i16);
+(declare-var @prgpddualproc__raw_rgpd2_ypr2 i16);
+(declare-var @prgpddualproc__raw_rgpd2_ypr1 i16);
+(declare-var @prgpddualproc__raw_rgpd1_ypr3 i16);
+(declare-var @prgpddualproc__raw_rgpd1_ypr2 i16);
+(declare-var @prgpddualproc__raw_rgpd1_ypr1 i16);
+(declare-var @prgpddualproc__resins_ypr float32 array 5);
+(declare-var @prgpddualproc__microsyn_rgpd2 i16);
+(declare-var @prgpddualproc__microsyn_rgpd1 i16);
+(declare-var @prgpddualproc__minorid i16);
+(declare-var @prgpddualproc__rgpdmsgsts2 flag);
+(declare-var @prgpddualproc__rgpdmsgsts1 flag);
+(declare-var @prgpddualproc__selctionsrc_ypr1 i16);
+(declare-var @prgpddualproc__flg2retnprevdata_ypr1 i16);
+(declare-var @prgpddualproc__selchid_ypr1 i16);
+(declare-var @prgpddualproc__selctionsrc_ypr2 i16);
+(declare-var @prgpddualproc__flg2retnprevdata_ypr2 i16);
+(declare-var @prgpddualproc__selchid_ypr2 i16);
+(declare-var @prgpddualproc__selctionsrc_ypr3 i16);
+(declare-var @prgpddualproc__flg2retnprevdata_ypr3 i16);
+(declare-var @prgpddualproc__selchid_ypr3 i16);
+(declare-var @prgpddualproc__comp_rgpd1_ypr float32 array 5);
+(declare-var @prgpddualproc__comp_rgpd2_ypr float32 array 5);
+(declare-var @prgpddualproc__isolnsts_hardtm1 i16);
+(declare-var @prgpddualproc__isolnsts_hardtm2 i16);
+(declare-var @prgpddualproc__isolnsts_hardtm3 i16);
+(declare-var @prgpddualproc__indhardthreshviol1 i16);
+(declare-var @prgpddualproc__indhardthreshviol2 i16);
+(declare-var @prgpddualproc__indhardthreshviol3 i16);
+(declare-var @prgpddualproc__prmfailparitytm1 i16);
+(declare-var @prgpddualproc__prmfailparitytm2 i16);
+(declare-var @prgpddualproc__prmfailparitytm3 i16);
+(declare-var @prgpddualproc__flag2indcurrhlthfail1 i16);
+(declare-var @prgpddualproc__flag2indcurrhlthfail2 i16);
+(declare-var @prgpddualproc__rgpdhlth_prmfail1 i16);
+(declare-var @prgpddualproc__rgpdhlth_prmfail2 i16);
+(declare-var @prgpddualproc__rgpdsts_cochar_mjr flag);
+(declare-var @prgpddualproc__prmfailflg_parity1 i16);
+(declare-var @prgpddualproc__rgpd_fdi_sts_mjr i16);
+(declare-var @prgpddualproc__prmfailflg_parity2 i16);
+(declare-var @prgpddualproc__prmfailflg_parity3 i16);
+(declare-var @prgpddualproc__isolnsts_movavgtm1 i16);
+(declare-var @prgpddualproc__isolnsts_movavgtm2 i16);
+(declare-var @prgpddualproc__isolnsts_movavgtm3 i16);
+(declare-var @prgpddualproc__maxresrgpdmjrfdi float32 array 5);
+(declare-var @prgpddualproc__flg2indhardschedule1 i16);
+(declare-var @prgpddualproc__errcnt2setrgpdnok1 i16);
+(declare-var @prgpddualproc__errcnt2setrgpdflflg1 i16);
+(declare-var @prgpddualproc__consfailsts_rgpd1 i16);
+(declare-var @prgpddualproc__consfailsts_rgpd2 i16);
+(declare-var @prgpddualproc__flg2indhardschedule2 i16);
+(declare-var @prgpddualproc__errcnt2setrgpdnok2 i16);
+(declare-var @prgpddualproc__errcnt2setrgpdflflg2 i16);
+(declare-var @prgpddualproc__flg2indhardschedule3 i16);
+(declare-var @prgpddualproc__errcnt2setrgpdnok3 i16);
+(declare-var @prgpddualproc__errcnt2setrgpdflflg3 i16);
+(declare-var @prgpddualproc__hardres float32 array 5);
+(declare-var @prgpddualproc__hardrgpd1_res float32 array 5);
+(declare-var @prgpddualproc__hardrgpd2_res float32 array 5);
+(declare-var @prgpddualproc__errcnthardthresviol1 i16);
+(declare-var @prgpddualproc__rgpd1harderrcntr1 i16);
+(declare-var @prgpddualproc__rgpd2harderrcntr1 i16);
+(declare-var @prgpddualproc__errcnthardthresviol2 i16);
+(declare-var @prgpddualproc__rgpd1harderrcntr2 i16);
+(declare-var @prgpddualproc__rgpd2harderrcntr2 i16);
+(declare-var @prgpddualproc__errcnthardthresviol3 i16);
+(declare-var @prgpddualproc__rgpd1harderrcntr3 i16);
+(declare-var @prgpddualproc__rgpd2harderrcntr3 i16);
+(declare-var @prgpddualproc__storgeindex1 i16);
+(declare-var @prgpddualproc__blocksizeu16 i16);
+(declare-var @prgpddualproc__storgeindexres1 i16);
+(declare-var @prgpddualproc__blocksizeu16res i16);
+(declare-var @prgpddualproc__r0acc float32 array 5);
+(declare-var @prgpddualproc__rgpd1_resacc float32 array 5);
+(declare-var @prgpddualproc__rgpd2_resacc float32 array 5);
+(declare-var @prgpddualproc__rgpd1movavgerrcntr1 i16);
+(declare-var @prgpddualproc__rgpd2movavgerrcntr1 i16);
+(declare-var @prgpddualproc__storgeindex2 i16);
+(declare-var @prgpddualproc__storgeindexres2 i16);
+(declare-var @prgpddualproc__rgpd1movavgerrcntr2 i16);
+(declare-var @prgpddualproc__rgpd2movavgerrcntr2 i16);
+(declare-var @prgpddualproc__storgeindex3 i16);
+(declare-var @prgpddualproc__storgeindexres3 i16);
+(declare-var @prgpddualproc__rgpd1movavgerrcntr3 i16);
+(declare-var @prgpddualproc__rgpd2movavgerrcntr3 i16);
+(declare-var @prgpddualproc__conserrcntr_rgpdcomm1 i16);
+(declare-var @prgpddualproc__errcntr_rgpdhlth1 i16);
+(declare-var @prgpddualproc__conserrcntr_rgpdcomm2 i16);
+(declare-var @prgpddualproc__errcntr_rgpdhlth2 i16);
+;; -----------------------------------------
+;; Declare minor thread
+;; -----------------------------------------
+;
+(declare-thread minor prgpddualproc__rrgpd_driver)
+;(invoke-behaviour minor synchronous unique can-be-killed (repeated 0ms 20ms) (priority high))
+;(pre-condition minor (assert(= (bvadd @main__stageflg @main__stageflgc) #xffff)))
+;
+;(post-condition minor (assert(fp.lt (select @prgpddualproc__comp_rgpd1_ypr #x0000000000000001) (fp #b0 #b10000010 #b01000000000000000000000))))
+;(post-condition minor (assert(fp.lt (select @prgpddualproc__comp_rgpd1_ypr #x0000000000000002) (fp #b0 #b10000010 #b01000000000000000000000))))
+;(post-condition minor (assert(fp.lt (select @prgpddualproc__comp_rgpd1_ypr #x0000000000000003) (fp #b0 #b10000010 #b01000000000000000000000))))
+;(post-condition minor (assert(fp.lt (select @prgpddualproc__comp_rgpd2_ypr #x0000000000000001) (fp #b0 #b10000010 #b01000000000000000000000))))
+;(post-condition minor (assert(fp.lt (select @prgpddualproc__comp_rgpd2_ypr #x0000000000000002) (fp #b0 #b10000010 #b01000000000000000000000))))
+;(post-condition minor (assert(fp.lt (select @prgpddualproc__comp_rgpd2_ypr #x0000000000000003) (fp #b0 #b10000010 #b01000000000000000000000))))
+;(post-condition minor (assert(=> (= @prgpddualproc__flag2indcurrhlthfail1 #xAAAA) (or (bvsge prgpddualproc__microsyn_rgpd1 #x309E) (bvsle prgpddualproc__microsyn_rgpd1 #x28F1)))))
+;(post-condition minor (assert(=> (= @prgpddualproc__flag2indcurrhlthfail2 #xAAAA) (or (bvsge prgpddualproc__microsyn_rgpd2 #x309E) (bvsle prgpddualproc__microsyn_rgpd2 #x28F1)))))
+;(post-condition minor (assert(=> (= @prgpddualproc__consfailsts_rgpd1 #xAAAA) (or (bvuge @prgpddualproc__errcntr_rgpdhlth1 #x0003) (bvuge @prgpddualproc__conserrcntr_rgpdcomm1 #x0003)))))
+;(post-condition minor (assert(=> (= @prgpddualproc__consfailsts_rgpd2 #xAAAA) (or (bvuge @prgpddualproc__errcntr_rgpdhlth2 #x0003) (bvuge @prgpddualproc__conserrcntr_rgpdcomm2 #x0003)))))
+;(post-condition minor (assert(=> (= @prgpddualproc__rgpdhlth_prmfail1 #xAAAA) (bvuge @prgpddualproc__errcntr_rgpdhlth1 #x01F4))))
+;(post-condition minor (assert(=> (= @prgpddualproc__rgpdhlth_prmfail2 #xAAAA) (bvuge @prgpddualproc__errcntr_rgpdhlth2 #x01F4))))
+;(post-condition minor (assert(=> (and (= @prgpddualproc__flag2indcurrhlthfail1 #xAAAA)(= @prgpddualproc__consfailsts_rgpd1 #xAAAA) ))(= @prgpddualproc__rgpdhlth_prmfail1 #xAAAA))))
+;(post-condition minor (assert(=> (and (= @prgpddualproc__flag2indcurrhlthfail2 #xAAAA)(= @prgpddualproc__consfailsts_rgpd2 #xAAAA) ))(= @prgpddualproc__rgpdhlth_prmfail2 #xAAAA))))
+;(post-condition minor (assert(=> (= @prgpddualproc__selchid_ypr1 #x0002) (and (= @prgpddualproc__bothrgpd_nok1 #xAAAA) (= @prgpddualproc__rgpdmsgsts1 #xAAAA)))))
+;(post-condition minor (assert(=> (= @prgpddualproc__selchid_ypr2 #x0002) (and (= @prgpddualproc__bothrgpd_nok2 #xAAAA) (= @prgpddualproc__rgpdmsgsts1 #xAAAA)))))
+;(post-condition minor (assert(=> (= @prgpddualproc__selchid_ypr3 #x0002) (and (= @prgpddualproc__bothrgpd_nok3 #xAAAA) (= @prgpddualproc__rgpdmsgsts1 #xAAAA)))))
+;(post-condition minor (assert(=> (= @prgpddualproc__selchid_ypr1 #x0001) (and (= @prgpddualproc__bothrgpd_nok1 #xAAAA) (= @prgpddualproc__rgpdmsgsts2 #xAAAA)))))
+;(post-condition minor (assert(=> (= @prgpddualproc__selchid_ypr2 #x0001) (and (= @prgpddualproc__bothrgpd_nok2 #xAAAA) (= @prgpddualproc__rgpdmsgsts2 #xAAAA)))))
+;(post-condition minor (assert(=> (= @prgpddualproc__selchid_ypr3 #x0001) (and (= @prgpddualproc__bothrgpd_nok3 #xAAAA) (= @prgpddualproc__rgpdmsgsts2 #xAAAA)))))
+;(post-condition minor (assert(=> (= @prgpddualproc__bothrgpd_nok1 #xAAAA) (bvuge @prgpddualproc__errcnt2setrgpdnok1 #x000F))))
+;(post-condition minor (assert(=> (= @prgpddualproc__bothrgpd_nok2 #xAAAA) (bvuge @prgpddualproc__errcnt2setrgpdnok2 #x000F))))
+;(post-condition minor (assert(=> (= @prgpddualproc__bothrgpd_nok3 #xAAAA) (bvuge @prgpddualproc__errcnt2setrgpdnok3 #x000F))))
+;(post-condition minor (assert(=> (= @prgpddualproc__rgpd_fail_flag #xAAAA) (or (bvuge @prgpddualproc__errcnt2setrgpdflflg1 #x000F) (bvuge @prgpddualproc__errcnt2setrgpdflflg2 #x000F) (bvuge @prgpddualproc__errcnt2setrgpdflflg3 #x000F)))))
+;(post-condition minor (assert(=> (= @prgpddualproc__prmfailparitytm1 #x0001) (or (bvuge @prgpddualproc__rgpd1harderrcntr1 #x000F) (bvuge @prgpddualproc__rgpd1movavgerrcntr1 #x0096)))))
+;(post-condition minor (assert(=> (= @prgpddualproc__prmfailparitytm2 #x0001) (or (bvuge @prgpddualproc__rgpd1harderrcntr2 #x000F) (bvuge @prgpddualproc__rgpd1movavgerrcntr2 #x0096)))))
+;(post-condition minor (assert(=> (= @prgpddualproc__prmfailparitytm3 #x0001) (or (bvuge @prgpddualproc__rgpd1harderrcntr3 #x000F) (bvuge @prgpddualproc__rgpd1movavgerrcntr3 #x0096)))))
+;(post-condition minor (assert(=> (= @prgpddualproc__prmfailparitytm1 #x0010) (or (bvuge @prgpddualproc__rgpd2harderrcntr1 #x000F) (bvuge @prgpddualproc__rgpd2movavgerrcntr1 #x0096)))))
+;(post-condition minor (assert(=> (= @prgpddualproc__prmfailparitytm2 #x0010) (or (bvuge @prgpddualproc__rgpd2harderrcntr2 #x000F) (bvuge @prgpddualproc__rgpd2movavgerrcntr2 #x0096)))))
+;(post-condition minor (assert(=> (= @prgpddualproc__prmfailparitytm3 #x0010) (or (bvuge @prgpddualproc__rgpd2harderrcntr3 #x000F) (bvuge @prgpddualproc__rgpd2movavgerrcntr3 #x0096)))))
