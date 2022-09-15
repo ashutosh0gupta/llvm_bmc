@@ -106,7 +106,7 @@ void bmc_fun_pass::translatePrecond( bmc& b ) {
           var_name = '@'+ var_name;
           const size_t oldSize = var_name.length();
           std::string init_name = to_string(mem_st[idx].e);
-          
+          if (find(precond_var_names.begin(), precond_var_names.end(), init_name) == precond_var_names.end()) {
           precond_var_names.push_back(init_name);
           if (mem_st[idx].t.type.is_fpa()) {
             precond_declarations.push_back(o.solver_ctx.fpa_const(init_name.c_str(),8,24));
@@ -120,7 +120,7 @@ void bmc_fun_pass::translatePrecond( bmc& b ) {
             precond_var_names.push_back(init_name1);
             precond_declarations.push_back(o.solver_ctx.bv_const(init_name1.c_str(),16));
           }
-
+	 }
           const size_t newSize = init_name.length();
           for( size_t pos = 0; ; pos += newSize ) {
             // Locate the substring to replace
@@ -189,6 +189,7 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
           //oldSize = var_name.length();
           init_name = to_string(mem_st[idx].e);
           //std::cout << "Init name is " << init_name << "\n";
+	 if (find(postcond_var_names.begin(), postcond_var_names.end(), init_name) == postcond_var_names.end()) {
           postcond_var_names.push_back(init_name);
           if (mem_st[idx].t.type.is_fpa()) {
             postcond_declarations.push_back(o.solver_ctx.fpa_const(init_name.c_str(),8,24));
@@ -202,7 +203,7 @@ void bmc_fun_pass::translatePostcond( bmc& b, unsigned bidx ) {
             postcond_var_names.push_back(init_name1);
             postcond_declarations.push_back(o.solver_ctx.bv_const(init_name1.c_str(),16));
           }
-
+	 }
           const size_t newSize = init_name.length();
           for( size_t pos = 0; ; pos += newSize ) {
             // Locate the substring to replace
