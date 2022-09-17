@@ -7,6 +7,8 @@
 #include "llvm/Analysis/LoopPass.h"
 #pragma GCC diagnostic pop
 
+#include <map>
+
 class collect_loopdata;
 
 class loopdata {

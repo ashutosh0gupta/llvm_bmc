@@ -11,6 +11,7 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #pragma GCC diagnostic ignored "-Wcomment"
+#pragma GCC diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 // pragam'ed to aviod warnings due to llvm included files
 #include "llvm/IR/DerivedTypes.h"
 // #include "llvm/IR/TypeBuilder.h"
@@ -455,8 +456,8 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   }
   std::unique_ptr<llvm::Module> module = Act->takeModule();
 
-  return std::move(module);
-
+  // return std::move(module);
+  return module;
   return nullptr;
 }
 
@@ -661,7 +662,7 @@ llvm::Function *printf_prototype( llvm::Module *mod,
   // llvm::FunctionType *printf_type =
   //     llvm::TypeBuilder<int(char *, ...), false>::get(glbContext);
 
-  auto attr_list =  llvm::AttributeList().addAttribute(mod->getContext(), 1U, llvm::Attribute::NoAlias);
+  auto attr_list =  llvm::AttributeList().addAttributeAtIndex(mod->getContext(), 1U, llvm::Attribute::NoAlias);
   auto a = mod->getOrInsertFunction("printf", printf_type, attr_list );
   llvm::Function *func = llvm::cast<llvm::Function>(a.getCallee());
 
@@ -678,7 +679,7 @@ llvm::Function *assume_prototype(llvm::Module *mod, llvm::LLVMContext& glbContex
   // llvm::FunctionType *assume_type =
   //     llvm::TypeBuilder<void(int), false>::get(glbContext);
 
-  auto attr_list = llvm::AttributeList().addAttribute(mod->getContext(), 1U, llvm::Attribute::NoAlias);
+  auto attr_list = llvm::AttributeList().addAttributeAtIndex(mod->getContext(), 1U, llvm::Attribute::NoAlias);
 
   auto callee = mod->getOrInsertFunction("__llbmc_assume", assume_type, attr_list );
     llvm::Function *func = llvm::cast<llvm::Function>(callee.getCallee());
@@ -696,7 +697,7 @@ llvm::Function *assert_prototype(llvm::Module *mod, llvm::LLVMContext& glbContex
   // llvm::FunctionType *assert_type =
   //     llvm::TypeBuilder<void(int), false>::get(glbContext);
 
-  auto attr_list = llvm::AttributeList().addAttribute(mod->getContext(), 1U, llvm::Attribute::NoAlias);
+  auto attr_list = llvm::AttributeList().addAttributeAtIndex(mod->getContext(), 1U, llvm::Attribute::NoAlias);
 
   auto callee = mod->getOrInsertFunction("__llbmc_assert", assert_type, attr_list);
   llvm::Function *func = llvm::cast<llvm::Function>(callee.getCallee());
@@ -782,8 +783,8 @@ llvm::Loop* getNextLoop(std::list<llvm::Loop*> lList, llvm::Loop* L) {
 llvm::Value* getArrValueFromZ3Expr(llvm::Value *V, expr e, llvm::IRBuilder<> &irb, llvm::LLVMContext& c, std::map<std::string, llvm::Value*>& exprValMap, std::set<llvm::Value*>& arrSet) {
   llvm::Value *res = getValueFromZ3Expr(e, irb, c, exprValMap, arrSet);
   if(V != NULL ) {
-    res = irb.CreateGEP(V, res);
-    res = irb.CreateLoad(res);
+    res = irb.CreateGEP(V->getType(), V, res);
+    res = irb.CreateLoad(V->getType(), res); // todo: which getType needs to be passed.
     res = irb.CreateSExt(res, llvm::IntegerType::getInt64Ty(c));
     assert(res);
   }
@@ -895,9 +896,9 @@ llvm::Value* getValueFromZ3SubExpr(expr e, llvm::IRBuilder<> &irb, llvm::LLVMCon
     argListIt++;
     llvm::Value* Ind = *argListIt;
     assert(Ind);
-    llvm::Value* res = irb.CreateGEP(Arr, Ind);
+    llvm::Value* res = irb.CreateGEP(Arr->getType(), Arr, Ind);
     assert(res);
-    res = irb.CreateLoad(res);
+    res = irb.CreateLoad(res->getType(), res); //todo: may be we need scalare type
     assert(res);
     res = irb.CreateSExt(res, llvm::IntegerType::getInt64Ty(c));
     assert(res);
@@ -1017,7 +1018,7 @@ void collectArr( llvm::Function &f, std::set<llvm::Value*>& arrSet) {
       llvm::Instruction* I = &(Iobj);
       if( auto alloc = llvm::dyn_cast<llvm::AllocaInst>(I) ) {
         if( alloc->isArrayAllocation() &&
-            !alloc->getType()->getElementType()->isIntegerTy() ) {
+            !alloc->getType()->getPointerElementType()->isIntegerTy() ) {
           llvm_bmc_error( "llvm_utils", "only pointers to intergers is allowed!" );
         }
         arrSet.insert( alloc );
@@ -1400,7 +1401,7 @@ src_loc
 getLoc( const llvm::Instruction* I ) {
   if( auto dbg = llvm::dyn_cast<llvm::DbgInfoIntrinsic>(I) ) {
     if( auto dbgvar = llvm::dyn_cast<llvm::DbgVariableIntrinsic>(dbg) ) {
-      auto loc = dbgvar->getVariableLocation();
+      auto loc = dbgvar->getVariableLocationOp(0);
       if( auto I_val = llvm::dyn_cast<llvm::Instruction>(loc) ) {
         if( I_val ) I = I_val;
       }else if( llvm::dyn_cast<llvm::Constant>(loc) ) {

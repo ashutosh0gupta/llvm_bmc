@@ -171,7 +171,7 @@ expr memory_event::get_power_mo_solver_symbol() const {
 
 void memory_event::update_topological_order() {
   unsigned max = 0;
-  for( const me_ptr e : prev_events)
+  for( const me_ptr& e : prev_events)
     if( max < e->get_topological_order() ) max = e->get_topological_order();
   topological_order = max + 1;
   // o_tag = o_tag_t::na;

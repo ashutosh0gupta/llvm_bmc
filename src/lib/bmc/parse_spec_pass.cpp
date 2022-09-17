@@ -260,7 +260,7 @@ void parse_spec_pass::insert_assert_call( llvm::Module &m, llvm::Function &f ) {
     auto ret_type = llvm::Type::getVoidTy(ctx);
     auto assert_type = llvm::FunctionType::get(ret_type , i1_type, false );
 
-    auto attr_list = llvm::AttributeList().addAttribute(m.getContext(), 1U, llvm::Attribute::NoAlias);
+    auto attr_list = llvm::AttributeList().addAttributeAtIndex(m.getContext(), 1U, llvm::Attribute::NoAlias);
 
     auto assertfunc = m.getOrInsertFunction("__VERIFIER_assert_CallSeqCheck", assert_type, attr_list);
   //llvm::CallInst *call = 

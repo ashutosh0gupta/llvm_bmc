@@ -1138,14 +1138,14 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
       if( auto glb = llvm::dyn_cast<llvm::GlobalVariable>(v) ) {
         llvm::Type* ty = glb->getType();
         if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
-          auto el_ty = pty->getElementType();
+          auto el_ty = pty->getPointerElementType();
           sort z_sort = llvm_to_sort( o, el_ty);
           ty_str = to_string(z_sort);
         }else{ llvm_bmc_error( "parse comment::", "unrecognized type!"); }
       }else{
         llvm::Type* ty = v->getType();
         if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
-          auto el_ty = pty->getElementType();
+          auto el_ty = pty->getPointerElementType();
           sort z_sort = llvm_to_sort( o, el_ty);
           ty_str = to_string( solver_ctx.array_sort( solver_ctx.int_sort(), z_sort ) );
         }else{
@@ -1395,7 +1395,7 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
   // collect global arrays of the module
   for( auto& glb : f->getParent()->globals()) {
     if( auto ptr = llvm::dyn_cast<llvm::PointerType>( glb.getType() ) ) {
-      if( ptr->getElementType()->isArrayTy() ) {
+      if( ptr->getPointerElementType()->isArrayTy() ) {
         ary_to_int[&glb] = arrCntr++;
       }
     }

@@ -41,3 +41,5 @@ Testing
 ./llvmbmc -f "minor_cycle__post_output" -b examples/AssemblyFiles/merged.s
 
 ./llvmbmc -f "lookup__output_lookup" -b examples/AssemblyFiles/merged.s
+
+./llvmbmc -f "_ada_mjguidancedriver" -b examples/AssemblyFiles/test-con2.s -s examples/AssemblyFiles/test-con1-spec.txt

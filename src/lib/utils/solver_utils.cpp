@@ -5,6 +5,7 @@
 #include <fstream>
 #include <string>
 #include <list>
+#include <stack>
 #include "solver_utils.h"
 
 expr smt2_parse_string(solver_context &sol_ctx, const char *str)

@@ -133,7 +133,7 @@ memory_state bmc::populate_mem_state() {
 
     if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
       assert(pty);
-      auto el_ty = pty->getElementType();
+      auto el_ty = pty->getPointerElementType();
       assert(el_ty);
 
       if(el_ty->isArrayTy()) continue;

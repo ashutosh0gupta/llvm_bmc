@@ -4,7 +4,7 @@ LLVMBMC=llvmbmc
 HOME_INSTALLED=~/installed
 BUILDDIR = $(PWD)/build
 SRCDIR = $(PWD)/src
-LLVM_VERSION=12.0.1
+LLVM_VERSION=14.0.0
 # LLVM_VERSION=3.6.2
 LD=ld.gold
 
