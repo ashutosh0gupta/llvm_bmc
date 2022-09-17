@@ -13,23 +13,27 @@
 (declare-var @main__stageflgc  flag); input
 (declare-var @minor_cycle__offstage3 flag)
 (declare-var @major_cycle__position float32 array 5)  ;output
+
 ;; -----------------------------------------
 ;; Declare major thread
 ;; -----------------------------------------
 ;; Declare threads
 (declare-thread major main__guid_major) ; param name entry_function
-;(invoke-behaviour major synchronous unique can-be-killed (repeated 0ms 500ms) (priority low))
+(invoke-parameters major (repeated 0ms 500ms) (priority 5))
+;(invoke-behaviour major synchronous unique can-be-killed (repeated 0ms 500ms) (priority 5))
 ;; model when a thread can be killed.
 (post-condition major (CallSequence main__stageflags major_cycle__stage3_major))
 ;(post-condition major (assert(=> (not(= (select @main__BRate #x0000000000000001) (fp #b0 #b00000000 #b00000000000000000000000))) (bvuge @main__stageflg #x0044))))
 ;(post-condition major (assert(=> (= @main__guidoutflag #x2222) (bvuge @main__stageflg #x0077))))
 ;
+
 ;; -----------------------------------------
 ;; Declare minor thread
 ;; -----------------------------------------
 ;
 (declare-thread minor main__guid_minor)
-;(invoke-behaviour minor synchronous unique can-be-killed (repeated 0ms 20ms) (priority high))
+(invoke-parameters minor (repeated 0ms 20ms) (priority 5))
+;(invoke-behaviour minor synchronous unique can-be-killed (repeated 0ms 20ms) (priority 10))
 (pre-condition minor (assert(= (bvadd @main__stageflg @main__stageflgc) #xffff)))
 ;
 (post-condition minor (assert(= @main__combinederrorflag #x0000)))
