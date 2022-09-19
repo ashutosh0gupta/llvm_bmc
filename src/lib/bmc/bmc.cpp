@@ -189,22 +189,22 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
   if( !o.include_unreach_specs &&  spec.is_unreach() )
     return false;
  
-  params p(o.solver_ctx);
-  //p.set("mul2concat", true);
-  tactic t = 
-        tactic(o.solver_ctx, "simplify") &
-        tactic(o.solver_ctx, "solve-eqs") &
-        tactic(o.solver_ctx, "elim-term-ite") &
-        tactic(o.solver_ctx, "fpa2bv");
-        tactic(o.solver_ctx, "aig");
-        /*tactic(o.solver_ctx, "bvarray2uf") &
-	tactic(o.solver_ctx, "ctx_simplify") &
-        tactic(o.solver_ctx, "psmt"); */
-  solver s = t.mk_solver();
+//  params p(o.solver_ctx);
+//  //p.set("mul2concat", true);
+//  tactic t = 
+//        tactic(o.solver_ctx, "simplify") &
+//        tactic(o.solver_ctx, "solve-eqs") &
+//        tactic(o.solver_ctx, "elim-term-ite") &
+//        tactic(o.solver_ctx, "fpa2bv");
+//        tactic(o.solver_ctx, "aig");
+//        /*tactic(o.solver_ctx, "bvarray2uf") &
+//	tactic(o.solver_ctx, "ctx_simplify") &
+//        tactic(o.solver_ctx, "psmt"); */
+//  solver s = t.mk_solver();
   //z3::set_param("parallel.enable", true); 
 
   // setup solver
-  //solver s(o.solver_ctx);
+  solver s(o.solver_ctx);
 
   // adding pre conditions
   for(auto& pre : bmc_ds_ptr->pre_cond_vec) {

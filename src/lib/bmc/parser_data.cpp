@@ -207,6 +207,27 @@ void parser_data::read_thread( std::istream& in ) {
 }
 
 
+
+void parser_data::read_invokeparam( std::istream& in ) {
+  std::string symb1 = read_symbol( in );
+  std::string symb2 = read_symbol( in );
+  
+  if (symb2 == "repeated") {
+  	auto periodicity  = read_unsigned(in);
+	auto pair1 = std::make_pair( symb1, periodicity );
+    
+	std::string symb3 = read_symbol( in );
+	if (symb3 == "priority") {
+		auto priority  = read_unsigned(in);
+		auto pair2 = std::make_pair( pair1, priority );
+		thread_exec_map.insert( pair2 );
+    		//read_close_parentheses(in);
+		std::cout << "Thread name is " << symb1 << " Periodicity is " << periodicity << " Priority is " << priority << "\n";
+	}
+  }
+}
+
+
 void parser_data::read_precond( std::istream& in ) {
   std::string symb1 = read_symbol( in );
   std::string symb2 = read_formula( in );
@@ -321,12 +342,12 @@ void parser_data::read_file( std::istream& in ) {
       read_variable( in );
     }else if( cmd == "declare-thread" ) {
       read_thread( in );
+    }else if( cmd == "invoke-parameters" ) {
+      read_invokeparam( in );
     }else if( cmd == "pre-condition" ) {
       read_precond( in );
     }else if( cmd == "post-condition" ) {
       read_postcond( in );
-      //    }else if( cmd == "env-invariant" ) {
-      //      read_envinv( in );
     }else{
       llvm_bmc_error( "Spec_parse", "unknown command " << cmd << " !");
     }

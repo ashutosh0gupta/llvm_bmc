@@ -19,7 +19,7 @@
 ;; -----------------------------------------
 ;; Declare threads
 (declare-thread major main__guid_major) ; param name entry_function
-(invoke-parameters major (repeated 0ms 500ms) (priority 5))
+(invoke-parameters major repeated 1 priority 2)
 ;(invoke-behaviour major synchronous unique can-be-killed (repeated 0ms 500ms) (priority 5))
 ;; model when a thread can be killed.
 (post-condition major (CallSequence main__stageflags major_cycle__stage3_major))
@@ -32,7 +32,7 @@
 ;; -----------------------------------------
 ;
 (declare-thread minor main__guid_minor)
-(invoke-parameters minor (repeated 0ms 20ms) (priority 5))
+(invoke-parameters minor repeated 25 priority 1)
 ;(invoke-behaviour minor synchronous unique can-be-killed (repeated 0ms 20ms) (priority 10))
 (pre-condition minor (assert(= (bvadd @main__stageflg @main__stageflgc) #xffff)))
 ;

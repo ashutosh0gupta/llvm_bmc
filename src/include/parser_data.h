@@ -32,6 +32,8 @@ public:
      std::map< std::string, unsigned > fn_thread_map;
      unsigned thread_num = 0;
 
+     std::map <std::pair <std::string, uint16_t>, uint16_t> thread_exec_map;
+
 public:
      
      parser_data(solver_context&);
@@ -50,6 +52,7 @@ public:
      std::string read_command( std::istream& in );
      void read_variable( std::istream& in );
      void read_thread( std::istream& in );
+     void read_invokeparam( std::istream& in ); 
      void read_precond( std::istream& in );
      void read_postcond( std::istream& in );
      void read_envinv( std::istream& in );
