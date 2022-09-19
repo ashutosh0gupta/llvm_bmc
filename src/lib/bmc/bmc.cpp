@@ -75,10 +75,14 @@ void bmc::run_bmc_pass() {
 
   if(o.loop_aggr) {
     passMan.add( new bmc_loop_pass(o,o.solver_ctx, def_map, *this));
-  } else {
+  }
+  // else if (o.concur) {
+  //   passMan.add( new bmc_concur_pass(o,o.solver_ctx, def_map, *this));
+  // }
+  else {
     passMan.add( new bmc_fun_pass(o, o.solver_ctx,*this));
   }
-
+  
   passMan.run( *module.get() );
 
 }
