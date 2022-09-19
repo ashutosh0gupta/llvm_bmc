@@ -1,8 +1,8 @@
 Dependencies
 ------------
 
-* Install llvm-10
-* Install clang-10
+* Install llvm-14
+* Install clang-14
 * Install Boost
 * depends on -lz
 
