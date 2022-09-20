@@ -6,6 +6,7 @@
 #include "include/loopdata.h"
 #include "include/array_model.h"
 #include "include/solver.h"
+#include "include/spec.h"
 #include "include/llvm_decls.h"
 
 
@@ -38,6 +39,9 @@ public:
   std::vector <threads> thread_list;
   std::vector<condition> prop;
   std::vector<condition> precond;
+
+  std::vector< spec_thread > threads_; //todo : populate this
+
   bool verify_prop();
   //--------------------------------------------
 

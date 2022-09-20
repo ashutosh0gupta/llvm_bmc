@@ -1,3 +1,6 @@
+#ifndef LLVM_SPEC_H
+#define LLVM_SPEC_H
+
 #include "include/solver.h"
 #include "lib/utils/solver_utils.h"
 #include <string.h>
@@ -7,8 +10,21 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>     
 
-class parser_data {
+class spec_thread {
+public:
+  std::string name;
+  std::string function;
+  std::vector <expr> pres;
+  std::vector <expr> envs;
+  std::vector <expr> posts;
+  std::vector < std::pair <std::string, std::string> > call_seqs;
+  unsigned period; // in ms
+  unsigned priority;
+};
 
+class parser_data {
+  // rename spec_parser
+  // move this class to src/lib/bmc/
 public:
      solver_context& solver_ctx;
      //bmc_ds* bmc_ds_ptr;
@@ -30,7 +46,7 @@ public:
 
      std::map <std::pair <std::string, std::string>, std::string> callseq_map; 
      std::map< std::string, unsigned > fn_thread_map;
-     unsigned thread_num = 0;
+  unsigned thread_num = 0;
 
      std::map <std::pair <std::string, uint16_t>, uint16_t> thread_exec_map;
 
@@ -60,3 +76,4 @@ public:
 };
 
 
+#endif // LLVM_SPEC_H
