@@ -21,9 +21,9 @@ collect_globals_pass::collect_globals_pass( llvm::Module &m,
       std::cout << "Entry Fn is " << str2 << " Thread is " << str1 << "\n";
   } */
 
-  if( b.thread_list.size() >= 2 ) {
-    fname1 = b.thread_list.at(0).second;
-    fname2 = b.thread_list.at(1).second;
+  if( b.threads.size() >= 2 ) {
+    fname1 = b.threads.at(0).entry_function;
+    fname2 = b.threads.at(1).entry_function;
   }
   
   //fname1 = "_ada_mnguidancedriver";
@@ -138,9 +138,9 @@ if ((f.getName().str() == fname1) ||(f.getName().str() == fname2)) {
   std::string name = (std::string)f.getName();
   //std::cout << "Fn is " << name << "\n";
 
-  for (auto i = b.fn_to_thread.begin(); i != b.fn_to_thread.end(); i++) {
-  	if (name == i->first) {
-      		thread_num = i->second;
+  for (unsigned i = 0; i < b.threads.size(); i++) {
+  	if (name == b.threads.at(i).entry_function) {
+      		thread_num = b.threads.at(i).thread_num;
 		//std::cout << "Fn is " << name << " Thread num " << thread_num << "\n";
 	    }
   } 

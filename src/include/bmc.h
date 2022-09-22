@@ -33,14 +33,14 @@ public:
   //--------------------------------------------------
   // add data structure to store information collected
   // from specification file
-  std::map< std::string, unsigned > fn_to_thread;
-  typedef std::pair<std::string, std::string> threads;
-  typedef std::pair<std::string, expr> condition;
-  std::vector <threads> thread_list;
-  std::vector<condition> prop;
-  std::vector<condition> precond;
+  //std::map< std::string, unsigned > fn_to_thread;
+  //typedef std::pair<std::string, std::string> threads;
+  //typedef std::pair<std::string, expr> condition;
+  //std::vector <threads> thread_list;
+  //std::vector<condition> prop;
+  //std::vector<condition> precond;
 
-  std::vector< spec_thread > threads_; //todo : populate this
+  std::vector< spec_thread > threads; //todo : populate this
 
   bool verify_prop();
   //--------------------------------------------

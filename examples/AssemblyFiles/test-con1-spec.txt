@@ -26,6 +26,7 @@
 ;(post-condition major (assert(=> (not(= (select @main__BRate #x0000000000000001) (fp #b0 #b00000000 #b00000000000000000000000))) (bvuge @main__stageflg #x0044))))
 ;(post-condition major (assert(=> (= @main__guidoutflag #x2222) (bvuge @main__stageflg #x0077))))
 ;
+(end-thread major)
 
 ;; -----------------------------------------
 ;; Declare minor thread
@@ -39,3 +40,4 @@
 (post-condition minor (assert(= @main__combinederrorflag #x0000)))
 ;(post-condition minor (assert(=> (= @main__guidoutflag #x0022) (fp.gt @minor_cycle__velocitycoeff (fp #b0 #b10001011 #b01000111010000000000000)))))
 ;(post-condition minor (CallSequence main__stageflags minor_cycle__stage3_minor))
+(end-thread minor)

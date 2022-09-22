@@ -104,8 +104,8 @@ void bmc::init() {
     std::string fname = demangle(fit->getName().str());
 
     if (o.check_spec) {
-	for (auto j = thread_list.begin(); j != thread_list.end(); j++) {
-	        std::string EntryFn = j->second;
+	for (unsigned j = 0; j < threads.size(); j++) {
+	        std::string EntryFn = threads.at(j).entry_function;
 		if (fname == EntryFn) {
 	  		m_model.store_state_map[0] = mem_st;
     		}
