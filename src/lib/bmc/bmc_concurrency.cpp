@@ -24,3 +24,6 @@ void bmc_concur_pass::getAnalysisUsage(llvm::AnalysisUsage &au) const {
   au.setPreservesAll();
   au.addRequired<llvm::LoopInfoWrapperPass>();
 }
+
+
+// -- run do_bmc for all the threads.
