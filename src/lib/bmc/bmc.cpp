@@ -1,5 +1,6 @@
 #include "include/bmc.h"
 #include "lib/bmc/bmc_fun_pass.h"
+#include "lib/bmc/bmc_concurrency.h"
 #include "lib/bmc/bmc_loop_pass.h"
 #include "lib/utils/build_name_map.h"
 #include "lib/utils/collect_loopdata.h"
@@ -76,10 +77,13 @@ void bmc::run_bmc_pass() {
   if(o.loop_aggr) {
     passMan.add( new bmc_loop_pass(o,o.solver_ctx, def_map, *this));
   }
-  // else if (o.concur) {
-  //   passMan.add( new bmc_concur_pass(o,o.solver_ctx, def_map, *this));
-  // }
-  else {
+  else if ( threads.size() > 1 ) {
+    passMan.add( new bmc_concur_pass(o,o.solver_ctx, *this));
+  } else {
+    // todo: enable the following code if funcName is missing
+    // if( threads.size() == 1) {
+    //   o.funcName = threads[0].entry_function;
+    // }
     passMan.add( new bmc_fun_pass(o, o.solver_ctx,*this));
   }
   

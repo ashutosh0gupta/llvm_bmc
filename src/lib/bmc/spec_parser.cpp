@@ -339,3 +339,11 @@ void spec_parser::read_file( std::istream& in, bmc& b ) {
        else smt_assert = false; */
   }
 }
+
+void spec_parser::read_file( const std::string& spec_file, bmc& b ) {
+  if ( !boost::filesystem::exists( spec_file ) ) {
+    llvm_bmc_error( "SPEC_PARSING", "failed to find file " << spec_file );
+  }
+  std::ifstream file(spec_file);
+  read_file( file, b);
+}

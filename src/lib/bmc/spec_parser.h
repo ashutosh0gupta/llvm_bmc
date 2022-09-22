@@ -43,25 +43,26 @@ public:
      spec_parser(solver_context&);
     ~spec_parser();
 
-     bool peek_space( std::istream& in );
-     bool peek_alpha_numeric_or_underscore( std::istream& in );
-     void consume_spaces( std::istream& in );
-     bool read_or_check_open_parentheses( std::istream& in );
-     bool check_close_parentheses( std::istream& in );
-     bool read_close_parentheses( std::istream& in );
-     std::string read_symbol( std::istream& in );
-     std::string read_formula( std::istream& in );
-     unsigned read_unsigned( std::istream& in );
-     unsigned read_float( std::istream& in );
-     std::string read_command( std::istream& in );
-     void read_variable( std::istream& in );
-     void read_thread( std::istream& in );
-     void read_invokeparam( std::istream& in ); 
-     void read_precond( std::istream& in );
-     void read_postcond( std::istream& in );
-     void read_envinv( std::istream& in );
-     void clear_threadobj( std::istream& in, bmc& b );
-     void read_file( std::istream& in, bmc& b );
+  bool peek_space( std::istream& in );
+  bool peek_alpha_numeric_or_underscore( std::istream& in );
+  void consume_spaces( std::istream& in );
+  bool read_or_check_open_parentheses( std::istream& in );
+  bool check_close_parentheses( std::istream& in );
+  bool read_close_parentheses( std::istream& in );
+  std::string read_symbol( std::istream& in );
+  std::string read_formula( std::istream& in );
+  unsigned read_unsigned( std::istream& in );
+  unsigned read_float( std::istream& in );
+  std::string read_command( std::istream& in );
+  void read_variable( std::istream& in );
+  void read_thread( std::istream& in );
+  void read_invokeparam( std::istream& in ); 
+  void read_precond( std::istream& in );
+  void read_postcond( std::istream& in );
+  void read_envinv( std::istream& in );
+  void clear_threadobj( std::istream& in, bmc& b );
+  void read_file( std::istream& in, bmc& b );
+  void read_file( const std::string& spec_file, bmc& b );
 };
 
 

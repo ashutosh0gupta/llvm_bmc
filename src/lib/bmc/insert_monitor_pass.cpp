@@ -16,16 +16,9 @@ insert_monitor_pass::insert_monitor_pass(llvm::Module &m, options& o, bmc& b)
 
 insert_monitor_pass::~insert_monitor_pass() {}
 
-void insert_monitor_pass::init_parse(llvm::Module &m, options& o, bmc& b)
+void insert_monitor_pass::
+init_parse(llvm::Module &m, options& o, bmc& b)
 {
-  spec_parser sp(o.solver_ctx);
-  const std::string Specfilename = o.get_spec_file();
-
-  if ( !boost::filesystem::exists( Specfilename ) ) {
-    llvm_bmc_error( "SPEC_PARSING", "failed to find file " << Specfilename );
-  }
-  std::ifstream file(Specfilename);
-  sp.read_file( file, b);
 
   /* b.fn_to_thread = pd.fn_thread_map;
   b.thread_list = pd.list_threads;
@@ -44,7 +37,7 @@ void insert_monitor_pass::init_parse(llvm::Module &m, options& o, bmc& b)
 //     }
 //   }
 
-  for (auto j = 0; j < b.threads.size(); j++) { 
+  for (unsigned j = 0; j < b.threads.size(); j++) { 
   if (!b.threads.at(j).call_seqs.empty()) {
   callseq_num = -1;
   //for (auto i = pd.callseq_map.begin(); i != pd.callseq_map.end(); i++) {
@@ -55,7 +48,7 @@ void insert_monitor_pass::init_parse(llvm::Module &m, options& o, bmc& b)
     auto CallSeqs = b.threads.at(j).call_seqs;
 
     auto size_cs = b.threads.at(j).call_seqs.size();
-    for (auto k = 0; k < size_cs; k++) {
+    for (unsigned k = 0; k < size_cs; k++) {
 	auto CallSeqpair = b.threads.at(j).call_seqs.at(k);
     /* for (auto j = pd.list_threads.begin(); j != pd.list_threads.end(); j++) {
       if (ThName == j->first) EntryFnName = j->second;
@@ -110,10 +103,10 @@ void insert_monitor_pass::init_parse(llvm::Module &m, options& o, bmc& b)
  } */
 
  
-      for (auto mit = m.begin(); mit != m.end(); mit++) { //Iterate over functions in module
+  for (auto mit = m.begin(); mit != m.end(); mit++) { //Iterate over functions in module
         //bool Modified =
-        runOnFunction(*mit);
-      }
+    runOnFunction(*mit);
+  }
 }
 
 
@@ -318,10 +311,19 @@ void insert_monitor_pass::getAnalysisUsage(llvm::AnalysisUsage &au) const {
 void import_spec_file( std::unique_ptr<llvm::Module>& module,
                        options& o, bmc& b) {
   if (o.check_spec) {
+    spec_parser sp(o.solver_ctx);
+    sp.read_file( o.get_spec_file(), b);
+    // const std::string Specfilename = o.get_spec_file();
+    // if ( !boost::filesystem::exists( Specfilename ) ) {
+    //   llvm_bmc_error( "SPEC_PARSING", "failed to find file " << Specfilename );
+    // }
+    // std::ifstream file(Specfilename);
+    // sp.read_file( file, b);
+
     llvm::legacy::PassManager passMan;
     passMan.add( new insert_monitor_pass(*module.get(), o, b));
     passMan.run( *module.get() );
-    }
+  }
 
 //  for (auto i = b.fn_to_thread.begin(); i != b.fn_to_thread.end(); i++) {
 //	std::cout << "Fn. name is " << i->first << " Thread num is " << i->second << "\n";

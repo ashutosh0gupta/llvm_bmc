@@ -9,7 +9,7 @@
 // -- create all read write events
 // -- encode constraints
 
-class bmc_concurrency : public bmc_pass{
+class bmc_concur_pass : public bmc_pass, public llvm::FunctionPass {
 
 public:
   static char ID;
@@ -20,8 +20,8 @@ public:
   std::vector <expr> postcond_declarations;
 
 public:
-  bmc_concurrency( options&, solver_context& ctx_, bmc&);
-  ~bmc_concurrency();
+  bmc_concur_pass( options&, solver_context& ctx_, bmc&);
+  ~bmc_concur_pass();
 
   virtual bool runOnFunction( llvm::Function & );
   void translatePrecond( bmc& );
