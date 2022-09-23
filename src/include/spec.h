@@ -1,15 +1,13 @@
 #ifndef LLVM_SPEC_H
 #define LLVM_SPEC_H
 
-#include "include/solver.h"
-#include "lib/utils/solver_utils.h"
-#include <string.h>
-#include<iostream>
-#include<algorithm>
-#include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/fstream.hpp>     
+#include "include/options.h"
 
+class bmc;
+
+//
+// specification of a thread
+//
 class spec_thread {
 public:
   std::string name;
@@ -23,5 +21,17 @@ public:
   unsigned thread_num;
 };
 
+//
+// specification of the entire system
+//
+class spec_system {
+  public:
+  std::vector<spec_thread> threads;
+  std::vector <expr> pres;
+  std::vector <expr> posts;
+};
+
+void import_spec_file( std::unique_ptr<llvm::Module>& module,
+                       options& o, bmc& b);
 
 #endif // LLVM_SPEC_H

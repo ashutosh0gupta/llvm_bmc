@@ -81,7 +81,4 @@ public:
   std::map< const llvm::Loop*, bmc_loop*>& get_loop_formula_map();
 };
 
-void import_spec_file( std::unique_ptr<llvm::Module>& module,
-                       options& o, bmc& b);
-
 #endif // LLVM_BMC_H
