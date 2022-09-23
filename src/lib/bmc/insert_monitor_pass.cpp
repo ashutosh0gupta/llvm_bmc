@@ -5,6 +5,7 @@
 
 #include "llvm/Transforms/Utils/Cloning.h"
 
+#include "lib/parsers/spec_parser.h"
 
 char insert_monitor_pass::ID = 0;
 

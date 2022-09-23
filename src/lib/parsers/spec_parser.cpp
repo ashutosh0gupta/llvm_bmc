@@ -1,4 +1,4 @@
-#include "include/spec.h"
+#include "lib/parsers/spec_parser.h"
 
 #include <fstream>
 #include <ctype.h>
@@ -8,13 +8,13 @@ unsigned new_line_count = 1;
 #define AT_L " at line " << std::to_string( new_line_count ) << "!"
 
 
-parser_data::parser_data(solver_context& sol_ctx_)
+spec_parser::spec_parser(solver_context& sol_ctx_)
   : solver_ctx(sol_ctx_)
 {}
 
-parser_data::~parser_data() {}
+spec_parser::~spec_parser() {}
 
-bool parser_data::peek_space( std::istream& in ) {
+bool spec_parser::peek_space( std::istream& in ) {
   char c = in.peek();
   if( c == '\n' || c == '\t' || c == '\r' || c == ' ' ){
     if( c == '\n' ) new_line_count ++;
@@ -35,20 +35,20 @@ bool parser_data::peek_space( std::istream& in ) {
 }
 
 
-bool parser_data::peek_alpha_numeric_or_underscore( std::istream& in ) {
+bool spec_parser::peek_alpha_numeric_or_underscore( std::istream& in ) {
   char c  = in.peek();
   return std::isalnum( c ) || c == '_' || c == '-' || c == '@';
 }
 
 
-void parser_data::consume_spaces( std::istream& in ) {
+void spec_parser::consume_spaces( std::istream& in ) {
   while( peek_space( in ) ) {
     in.get();
   }
 }
 
 
-bool parser_data::read_or_check_open_parentheses( std::istream& in ) {
+bool spec_parser::read_or_check_open_parentheses( std::istream& in ) {
   consume_spaces( in );
   char c = in.peek();
   if( c == '(' ) {in.get(); return true; }
@@ -56,7 +56,7 @@ bool parser_data::read_or_check_open_parentheses( std::istream& in ) {
 }
 
 
-bool parser_data::check_close_parentheses( std::istream& in ) {
+bool spec_parser::check_close_parentheses( std::istream& in ) {
   consume_spaces( in );
   char c = in.peek();
   if( c == ')' ) return true;
@@ -64,7 +64,7 @@ bool parser_data::check_close_parentheses( std::istream& in ) {
 }
 
 
-bool parser_data::read_close_parentheses( std::istream& in ) {
+bool spec_parser::read_close_parentheses( std::istream& in ) {
   consume_spaces( in );
   char c = in.get();
   if( c != ')' ) {
@@ -75,7 +75,7 @@ bool parser_data::read_close_parentheses( std::istream& in ) {
 }
 
 
-std::string parser_data::read_symbol( std::istream& in ) {
+std::string spec_parser::read_symbol( std::istream& in ) {
   consume_spaces( in );
   std::string word;
   while( ((!peek_space(in)) && (peek_alpha_numeric_or_underscore(in)) &&
@@ -87,7 +87,7 @@ std::string parser_data::read_symbol( std::istream& in ) {
 }
 
 
-unsigned parser_data::read_unsigned( std::istream& in ) {
+unsigned spec_parser::read_unsigned( std::istream& in ) {
   consume_spaces( in );
   unsigned i;
   in >> i;
@@ -95,7 +95,7 @@ unsigned parser_data::read_unsigned( std::istream& in ) {
 }
 
 
-unsigned parser_data::read_float( std::istream& in ) {
+unsigned spec_parser::read_float( std::istream& in ) {
   consume_spaces( in );
   float i;
   in >> i;
@@ -103,7 +103,7 @@ unsigned parser_data::read_float( std::istream& in ) {
 }
 
 
-std::string parser_data::read_command( std::istream& in ) {
+std::string spec_parser::read_command( std::istream& in ) {
   consume_spaces( in );
   if( read_or_check_open_parentheses( in ) ) {
     return read_symbol( in );
@@ -116,7 +116,7 @@ std::string parser_data::read_command( std::istream& in ) {
 
 
 
-std::string parser_data::read_formula( std::istream& in ) {
+std::string spec_parser::read_formula( std::istream& in ) {
   consume_spaces( in );
   if( read_or_check_open_parentheses( in ) ) {
     std::string word;
@@ -129,7 +129,7 @@ std::string parser_data::read_formula( std::istream& in ) {
 }
 
 
-void parser_data::read_variable( std::istream& in ) {
+void spec_parser::read_variable( std::istream& in ) {
 
   consume_spaces( in );
   std::string var_name = read_symbol( in );
@@ -194,41 +194,45 @@ void parser_data::read_variable( std::istream& in ) {
 }
 
 
-void parser_data::read_thread( std::istream& in ) {
+void spec_parser::read_thread( std::istream& in ) {
   std::string symb1 = read_symbol( in );
   std::string symb2 = read_symbol( in );
-  auto pair = std::make_pair( symb1, symb2);
-  list_threads.push_back(pair);
+  //auto pair = std::make_pair( symb1, symb2);
+  //list_threads.push_back(pair);
   thread_num++;
-  auto pair1 = std::make_pair( symb2, thread_num);
+  //auto pair1 = std::make_pair( symb2, thread_num);
   //std::cout << "Entry fn is " << symb2 << " thread_num is " << thread_num << "\n";
   //assert(bmc_ds_ptr);
-  fn_thread_map.insert( pair1 );
+  thread_obj.name = symb1;
+  thread_obj.entry_function = symb2;
+  thread_obj.thread_num = thread_num;
+  //fn_thread_map.insert( pair1 );
 }
 
 
 
-void parser_data::read_invokeparam( std::istream& in ) {
+void spec_parser::read_invokeparam( std::istream& in ) {
   std::string symb1 = read_symbol( in );
   std::string symb2 = read_symbol( in );
   
   if (symb2 == "repeated") {
   	auto periodicity  = read_unsigned(in);
-	auto pair1 = std::make_pair( symb1, periodicity );
-    
+	//auto pair1 = std::make_pair( symb1, periodicity );
+        thread_obj.period = periodicity;
 	std::string symb3 = read_symbol( in );
 	if (symb3 == "priority") {
 		auto priority  = read_unsigned(in);
-		auto pair2 = std::make_pair( pair1, priority );
-		thread_exec_map.insert( pair2 );
+		thread_obj.priority = priority;
+		//auto pair2 = std::make_pair( pair1, priority );
+		//thread_exec_map.insert( pair2 );
     		//read_close_parentheses(in);
-		std::cout << "Thread name is " << symb1 << " Periodicity is " << periodicity << " Priority is " << priority << "\n";
+		//std::cout << "Thread name is " << symb1 << " Periodicity is " << periodicity << " Priority is " << priority << "\n";
 	}
   }
 }
 
 
-void parser_data::read_precond( std::istream& in ) {
+void spec_parser::read_precond( std::istream& in ) {
   std::string symb1 = read_symbol( in );
   std::string symb2 = read_formula( in );
 
@@ -246,13 +250,14 @@ void parser_data::read_precond( std::istream& in ) {
     const char* symb4 = symb3.c_str();
 
     expr e = parseFormula(solver_ctx, symb4, names, declarations);
-    auto pair = std::make_pair( symb1, e);
-    list_precond.push_back(pair);
+    //auto pair = std::make_pair( symb1, e);
+    //list_precond.push_back(pair);
+    thread_obj.pres.push_back(e);
   }
 }
 
 
-void parser_data::read_postcond( std::istream& in ) {
+void spec_parser::read_postcond( std::istream& in ) {
   std::string symb1 = read_symbol( in );
   std::string symb2 = read_formula( in );
 
@@ -261,8 +266,7 @@ void parser_data::read_postcond( std::istream& in ) {
     std::string symb4 = read_symbol( in );
 
     auto pair1 = std::make_pair( symb3, symb4 );
-    auto pair2 = std::make_pair( pair1, symb1 );
-    callseq_map.insert( pair2 );
+    thread_obj.call_seqs.push_back( pair1 );
     read_close_parentheses(in);
   }
 
@@ -285,55 +289,32 @@ void parser_data::read_postcond( std::istream& in ) {
     //expr e = smt2_parse_string( solver_ctx, symb4);
 
     expr e = parseFormula(solver_ctx, symb4, names, declarations);
-    auto pair = std::make_pair( symb1, e);
-    list_postcond.push_back(pair);
+    //auto pair = std::make_pair( symb1, e);
+    thread_obj.posts.push_back(e);
   }
 }
 
 
-//void parser_data::read_envinv( std::istream& in ) {
+//void spec_parser::read_envinv( std::istream& in ) {
 //   std::string symb = read_symbol( in );
 //   list_envinv.push_back(symb);
 //}
 
 
-//sugar_t_ptr read_sugar_ref( std::string s_name, sugar_t_map sugar_map ) {
-//   if( sugar_map.find(s_name) != sugar_map.end() ) {
-//     return sugar_map[s_name];
-//     // return sugar_mol::make( sugar_map[s_name] );
-//   }else{
-//     bio_synth_error( "sugar_parse",
-//                      "undeclared sugar " << s_name << " found" << AT_L );
-//   }
-//}
+void spec_parser::clear_threadobj( std::istream& in, bmc& b ) {
+   std::string symb1 = read_symbol( in );
+   b.threads.push_back(thread_obj);
+   thread_obj.name = " ";
+   thread_obj.entry_function = " ";
+   thread_obj.pres.clear();
+   thread_obj.posts.clear();
+   thread_obj.call_seqs.clear();
+   thread_obj.period = 0;
+   thread_obj.priority = 0;
+}
 
 
-//sugar_mol_ptr read_mol( std::istream& in, const sugar_t_map& sugar_map ) {
-//   std::string s_name;
-//   if( read_or_check_open_parentheses(in) ) {
-//     std::string s_name = read_symbol( in );
-//     auto sugar = read_sugar_ref( s_name, sugar_map );
-//     sugar_mol_vec mols;
-//     assert( sugar );
-//     for( unsigned i = 0; i < sugar->get_children_num(); i++ ) {
-//       auto mol_i = read_mol( in, sugar_map );
-//       mols.push_back( mol_i );
-//     }
-//     read_close_parentheses(in);
-//     return sugar_mol::make( sugar, mols );
-//   }else if( check_close_parentheses(in) ) {
-//     bio_synth_error( "sugar_parse", "unexpected close parentheses" <<
-//AT_L );
-//   }else{
-//     std::string s_name = read_symbol( in );
-//     if( s_name == "_" ) return nullptr;
-//     auto sugar = read_sugar_ref( s_name, sugar_map );
-//     return sugar_mol::make( sugar );
-//   }
-//}
-
-
-void parser_data::read_file( std::istream& in ) {
+void spec_parser::read_file( std::istream& in, bmc& b ) {
   for(;;){
     std::string cmd = read_command( in );
     if( cmd == "eof" ) {
@@ -348,6 +329,8 @@ void parser_data::read_file( std::istream& in ) {
       read_precond( in );
     }else if( cmd == "post-condition" ) {
       read_postcond( in );
+    }else if( cmd == "end-thread" ) {
+      clear_threadobj(in, b);
     }else{
       llvm_bmc_error( "Spec_parse", "unknown command " << cmd << " !");
     }
@@ -355,4 +338,12 @@ void parser_data::read_file( std::istream& in ) {
     /* if (!smt_assert) read_close_parentheses(in);
        else smt_assert = false; */
   }
+}
+
+void spec_parser::read_file( const std::string& spec_file, bmc& b ) {
+  if ( !boost::filesystem::exists( spec_file ) ) {
+    llvm_bmc_error( "SPEC_PARSING", "failed to find file " << spec_file );
+  }
+  std::ifstream file(spec_file);
+  read_file( file, b);
 }

@@ -23,7 +23,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
-#include "lib/bmc/spec_parser.h"
 
 //public bmc_pass,
 
