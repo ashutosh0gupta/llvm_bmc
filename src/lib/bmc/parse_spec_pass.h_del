@@ -329,7 +329,7 @@ void import_spec_file( std::unique_ptr<llvm::Module>& module,
     llvm::legacy::PassManager passMan;
     passMan.add( new parse_spec_pass(*module.get(), o, b));
     passMan.run( *module.get() );
-    }
+  }
 
 //  for (auto i = b.fn_to_thread.begin(); i != b.fn_to_thread.end(); i++) {
 //	std::cout << "Fn. name is " << i->first << " Thread num is " << i->second << "\n";
