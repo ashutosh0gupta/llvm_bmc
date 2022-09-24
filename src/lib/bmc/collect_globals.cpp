@@ -1,4 +1,4 @@
-#include "include/collect_globals.h"
+#include "lib/bmc/collect_globals.h"
 #include "lib/utils/utils.h"
 #include "lib/utils/llvm_utils.h"
 #include "include/value_expr_map.h"

@@ -6,7 +6,7 @@
 #include "lib/utils/collect_loopdata.h"
 #include "lib/utils/llvm_utils.h"
 // #include "lib/bmc/bmc_loop_pass.h"
-#include "include/collect_globals.h"
+#include "lib/bmc/collect_globals.h"
 #include "bmc_utils.h"
 #include "witness.h"
 

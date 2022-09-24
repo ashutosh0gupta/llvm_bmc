@@ -4,7 +4,7 @@
 // TODO : remove reference to heap model and access of public class variables
 #include "include/array_model.h"
 #include "include/memory_event.h"
-#include "include/collect_globals.h"
+// #include "include/collect_globals.h"
 
 //todo: remove reference to bmc_obj which is due to global variables
 
