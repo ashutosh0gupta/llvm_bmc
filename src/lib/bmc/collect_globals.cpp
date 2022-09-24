@@ -5,58 +5,33 @@
 
 #include "llvm/IR/DIBuilder.h"
 
-char collect_globals_pass::ID = 0;
+//char collect_globals_pass::ID = 0;
 
-collect_globals_pass::collect_globals_pass( llvm::Module &m,
-                                            solver_context& solver_ctx__,
-                                            memory_cons& mem_enc_,
+collect_globals_pass::collect_globals_pass( std::unique_ptr<llvm::Module>& m_,
+					    solver_context& solver_ctx__, 
+					    memory_cons& mem_enc_,
                                             options& o, bmc& b)
-  : llvm::ModulePass(ID), solver_ctx(solver_ctx__), mem_enc(mem_enc_), 
-    o(o), b(b)
-{
-
-  /*for (auto j = b.thread_list.begin(); j != b.thread_list.end(); j++) {
-      std::string str1 = j->first;
-      std::string str2 = j->second;
-      std::cout << "Entry Fn is " << str2 << " Thread is " << str1 << "\n";
-  } */
-
-  if( b.threads.size() >= 2 ) {
-    fname1 = b.threads.at(0).entry_function;
-    fname2 = b.threads.at(1).entry_function;
-  }
-  
-  //fname1 = "_ada_mnguidancedriver";
-  //fname2 = "_ada_mjguidancedriver";
-  //solver_ctx = o.solver_ctx;
+  : module(m_), solver_ctx(solver_ctx__), mem_enc(mem_enc_),
+    o(o), b(b) { 
+	collect_globals(module, b);
+	insert_concurrent(b);
+	CreateRdWrEvents(module, b);
 }
 
 collect_globals_pass::~collect_globals_pass() {}
 
+void collect_globals_pass::collect_globals( std::unique_ptr<llvm::Module>& m, bmc &b ) {
+  for (unsigned j = 0; j < b.threads.size(); j++) {
+     auto EntryFn = b.threads.at(j).entry_function;
+     for (auto mit = m->begin(); mit != m->end(); mit++) { //Iterate over functions in module
 
-bool collect_globals_pass::runOnModule(llvm::Module &m)
-{
-  for (auto mit = m.begin(); mit != m.end(); mit++) { //Iterate over functions in module
-    //bool modified =
-    runOnFunction(*mit);
-  }
-  insert_concurrent(fname1, fname2);
-
-  for (auto mit = m.begin(); mit != m.end(); mit++) { //Iterate over functions in module
-    CreateRdWrEvents(*mit, b);
-  }
-
-  return true;
-}
-
-
-bool collect_globals_pass::runOnFunction( llvm::Function &f ) {
-  if ((f.getName().str() == fname1) ||(f.getName().str() == fname2)) {
-
-    for (auto bbit = f.begin(); bbit != f.end(); bbit++) { //Iterate over basic blocks in function       
+      std::string Str1 = mit->getName().str();
+      if (Str1 == EntryFn) {
+    auto f = &(*mit);
+    for (auto bbit = f->begin(); bbit != f->end(); bbit++) { //Iterate over basic blocks in function       
 		       
       auto bb = &(*bbit);
-      for( auto it = bb->begin(), e = bb->end(); it != e; ++it) {
+      for( auto it = bb->begin(); it != bb->end(); ++it) {
         auto I = &(*it);
 //I->print( llvm::outs() );     std::cout << "\n";
         if( auto store = llvm::dyn_cast<llvm::StoreInst>(I) ) {
@@ -90,52 +65,56 @@ bool collect_globals_pass::runOnFunction( llvm::Function &f ) {
       } 
     }    
 
-   // std::cout << "Function name is " << f.getName().str() << "\n" << "No. of global variables is " << list_gvars.size() << " \n";
+    //std::cout << "Function name is " << f->getName().str() << "\n" << "No. of global variables is " << list_gvars.size() << " \n";
 
     //for(int i=0; i < list_gvars.size(); i++)
     //std::cout << (std::string)((list_gvars.at(i))->getName()) << "\n";
 
-    auto pair = std::make_pair( f.getName().str() , list_gvars );
+    auto pair = std::make_pair( f->getName().str() , list_gvars );
     fn_gvars_map.insert( pair );
 
     list_gvars.clear();   
-  } 
-
-  return true;
+   } 
+  }
+ }
+  //return true;
 } 
 
 
-void collect_globals_pass::insert_concurrent( std::string FnName1,
-                                              std::string FnName2 )
+void collect_globals_pass::insert_concurrent( bmc& b )
 {
-  if( fn_gvars_map.find(FnName1) != fn_gvars_map.end() ) {
-    list_gvars = fn_gvars_map[FnName1];
-    for (auto i = fn_gvars_map.begin(); i != fn_gvars_map.end(); i++) {
-      if (i->first ==  FnName2) {
+  for (unsigned k = 0; k < b.threads.size(); k++) {
+    auto FnName1 = b.threads.at(k).entry_function;
+    if( fn_gvars_map.find(FnName1) != fn_gvars_map.end() ) {
+     list_gvars = fn_gvars_map[FnName1];
+     for (auto i = fn_gvars_map.begin(); i != fn_gvars_map.end(); i++) {
+      if (i->first !=  FnName1) {
         for(unsigned j=0; j < list_gvars.size(); j++)
           {
             auto g1 = list_gvars.at(j);
             if (find(i->second.begin(), i->second.end(), g1) != i->second.end()) {
-              if (concurrent_list.empty())
-                concurrent_list.push_back(g1);
+              if (b.concurrent_vars.empty())
+                b.concurrent_vars.push_back(g1);
               else {
-                if (find(concurrent_list.begin(), concurrent_list.end(), g1) == concurrent_list.end())
-                  concurrent_list.push_back(g1);
+                if (find(b.concurrent_vars.begin(), b.concurrent_vars.end(), g1) == b.concurrent_vars.end())
+                  b.concurrent_vars.push_back(g1);
               }	
             }
           }
       } 
     }
   }
-  /* for(int i=0; i < concurrent_list.size(); i++)
-    std::cout << "Concurrent variable number " << i << " is " << (std::string)((concurrent_list.at(i))->getName()) << "\n"; */
+ }
+//  for(unsigned i=0; i < b.concurrent_vars.size(); i++)
+//    std::cout << "Concurrent variable number " << i << " is " << (std::string)((b.concurrent_vars.at(i))->getName()) << "\n"; 
 	
 }
 
 
-void collect_globals_pass::CreateRdWrEvents(llvm::Function &f, bmc& b) {
-if ((f.getName().str() == fname1) ||(f.getName().str() == fname2)) {
-  std::string name = (std::string)f.getName();
+void collect_globals_pass::CreateRdWrEvents(std::unique_ptr<llvm::Module>& m, bmc& b) {
+for (auto mit = m->begin(); mit != m->end(); mit++) { //Iterate over functions in module
+  std::string name = mit->getName().str();
+  auto f = &(*mit);
   //std::cout << "Fn is " << name << "\n";
 
   for (unsigned i = 0; i < b.threads.size(); i++) {
@@ -162,10 +141,10 @@ if ((f.getName().str() == fname1) ||(f.getName().str() == fname2)) {
 
   expr path_cond = solver_ctx.bool_val(true);
 
-  for (auto bbit = f.begin(); bbit != f.end(); bbit++) {
+  for (auto bbit = f->begin(); bbit != f->end(); bbit++) {
     //Iterate over basic blocks in function
     auto bb = &(*bbit);
-    for( auto it = bb->begin(), e = bb->end(); it != e; ++it) {
+    for( auto it = bb->begin(); it != bb->end(); ++it) {
       auto I = &(*it);
 //I->print( llvm::outs() );     std::cout << "\n";
 
@@ -176,7 +155,7 @@ if ((f.getName().str() == fname1) ||(f.getName().str() == fname2)) {
         //expr val = read_const( o, store->getOperand(0) );
         me_set new_events;
         if (auto g = llvm::dyn_cast<llvm::GlobalVariable>( addr ) ) {
-          if (find(concurrent_list.begin(), concurrent_list.end(), g) != concurrent_list.end()) {			
+          if (find(b.concurrent_vars.begin(), b.concurrent_vars.end(), g) != b.concurrent_vars.end()) {			
             auto wr = mk_me_ptr( mem_enc, thr_id, prev_events, path_cond,  //thread_id to be passed correctly
                                  history, g, loc, event_t::w,
                                  translate_ordering_tags( store->getOrdering()) );
@@ -204,7 +183,7 @@ if ((f.getName().str() == fname1) ||(f.getName().str() == fname2)) {
         //expr val = read_const( o, load->getOperand(1) );
         me_set new_events;
         if( auto g = llvm::dyn_cast<llvm::GlobalVariable>( addr ) ) {
-          if (find(concurrent_list.begin(), concurrent_list.end(), g) != concurrent_list.end()) {			
+          if (find(b.concurrent_vars.begin(), b.concurrent_vars.end(), g) != b.concurrent_vars.end()) {			
             auto rd = mk_me_ptr( mem_enc, thr_id, prev_events, path_cond,  //thread_id to be passed correctly
                                  history, g, loc, event_t::r,
                                  translate_ordering_tags( load->getOrdering()) );
@@ -226,14 +205,14 @@ new_events.insert( rd );
         }
       }
     }
+   }
   }
- }
 }
 
 
 unsigned collect_globals_pass::add_thread( std::string str) {
   //auto thr = std::make_shared<thread>( _z3, str );
-  threads.push_back( str );
+  //b.threads.push_back( str );
   thread_num++;
   return thread_num-1;
 }
@@ -269,7 +248,7 @@ src_loc collect_globals_pass::getInstructionLocation(const llvm::Instruction* I 
 
 
 void collect_globals_pass::add_event( unsigned i, me_ptr e )   {
-  if( i < threads.size() ) {
+  if( i < b.threads.size() ) {
     add_event( e );
     /*if( e->is_rd() ) rd_events[e->prog_v].push_back( e );
       if( e->is_wr() ) wr_events[e->prog_v].insert( e );
@@ -280,11 +259,11 @@ void collect_globals_pass::add_event( unsigned i, me_ptr e )   {
 }
 
 
-llvm::StringRef collect_globals_pass::getPassName() const {
-  return "Collect global variables read and written by a function";
-}
+//llvm::StringRef collect_globals_pass::getPassName() const {
+//  return "Collect global variables read and written by a function";
+//}
 
-void collect_globals_pass::getAnalysisUsage(llvm::AnalysisUsage &au) const {
-  au.setPreservesAll();
-  au.addRequired<llvm::LoopInfoWrapperPass>();
-}
+//void collect_globals_pass::getAnalysisUsage(llvm::AnalysisUsage &au) const {
+//  au.setPreservesAll();
+//  au.addRequired<llvm::LoopInfoWrapperPass>();
+//}

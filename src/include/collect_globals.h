@@ -12,12 +12,12 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/LinkAllPasses.h"
 
-#include "include/memory_cons.h"
-#include "include/memory_event.h"
 #include "include/solver.h"
 #include "lib/utils/solver_utils.h"
 #include "include/options.h"
 #include "include/bmc.h"
+#include "include/memory_cons.h"
+#include "include/memory_event.h"
 //#include "include/parser_data.h"
 
 #include <string.h>
@@ -27,42 +27,40 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
-class collect_globals_pass : public llvm::ModulePass {
+class collect_globals_pass {
 
 public:
-  static char ID;
+  //static char ID;
+  std::unique_ptr<llvm::Module>& module;
   solver_context& solver_ctx;
-  memory_cons& mem_enc;
+  //memory_cons& mem_enc;
   options& o;
   bmc& b;
-  unsigned thread_num = 0;
-  std::string fname1, fname2;
+  
   std::map< std::string,  std::vector<const llvm::GlobalVariable*>> fn_gvars_map;
   std::vector<const llvm::GlobalVariable*> list_gvars;
 
-  //To do: Change to the vectors declared in memory_model.h
-  std::vector<const llvm::GlobalVariable*> concurrent_list;
-  std::vector<std::string> threads; // thread names
-//  memory_model m_model;
+  unsigned thread_num = 0;
   
+  memory_cons& mem_enc;
   me_vec events; // topologically sorted events
   me_ptr start_event, final_event;
   
   expr start_cond = solver_ctx.bool_val(true);
 
+
 public:
-  collect_globals_pass( llvm::Module &m,
-                        solver_context& solver_ctx__,
-                        memory_cons& mem_enc_,
+  collect_globals_pass( std::unique_ptr<llvm::Module>& m_,
+                        solver_context& solver_ctx__, memory_cons& mem_enc_,
                         options& o, bmc& b);
    ~collect_globals_pass();
 
-  virtual bool runOnModule(llvm::Module &m); //when there is a Module
-  virtual bool runOnFunction(llvm::Function &f); //called by runOnModule
+  //virtual bool runOnFunction(llvm::Function &f); //called by runOnModule
+  void collect_globals( std::unique_ptr<llvm::Module>& m, bmc &b );
+  void insert_concurrent(bmc&);
 
-  void insert_concurrent(std::string FnName1, std::string FnName2);
   unsigned add_thread( std::string str);
-  void CreateRdWrEvents(llvm::Function& f, bmc& b);
+  void CreateRdWrEvents(std::unique_ptr<llvm::Module>& m, bmc& b);
 
   o_tag_t translate_ordering_tags( llvm::AtomicOrdering ord );
   
@@ -86,9 +84,6 @@ public:
         add_event( i, e );
       }
     }
-
-  virtual void getAnalysisUsage(llvm::AnalysisUsage &au) const;
-  llvm::StringRef getPassName() const;
 
 };
 

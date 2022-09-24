@@ -41,6 +41,7 @@ public:
   //std::vector<condition> precond;
 
   std::vector< spec_thread > threads; //todo : populate this
+  std::vector<const llvm::GlobalVariable*> concurrent_vars;
 
   bool verify_prop();
   //--------------------------------------------

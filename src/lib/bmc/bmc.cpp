@@ -70,24 +70,27 @@ void bmc::run_bmc_pass() {
   passMan.add( new build_name_map( o, localNameMap, revStartLocalNameMap,
                                    revEndLocalNameMap ) );
   passMan.add( new collect_loopdata(o, ld_map, localNameMap, module) );
-
-  // //if( o.concurrent )
-  passMan.add( new collect_globals_pass(*module.get(), o.solver_ctx, o.mem_enc, o, *this) );
+  passMan.run( *module.get() );
 
   if(o.loop_aggr) {
     passMan.add( new bmc_loop_pass(o,o.solver_ctx, def_map, *this));
+    passMan.run( *module.get() );
   }
   else if ( threads.size() > 1 ) {
-    passMan.add( new bmc_concur_pass(o,o.solver_ctx, *this));
+	//passMan.add( new collect_globals_pass(o.solver_ctx, o.mem_enc, o, *this) );
+        collect_globals_pass(module, o.solver_ctx, o.mem_enc, o, *this);    
+	passMan.add( new bmc_concur_pass(o,o.solver_ctx, *this));
+        passMan.run( *module.get() );
   } else {
     // todo: enable the following code if funcName is missing
     // if( threads.size() == 1) {
     //   o.funcName = threads[0].entry_function;
     // }
     passMan.add( new bmc_fun_pass(o, o.solver_ctx,*this));
+    passMan.run( *module.get() );
   }
   
-  passMan.run( *module.get() );
+  //passMan.run( *module.get() );
 
 }
 

@@ -45,9 +45,9 @@ public:
   std::map<unsigned,memory_state> store_state_map; // block -> global state map
 
   //todo: thread name may change to a class reference
-  std::vector<std::string> threads; // thread names
+  //std::vector<std::string> threads; // thread names
   std::map< std::string, me_set1&> events;
-  std::vector<const llvm::GlobalVariable*> concurrent_vars;
+  //std::vector<const llvm::GlobalVariable*> concurrent_vars;
 
   void print();
 

@@ -19,6 +19,8 @@ public:
   std::vector <std::string> postcond_var_names;
   std::vector <expr> postcond_declarations;
 
+  std::string thread_name, EntryFn;
+  
 public:
   bmc_concur_pass( options&, solver_context& ctx_, bmc&);
   ~bmc_concur_pass();
@@ -27,6 +29,7 @@ public:
   void translatePrecond( bmc& );
   void translatePostcond( bmc&, unsigned );
   std::vector<std::string> read_variables( std::string );
+
   virtual void getAnalysisUsage(llvm::AnalysisUsage &au) const;
   llvm::StringRef getPassName() const;
 };
