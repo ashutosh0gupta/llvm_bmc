@@ -1,3 +1,6 @@
+#ifndef LLVMBMC_COLLECT_GLOBALS_H
+#define LLVMBMC_COLLECT_GLOBALS_H
+
 #include "llvm/Pass.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Constants.h"
@@ -27,7 +30,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 
-class collect_globals_pass {
+class collect_globals {
 
 public:
   //static char ID;
@@ -43,6 +46,9 @@ public:
   unsigned thread_num = 0;
   
   memory_cons& mem_enc;
+  //
+  //todo: creating of events should happen in bmc_pass
+  //
   me_vec events; // topologically sorted events
   me_ptr start_event, final_event;
   
@@ -50,13 +56,13 @@ public:
 
 
 public:
-  collect_globals_pass( std::unique_ptr<llvm::Module>& m_,
+  collect_globals( std::unique_ptr<llvm::Module>& m_,
                         solver_context& solver_ctx__, memory_cons& mem_enc_,
                         options& o, bmc& b);
-   ~collect_globals_pass();
+   ~collect_globals();
 
   //virtual bool runOnFunction(llvm::Function &f); //called by runOnModule
-  void collect_globals( std::unique_ptr<llvm::Module>& m, bmc &b );
+  void collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b );
   void insert_concurrent(bmc&);
 
   unsigned add_thread( std::string str);
@@ -88,3 +94,4 @@ public:
 };
 
 
+#endif // LLVMBMC_COLLECT_GLOBALS_H

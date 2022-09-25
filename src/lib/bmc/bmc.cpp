@@ -77,10 +77,9 @@ void bmc::run_bmc_pass() {
     passMan.run( *module.get() );
   }
   else if ( threads.size() > 1 ) {
-	//passMan.add( new collect_globals_pass(o.solver_ctx, o.mem_enc, o, *this) );
-        collect_globals_pass(module, o.solver_ctx, o.mem_enc, o, *this);    
-	passMan.add( new bmc_concur_pass(o,o.solver_ctx, *this));
-        passMan.run( *module.get() );
+    collect_globals( module, o.solver_ctx, o.mem_enc, o, *this );
+    passMan.add( new bmc_concur_pass(o,o.solver_ctx, *this) );
+    passMan.run( *module.get() );
   } else {
     // todo: enable the following code if funcName is missing
     // if( threads.size() == 1) {
@@ -89,7 +88,7 @@ void bmc::run_bmc_pass() {
     passMan.add( new bmc_fun_pass(o, o.solver_ctx,*this));
     passMan.run( *module.get() );
   }
-  
+
   //passMan.run( *module.get() );
 
 }

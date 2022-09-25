@@ -980,7 +980,7 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto val_expr = bmc_ds_ptr->m.get_term( val );
     auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
-    if( true ) { //todo: add check if the grobal variable is truly global 
+    if( true ) { //todo: add check if the grobal variable is truly global
       create_write_event( bidx, store, val_expr );
     }
     bmc_ds_ptr->bmc_vec.push_back( glb_wrt.first );

@@ -1,5 +1,5 @@
-#ifndef LLVM_SPEC_H
-#define LLVM_SPEC_H
+#ifndef LLVMBMC_SPEC_H
+#define LLVMBMC_SPEC_H
 
 #include "include/options.h"
 
@@ -34,4 +34,4 @@ class spec_system {
 void import_spec_file( std::unique_ptr<llvm::Module>& module,
                        options& o, bmc& b);
 
-#endif // LLVM_SPEC_H
+#endif // LLVMBMC_SPEC_H
