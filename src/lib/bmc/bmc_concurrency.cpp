@@ -20,13 +20,14 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
 //bool EntryFnFound = false;
   std::string fname = demangle(f.getName().str());
  // if (o.check_spec) {
-  for (unsigned j = 0; j < bmc_obj.threads.size(); j++) {
-  thread_name = bmc_obj.threads.at(j).name;
-  EntryFn = bmc_obj.threads.at(j).entry_function;
-  if (fname != EntryFn) {
-    continue;
+  unsigned j = 0;
+  for (;j < bmc_obj.threads.size(); j++) {
+    thread_name = bmc_obj.threads.at(j).name;
+    EntryFn = bmc_obj.threads.at(j).entry_function;
+    if (fname != EntryFn) continue;
   }
-  else { 
+  if( j == bmc_obj.threads.size() ) return false;
+
 //		  EntryFnFound = true;
 //		}
 //    	}
@@ -46,7 +47,6 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
   bmc_fun *bmc_fun_ptr = new bmc_fun(o, ary_to_int, bmc_obj.m_model); // local
   assert(bmc_fun_ptr);
   bmc_ds_ptr = bmc_fun_ptr;                 // set the pointer in base class
-  
   auto pair = std::make_pair( &f, bmc_fun_ptr);
   bmc_obj.get_func_formula_map().insert( pair );
 
@@ -56,8 +56,10 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
   computeTopologicalOrder(f, bmc_fun_ptr->rev_loop_ignore_edges,
                           bmc_fun_ptr->bb_vec, bmc_fun_ptr->block_to_id);
   bmc_fun_ptr->eb = &f.getEntryBlock();
-  bmc_ds_ptr->init_array_model( o.ar_model );
   bmc_fun_ptr->setup_prevs_non_repeating();
+
+
+  bmc_ds_ptr->init_array_model( o.ar_model );
 
   bmc_ds_ptr->thread_id = bmc_obj.threads.at(j).thread_num;
 
@@ -69,28 +71,35 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
 
   for (unsigned l = 0; l < bmc_obj.threads.at(j).period; l++) {
     do_bmc();
-  //translate post condition here
-  //bmc_obj.m_model.print();
 
-  unsigned bidx = 0;
-  for( const bb* src : bmc_ds_ptr->bb_vec ) {
-    for( auto it = src->begin(), e = src->end(); it != e; ++it) {
-      auto I = &(*it);
-      //I->print( llvm::outs() );     std::cout << "\n";
-      if (llvm::isa<llvm::ReturnInst>(I)) {
-        translatePostcond(bmc_obj, bmc_ds_ptr, o.solver_ctx, bidx);
+    unsigned bidx = 0;
+    for( const bb* src : bmc_ds_ptr->bb_vec ) {
+      for( auto it = src->begin(), e = src->end(); it != e; ++it) {
+        auto I = &(*it);
+        //I->print( llvm::outs() );     std::cout << "\n";
+        if (llvm::isa<llvm::ReturnInst>(I)) {
+          translatePostcond(bmc_obj, bmc_ds_ptr, o.solver_ctx, bidx);
+        }
       }
-     }
-     bidx++;
+      bidx++;
     }
-   }
   }
- }
+ //  }
+ // }
   //do_bmc(); // todo: why? delete if not needed.
   //translate post condition here
+  if( o.verbosity > 10 ) {
+    // Print collected events events here
+  }
+  // Add code for stiching the events, when both are processes
   return false;
 }
 
+
+void bmc_concur_pass::getAnalysisUsage(llvm::AnalysisUsage &au) const {
+  au.setPreservesAll();
+  au.addRequired<llvm::LoopInfoWrapperPass>();
+}
 
 
 /* void bmc_concur_pass::translatePrecond( bmc& b ) {
@@ -338,10 +347,6 @@ std::vector<std::string> bmc_concur_pass::read_variables( std::string word1 ) {
    return global_vars;
 } */
 
-void bmc_concur_pass::getAnalysisUsage(llvm::AnalysisUsage &au) const {
-  au.setPreservesAll();
-  au.addRequired<llvm::LoopInfoWrapperPass>();
-}
 
 
 // -- run do_bmc for all the threads.
