@@ -840,10 +840,26 @@ void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
   }
 }
 
+
+
+//
+// concurrency support
+//
+void bmc_pass::create_read_event( unsigned bidx,
+                                   const llvm::LoadInst* load ) {
+  src_loc loc = getLoc( load );
+  expr path_cond = bmc_ds_ptr->get_path_bit( bidx ); 
+  std::vector<expr> history;
+  unsigned tid = bmc_ds_ptr->thread_id;
+  auto evt = mk_me_ptr(o.mem_enc, tid, {}, path_cond, history, loc, event_t::r, o_tag_t::na ); //NULL, true, NULL, val_expr, loc.
+  bmc_ds_ptr->all_events.insert( std::make_pair( tid, evt ) );
+}
+
+
 void bmc_pass::translateLoadInst( unsigned bidx,
                                   const llvm::LoadInst* load ) {
   assert( load );
-  //load->print( llvm::outs() );
+//load->print( llvm::outs() );
   //std::cout << "\n";
   auto addr = load->getOperand(0);
   // jump over casting
@@ -878,6 +894,11 @@ void bmc_pass::translateLoadInst( unsigned bidx,
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
     bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
+    if (find(bmc_obj.concurrent_vars.begin(), bmc_obj.concurrent_vars.end(), addr) != bmc_obj.concurrent_vars.end() ) { //todo: add check if the grobal variable is truly global
+      create_read_event( bidx, load );
+      //load->print( llvm::outs() ); std::cout << "\n";
+      //addr->print( llvm::outs() );  std::cout << "\n";
+    }
   // } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
   } else if( llvm::isa<const llvm::AllocaInst>(addr) ) {
     // To handle a[0] when a is dynamic sized array
@@ -951,7 +972,8 @@ void bmc_pass::create_write_event( unsigned bidx,
   src_loc loc = getLoc( store );
   expr path_cond = bmc_ds_ptr->get_path_bit( bidx ); //solver_ctx.bool_val(true);
   std::vector<expr> history;
-  unsigned tid = bmc_ds_ptr->get_thread_id();
+  //unsigned tid = bmc_ds_ptr->get_thread_id();
+  unsigned tid = bmc_ds_ptr->thread_id;
   auto evt = mk_me_ptr(o.mem_enc, tid, {}, path_cond, history, loc, event_t::w, o_tag_t::na ); //NULL, true, NULL, val_expr, loc.
   // collect_globals_pass cgp_obj;
   // cgp_obj.add_event(tid, evt);
@@ -980,8 +1002,10 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto val_expr = bmc_ds_ptr->m.get_term( val );
     auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
-    if( true ) { //todo: add check if the grobal variable is truly global
+    if (find(bmc_obj.concurrent_vars.begin(), bmc_obj.concurrent_vars.end(), addr) != bmc_obj.concurrent_vars.end() ) { //todo: add check if the grobal variable is truly global
       create_write_event( bidx, store, val_expr );
+      //store->print( llvm::outs() ); std::cout << "\n";
+      //addr->print( llvm::outs() );  std::cout << "\n";
     }
     bmc_ds_ptr->bmc_vec.push_back( glb_wrt.first );
     bmc_ds_ptr->m.insert_term_map( store, bidx, glb_wrt.second );

@@ -1,99 +1,12 @@
-#include "lib/bmc/bmc_concurrency.h"
+#include "lib/bmc/translate_specs.h"
 
-char bmc_concur_pass::ID = 0;
-
-bmc_concur_pass::bmc_concur_pass( options& o_, solver_context& ctx_, bmc& b_)
-  : bmc_pass(o_,ctx_,b_), translate_specs(), llvm::FunctionPass(ID)
-{}
+translate_specs::translate_specs( )
+  {}
 
 
+translate_specs::~translate_specs() {}
 
-bmc_concur_pass::~bmc_concur_pass() {}
-
-
-llvm::StringRef bmc_concur_pass::getPassName() const {
-  return "Constructs BMC formula for a concurrent program";
-}
-
-
-bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
-//bool EntryFnFound = false;
-  std::string fname = demangle(f.getName().str());
- // if (o.check_spec) {
-  for (unsigned j = 0; j < bmc_obj.threads.size(); j++) {
-  thread_name = bmc_obj.threads.at(j).name;
-  EntryFn = bmc_obj.threads.at(j).entry_function;
-  if (fname != EntryFn) {
-    continue;
-  }
-  else { 
-//		  EntryFnFound = true;
-//		}
-//    	}
-//  }
-//  else {
-//	if (fname != o.funcName) {
-//	   return false;
-//    	}
-//	else { EntryFnFound = true; }
-//  }
-
-//  if (EntryFnFound) {
-
-  // collect all the declared arrays in the function
-  populate_array_name_map(&f);
-
-  bmc_fun *bmc_fun_ptr = new bmc_fun(o, ary_to_int, bmc_obj.m_model); // local
-  assert(bmc_fun_ptr);
-  bmc_ds_ptr = bmc_fun_ptr;                 // set the pointer in base class
-  
-  auto pair = std::make_pair( &f, bmc_fun_ptr);
-  bmc_obj.get_func_formula_map().insert( pair );
-
-  collect_loop_backedges(this, bmc_fun_ptr->loop_ignore_edges,
-                         bmc_fun_ptr->rev_loop_ignore_edges);
-  bmc_fun_ptr->bb_vec.clear();
-  computeTopologicalOrder(f, bmc_fun_ptr->rev_loop_ignore_edges,
-                          bmc_fun_ptr->bb_vec, bmc_fun_ptr->block_to_id);
-  bmc_fun_ptr->eb = &f.getEntryBlock();
-  bmc_ds_ptr->init_array_model( o.ar_model );
-  bmc_fun_ptr->setup_prevs_non_repeating();
-
-  bmc_ds_ptr->thread_id = bmc_obj.threads.at(j).thread_num;
-
-  translateParams(f);
-  //translate pre condition here <<---
-  //bmc_obj.m_model.print();
-
-  translatePrecond(bmc_obj, bmc_ds_ptr, o.solver_ctx);
-
-  for (unsigned l = 0; l < bmc_obj.threads.at(j).period; l++) {
-    do_bmc();
-  //translate post condition here
-  //bmc_obj.m_model.print();
-
-  unsigned bidx = 0;
-  for( const bb* src : bmc_ds_ptr->bb_vec ) {
-    for( auto it = src->begin(), e = src->end(); it != e; ++it) {
-      auto I = &(*it);
-      //I->print( llvm::outs() );     std::cout << "\n";
-      if (llvm::isa<llvm::ReturnInst>(I)) {
-        translatePostcond(bmc_obj, bmc_ds_ptr, o.solver_ctx, bidx);
-      }
-     }
-     bidx++;
-    }
-   }
-  }
- }
-  //do_bmc(); // todo: why? delete if not needed.
-  //translate post condition here
-  return false;
-}
-
-
-
-/* void bmc_concur_pass::translatePrecond( bmc& b ) {
+void translate_specs::translatePrecond( bmc& b, bmc_ds* bmc_ds_ptr, solver_context& ctx ) {
   std::vector<std::string> glb_names;
   for (unsigned k = 0; k < b.threads.size(); k++) { 
    for (unsigned i = 0; i < b.threads.at(k).pres.size(); i++) {
@@ -108,14 +21,14 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
     for (unsigned j = 0; j < glb_names.size(); j++) {
       //std::cout << "glb_name1 is " << glb_names.at(j) << "\n";
       std::string var_name = glb_names.at(j);
-      for( auto glb_idx_pair : bmc_obj.m_model.ind_in_mem_state ) {
+      for( auto glb_idx_pair : b.m_model.ind_in_mem_state ) {
         auto g = glb_idx_pair.first;
         auto idx = glb_idx_pair.second;
         const std::string gvar = (std::string)(g->getName());
         //std::cout << "glb_name2 is " << gvar << "\n";
         if (gvar == var_name) {
           //std::cout << "glb_name is " << gvar << " Index is " << idx << "\n";
-          std::vector<state_obj>& mem_st = bmc_obj.m_model.store_state_map[0].mem_state_vec;
+          std::vector<state_obj>& mem_st = b.m_model.store_state_map[0].mem_state_vec;
           //std::cout << "Init name is ";
           //mem_st[idx].print(); std::cout << "\n";
           var_name = '@'+ var_name;
@@ -124,16 +37,16 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
           if (find(precond_var_names.begin(), precond_var_names.end(), init_name) == precond_var_names.end()) {
           precond_var_names.push_back(init_name);
           if (mem_st[idx].t.type.is_fpa()) {
-            precond_declarations.push_back(o.solver_ctx.fpa_const(init_name.c_str(),8,24));
+            precond_declarations.push_back(ctx.fpa_const(init_name.c_str(),8,24));
             std::string init_name1 = init_name + ".";
             precond_var_names.push_back(init_name1);
-            precond_declarations.push_back(o.solver_ctx.fpa_const(init_name1.c_str(),8,24));
+            precond_declarations.push_back(ctx.fpa_const(init_name1.c_str(),8,24));
           }
           if (mem_st[idx].t.type.is_bv()) {
-            precond_declarations.push_back(o.solver_ctx.bv_const(init_name.c_str(),16));
+            precond_declarations.push_back(ctx.bv_const(init_name.c_str(),16));
             std::string init_name1 = init_name + ".";
             precond_var_names.push_back(init_name1);
-            precond_declarations.push_back(o.solver_ctx.bv_const(init_name1.c_str(),16));
+            precond_declarations.push_back(ctx.bv_const(init_name1.c_str(),16));
           }
 	 }
           const size_t newSize = init_name.length();
@@ -156,7 +69,7 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
         }
       }	    
     }
-    expr e1 = parseFormula(o.solver_ctx, orig_precond, precond_var_names, precond_declarations);
+    expr e1 = parseFormula(ctx, orig_precond, precond_var_names, precond_declarations);
     //std::cout << "Modified precond is " << e1 << "\n";
     //b.precond.at(i) = e1;
     bmc_ds_ptr->add_pre_cond( e1, spec_reason_t::ASSUME );
@@ -169,7 +82,7 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
 }
 
 
-void bmc_concur_pass::translatePostcond( bmc& b, unsigned bidx ) {
+void translate_specs::translatePostcond( bmc& b, bmc_ds* bmc_ds_ptr, solver_context& ctx, unsigned bidx ) {
   // ary_to_int[llvmValue] -> get an index
 
   std::vector<std::string> glb_names;
@@ -189,17 +102,17 @@ void bmc_concur_pass::translatePostcond( bmc& b, unsigned bidx ) {
       std::string var_name = glb_names.at(j);
       std::string var_name1 = '@'+ var_name;
       const size_t oldSize = var_name1.length();
-      for( auto glb_idx_pair : bmc_obj.m_model.ind_in_mem_state ) {
+      for( auto glb_idx_pair : b.m_model.ind_in_mem_state ) {
         auto g = glb_idx_pair.first;
         auto idx = glb_idx_pair.second;
         const std::string gvar = (std::string)(g->getName());
         //std::cout << "glb_name2 is " << gvar << "\n";
         if (gvar == var_name) {
           //std::cout << "glb_name is " << gvar << " Index is " << idx << "\n";
-          //auto it = bmc_obj.m_model.store_state_map.end();
+          //auto it = b.m_model.store_state_map.end();
           //it--;
           //auto key1 = it->first;
-          std::vector<state_obj>& mem_st = bmc_obj.m_model.store_state_map[bidx].mem_state_vec;
+          std::vector<state_obj>& mem_st = b.m_model.store_state_map[bidx].mem_state_vec;
           //std::cout << "Init name is ";
           //mem_st[idx].print(); std::cout << " key is " << key1 << "\n";
           var_name = '@'+ var_name;
@@ -209,16 +122,16 @@ void bmc_concur_pass::translatePostcond( bmc& b, unsigned bidx ) {
 	 if (find(postcond_var_names.begin(), postcond_var_names.end(), init_name) == postcond_var_names.end()) {
           postcond_var_names.push_back(init_name);
           if (mem_st[idx].t.type.is_fpa()) {
-            postcond_declarations.push_back(o.solver_ctx.fpa_const(init_name.c_str(),8,24));
+            postcond_declarations.push_back(ctx.fpa_const(init_name.c_str(),8,24));
             std::string init_name1 = init_name + ".";
             postcond_var_names.push_back(init_name1);
-            postcond_declarations.push_back(o.solver_ctx.fpa_const(init_name1.c_str(),8,24));
+            postcond_declarations.push_back(ctx.fpa_const(init_name1.c_str(),8,24));
           }
           if (mem_st[idx].t.type.is_bv()) {
-            postcond_declarations.push_back(o.solver_ctx.bv_const(init_name.c_str(),16));
+            postcond_declarations.push_back(ctx.bv_const(init_name.c_str(),16));
             std::string init_name1 = init_name + ".";
             postcond_var_names.push_back(init_name1);
-            postcond_declarations.push_back(o.solver_ctx.bv_const(init_name1.c_str(),16));
+            postcond_declarations.push_back(ctx.bv_const(init_name1.c_str(),16));
           }
 	 }
           const size_t newSize = init_name.length();
@@ -263,10 +176,10 @@ void bmc_concur_pass::translatePostcond( bmc& b, unsigned bidx ) {
 	  //std::cout << "Sort1 is " << s << "\n";
 	  if (find(postcond_var_names.begin(), postcond_var_names.end(), init_name) == postcond_var_names.end()) {
             postcond_var_names.push_back(init_name);
-            postcond_declarations.push_back(o.solver_ctx.constant( init_name.c_str(), s ));
+            postcond_declarations.push_back(ctx.constant( init_name.c_str(), s ));
             std::string init_name1 = init_name + ".";
             postcond_var_names.push_back(init_name1);
-            postcond_declarations.push_back(o.solver_ctx.constant(init_name1.c_str(),s));
+            postcond_declarations.push_back(ctx.constant(init_name1.c_str(),s));
 	 }
           const size_t newSize = init_name.length();
           for( size_t pos = 0; ; pos += newSize ) {
@@ -288,7 +201,7 @@ void bmc_concur_pass::translatePostcond( bmc& b, unsigned bidx ) {
         } 
       }
      }
-    expr e1 = parseFormula(o.solver_ctx, orig_postcond, postcond_var_names, postcond_declarations);
+    expr e1 = parseFormula(ctx, orig_postcond, postcond_var_names, postcond_declarations);
     //std::cout << "Modified postcond is " << to_string(e1) << "\n";
     //b.prop.at(i) = e1;
     expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
@@ -303,7 +216,7 @@ void bmc_concur_pass::translatePostcond( bmc& b, unsigned bidx ) {
 
 
 
-std::vector<std::string> bmc_concur_pass::read_variables( std::string word1 ) {
+std::vector<std::string> translate_specs::read_variables( std::string word1 ) {
    //std::cout << "Word1 is " << word1 << "\n";
    global_vars.clear();
    std::string word = " ";
@@ -336,12 +249,5 @@ std::vector<std::string> bmc_concur_pass::read_variables( std::string word1 ) {
         }
     }
    return global_vars;
-} */
-
-void bmc_concur_pass::getAnalysisUsage(llvm::AnalysisUsage &au) const {
-  au.setPreservesAll();
-  au.addRequired<llvm::LoopInfoWrapperPass>();
 }
 
-
-// -- run do_bmc for all the threads.

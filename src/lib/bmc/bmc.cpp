@@ -77,7 +77,8 @@ void bmc::run_bmc_pass() {
     passMan.run( *module.get() );
   }
   else if ( threads.size() > 1 ) {
-    collect_globals( module, o.solver_ctx, o.mem_enc, o, *this );
+    //collect_globals( module, o.solver_ctx, o.mem_enc, o, *this );
+    collect_globals( module, *this );
     passMan.add( new bmc_concur_pass(o,o.solver_ctx, *this) );
     passMan.run( *module.get() );
   } else {
