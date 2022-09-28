@@ -112,7 +112,7 @@ public:
 
   const llvm::BasicBlock* eb; //todo: deprecate
 
-  std::map< unsigned, me_ptr > all_events;
+  //std::map< unsigned, me_ptr > all_events;
 
   unsigned processed_bidx = 0;
   std::vector<const llvm::BasicBlock*> bb_vec; // index in this vector is the block id

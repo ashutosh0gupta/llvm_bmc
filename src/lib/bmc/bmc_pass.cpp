@@ -841,7 +841,6 @@ void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
 }
 
 
-
 //
 // concurrency support
 //
@@ -852,7 +851,8 @@ void bmc_pass::create_read_event( unsigned bidx,
   std::vector<expr> history;
   unsigned tid = bmc_ds_ptr->thread_id;
   auto evt = mk_me_ptr(o.mem_enc, tid, {}, path_cond, history, loc, event_t::r, o_tag_t::na ); //NULL, true, NULL, val_expr, loc.
-  bmc_ds_ptr->all_events.insert( std::make_pair( tid, evt ) );
+  //bmc_ds_ptr->all_events.insert( std::make_pair( evt, tid ) );
+  bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
 }
 
 
@@ -977,7 +977,8 @@ void bmc_pass::create_write_event( unsigned bidx,
   auto evt = mk_me_ptr(o.mem_enc, tid, {}, path_cond, history, loc, event_t::w, o_tag_t::na ); //NULL, true, NULL, val_expr, loc.
   // collect_globals_pass cgp_obj;
   // cgp_obj.add_event(tid, evt);
-  bmc_ds_ptr->all_events.insert( std::make_pair( tid, evt ) );
+  //bmc_ds_ptr->all_events.insert( std::make_pair( evt, tid ) );
+  bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
 }
 
 void bmc_pass::translateStoreInst( unsigned bidx,

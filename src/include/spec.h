@@ -33,5 +33,7 @@ class spec_system {
 
 void import_spec_file( std::unique_ptr<llvm::Module>& module,
                        options& o, bmc& b);
+unsigned gcd(unsigned a, unsigned b);
+void findlcm(bmc& b);
 
 #endif // LLVMBMC_SPEC_H

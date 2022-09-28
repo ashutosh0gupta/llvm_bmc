@@ -8,6 +8,7 @@
 #include "include/solver.h"
 #include "include/spec.h"
 #include "include/llvm_decls.h"
+#include "include/memory_event.h"
 
 
 #define OUTSIDE_ANY_LOOP_CODE_PTR NULL
@@ -42,6 +43,7 @@ public:
 
   std::vector< spec_thread > threads; //todo : populate this
   std::vector<const llvm::GlobalVariable*> concurrent_vars;
+  std::map< me_ptr, unsigned > all_events;
 
   bool verify_prop();
   //--------------------------------------------

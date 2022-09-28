@@ -324,9 +324,41 @@ void import_spec_file( std::unique_ptr<llvm::Module>& module,
     llvm::legacy::PassManager passMan;
     passMan.add( new insert_monitor_pass(*module.get(), o, b));
     passMan.run( *module.get() );
+
+//Find LCM of time period of all threads and calculate number of times each thread should run
+    findlcm(b);
+//   for (unsigned j=0 ;j < b.threads.size(); j++) {
+//   std::cout << "Period of thread " << j << " is " << b.threads.at(j).period << "\n"; 
+//   }
   }
 
 //  for (auto i = b.fn_to_thread.begin(); i != b.fn_to_thread.end(); i++) {
 //	std::cout << "Fn. name is " << i->first << " Thread num is " << i->second << "\n";
 //  }
  }
+
+
+// Utility function to find
+// GCD of 'a' and 'b'
+unsigned gcd(unsigned a, unsigned b) {
+    if (b == 0)
+        return a;
+    return gcd(b, a % b);
+}
+ 
+// Returns LCM of array elements
+void findlcm(bmc& b) {
+    // Initialize result
+    unsigned ans = b.threads.at(0).period;
+ 
+    // ans contains LCM of arr[0], ..arr[i]
+    // after i'th iteration,
+    for (unsigned i = 1; i < b.threads.size(); i++) {
+        ans = (((b.threads.at(i).period * ans)) /
+                (gcd(b.threads.at(i).period, ans)));
+    }
+ 
+    for (unsigned i = 0; i < b.threads.size(); i++) {
+	b.threads.at(i).period = ans/ b.threads.at(i).period;
+    }
+}
