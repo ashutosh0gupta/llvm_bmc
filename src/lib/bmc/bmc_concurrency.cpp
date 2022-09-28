@@ -65,13 +65,7 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
      bidx++;
     }
   }
- 
-  //if( o.verbosity > 10 ) {
-    // Print collected events events here
- for (auto m = bmc_obj.all_events.begin(); m != bmc_obj.all_events.end(); m++) {
-      std::cout << "Thread ID is " << m->second << " Event is " << *(m->first) << "\n";
-   } 
-  // Add code for stitching the events, when both are processed
+
   return false;
 }
 

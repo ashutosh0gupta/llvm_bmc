@@ -482,20 +482,16 @@ private:
              expr& path_cond, std::vector<expr>& history_,
              const llvm::GlobalVariable* prog_v, src_loc& loc,
              event_t _et, o_tag_t ord_tag ) {
+    me_ptr e = std::make_shared<memory_event>( mem_enc.solver_ctx, tid, prev_es,prog_v,
+                                               path_cond, history_, loc, _et,
+                                               ord_tag );
+
     std::map<const me_ptr, expr > bconds;
     for( auto& ep : prev_es ) {
       bconds.insert( std::make_pair( ep, mem_enc.solver_ctx.bool_val(true) ) );
     }
-    me_ptr e = std::make_shared<memory_event>( mem_enc.solver_ctx, tid, prev_es,prog_v,
-                                               path_cond, history_, loc, _et,
-                                               ord_tag );
     full_initialize_se( mem_enc, e, prev_es, bconds );
 
-    // std::string loc_name = loc.gen_name();
-    // variable ssa_v = prog_v + "#" + loc_name;
-    // me_ptr e = std::make_shared<memory_event>( mem_enc.solver_ctx, tid, prev_es, 0,
-    //                                              ssa_v, prog_v,loc_name,_et);
-    // full_initialize_se( mem_enc, e, prev_es, path_cond, history_,loc,ord_tag,bconds);
     return e;
   }
 
@@ -511,23 +507,13 @@ private:
                                                  ord_tag );
     full_initialize_se( mem_enc, e, prev_es, bconds );
 
-    // std::string lname;
-    // if( et == event_t::block ) {
-    //   src_loc loc_d;
-    //   lname = "block__" + std::to_string(tid) + "__"+ loc_d.gen_name();
-    // }else{
-    //   lname = loc.gen_name();
-    // }
-    // me_ptr e =
-    //   std::make_shared<memory_event>(mem_enc.solver_ctx,tid,prev_es,0,lname,et);
-    // full_initialize_se( mem_enc, e, prev_es, path_cond, history_,loc,ord_tag,bconds);
     return e;
   }
 
   inline me_ptr
   mk_me_ptr( memory_cons& mem_enc, unsigned tid, me_set prev_es,
              expr& path_cond, std::vector<expr>& history_,
-             src_loc& loc, //std::string loc,
+             src_loc& loc, 
              event_t et, o_tag_t ord_tag = o_tag_t::na ) {
     std::map<const me_ptr, expr> branch_conds;
     for( auto& ep : prev_es ) {

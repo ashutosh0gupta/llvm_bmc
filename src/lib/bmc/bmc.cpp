@@ -81,6 +81,18 @@ void bmc::run_bmc_pass() {
     collect_globals( module, *this );
     passMan.add( new bmc_concur_pass(o,o.solver_ctx, *this) );
     passMan.run( *module.get() );
+
+    //if( o.verbosity > 10 ) {
+    // Print collected events events here
+    // for (auto m = all_events.begin(); m != all_events.end(); m++) {
+    for (auto m : all_events) {
+      auto& e =  *(m.first);
+      std::cout << "Thread ID is " << m.second << " Event is " << *(m.first) << "\n";
+      std::cout << e.tid << "\n";
+      std::cout << e.prog_v << "\n";
+    }
+  // Add code for stitching the events, when both are processed
+
   } else {
     // todo: enable the following code if funcName is missing
     // if( threads.size() == 1) {
