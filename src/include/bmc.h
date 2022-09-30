@@ -43,7 +43,8 @@ public:
 
   std::vector< spec_thread > threads; //todo : populate this
   std::vector<const llvm::GlobalVariable*> concurrent_vars;
-  std::map< me_ptr, unsigned > all_events;
+  //std::map< me_ptr, unsigned > all_events;
+  me_set all_events;
 
   bool verify_prop();
   //--------------------------------------------

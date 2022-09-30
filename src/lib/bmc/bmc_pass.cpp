@@ -844,15 +844,35 @@ void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
 //
 // concurrency support
 //
+o_tag_t bmc_pass::translate_ordering_tags( llvm::AtomicOrdering ord ) {
+  switch( ord ) {
+  case llvm::AtomicOrdering::NotAtomic: return o_tag_t::na; break;
+  case llvm::AtomicOrdering::Unordered: return o_tag_t::uo; break;
+  case llvm::AtomicOrdering::Monotonic: return o_tag_t::mon; break;
+  case llvm::AtomicOrdering::Acquire: return o_tag_t::acq; break;
+  case llvm::AtomicOrdering::Release: return o_tag_t::rls; break;
+  case llvm::AtomicOrdering::AcquireRelease: return o_tag_t::acqrls; break;
+  case llvm::AtomicOrdering::SequentiallyConsistent: return o_tag_t::sc; break;
+  default:
+    llvm_bmc_error("bmc", "Unsupported nondet type!");
+  }
+  return o_tag_t::na; // dummy return;
+}
+
 void bmc_pass::create_read_event( unsigned bidx,
-                                   const llvm::LoadInst* load ) {
+                                   const llvm::LoadInst* load, llvm::Value* addr ) {
   src_loc loc = getLoc( load );
   expr path_cond = bmc_ds_ptr->get_path_bit( bidx ); 
   std::vector<expr> history;
   unsigned tid = bmc_ds_ptr->thread_id;
-  auto evt = mk_me_ptr(o.mem_enc, tid, {}, path_cond, history, loc, event_t::r, o_tag_t::na ); //NULL, true, NULL, val_expr, loc.
+  
+  if (auto glb = llvm::dyn_cast<llvm::GlobalVariable>(addr)) {
+    auto evt = mk_me_ptr(o.mem_enc, tid, prev_events, path_cond, history, glb, loc, event_t::r, translate_ordering_tags( load->getOrdering()) ); //NULL, true, NULL, val_expr, loc.
   //bmc_ds_ptr->all_events.insert( std::make_pair( evt, tid ) );
-  bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
+    //bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
+    bmc_obj.all_events.insert( evt );
+    prev_events = bmc_obj.all_events;
+  }
 }
 
 
@@ -895,7 +915,7 @@ void bmc_pass::translateLoadInst( unsigned bidx,
     auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
     bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
     if (find(bmc_obj.concurrent_vars.begin(), bmc_obj.concurrent_vars.end(), addr) != bmc_obj.concurrent_vars.end() ) { //todo: add check if the grobal variable is truly global
-      create_read_event( bidx, load );
+      create_read_event( bidx, load, addr );
       //load->print( llvm::outs() ); std::cout << "\n";
       //addr->print( llvm::outs() );  std::cout << "\n";
     }
@@ -966,7 +986,7 @@ void bmc_pass::storeToArrayHelper( unsigned bidx,
 //
 void bmc_pass::create_write_event( unsigned bidx,
                                    const llvm::StoreInst* store,
-                                   expr val_expr ) {
+                                   llvm::Value* addr ) {
   // todo: write here
 
   src_loc loc = getLoc( store );
@@ -974,11 +994,16 @@ void bmc_pass::create_write_event( unsigned bidx,
   std::vector<expr> history;
   //unsigned tid = bmc_ds_ptr->get_thread_id();
   unsigned tid = bmc_ds_ptr->thread_id;
-  auto evt = mk_me_ptr(o.mem_enc, tid, {}, path_cond, history, loc, event_t::w, o_tag_t::na ); //NULL, true, NULL, val_expr, loc.
+  if (auto glb = llvm::dyn_cast<llvm::GlobalVariable>(addr)) {
+    auto evt = mk_me_ptr(o.mem_enc, tid, prev_events, path_cond, history, glb, loc, event_t::w, translate_ordering_tags( store->getOrdering()) );
+  //NULL, true, NULL, val_expr, loc.
   // collect_globals_pass cgp_obj;
   // cgp_obj.add_event(tid, evt);
   //bmc_ds_ptr->all_events.insert( std::make_pair( evt, tid ) );
-  bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
+  //bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
+    bmc_obj.all_events.insert( evt );
+    prev_events = bmc_obj.all_events;
+ }
 }
 
 void bmc_pass::translateStoreInst( unsigned bidx,
@@ -1004,7 +1029,7 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     auto val_expr = bmc_ds_ptr->m.get_term( val );
     auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
     if (find(bmc_obj.concurrent_vars.begin(), bmc_obj.concurrent_vars.end(), addr) != bmc_obj.concurrent_vars.end() ) { //todo: add check if the grobal variable is truly global
-      create_write_event( bidx, store, val_expr );
+      create_write_event( bidx, store, addr );
       //store->print( llvm::outs() ); std::cout << "\n";
       //addr->print( llvm::outs() );  std::cout << "\n";
     }
@@ -1081,6 +1106,9 @@ void bmc_pass::translateRetInst(const llvm::ReturnInst *ret ) {
   }
   //todo : if you have specs, translate the spec to the current names
   //bmc_ds_ptr->add_spec( !path_bit || translate_cons, spec_reason_t::FROM_SPEC_FILE );
+  if ( bmc_obj.threads.size() > 1 ) {
+    final_prev_events.insert( prev_events.begin(), prev_events.end() );    
+  }
 }
 
 void bmc_pass::translateSwitchInst( unsigned bidx,
@@ -1343,6 +1371,16 @@ expr bmc_pass::extend_path( unsigned bidx, unsigned pre_bidx ) {
 void bmc_pass::do_bmc() {
   assert(bmc_ds_ptr);
 
+  if ( bmc_obj.threads.size() > 1 ) {
+   expr start_bit = get_fresh_bool(solver_ctx,"start");
+   std::vector< expr > history = { start_bit };
+   src_loc loc;
+   unsigned thr_id = bmc_ds_ptr->thread_id;
+   auto start = mk_me_ptr( o.mem_enc, thr_id, prev_events, start_bit, history, loc, event_t::barr );
+   set_start_event( thr_id, start, start_bit );
+   prev_events.insert( start );
+  }
+
   // init_array_model( bmc_ds_ptr->bb_vec, bmc_ds_ptr->eb );
   init_path_exit_bit( bmc_ds_ptr->bb_vec );
   unsigned bidx = 0;
@@ -1382,6 +1420,19 @@ void bmc_pass::do_bmc() {
 
   if( o.verbosity > 2 )
     bmc_ds_ptr->print_formulas();
+
+ if ( bmc_obj.threads.size() > 1 ) {
+  prev_events.clear();
+  // create final event of the thread
+  
+  expr exit_cond = solver_ctx.bool_val(true);
+  std::vector<expr> history_exprs;
+  src_loc floc;
+  unsigned thr_id = bmc_ds_ptr->thread_id;
+  auto final = mk_me_ptr( o.mem_enc, thr_id, final_prev_events, exit_cond,
+                          history_exprs, floc, event_t::barr );
+  set_final_event( thr_id, final, exit_cond );
+ }
 
 }
 

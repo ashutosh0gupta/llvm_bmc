@@ -86,14 +86,16 @@ void bmc::run_bmc_pass() {
     // Print collected events events here
     // for (auto m = all_events.begin(); m != all_events.end(); m++) {
     for (auto m : all_events) {
-      auto& e =  *(m.first);
-      std::cout << "Thread ID is " << m.second << " Event is " << *(m.first) << "\n";
+      //auto& e =  *(m.first);
+      auto& e =  *m;
+      //std::cout << "Thread ID is " << m.second << " Event is " << *(m.first) << "\n";
+      std::cout << "Event is " << e << "\n";
       std::cout << e.tid << "\n";
-      std::cout << e.prog_v << "\n";
+      std::cout << (std::string)(e.prog_v -> getName()) << "\n";
     }
+   }
   // Add code for stitching the events, when both are processed
-
-  } else {
+  else {
     // todo: enable the following code if funcName is missing
     // if( threads.size() == 1) {
     //   o.funcName = threads[0].entry_function;

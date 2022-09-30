@@ -22,6 +22,11 @@ public:
   // accross run calls but infomration does not go stale.
   std::map< const llvm::Value*, unsigned > ary_to_int;
 
+  me_ptr start_event, final_event;
+  me_set prev_events, final_prev_events;
+  expr start_cond = solver_ctx.bool_val(true);
+  expr final_cond = solver_ctx.bool_val(true);
+
 private:
   //--------------------------------------------------------------------------
   // debug info management
@@ -79,8 +84,8 @@ private:
   void print_bb_vecs();
 
   //todo : concurrency support
-  void create_write_event( unsigned, const llvm::StoreInst* store, expr );
-  void create_read_event( unsigned, const llvm::LoadInst* load );
+  void create_write_event( unsigned, const llvm::StoreInst* store, llvm::Value* );
+  void create_read_event( unsigned, const llvm::LoadInst* load, llvm::Value* );
   // void create_read_event( const llvm::StoreInst* store );
   // void create_block_event( const llvm::StoreInst* store );
   // void create_join_event( const llvm::StoreInst* store );
@@ -95,6 +100,26 @@ public:
 
   void translateParams(llvm::Function &);
   void do_bmc();
+
+  void set_start_event( me_ptr e, expr cond ) {
+      start_event = e;
+      start_cond = cond;
+  }
+
+  void set_start_event( unsigned i, me_ptr e, expr cond ) {
+      set_start_event( e, cond );
+    }
+
+  void set_final_event( me_ptr e, expr cond ) {
+      final_event = e;
+      final_cond = cond;
+    }
+
+  void set_final_event( unsigned i, me_ptr e, expr cond ) {
+      set_final_event( e, cond );
+    }
+
+  o_tag_t translate_ordering_tags( llvm::AtomicOrdering ord );
 
 };
 
