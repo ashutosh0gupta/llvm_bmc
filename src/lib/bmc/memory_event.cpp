@@ -741,6 +741,7 @@ void
 full_initialize_se( memory_cons& mem_enc, me_ptr e, me_set& prev_es,
                     std::map<const me_ptr, expr>& branch_conds) {
   mem_enc.record_event( e );
+  return; //todo: to avoid memory leaks
   for(me_ptr ep  : prev_es) {
     ep->add_post_events( e, branch_conds.at(ep) );
   }

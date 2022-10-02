@@ -910,11 +910,12 @@ void bmc_pass::translateLoadInst( unsigned bidx,
   //   exprs idxs;
   //   translateGEP( gep, idxs);
   //   loadFromArrayHelper(bidx, load, idxs);
-  } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
+  } else if(auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
     bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
-    if (find(bmc_obj.concurrent_vars.begin(), bmc_obj.concurrent_vars.end(), addr) != bmc_obj.concurrent_vars.end() ) { //todo: add check if the grobal variable is truly global
+    if ( exists( bmc_obj.concurrent_vars, gv ) ) {
+    // if (find(bmc_obj.concurrent_vars.begin(), bmc_obj.concurrent_vars.end(), addr) != bmc_obj.concurrent_vars.end() ) { //todo: add check if the grobal variable is truly global
       create_read_event( bidx, load, addr );
       //load->print( llvm::outs() ); std::cout << "\n";
       //addr->print( llvm::outs() );  std::cout << "\n";
@@ -1024,11 +1025,12 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     exprs idxs;
     translateGEP( gop, idxs);
     storeToArrayHelper(bidx, store, val, idxs);
-  } else if(llvm::isa<const llvm::GlobalVariable>(addr)) {
+  } else if(auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto val_expr = bmc_ds_ptr->m.get_term( val );
     auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
-    if (find(bmc_obj.concurrent_vars.begin(), bmc_obj.concurrent_vars.end(), addr) != bmc_obj.concurrent_vars.end() ) { //todo: add check if the grobal variable is truly global
+    if ( exists( bmc_obj.concurrent_vars, gv ) ) {
+        // find(bmc_obj.concurrent_vars.begin(), bmc_obj.concurrent_vars.end(), addr) != bmc_obj.concurrent_vars.end() ) { //todo: add check if the grobal variable is truly global
       create_write_event( bidx, store, addr );
       //store->print( llvm::outs() ); std::cout << "\n";
       //addr->print( llvm::outs() );  std::cout << "\n";
@@ -1107,7 +1109,7 @@ void bmc_pass::translateRetInst(const llvm::ReturnInst *ret ) {
   //todo : if you have specs, translate the spec to the current names
   //bmc_ds_ptr->add_spec( !path_bit || translate_cons, spec_reason_t::FROM_SPEC_FILE );
   if ( bmc_obj.threads.size() > 1 ) {
-    final_prev_events.insert( prev_events.begin(), prev_events.end() );    
+    final_prev_events.insert( prev_events.begin(), prev_events.end() );
   }
 }
 
@@ -1372,13 +1374,15 @@ void bmc_pass::do_bmc() {
   assert(bmc_ds_ptr);
 
   if ( bmc_obj.threads.size() > 1 ) {
-   expr start_bit = get_fresh_bool(solver_ctx,"start");
-   std::vector< expr > history = { start_bit };
-   src_loc loc;
-   unsigned thr_id = bmc_ds_ptr->thread_id;
-   auto start = mk_me_ptr( o.mem_enc, thr_id, prev_events, start_bit, history, loc, event_t::barr );
-   set_start_event( thr_id, start, start_bit );
-   prev_events.insert( start );
+    // todo: support incremental calls???
+    expr start_bit = get_fresh_bool(solver_ctx,"start");
+    std::vector< expr > history = { start_bit };
+    src_loc loc;
+    unsigned thr_id = bmc_ds_ptr->thread_id;
+    auto start = mk_me_ptr( o.mem_enc, thr_id, prev_events, start_bit,
+                            history, loc, event_t::barr );
+    set_start_event( thr_id, start, start_bit );
+    prev_events.insert( start );
   }
 
   // init_array_model( bmc_ds_ptr->bb_vec, bmc_ds_ptr->eb );
@@ -1404,6 +1408,7 @@ void bmc_pass::do_bmc() {
       bmc_ds_ptr->bmc_vec.push_back( implies( path_bit, _or( incoming_paths, solver_ctx) ) );
       bmc_ds_ptr->bmc_vec.push_back( bmc_ds_ptr->join_array_state( incoming_paths, bmc_ds_ptr->pred_idxs[bidx], bidx ) );
       bmc_ds_ptr->bmc_vec.push_back( bmc_ds_ptr->m_model.join_state( incoming_paths, bmc_ds_ptr->pred_idxs[bidx], bidx ) );
+      // todo: join prev_events
     }
 
     translateBlock( bidx, src );
@@ -1422,16 +1427,15 @@ void bmc_pass::do_bmc() {
     bmc_ds_ptr->print_formulas();
 
  if ( bmc_obj.threads.size() > 1 ) {
-  prev_events.clear();
-  // create final event of the thread
-  
-  expr exit_cond = solver_ctx.bool_val(true);
-  std::vector<expr> history_exprs;
-  src_loc floc;
-  unsigned thr_id = bmc_ds_ptr->thread_id;
-  auto final = mk_me_ptr( o.mem_enc, thr_id, final_prev_events, exit_cond,
-                          history_exprs, floc, event_t::barr );
-  set_final_event( thr_id, final, exit_cond );
+   prev_events.clear();
+   // create final event of the thread
+   expr exit_cond = solver_ctx.bool_val(true);
+   std::vector<expr> history_exprs;
+   src_loc floc;
+   unsigned thr_id = bmc_ds_ptr->thread_id;
+   auto final = mk_me_ptr( o.mem_enc, thr_id, final_prev_events, exit_cond,
+                           history_exprs, floc, event_t::barr );
+   set_final_event( thr_id, final, exit_cond );
  }
 
 }
