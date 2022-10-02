@@ -1,5 +1,14 @@
 #include "include/memory_event.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+// pragam'ed to aviod warnings due to llvm included files
+#include "llvm/Transforms/IPO/AlwaysInliner.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/Analysis/CFGPrinter.h"
+#include "llvm/Analysis/InlineCost.h"
+#pragma GCC diagnostic pop
+
 using namespace std;
 
 
@@ -181,55 +190,55 @@ void memory_event::update_topological_order() {
 //Old constructors:
 // Move the ctrc calls to the new constructors
 
-memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
-                                me_set& _prev_events, unsigned instr_no,
-                                const variable& _v,
-                                const llvm::GlobalVariable* _prog_v,
-                                std::string _loc, event_t _et )
-  : tid(_tid)
-  , v(_v)
-  , v_copy(_v)
-  , prog_v( _prog_v )
-  , loc_name(_loc)
-  , et( _et )
-  , prev_events( _prev_events )
-  , guard(sol_ctx)
-{
-  if( et != event_t::r &&  et != event_t::w &&  et != event_t::u ) {
-    llvm_bmc_error("mem_event", "symboic event with wrong parameters!");
-  }
-  if( et == event_t::u ) {
-    v_copy = v + "#update_wr";
-  }
-  std::string e_name = event_t_name( et ) + "#" + v.name;
-  e_v = create_internal_event(   sol_ctx,           e_name,tid,instr_no,false);
-  thin_v = create_internal_event(sol_ctx,"__thin__"+e_name,tid,instr_no,false);
-  c11_hb_v=create_internal_event(sol_ctx,"__hb__"  +e_name,tid,instr_no,false);
-  update_topological_order();
-  o_tag = o_tag_t::na;
-}
+// memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
+//                                 me_set& _prev_events, unsigned instr_no,
+//                                 const variable& _v,
+//                                 const llvm::GlobalVariable* _prog_v,
+//                                 std::string _loc, event_t _et )
+//   : tid(_tid)
+//   , v(_v)
+//   , v_copy(_v)
+//   , prog_v( _prog_v )
+//   , loc_name(_loc)
+//   , et( _et )
+//   , prev_events( _prev_events )
+//   , guard(sol_ctx)
+// {
+//   if( et != event_t::r &&  et != event_t::w &&  et != event_t::u ) {
+//     llvm_bmc_error("mem_event", "symboic event with wrong parameters!");
+//   }
+//   if( et == event_t::u ) {
+//     v_copy = v + "#update_wr";
+//   }
+//   std::string e_name = event_t_name( et ) + "#" + v.name;
+//   e_v = create_internal_event(   sol_ctx,           e_name,tid,instr_no,false);
+//   thin_v = create_internal_event(sol_ctx,"__thin__"+e_name,tid,instr_no,false);
+//   c11_hb_v=create_internal_event(sol_ctx,"__hb__"  +e_name,tid,instr_no,false);
+//   update_topological_order();
+//   o_tag = o_tag_t::na;
+// }
 
 
-// barrier events
-memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
-                                me_set& _prev_events, unsigned instr_no,
-                                std::string _loc, event_t _et )
-  : tid(_tid)
-  , v("dummy",sol_ctx)
-  , v_copy("dummy",sol_ctx)
-  , prog_v( NULL )
-  , loc_name(_loc)
-  , et( _et )
-  , prev_events( _prev_events )
-  , guard(sol_ctx)
-{
-  std::string e_name = event_t_name( et ) + "#" + loc_name;
-  e_v = create_internal_event    (sol_ctx,            e_name,tid,instr_no,true);
-  thin_v = create_internal_event (sol_ctx, "__thin__"+e_name,tid,instr_no,true);
-  c11_hb_v =create_internal_event(sol_ctx, "__hb__"  +e_name,tid,instr_no,true);
-  update_topological_order();
-  o_tag = o_tag_t::na;
-}
+// // barrier events
+// memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
+//                                 me_set& _prev_events, unsigned instr_no,
+//                                 std::string _loc, event_t _et )
+//   : tid(_tid)
+//   , v("dummy",sol_ctx)
+//   , v_copy("dummy",sol_ctx)
+//   , prog_v( NULL )
+//   , loc_name(_loc)
+//   , et( _et )
+//   , prev_events( _prev_events )
+//   , guard(sol_ctx)
+// {
+//   std::string e_name = event_t_name( et ) + "#" + loc_name;
+//   e_v = create_internal_event    (sol_ctx,            e_name,tid,instr_no,true);
+//   thin_v = create_internal_event (sol_ctx, "__thin__"+e_name,tid,instr_no,true);
+//   c11_hb_v =create_internal_event(sol_ctx, "__hb__"  +e_name,tid,instr_no,true);
+//   update_topological_order();
+//   o_tag = o_tag_t::na;
+// }
 
 
 // new constructor
@@ -261,7 +270,8 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
   //position_name = e_t_name + "#" + (std::string) (prog_v -> getName()) + "#" + loc.position_name();
   position_name = e_t_name + "#" + loc.position_name();  //To be modified later
 
-  //v = prog_v + "#" + loc_name; //To be modified later
+  v = v + (std::string)(prog_v->getName()) + "#" + (std::string)(loc_name);
+
   v_copy = (et != event_t::u) ? v : v + "#update_wr";
 
   std::string e_name = e_t_name + "#" + v.name;

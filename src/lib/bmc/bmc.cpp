@@ -85,15 +85,20 @@ void bmc::run_bmc_pass() {
     //if( o.verbosity > 10 ) {
     // Print collected events events here
     // for (auto m = all_events.begin(); m != all_events.end(); m++) {
-    for (auto m : all_events) {
-      //auto& e =  *(m.first);
-      auto& e =  *m;
-      //std::cout << "Thread ID is " << m.second << " Event is " << *(m.first) << "\n";
-      std::cout << "Event is " << e << "\n";
-      std::cout << "Thread ID " << e.tid << "\n";
-      std::cout << "Global Var " << (std::string)(e.prog_v -> getName()) << "\n";
-      std::ostream& os = std::cout;
-      debug_print(os, e.prev_events);
+    for ( unsigned tid = 1; tid < threads.size()+1; tid++  ) {
+      std::cout << "-----------------------------------\n";
+      std::cout << "Thread ID " << tid << "\n";
+      for (auto m : all_events) {
+        //auto& e =  *(m.first);
+        auto& e =  *m;
+        if( e.tid != tid ) continue;
+        //std::cout << "Thread ID is " << m.second << " Event is " << *(m.first) << "\n";
+        std::cout <<  e.v << "\n";
+        // std::cout << "Global Var " << (std::string)(e.prog_v -> getName()) << "\n";
+        std::ostream& os = std::cout;
+        std::cout << "Prev events:"; debug_print(os, e.prev_events);
+      }
+      std::cout << "-----------------------------------\n";
     }
    }
   // Add code for stitching the events, when both are processed
