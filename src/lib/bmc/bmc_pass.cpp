@@ -841,9 +841,12 @@ void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
 }
 
 
+//------------------------------------------
 //
-// concurrency support
+//           concurrency support
 //
+//-----------------------------------------
+
 o_tag_t bmc_pass::translate_ordering_tags( llvm::AtomicOrdering ord ) {
   switch( ord ) {
   case llvm::AtomicOrdering::NotAtomic: return o_tag_t::na; break;
@@ -871,9 +874,36 @@ void bmc_pass::create_read_event( unsigned bidx,
   //bmc_ds_ptr->all_events.insert( std::make_pair( evt, tid ) );
     //bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
     bmc_obj.all_events.insert( evt );
-    prev_events = bmc_obj.all_events;
+    prev_events = {evt};
   }
 }
+
+//
+// concurrency support
+//
+void bmc_pass::create_write_event( unsigned bidx,
+                                   const llvm::StoreInst* store,
+                                   llvm::Value* addr ) {
+  // todo: write here
+
+  src_loc loc = getLoc( store );
+  expr path_cond = bmc_ds_ptr->get_path_bit( bidx ); //solver_ctx.bool_val(true);
+  std::vector<expr> history;
+  //unsigned tid = bmc_ds_ptr->get_thread_id();
+  unsigned tid = bmc_ds_ptr->thread_id;
+  if (auto glb = llvm::dyn_cast<llvm::GlobalVariable>(addr)) {
+    auto evt = mk_me_ptr(o.mem_enc, tid, prev_events, path_cond, history, glb, loc, event_t::w, translate_ordering_tags( store->getOrdering()) );
+    prev_events = {evt};
+  //NULL, true, NULL, val_expr, loc.
+  // collect_globals_pass cgp_obj;
+  // cgp_obj.add_event(tid, evt);
+  //bmc_ds_ptr->all_events.insert( std::make_pair( evt, tid ) );
+  //bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
+    bmc_obj.all_events.insert( evt );
+ }
+}
+
+//---------------------------------------------
 
 
 void bmc_pass::translateLoadInst( unsigned bidx,
@@ -982,30 +1012,6 @@ void bmc_pass::storeToArrayHelper( unsigned bidx,
   bmc_ds_ptr->m.insert_term_map( store, bidx, arr_wrt.new_name );
 }
 
-//
-// concurrency support
-//
-void bmc_pass::create_write_event( unsigned bidx,
-                                   const llvm::StoreInst* store,
-                                   llvm::Value* addr ) {
-  // todo: write here
-
-  src_loc loc = getLoc( store );
-  expr path_cond = bmc_ds_ptr->get_path_bit( bidx ); //solver_ctx.bool_val(true);
-  std::vector<expr> history;
-  //unsigned tid = bmc_ds_ptr->get_thread_id();
-  unsigned tid = bmc_ds_ptr->thread_id;
-  if (auto glb = llvm::dyn_cast<llvm::GlobalVariable>(addr)) {
-    auto evt = mk_me_ptr(o.mem_enc, tid, prev_events, path_cond, history, glb, loc, event_t::w, translate_ordering_tags( store->getOrdering()) );
-  //NULL, true, NULL, val_expr, loc.
-  // collect_globals_pass cgp_obj;
-  // cgp_obj.add_event(tid, evt);
-  //bmc_ds_ptr->all_events.insert( std::make_pair( evt, tid ) );
-  //bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
-    bmc_obj.all_events.insert( evt );
-    prev_events = bmc_obj.all_events;
- }
-}
 
 void bmc_pass::translateStoreInst( unsigned bidx,
                                    const llvm::StoreInst* store ) {
@@ -1382,7 +1388,7 @@ void bmc_pass::do_bmc() {
     auto start = mk_me_ptr( o.mem_enc, thr_id, prev_events, start_bit,
                             history, loc, event_t::barr );
     set_start_event( thr_id, start, start_bit );
-    prev_events.insert( start );
+    prev_events = { start };
   }
 
   // init_array_model( bmc_ds_ptr->bb_vec, bmc_ds_ptr->eb );
@@ -1398,7 +1404,6 @@ void bmc_pass::do_bmc() {
   if ( bmc_obj.threads.size() > 1 ) {
     for(auto PI = llvm::pred_begin(src),E = llvm::pred_end(src);PI != E;++PI) {
       const llvm::BasicBlock *prev = *PI;
-      
       //collect incoming branch conditions
       me_set& prev_trail = bmc_ds_ptr->block_to_trailing_events.at( prev );
       prev_events.insert( prev_trail.begin(), prev_trail.end() );
