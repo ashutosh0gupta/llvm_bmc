@@ -90,8 +90,10 @@ void bmc::run_bmc_pass() {
       auto& e =  *m;
       //std::cout << "Thread ID is " << m.second << " Event is " << *(m.first) << "\n";
       std::cout << "Event is " << e << "\n";
-      std::cout << e.tid << "\n";
-      std::cout << (std::string)(e.prog_v -> getName()) << "\n";
+      std::cout << "Thread ID " << e.tid << "\n";
+      std::cout << "Global Var " << (std::string)(e.prog_v -> getName()) << "\n";
+      std::ostream& os = std::cout;
+      debug_print(os, e.prev_events);
     }
    }
   // Add code for stitching the events, when both are processed

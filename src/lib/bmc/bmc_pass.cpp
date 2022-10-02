@@ -1390,6 +1390,17 @@ void bmc_pass::do_bmc() {
     if( llvm::isa<llvm::ResumeInst>( src->getTerminator() ) ) {
       continue; // todo: hack! We are ignoring returned exceptions.
     }
+
+  if ( bmc_obj.threads.size() > 1 ) {
+    for(auto PI = llvm::pred_begin(src),E = llvm::pred_end(src);PI != E;++PI) {
+      const llvm::BasicBlock *prev = *PI;
+      
+      //collect incoming branch conditions
+      me_set& prev_trail = bmc_ds_ptr->block_to_trailing_events.at( prev );
+      prev_events.insert( prev_trail.begin(), prev_trail.end() );
+    }
+  }
+
     std::vector<expr> incoming_paths;
     std::vector<const bb*> prevs;
     for( auto& pre_bidx : bmc_ds_ptr->pred_idxs[bidx] ) {
@@ -1412,6 +1423,11 @@ void bmc_pass::do_bmc() {
       print_bb_exprs(src);
     if( o.verbosity > 3 )
       print_bb_vecs();
+
+    if ( bmc_obj.threads.size() > 1 ) {
+      bmc_ds_ptr->block_to_trailing_events[src] = prev_events;
+      prev_events.clear();
+    }
   }
   bmc_ds_ptr->processed_bidx = bmc_ds_ptr->bb_vec.size();
 
@@ -1420,11 +1436,9 @@ void bmc_pass::do_bmc() {
 
   if( o.verbosity > 2 )
     bmc_ds_ptr->print_formulas();
-
- if ( bmc_obj.threads.size() > 1 ) {
-  prev_events.clear();
-  // create final event of the thread
   
+  // create final event of the thread
+  if ( bmc_obj.threads.size() > 1 ) {
   expr exit_cond = solver_ctx.bool_val(true);
   std::vector<expr> history_exprs;
   src_loc floc;
