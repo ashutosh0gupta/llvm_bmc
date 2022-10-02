@@ -70,6 +70,7 @@ public:
   //interface to execution environment model
 
   memory_cons memory_global_events;
+  std::map< const llvm::BasicBlock* , me_set > block_to_trailing_events;
 
   //--------------------------------------------------------------------------
   //interface to array model
