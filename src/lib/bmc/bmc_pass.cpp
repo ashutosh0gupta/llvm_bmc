@@ -1389,6 +1389,7 @@ void bmc_pass::do_bmc() {
                             history, loc, event_t::barr );
     set_start_event( thr_id, start, start_bit );
     prev_events = { start };
+    //bmc_obj.all_events.insert( start );
   }
 
   // init_array_model( bmc_ds_ptr->bb_vec, bmc_ds_ptr->eb );
@@ -1456,6 +1457,7 @@ void bmc_pass::do_bmc() {
     auto final = mk_me_ptr( o.mem_enc, thr_id, final_prev_events, exit_cond,
                             history_exprs, floc, event_t::barr );
     set_final_event( thr_id, final, exit_cond );
+    //bmc_obj.all_events.insert( final );
  }
 
 }

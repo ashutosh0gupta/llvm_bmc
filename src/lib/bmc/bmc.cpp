@@ -95,6 +95,7 @@ void bmc::run_bmc_pass() {
         //std::cout << "Thread ID is " << m.second << " Event is " << *(m.first) << "\n";
         std::cout <<  e.v << "\n";
         // std::cout << "Global Var " << (std::string)(e.prog_v -> getName()) << "\n";
+        //e.update_topological_order();
         std::ostream& os = std::cout;
         std::cout << "Prev events:"; debug_print(os, e.prev_events);
       }
