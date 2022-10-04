@@ -63,29 +63,31 @@ bool wmm_event_cons::is_po( hb_enc::se_ptr x, hb_enc::se_ptr y ) {
 
 bool wmm_event_cons::in_grf( const hb_enc::se_ptr& wr,
                              const hb_enc::se_ptr& rd ) {
-  if( p.is_mm_sc() ) {
-    return true;
-  }else if( p.is_mm_tso() || p.is_mm_pso() || p.is_mm_power() ||
-            p.is_mm_rmo() || p.is_mm_alpha() || p.is_mm_arm8_2()) {
-    return wr->tid != rd->tid; //only events with diff threads are part of grf
-  }else{
-    p.unsupported_mm();
-    return false;
-  }
+  return true;
+  // if( p.is_mm_sc() ) {
+  //   return true;
+  // }else if( p.is_mm_tso() || p.is_mm_pso() || p.is_mm_power() ||
+  //           p.is_mm_rmo() || p.is_mm_alpha() || p.is_mm_arm8_2()) {
+  //   return wr->tid != rd->tid; //only events with diff threads are part of grf
+  // }else{
+  //   p.unsupported_mm();
+  //   return false;
+  // }
 }
 
 bool wmm_event_cons::is_no_thin_mm() const {
-  if( p.is_mm_sc() || p.is_mm_arm8_2() || p.is_mm_power() ) {
-    return false;
-  }else if(    p.is_mm_tso() // todo: tso/pso do not need thin air
-            || p.is_mm_pso()
-            || p.is_mm_rmo()
-            || p.is_mm_alpha() ) {
-    return true;
-  }else{
-    p.unsupported_mm();
-    return false; // dummy return
-  }
+  return false;
+  // if( p.is_mm_sc() || p.is_mm_arm8_2() || p.is_mm_power() ) {
+  //   return false;
+  // }else if(    p.is_mm_tso() // todo: tso/pso do not need thin air
+  //           || p.is_mm_pso()
+  //           || p.is_mm_rmo()
+  //           || p.is_mm_alpha() ) {
+  //   return true;
+  // }else{
+  //   p.unsupported_mm();
+  //   return false; // dummy return
+  // }
 }
 
 //----------------------------------------------------------------------------
@@ -105,19 +107,15 @@ bool wmm_event_cons::is_no_thin_mm() const {
 
 
 bool wmm_event_cons::is_rd_rd_coherence_preserved() {
-  if( p.is_mm_sc()
-      || p.is_mm_tso()
-      || p.is_mm_pso()
-      || p.is_mm_alpha()
-      || p.is_mm_arm8_2()
-      ) {
-    return true;
-  }else if( p.is_mm_rmo() || p.is_mm_power() ){
-    return false;
-  }else{
-    p.unsupported_mm();
-    return false; // dummy return
-  }
+  return true;
+  // if( p.is_mm_sc() ) {
+  //   return true;
+  // }else if( p.is_mm_rmo() || p.is_mm_power() ){
+  //   return false;
+  // }else{
+  //   p.unsupported_mm();
+  //   return false; // dummy return
+  // }
 }
 
 //----------------------------------------------------------------------------
@@ -149,14 +147,7 @@ bool wmm_event_cons::anti_po_read( const hb_enc::se_ptr& wr,
   // (if rf is local then may not visible to global ordering)
   assert( wr->tid >= p.size() || rd->tid >= p.size() ||
           wr->prog_v.name == rd->prog_v.name );
-  if( p.is_mm_sc()
-      || p.is_mm_tso()
-      || p.is_mm_pso()
-      || p.is_mm_rmo()
-      || p.is_mm_alpha()
-      || p.is_mm_c11()
-      || p.is_mm_arm8_2()
-			|| p.is_mm_power()) {
+  if( p.is_mm_sc() ) {
     // should come here for those memory models where rd-wr on
     // same variables are in ppo
     if( is_po_new( rd, wr ) ) {
@@ -177,14 +168,7 @@ bool wmm_event_cons::anti_po_loc_fr( const hb_enc::se_ptr& rd,
   // coherance disallows rf(rd,wr') and ws(wr',wr) and po-loc( wr, rd)
   assert( wr->tid >= p.size() || rd->tid >= p.size() ||
           wr->prog_v.name == rd->prog_v.name );
-  if( p.is_mm_sc()
-      || p.is_mm_tso()
-      || p.is_mm_pso()
-      || p.is_mm_rmo()
-      || p.is_mm_alpha()
-      || p.is_mm_arm8_2()
-			|| p.is_mm_power()
-      ) {
+  if( p.is_mm_sc() ) {
     if( wr->is_update() && rd == wr ) return false;
     if( is_po_new( wr, rd ) ) {
       return true;
@@ -197,33 +181,21 @@ bool wmm_event_cons::anti_po_loc_fr( const hb_enc::se_ptr& rd,
 }
 
 bool wmm_event_cons::is_wr_wr_coherence_needed() {
-  if( p.is_mm_sc()
-      || p.is_mm_tso()
-      || p.is_mm_pso()
-      || p.is_mm_rmo()
-      || p.is_mm_alpha()
-      || p.is_mm_arm8_2() ) {
-    return false;
-  }else{
-    p.unsupported_mm();
-  }
+  // if( p.is_mm_sc()
+  //     || p.is_mm_tso()
+  //     || p.is_mm_pso()
+  //     || p.is_mm_rmo()
+  //     || p.is_mm_alpha()
+  //     || p.is_mm_arm8_2() ) {
+  //   return false;
+  // }else{
+  //   p.unsupported_mm();
+  // }
   return false;//dummy return
 }
 
 
 bool wmm_event_cons::is_rd_wr_coherence_needed() {
-  if( p.is_mm_sc()
-      || p.is_mm_tso()
-      || p.is_mm_pso()
-      || p.is_mm_rmo()
-      || p.is_mm_alpha()
-			|| p.is_mm_power() ) {
-    return false;
-  } if( p.is_mm_arm8_2() ) {
-    return true;
-  }else{
-    p.unsupported_mm();
-  }
   return false;//dummy return
 }
 
@@ -236,8 +208,8 @@ void wmm_event_cons::ses() {
   // - fr  from read
   // - ws  write serialization
 
-// we assume wr-wr coherence (po o ws) is not needed
-  assert( p.is_mm_power() || !is_wr_wr_coherence_needed());// check against new mm
+  // we assume wr-wr coherence (po o ws) is not needed
+  // assert( p.is_mm_power() || !is_wr_wr_coherence_needed());// check against new mm
 
   //todo: disable the following code if rd rd coherence not preserved
   //todo: remove the following. seq_before also calculates the following info
@@ -272,13 +244,9 @@ void wmm_event_cons::ses() {
         // read from
         z3::expr new_rf = implies( b, hb_encoding.mk_ghbs( wr, rd ) );
         rf = rf && new_rf;
-        if( is_no_thin_mm() ) {
-          z3::expr new_thin = implies( b, hb_encoding.mk_ghb_thin( wr, rd ) );
-          thin = thin && new_thin;
-        }
         //global read from
         if( in_grf( wr, rd ) ) grf = grf && new_rf;
-        if( p.is_mm_arm8_2() ) grf = grf && rfi_ord_arm8_2( b, wr, rd );
+        // if( p.is_mm_arm8_2() ) grf = grf && rfi_ord_arm8_2( b, wr, rd );
         // from read
         for( const hb_enc::se_ptr& after_wr : wrs ) {
           if( after_wr->name() != wr->name() ) {
@@ -289,11 +257,11 @@ void wmm_event_cons::ses() {
               fr = fr && !cond;
             }else if( is_po_new( rd, after_wr ) ) {
               //write-read coherence: avoiding cycles po o (ws;rf)
-              // if( is_rd_wr_coherence_needed() )
+              if( is_rd_wr_coherence_needed() )
                 fr = fr && implies( b, hb_encoding.mk_ghbs(wr,after_wr) );
             }else{
               auto new_fr = hb_encoding.mk_ghbs( rd, after_wr );
-              if( is_rd_rd_coherence_preserved() ) {
+              // if( is_rd_rd_coherence_preserved() ) {
                 // read-read coherence, avoding cycles po U (fr o rf)
                 for( auto before_rd : prev_rds[rd] ) {
                   if( rd->access_same_var( before_rd ) ) {
@@ -302,11 +270,11 @@ void wmm_event_cons::ses() {
                     new_fr = !anti_coherent_b && new_fr;
                   }
                 }
-              }
-              if( auto& rmw_w = rd->rmw_other ) {
-                // rmw & (fr o mo) empty
-                new_fr = new_fr && hb_encoding.mk_ghbs( rmw_w, after_wr );
-              }
+              // }
+              // if( auto& rmw_w = rd->rmw_other ) {
+              //   // rmw & (fr o mo) empty
+              //   new_fr = new_fr && hb_encoding.mk_ghbs( rmw_w, after_wr );
+              // }
               fr = fr && implies( cond , new_fr );
             }
           }
@@ -333,19 +301,19 @@ void wmm_event_cons::ses() {
       }
     }
 
-    if( is_no_thin_mm() ) {
-      // dependency
-      for( const hb_enc::se_ptr& wr : wrs ) {
-        for( auto& dep : wr->data_dependency )
-          thin = thin && z3::implies(dep.cond,hb_encoding.mk_hb_thin(dep.e,wr));
-        // for( auto& dep : wr->ctrl_dependency )
-        //   thin = thin && z3::implies(dep.cond, hb_encoding.mk_hb_thin( dep.e, wr ));
-      }
-      // for( const hb_enc::se_ptr& rd : rds ) {
-      //   for( auto& dep : rd->ctrl_dependency )
-      //     thin = thin && z3::implies(dep.cond, hb_encoding.mk_hb_thin( dep.e, rd ));
+    // if( is_no_thin_mm() ) {
+    //   // dependency
+    //   for( const hb_enc::se_ptr& wr : wrs ) {
+    //     for( auto& dep : wr->data_dependency )
+    //       thin = thin && z3::implies(dep.cond,hb_encoding.mk_hb_thin(dep.e,wr));
+    //     // for( auto& dep : wr->ctrl_dependency )
+    //     //   thin = thin && z3::implies(dep.cond, hb_encoding.mk_hb_thin( dep.e, wr ));
+    //   }
+    //   // for( const hb_enc::se_ptr& rd : rds ) {
+    //   //   for( auto& dep : rd->ctrl_dependency )
+    //   //     thin = thin && z3::implies(dep.cond, hb_encoding.mk_hb_thin( dep.e, rd ));
+    // // }
     // }
-    }
   }
 }
 
@@ -394,7 +362,6 @@ void wmm_event_cons::ppo_sc( const tara::thread& thread ) {
   po = po && hb_encoding.mk_ghbs( e->prev_events, e );
 }
 
-
 bool wmm_event_cons::is_non_mem_ordered( const hb_enc::se_ptr& e1,
                                          const hb_enc::se_ptr& e2  ) {
   if( e1->is_block_head() || e2->is_block_head()  ) return false;
@@ -415,56 +382,9 @@ bool wmm_event_cons::is_ordered_sc( const hb_enc::se_ptr& e1,
   return true;
 }
 
-bool wmm_event_cons::is_ordered_tso( const hb_enc::se_ptr& e1,
-                                     const hb_enc::se_ptr& e2  ) {
-
-  assert( e1->is_mem_op() && e2->is_mem_op() );
-  if( e1->is_wr() && e2->is_wr() ) return true;
-  if( e1->is_rd() && ( e2->is_wr() || e2->is_rd() ) ) return true;
-  return false;
-}
-
-bool wmm_event_cons::is_ordered_pso( const hb_enc::se_ptr& e1,
-                                     const hb_enc::se_ptr& e2  ) {
-  assert( e1->is_mem_op() && e2->is_mem_op() );
-  if( e1->is_wr() && e2->is_wr() && (e1->prog_v.name == e2->prog_v.name )) return true;
-  if( e1->is_rd() && ( e2->is_wr() || e2->is_rd() ) ) return true;
-  return false;
-}
 
 
 
-
-z3::expr wmm_event_cons::is_ordered_dependency( const hb_enc::se_ptr& e1,
-                                                const hb_enc::se_ptr& e2  ) {
-
-  if( !(e1->is_mem_op() && e2->is_mem_op()) ) return z3.mk_emptyexpr();
-
-  z3::expr ret = z3.mk_emptyexpr();
-  for( auto& dep : e2->data_dependency ) {
-    if( dep.e == e1 ) {
-      ret = dep.cond;
-      break;
-    }
-  }
-  for( auto& dep : e2->ctrl_dependency ) {
-    if( dep.e == e1 ) {
-      if( ret ) ret = ret || dep.cond; else ret = dep.cond;
-      break;
-    }
-  }
-  return ret;
-}
-
-bool wmm_event_cons::is_ordered_alpha( const hb_enc::se_ptr& e1,
-                                       const hb_enc::se_ptr& e2  ) {
-  assert( e1->is_mem_op() && e2->is_mem_op() );
-  if( e1->is_wr() && e2->is_wr() && (e1->prog_v.name == e2->prog_v.name))
-    return true;
-  if( e1->is_rd() && ( e2->is_wr() || e2->is_rd()) &&
-      (e1->prog_v.name == e2->prog_v.name)) return true;
-  return false;
-}
 
 bool wmm_event_cons::check_ppo( mm_t mm,
                                 const hb_enc::se_ptr& e1,
@@ -477,13 +397,6 @@ bool wmm_event_cons::check_ppo( mm_t mm,
   // }
   switch( mm ) {
   case mm_t::sc     : return is_ordered_sc   ( e1, e2 ); break;
-  case mm_t::tso    : return is_ordered_tso  ( e1, e2 ); break;
-  case mm_t::pso    : return is_ordered_pso  ( e1, e2 ); break;
-  case mm_t::rmo    : return is_ordered_rmo  ( e1, e2 ); break;
-  case mm_t::alpha  : return is_ordered_alpha( e1, e2 ); break;
-  case mm_t::arm8_2 : return is_ordered_arm8_2( e1,e2 ); break;
-  case mm_t::power  : return is_ordered_power( e1,e2 ); break;
-  case mm_t::c11    : return is_ordered_c11( e1,e2); break;
   default:
     std::string msg = "unsupported memory model: " + string_of_mm( mm ) + "!!";
     wmm_error( msg );
@@ -497,78 +410,65 @@ bool wmm_event_cons::check_ppo( const hb_enc::se_ptr& e1,
   return false; // dummy return
 }
 
-void wmm_event_cons::ppo_traverse( const tara::thread& thread ) {
-  hb_enc::se_to_ses_map pending_map, ordered_map;
-  auto& se = thread.start_event;
-  pending_map[se].insert(se); // this is how it should start
+// void wmm_event_cons::ppo_traverse( const tara::thread& thread ) {
+//   hb_enc::se_to_ses_map pending_map, ordered_map;
+//   auto& se = thread.start_event;
+//   pending_map[se].insert(se); // this is how it should start
 
-  for( auto& e : thread.events ) {
-    pending_map[e].insert(e);
-    hb_enc::se_set tmp_pendings;
-    for( auto& ep : e->prev_events )
-      helpers::set_insert( tmp_pendings, pending_map[ep] );
-    hb_enc::se_set& pending = pending_map[e];
-    hb_enc::se_set& ordered = ordered_map[e];
-    hb_enc::se_set seen_set;
-    while( !tmp_pendings.empty() ) {
-      auto ep = *tmp_pendings.begin();
-      tmp_pendings.erase( ep );
-      if( helpers::exists( seen_set, ep ) ) continue;
-      seen_set.insert( ep );
-      if( check_ppo( ep, e ) ) {
-        po = po && hb_encoding.mk_ghbs( ep, e );
-        ordered.insert( ep );
-      }else{
-        pending.insert( ep );
-        helpers::set_insert( tmp_pendings, ordered_map[ep] );
-      }
-    }
-  }
+//   for( auto& e : thread.events ) {
+//     pending_map[e].insert(e);
+//     hb_enc::se_set tmp_pendings;
+//     for( auto& ep : e->prev_events )
+//       helpers::set_insert( tmp_pendings, pending_map[ep] );
+//     hb_enc::se_set& pending = pending_map[e];
+//     hb_enc::se_set& ordered = ordered_map[e];
+//     hb_enc::se_set seen_set;
+//     while( !tmp_pendings.empty() ) {
+//       auto ep = *tmp_pendings.begin();
+//       tmp_pendings.erase( ep );
+//       if( helpers::exists( seen_set, ep ) ) continue;
+//       seen_set.insert( ep );
+//       if( check_ppo( ep, e ) ) {
+//         po = po && hb_encoding.mk_ghbs( ep, e );
+//         ordered.insert( ep );
+//       }else{
+//         pending.insert( ep );
+//         helpers::set_insert( tmp_pendings, ordered_map[ep] );
+//       }
+//     }
+//   }
 
-  auto& fe = thread.final_event;
-  for( auto& e : fe->prev_events ) {
-    for( auto& ep : pending_map[e] ) {
-      po = po && hb_encoding.mk_ghbs( ep, fe );
-    }
-  }
-}
+//   auto& fe = thread.final_event;
+//   for( auto& e : fe->prev_events ) {
+//     for( auto& ep : pending_map[e] ) {
+//       po = po && hb_encoding.mk_ghbs( ep, fe );
+//     }
+//   }
+// }
 
 void wmm_event_cons::ppo() {
   // wmm_test_ppo();
 
   for( unsigned t=0; t < p.size(); t++ ) {
     auto& thr = p.get_thread(t);
+
+    // May be not needed
     auto& cr_e = p.create_map[thr.name];
-    z3::expr cr_ord = p.is_mm_c11() ?
-      hb_encoding.mk_hb_c11_hb( cr_e ,thr.start_event ):
-      hb_encoding.mk_hbs( cr_e ,thr.start_event );
+    z3::expr cr_ord = hb_encoding.mk_hbs( cr_e ,thr.start_event );
     po = po && z3::implies( cr_e->guard, thr.start_event->guard && cr_ord );
-    if(       p.is_mm_sc()    ) { ppo_sc ( thr ); // sc_ppo   ( thread );
-    }else if( p.is_mm_tso()   ) { ppo_traverse( thr );
-    }else if( p.is_mm_pso()   ) { ppo_traverse( thr );
-    }else if( p.is_mm_rmo()   ) { ppo_rmo_traverse( thr );
-    }else if( p.is_mm_alpha() ) { ppo_traverse( thr );
-    }else if( p.is_mm_arm8_2()) { ppo_arm8_2( thr );
-    }else if( p.is_mm_power() ) { ppo_power( thr );
-    }else if( p.is_mm_c11() )   { ppo_c11( thr );
-    }else{                      p.unsupported_mm();
-    }
-    // ordering with the final events of the thread
-    // and theor join points
+
+    ppo_sc ( thr );
+
     const auto& it = p.join_map.find( thr.name );
     if( it != p.join_map.end() ) {
       const auto& jp_pair = it->second;
       const auto join_point = jp_pair.first;
       z3::expr join_guard = jp_pair.second;
-      z3::expr join_order = p.is_mm_c11() ?
-        hb_encoding.mk_hb_c11_hb( thr.final_event, join_point ):
-        hb_encoding.mk_hbs( thr.final_event, join_point);
+      z3::expr join_order = hb_encoding.mk_hbs( thr.final_event, join_point);
       // z3::expr join_order = hb_encoding.mk_hbs( thr.final_event, join_point);
       po = po && z3::implies( thr.final_event->guard, join_guard && join_order);
     }
   }
-  // po = po && dist;
-  //phi_po = phi_po && barriers;
   po = po.simplify();
 }
 
@@ -778,25 +678,11 @@ void wmm_event_cons::print_rel(std::map<event_pair,z3::expr>& a,std::ostream& ou
 //////////////////////////////////////////////////////////////
 
 void wmm_event_cons::run() {
-  update_orderings();
+  // update_orderings();
 
-  if( !p.is_mm_power() ) {
-  	ppo(); // build hb formulas to encode the preserved program order
-  	if( p.is_mm_c11() ) {
-  		ses_c11();
-  	}else{
-  		distinct_events();
-  		ses();
-  	}
-  }else{
-  	ses_power();
-  	ppo();
-  	prop_power();
-  	obs_power();
-  	p.phi_hb=fixpoint&&ppo_expr&&fence;
-  	p.phi_obs=obs_expr;
-  	p.phi_prop=prop_expr&&co_expr;
-  }
+  ppo(); // build hb formulas to encode the preserved program order
+  distinct_events();
+  ses();
 
   if ( o.print_phi ) {
     o.out() << "(" << endl
