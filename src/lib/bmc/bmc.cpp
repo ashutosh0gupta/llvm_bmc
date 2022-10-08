@@ -127,6 +127,7 @@ std::map< const llvm::Loop*, bmc_loop*>& bmc::get_loop_formula_map() {
 
 
 void bmc::init() {
+
   memory_state mem_st = populate_mem_state();
 
   for (auto fit=module->begin(), endit=module->end(); fit!=endit; ++fit) {
@@ -152,6 +153,19 @@ void bmc::init() {
 }
 
 memory_state bmc::populate_mem_state() {
+
+  me_set prev_events;
+  src_loc sloc,floc;  //"the_launcher",   "the_finisher";  
+  std::vector<expr> history;
+  expr tru = o.solver_ctx.bool_val(true);
+  auto start = mk_me_ptr( o.mem_enc, INT_MAX, prev_events, tru, history, sloc,
+                          event_t::pre, o_tag_t::sc);
+  auto final = mk_me_ptr( o.mem_enc, INT_MAX, prev_events, tru, history, floc,
+                          event_t::post, o_tag_t::sc);
+
+  init_loc = start;
+  post_loc = final;
+
   memory_state mem_st;
   // TODO : Add setter and getters
   auto& vec = mem_st.mem_state_vec;
@@ -162,7 +176,7 @@ memory_state bmc::populate_mem_state() {
 
     llvm::GlobalVariable* glb = &*iter_glb; //3.8
     llvm::Type* ty = glb->getType();
-    //const std::string gvar = (std::string)(glb->getName());
+    const std::string gvar = (std::string)(glb->getName());
 
     if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
       assert(pty);
@@ -180,6 +194,9 @@ memory_state bmc::populate_mem_state() {
       datatype ty(z_sort);
       state_obj tem_state_obj(new_glb,ty);
       vec.push_back(tem_state_obj);
+
+      add_global( gvar, z_sort );
+      wr_events[ get_global( gvar ) ].insert( start );
 
       if( glb->hasUniqueInitializer() ) {
         auto c = glb->getInitializer();

@@ -419,6 +419,134 @@ expr memory_event::get_addr_dependency_cond( const me_ptr& e2 ) {
   return expr( guard.ctx() );
 }
 
+void
+pointwise_and( const depends_set& dep_in,
+                     expr cond,
+                     depends_set& dep_out ) {
+  dep_out.clear();
+  for( const depends& d : dep_in ) {
+    expr c = d.cond && cond;
+    c = c.simplify();
+    dep_out.insert( depends( d.e, c ));
+  }
+}
+
+
+void
+join_depends_set( const std::vector<depends_set>& dep,
+                          const std::vector<expr>& conds,
+                          depends_set& result ) {
+  result.clear();
+  unsigned num = dep.size();
+  if( num >= 1 ) pointwise_and( dep.at(0), conds.at(0), result );
+  for( unsigned i = 1 ; i < num ; i++ ) {
+    depends_set tmp;
+    pointwise_and( dep.at(i), conds.at(i), tmp );
+    join_depends_set( tmp, result );
+  }
+}
+
+void
+join_depends_set( const std::vector<depends_set>& dep,
+                          depends_set& result ) {
+  result.clear();
+  unsigned num = dep.size();
+  if ( num == 1 )
+    result = dep.at(0);
+  else if ( num == 2 )
+    join_depends_set( dep.at(0), dep.at( 1 ), result );
+  else if ( num > 2 ) {
+    for ( unsigned i = 0 ; i < num ; i++ ) {
+      join_depends_set( dep.at( i ), result );
+    }
+  }
+}
+
+//todo : make depends set efficient
+//       make it a well implemented class
+
+void join_depends_set( const me_ptr& e1, const expr cond1,
+                               depends_set& set ) {
+  expr cond = cond1;
+  for( auto it1 = set.begin(); it1 != set.end(); it1++) {
+    const depends& dep2 = *it1;
+    me_ptr e2 = dep2.e;
+    if( e1 == e2 ) {
+      cond = ( cond || dep2.cond );
+      cond = cond.simplify();
+      set.erase(it1);
+      break;
+    }
+  }
+  set.insert( depends( e1, cond ) );
+
+}
+
+void join_depends_set( const depends& dep,
+                             depends_set& set ) {
+  join_depends_set( dep.e, dep.cond, set );
+}
+
+void join_depends_set( const depends_set& dep0,
+                             depends_set& dep1 ) {
+  for( auto element0 : dep0 )
+    join_depends_set( element0, dep1 );
+  // tara::debug_print( std::cout, dep1 );
+}
+
+
+void join_depends_set( const depends_set& dep0,
+                               const depends_set& dep1,
+                               depends_set& set ) {
+  set = dep1;
+  join_depends_set( dep0, set );
+}
+
+
+void meet_depends_set( const me_ptr& e1, const expr cond1,
+                               depends_set& set ) {
+  expr cond = cond1;
+  for( auto it1 = set.begin(); it1 != set.end(); it1++) {
+    const depends& dep2 = *it1;
+    me_ptr e2 = dep2.e;
+    if( e1 == e2 ) {
+      cond = ( cond && dep2.cond );
+      cond = cond.simplify();
+      set.erase(it1);
+      break;
+    }
+  }
+  set.insert( depends( e1, cond ) );
+}
+
+void meet_depends_set( const depends& dep,
+                               depends_set& set ) {
+  meet_depends_set( dep.e, dep.cond, set );
+}
+
+void meet_depends_set( const depends_set& dep0,
+                             depends_set& dep1 ) {
+  for( auto element0 : dep0 )
+    meet_depends_set( element0, dep1 );
+}
+
+void meet_depends_set( const depends_set& dep0,
+                               const depends_set& dep1,
+                               depends_set& set ) {
+  set = dep1;
+  meet_depends_set( dep0, set );
+}
+
+
+void meet_depends_set( const std::vector<depends_set>& dep,
+                               depends_set& result ) {
+  result.clear();
+  unsigned num = dep.size();
+  if( num >= 1 ) result =  dep.at(0);
+  for( unsigned i = 1 ; i < num ; i++ )
+    meet_depends_set( dep.at(i), result );
+  // return data_dep_ses;
+}
 
 void memory_event::debug_print( std::ostream& stream ) {
   stream << *this << "\n";
@@ -545,6 +673,85 @@ void memory_cons::make_po_tstamp( tstamp_var_ptr loc )
   expr loc_expr = solver_ctx.constant( loc->name.c_str(), hb_sort );
   loc->e = loc_expr;
   tstamp_lookup.insert(make_pair(loc_expr, loc));
+}
+
+
+expr memory_cons::get_rf_bit( const variable& v1,
+                 const se_ptr& wr,
+                 const se_ptr& rd ) const {
+    assert( ( wr->is_pre() || wr->is_wr() ) &&
+            ( rd->is_rd() || rd->is_post() ) );
+    assert( !wr->is_wr() || v1 == wr->v ); //Confirm v is OK instead of prog_v
+    assert( !rd->is_rd() || v1 == rd->v );
+
+    std::string bname = v1+"-"+wr->name()+"-"+rd->name();
+    return solver_ctx.bool_const(  bname.c_str() );
+  }
+
+expr memory_cons::get_rf_bit( const se_ptr& wr,
+                 const se_ptr& rd ) const {
+    assert( wr->is_wr() && rd->is_rd() );
+    assert( wr->v == rd->v );
+    const variable& v1 = wr->v;
+    return get_rf_bit( v1, wr, rd );
+    // std::string bname = v1+"-"+wr->name()+"-"+rd->name();
+    // return z3.c.bool_const(  bname.c_str() );
+  }
+
+
+hb memory_cons::mk_hbs(const se_ptr& before, const se_ptr& after) {
+  return make_hb( before->e_v, after->e_v );
+}
+
+expr memory_cons::mk_hbs( const se_set& before, const se_ptr& after) {
+  expr hbs = solver_ctx.bool_val(true);
+  for( auto& bf : before ) {
+      hbs = hbs && mk_hbs( bf, after );
+  }
+  return hbs;
+}
+
+expr memory_cons::mk_hbs(const se_ptr& before, const se_set& after) {
+  expr hbs = solver_ctx.bool_val(true);
+  for( auto& af : after ) {
+      hbs = hbs && mk_hbs( before, af );
+  }
+  return hbs;
+}
+
+
+expr memory_cons::mk_hbs(const se_set& before, const se_set& after) {
+  expr hbs = solver_ctx.bool_val(true);
+  for( auto& bf : before ) {
+    for( auto& af : after ) {
+      hbs = hbs && mk_hbs( bf, af );
+    }
+  }
+  return hbs;
+}
+
+hb memory_cons::mk_hb_thin(const se_ptr& before, const se_ptr& after) {
+  return make_hb( before->thin_v, after->thin_v );
+}
+
+
+
+expr memory_cons::mk_ghbs( const se_ptr& before, const se_ptr& after ) {
+  expr cond = before->guard && after->guard;
+  cond = cond.simplify();
+  return implies( cond, mk_hbs( before, after ) );
+}
+
+expr memory_cons::mk_ghbs( const se_ptr& before, const se_set& after ) {
+  expr hbs = solver_ctx.bool_val(true);
+  for( auto& af : after ) hbs = hbs && mk_ghbs( before, af );
+  return hbs;
+}
+
+expr memory_cons::mk_ghbs( const se_set& before, const se_ptr& after ) {
+  expr hbs = solver_ctx.bool_val(true);
+  for( auto& bf : before ) hbs = hbs && mk_ghbs( bf, after );
+  return hbs;
 }
 
 
@@ -755,4 +962,5 @@ full_initialize_se( memory_cons& mem_enc, me_ptr e, me_set& prev_es,
   for(me_ptr ep  : prev_es) {
     ep->add_post_events( e, branch_conds.at(ep) );
   }
+
 }

@@ -1,68 +1,35 @@
-/*
- * Copyright 2017, TIFR
- *
- * This file is part of TARA.
- *
- * TARA is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * TARA is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with TARA.  If not, see <http://www.gnu.org/licenses/>.
- */
-
-#include "wmm.h"
-#include "helpers/helpers.h"
-#include <string.h>
-#include "helpers/z3interf.h"
-#include "hb_enc/hb.h"
-#include <utility>
-#include <assert.h>
-using namespace tara;
-using namespace tara::cssa;
-using namespace tara::helpers;
-
-using namespace std;
+#include "ses.h"
+#include "include/memory_event.h"
 
 //----------------------------------------------------------------------------
 // New code
 //----------------------------------------------------------------------------
 
-wmm_event_cons::wmm_event_cons( helpers::z3interf& _z3,
-                                api::options& _o,
-                                hb_enc::encoding& _hb_encoding,
-                                tara::program& _p )
-: z3( _z3 )
-,o( _o )
-,hb_encoding( _hb_encoding )
-,p( _p ) {
+event_cons::event_cons( options& o, solver_context& solver_ctx__, 
+                        memory_cons& mem_enc_, bmc& b)
+  : o(o), solver_ctx(solver_ctx__), 
+    mem_enc(mem_enc_), b_obj(b) {
 }
 
 
-bool wmm_event_cons::is_po( hb_enc::se_ptr x, hb_enc::se_ptr y ) {
-  if( x == y )
-    return true;
-  if( x->is_pre() || y->is_post() ) return true;
-  if( x->is_post() || y->is_pre() ) return false;
-  if( x->tid != y->tid ) return false;
-  if( x->get_topological_order() >= y->get_topological_order() ) return false;
+//bool event_cons::is_po( me_ptr x, me_ptr y ) {
+//  if( x == y )
+//    return true;
+//  if( x->is_pre() || y->is_post() ) return true;
+//  if( x->is_post() || y->is_pre() ) return false;
+//  if( x->tid != y->tid ) return false;
+//  if( x->get_topological_order() >= y->get_topological_order() ) return false;
 
-  // return is_po_new( x, y);
-  return p.is_seq_before( x, y );
-}
+//  // return is_po_new( x, y);
+//  return p.is_seq_before( x, y );
+//}
 
 //----------------------------------------------------------------------------
 // memory model utilities
 
 
-bool wmm_event_cons::in_grf( const hb_enc::se_ptr& wr,
-                             const hb_enc::se_ptr& rd ) {
+bool event_cons::in_grf( const me_ptr& wr,
+                             const me_ptr& rd ) {
   return true;
   // if( p.is_mm_sc() ) {
   //   return true;
@@ -75,7 +42,7 @@ bool wmm_event_cons::in_grf( const hb_enc::se_ptr& wr,
   // }
 }
 
-bool wmm_event_cons::is_no_thin_mm() const {
+bool event_cons::is_no_thin_mm() const {
   return false;
   // if( p.is_mm_sc() || p.is_mm_arm8_2() || p.is_mm_power() ) {
   //   return false;
@@ -106,7 +73,7 @@ bool wmm_event_cons::is_no_thin_mm() const {
 //  - ws;rf   (w->r)   r->w  n    n     n     n     n      r
 
 
-bool wmm_event_cons::is_rd_rd_coherence_preserved() {
+bool event_cons::is_rd_rd_coherence_preserved() {
   return true;
   // if( p.is_mm_sc() ) {
   //   return true;
@@ -123,17 +90,17 @@ bool wmm_event_cons::is_rd_rd_coherence_preserved() {
 // In original implementation this part of constraints are
 // referred as pi constraints
 
-z3::expr wmm_event_cons::get_rf_bvar( const tara::variable& v1,
-                                      hb_enc::se_ptr wr, hb_enc::se_ptr rd,
+expr event_cons::get_rf_bvar( const variable& v1,
+                                      me_ptr wr, me_ptr rd,
                                       bool record ) {
-  z3::expr b = hb_encoding.get_rf_bit( v1, wr, rd );
-  std::string bname = z3.get_top_func_name(b);
+  expr b = mem_enc.get_rf_bit( v1, wr, rd );
+  std::string bname = "dummy"; //z3::get_top_func_name(b); ///Find equivalent function
   // std::string bname = v1+"-"+wr->name()+"-"+rd->name();
   // z3::expr b = z3.c.bool_const(  bname.c_str() );
   if( record ) {
-    p.reading_map.insert( std::make_tuple(bname, wr, rd) );
-    if( p.is_mm_c11() ) // keep a copy in encoding object//todo: remove copy
-      hb_encoding.rf_map.insert( std::make_tuple(bname, wr, rd) );
+    b_obj.reading_map.insert( std::make_tuple(bname, wr, rd) );
+    //if( p.is_mm_c11() ) // keep a copy in encoding object//todo: remove copy
+      mem_enc.rf_map.insert( std::make_tuple(bname, wr, rd) );
   }
   return b;
 }
@@ -141,46 +108,46 @@ z3::expr wmm_event_cons::get_rf_bvar( const tara::variable& v1,
 
 
 //----------------------------------------------------------------------------
-bool wmm_event_cons::anti_po_read( const hb_enc::se_ptr& wr,
-                                   const hb_enc::se_ptr& rd ) {
+bool event_cons::anti_po_read( const me_ptr& wr,
+                                   const me_ptr& rd ) {
   // preventing coherence violation - rf
   // (if rf is local then may not visible to global ordering)
-  assert( wr->tid >= p.size() || rd->tid >= p.size() ||
-          wr->prog_v.name == rd->prog_v.name );
-  if( p.is_mm_sc() ) {
+  assert( wr->tid > b_obj.threads.size() || rd->tid > b_obj.threads.size() ||
+          wr->prog_v-> getName() == rd->prog_v-> getName() );
+  //if( p.is_mm_sc() ) {
     // should come here for those memory models where rd-wr on
     // same variables are in ppo
     if( is_po_new( rd, wr ) ) {
       return true;
     }
     //
-  }else{
-    p.unsupported_mm();
-  }
+  //}else{
+    //p.unsupported_mm();
+  //}
   return false;
 }
 
 
-bool wmm_event_cons::anti_po_loc_fr( const hb_enc::se_ptr& rd,
-                                     const hb_enc::se_ptr& wr ) {
+bool event_cons::anti_po_loc_fr( const me_ptr& rd,
+                                     const me_ptr& wr ) {
   // preventing coherence violation - fr;
   // (if rf is local then it may not be visible to the global ordering)
   // coherance disallows rf(rd,wr') and ws(wr',wr) and po-loc( wr, rd)
-  assert( wr->tid >= p.size() || rd->tid >= p.size() ||
-          wr->prog_v.name == rd->prog_v.name );
-  if( p.is_mm_sc() ) {
+  assert( wr->tid > b_obj.threads.size() || rd->tid > b_obj.threads.size() ||
+          wr->prog_v-> getName() == rd->prog_v-> getName() );
+  //if( p.is_mm_sc() ) {
     if( wr->is_update() && rd == wr ) return false;
     if( is_po_new( wr, rd ) ) {
       return true;
     }
     //
-  }else{
-    p.unsupported_mm();
-  }
+  //}else{
+    //p.unsupported_mm();
+  //}
   return false;
 }
 
-bool wmm_event_cons::is_wr_wr_coherence_needed() {
+bool event_cons::is_wr_wr_coherence_needed() {
   // if( p.is_mm_sc()
   //     || p.is_mm_tso()
   //     || p.is_mm_pso()
@@ -195,12 +162,12 @@ bool wmm_event_cons::is_wr_wr_coherence_needed() {
 }
 
 
-bool wmm_event_cons::is_rd_wr_coherence_needed() {
+bool event_cons::is_rd_wr_coherence_needed() {
   return false;//dummy return
 }
 
 
-void wmm_event_cons::ses() {
+void event_cons::ses() {
   // For each global variable we need to construct
   // - wf  well formed
   // - rf  read from
@@ -213,12 +180,12 @@ void wmm_event_cons::ses() {
 
   //todo: disable the following code if rd rd coherence not preserved
   //todo: remove the following. seq_before also calculates the following info
-  hb_enc::se_to_ses_map prev_rds;
-  for( unsigned t = 0; t < p.size(); t++ ) {
-     const auto& thr = p.get_thread( t );
+  me_to_ses_map prev_rds;
+  for( unsigned t = 0; t < b_obj.threads.size()+1; t++ ) {
+     const auto& thr = b_obj.get_thread( t );
   // for( const auto& thr : p.threads ) {
     for( auto e : thr.events ) {
-      hb_enc::se_set& rds = prev_rds[e];
+      me_set& rds = prev_rds[e];
       for( auto ep : e->prev_events ) {
         rds.insert( prev_rds[ep].begin(), prev_rds[ep].end() );
         if( ep->is_rd() ) rds.insert( ep );
@@ -226,31 +193,31 @@ void wmm_event_cons::ses() {
     }
   }
 
-  for( const auto& v1 : p.globals ) {
-    const auto& rds = p.rd_events[v1];
-    const auto& wrs = p.wr_events[v1];
-    for( const hb_enc::se_ptr& rd : rds ) {
-      z3::expr some_rfs = z3.c.bool_val(false);
-      z3::expr rd_v = rd->get_rd_expr(v1);
-      for( const hb_enc::se_ptr& wr : wrs ) {
+  for( const auto& v1 : b_obj.globals ) {
+    const me_vec& rds = b_obj.rd_events[v1];
+    const me_set& wrs = b_obj.wr_events[v1];
+    for( const me_ptr& rd : rds ) {
+      expr some_rfs = solver_ctx.bool_val(false);
+      expr rd_v = rd->get_rd_expr(v1);
+      for( const me_ptr& wr : wrs ) {
         // avoiding cycles po o rf
         if( anti_po_read( wr, rd ) ) continue;
-        z3::expr wr_v = wr->get_wr_expr( v1 );
-        z3::expr b = get_rf_bvar( v1, wr, rd );
+        expr wr_v = wr->get_wr_expr( v1 );
+        expr b = get_rf_bvar( v1, wr, rd );
         some_rfs = some_rfs || b;
-        z3::expr eq = ( rd_v == wr_v );
+        expr eq = ( rd_v == wr_v );
         // well formed
         wf = wf && implies( b, wr->guard && eq);
         // read from
-        z3::expr new_rf = implies( b, hb_encoding.mk_ghbs( wr, rd ) );
+        expr new_rf = implies( b, mem_enc.mk_ghbs( wr, rd ) );
         rf = rf && new_rf;
         //global read from
         if( in_grf( wr, rd ) ) grf = grf && new_rf;
         // if( p.is_mm_arm8_2() ) grf = grf && rfi_ord_arm8_2( b, wr, rd );
         // from read
-        for( const hb_enc::se_ptr& after_wr : wrs ) {
+        for( const me_ptr& after_wr : wrs ) {
           if( after_wr->name() != wr->name() ) {
-            auto cond = b && hb_encoding.mk_ghbs(wr,after_wr)
+            auto cond = b && mem_enc.mk_ghbs(wr,after_wr)
                           && after_wr->guard;
             if( anti_po_loc_fr( rd, after_wr ) ) {
               //write-read coherence: avoiding cycles po o fr
@@ -258,14 +225,14 @@ void wmm_event_cons::ses() {
             }else if( is_po_new( rd, after_wr ) ) {
               //write-read coherence: avoiding cycles po o (ws;rf)
               if( is_rd_wr_coherence_needed() )
-                fr = fr && implies( b, hb_encoding.mk_ghbs(wr,after_wr) );
+                fr = fr && implies( b, mem_enc.mk_ghbs(wr,after_wr) );
             }else{
-              auto new_fr = hb_encoding.mk_ghbs( rd, after_wr );
+              auto new_fr = mem_enc.mk_ghbs( rd, after_wr );
               // if( is_rd_rd_coherence_preserved() ) {
                 // read-read coherence, avoding cycles po U (fr o rf)
                 for( auto before_rd : prev_rds[rd] ) {
                   if( rd->access_same_var( before_rd ) ) {
-                    z3::expr anti_coherent_b =
+                    expr anti_coherent_b =
                       get_rf_bvar( v1, after_wr, before_rd, false );
                     new_fr = !anti_coherent_b && new_fr;
                   }
@@ -285,18 +252,18 @@ void wmm_event_cons::ses() {
 
     auto it1 = wrs.begin();
     for( ; it1 != wrs.end() ; it1++ ) {
-      const hb_enc::se_ptr& wr1 = *it1;
+      const me_ptr& wr1 = *it1;
       auto it2 = it1;
       it2++;
       for( ; it2 != wrs.end() ; it2++ ) {
-        const hb_enc::se_ptr& wr2 = *it2;
+        const me_ptr& wr2 = *it2;
         // write serialization
         // todo: what about ws;rf
         if( wr1->tid != wr2->tid && // Why this condition?
             !wr1->is_pre() && !wr2->is_pre() // no initializations
             ) {
-          ws = ws && ( hb_encoding.mk_ghbs( wr1, wr2 ) ||
-                       hb_encoding.mk_ghbs( wr2, wr1 ) );
+          ws = ws && ( mem_enc.mk_ghbs( wr1, wr2 ) ||
+                       mem_enc.mk_ghbs( wr2, wr1 ) );
         }
       }
     }
@@ -325,17 +292,17 @@ void wmm_event_cons::ses() {
 //----------------------------------------------------------------------------
 // declare all events happen at different time points
 
-void wmm_event_cons::distinct_events() {
+void event_cons::distinct_events() {
 
-  z3::expr_vector es( z3.c );
+  expr_vector es( solver_ctx );
 
-  es.push_back( p.init_loc->get_solver_symbol() );
+  es.push_back( b_obj.init_loc->get_solver_symbol() );
 
-  if( p.post_loc )
-    es.push_back( p.post_loc->get_solver_symbol() );
+  if( b_obj.post_loc )
+    es.push_back( b_obj.post_loc->get_solver_symbol() );
 
-  for( unsigned t=0; t < p.size(); t++ ) {
-    auto& thread = p.get_thread(t);
+  for( unsigned t=0; t < b_obj.threads.size(); t++ ) {
+    auto& thread = b_obj.get_thread(t);
     for(auto& e : thread.events )
       es.push_back( e->get_solver_symbol() );
     es.push_back( thread.start_event->get_solver_symbol() );
@@ -353,17 +320,17 @@ void wmm_event_cons::distinct_events() {
 
 
 
-void wmm_event_cons::ppo_sc( const tara::thread& thread ) {
+void event_cons::ppo_sc( const spec_thread& thread ) {
 
   for( auto& e : thread.events ) {
-    po = po && hb_encoding.mk_ghbs( e->prev_events, e );
+    po = po && mem_enc.mk_ghbs( e->prev_events, e );
   }
   auto& e = thread.final_event;
-  po = po && hb_encoding.mk_ghbs( e->prev_events, e );
+  po = po && mem_enc.mk_ghbs( e->prev_events, e );
 }
 
-bool wmm_event_cons::is_non_mem_ordered( const hb_enc::se_ptr& e1,
-                                         const hb_enc::se_ptr& e2  ) {
+bool event_cons::is_non_mem_ordered( const me_ptr& e1,
+                                         const me_ptr& e2  ) {
   if( e1->is_block_head() || e2->is_block_head()  ) return false;
   if( e2->is_barrier() ||e2->is_before_barrier() ||e2->is_thread_create())
     return true;
@@ -375,8 +342,8 @@ bool wmm_event_cons::is_non_mem_ordered( const hb_enc::se_ptr& e1,
   return false;
 }
 
-bool wmm_event_cons::is_ordered_sc( const hb_enc::se_ptr& e1,
-                                    const hb_enc::se_ptr& e2  ) {
+bool event_cons::is_ordered_sc( const me_ptr& e1,
+                                    const me_ptr& e2  ) {
   assert( e1->is_mem_op() && e2->is_mem_op() );
 
   return true;
@@ -386,31 +353,32 @@ bool wmm_event_cons::is_ordered_sc( const hb_enc::se_ptr& e1,
 
 
 
-bool wmm_event_cons::check_ppo( mm_t mm,
-                                const hb_enc::se_ptr& e1,
-                                const hb_enc::se_ptr& e2 ) {
+bool event_cons::check_ppo( //mm_t mm,
+                                const me_ptr& e1,
+                                const me_ptr& e2 ) {
   if( e1->is_non_mem_op() || e2->is_non_mem_op() ) {
     return is_non_mem_ordered( e1, e2 );
   }
   // if( e1->is_barr_type() || e2->is_barr_type() ) {
   //   return is_barrier_ordered( e1, e2 );
   // }
-  switch( mm ) {
-  case mm_t::sc     : return is_ordered_sc   ( e1, e2 ); break;
-  default:
-    std::string msg = "unsupported memory model: " + string_of_mm( mm ) + "!!";
-    wmm_error( msg );
-  }
+  //switch( mm ) {
+  //case mm_t::sc     : 
+    return is_ordered_sc   ( e1, e2 ); //break;
+  //default:
+    //std::string msg = "unsupported memory model: " + string_of_mm( mm ) + "!!";
+    //llvm_bmc_error( "bmc", msg );
+  //}
   return false; // dummy return
 }
 
-bool wmm_event_cons::check_ppo( const hb_enc::se_ptr& e1,
-                                const hb_enc::se_ptr& e2 ) {
-  return check_ppo( p.get_mm(), e1, e2 );
+/* bool event_cons::check_ppo( const me_ptr& e1,
+                                const me_ptr& e2 ) {
+  //return check_ppo( p.get_mm(), e1, e2 );
   return false; // dummy return
-}
+} */
 
-// void wmm_event_cons::ppo_traverse( const tara::thread& thread ) {
+// void event_cons::ppo_traverse( const tara::thread& thread ) {
 //   hb_enc::se_to_ses_map pending_map, ordered_map;
 //   auto& se = thread.start_event;
 //   pending_map[se].insert(se); // this is how it should start
@@ -446,26 +414,25 @@ bool wmm_event_cons::check_ppo( const hb_enc::se_ptr& e1,
 //   }
 // }
 
-void wmm_event_cons::ppo() {
+void event_cons::ppo() {
   // wmm_test_ppo();
 
-  for( unsigned t=0; t < p.size(); t++ ) {
-    auto& thr = p.get_thread(t);
+  for( unsigned t=0; t < b_obj.threads.size(); t++ ) {
+    auto& thr = b_obj.get_thread(t);
 
     // May be not needed
-    auto& cr_e = p.create_map[thr.name];
-    z3::expr cr_ord = hb_encoding.mk_hbs( cr_e ,thr.start_event );
+    auto& cr_e = b_obj.create_map[thr.name];
+    expr cr_ord = mem_enc.mk_hbs( cr_e ,thr.start_event );
     po = po && z3::implies( cr_e->guard, thr.start_event->guard && cr_ord );
 
     ppo_sc ( thr );
 
-    const auto& it = p.join_map.find( thr.name );
-    if( it != p.join_map.end() ) {
+    const auto& it = b_obj.join_map.find( thr.name );
+    if( it != b_obj.join_map.end() ) {
       const auto& jp_pair = it->second;
       const auto join_point = jp_pair.first;
-      z3::expr join_guard = jp_pair.second;
-      z3::expr join_order = hb_encoding.mk_hbs( thr.final_event, join_point);
-      // z3::expr join_order = hb_encoding.mk_hbs( thr.final_event, join_point);
+      expr join_guard = jp_pair.second;
+      expr join_order = mem_enc.mk_hbs( thr.final_event, join_point);
       po = po && z3::implies( thr.final_event->guard, join_guard && join_order);
     }
   }
@@ -474,22 +441,23 @@ void wmm_event_cons::ppo() {
 
 
 // collecting stats about the events
-void wmm_event_cons::update_orderings() {
-  for( unsigned i = 0; i < p.size(); i ++ ) {
-    for( auto& e : p.get_thread(i).events ) {
-      update_must_before( p.get_thread(i).events, e );
+void event_cons::update_orderings() {
+  for( unsigned i = 0; i < b_obj.threads.size(); i ++ ) {
+    for( auto& e : b_obj.get_thread(i).events ) {
+      update_must_before( b_obj.get_thread(i).events, e );
     }
   }
+   
+  /// To be added
+  //p.update_seq_orderings();
 
-  p.update_seq_orderings();
-
-  for( unsigned i = 0; i < p.size(); i ++ ) {
-    auto rit = p.get_thread(i).events.rbegin();
-    auto rend = p.get_thread(i).events.rend();
+  for( unsigned i = 0; i < b_obj.threads.size(); i ++ ) {
+    auto rit = b_obj.get_thread(i).events.rbegin();
+    auto rend = b_obj.get_thread(i).events.rend();
     for (; rit!= rend; ++rit)
-      update_must_after( p.get_thread(i).events, *rit );
+      update_must_after( b_obj.get_thread(i).events, *rit );
   }
-  if( !p.is_mm_c11() && !p.is_mm_power()) {
+  /* if( !p.is_mm_c11() && !p.is_mm_power()) {
     //todo: check if this condition is correct
     // assert(false);
     for( unsigned i = 0; i < p.size(); i ++ ) {
@@ -497,124 +465,124 @@ void wmm_event_cons::update_orderings() {
         update_ppo_before( p.get_thread(i).events, e );
       }
     }
-  }
+  } */
 
   if(0) { // todo : may after disabled for now
-    for( unsigned i = 0; i < p.size(); i ++ ) {
-      auto rit = p.get_thread(i).events.rbegin();
-      auto rend = p.get_thread(i).events.rend();
+    for( unsigned i = 0; i < b_obj.threads.size(); i ++ ) {
+      auto rit = b_obj.get_thread(i).events.rbegin();
+      auto rend = b_obj.get_thread(i).events.rend();
       for (; rit!= rend; ++rit)
-        update_may_after( p.get_thread(i).events, *rit );
+        update_may_after( b_obj.get_thread(i).events, *rit );
     }
   }
 
-  if( o.print_input > 2 ) {
-    o.out() << "============================\n";
-    o.out() << "must after/before relations:\n";
-    o.out() << "============================\n";
-    for( unsigned i = 0; i < p.size(); i ++ ) {
-      hb_enc::se_vec es = p.get_thread(i).events;
-      es.push_back( p.get_thread(i).start_event );
-      es.push_back( p.get_thread(i).final_event );
+  if( o.verbosity > 2 ) {
+    std::cout << "============================\n";
+    std::cout << "must after/before relations:\n";
+    std::cout << "============================\n";
+    for( unsigned i = 0; i < b_obj.threads.size(); i ++ ) {
+      me_vec es = b_obj.get_thread(i).events;
+      es.push_back( b_obj.get_thread(i).start_event );
+      es.push_back( b_obj.get_thread(i).final_event );
       for( auto& e : es ) {
-        o.out() << e->name() << "\nbefore: ";
-        tara::debug_print( o.out(), p.must_before[e] );
-        o.out() << "after: ";
-        tara::debug_print( o.out(), p.must_after [e] );
-        o.out() << "may after: ";
-        tara::debug_print( o.out(), p.may_after [e] );
-        o.out() << "ppo before: ";
-        tara::debug_print( o.out(), p.ppo_before [e] );
-        o.out() << "c11 release sequence heads: ";
-        tara::debug_print( o.out(), p.c11_rs_heads [e] );
-        o.out() << "seq dominated wr before: ";
-        tara::debug_print( o.out(), p.seq_dom_wr_before [e] );
-        o.out() << "seq dominated wr after: ";
-        tara::debug_print( o.out(), p.seq_dom_wr_after [e] );
-        o.out() << "seq before: ";
-        tara::debug_print( o.out(), p.seq_before[e] );
-        o.out() << "\n";
+        std::cout << e->name() << "\nbefore: ";
+        debug_print( std::cout, b_obj.must_before[e] );
+        std::cout << "after: ";
+        debug_print( std::cout, b_obj.must_after [e] );
+        std::cout << "may after: ";
+        debug_print( std::cout, b_obj.may_after [e] );
+        std::cout << "ppo before: ";
+        debug_print( std::cout, b_obj.ppo_before [e] );
+        std::cout << "c11 release sequence heads: ";
+        debug_print( std::cout, b_obj.c11_rs_heads [e] );
+        std::cout << "seq dominated wr before: ";
+        debug_print( std::cout, b_obj.seq_dom_wr_before [e] );
+        std::cout << "seq dominated wr after: ";
+        debug_print( std::cout, b_obj.seq_dom_wr_after [e] );
+        std::cout << "seq before: ";
+        debug_print( std::cout, b_obj.seq_before[e] );
+        std::cout << "\n";
       }
     }
   }
 }
 
-void wmm_event_cons::update_must_before( const hb_enc::se_vec& es,
-                                         hb_enc::se_ptr e ) {
+void event_cons::update_must_before( const me_vec& es,
+                                         me_ptr e ) {
   // hb_enc::se_tord_set to_be_visited = { e };
-  hb_enc::se_to_ses_map local_ordered;
+  me_to_ses_map local_ordered;
   for( auto& ep : es ) {
     if( ep->get_topological_order() > e->get_topological_order() )
       continue;
-    std::vector<hb_enc::se_set> ord_sets( ep->prev_events.size() );
+    std::vector<me_set> ord_sets( ep->prev_events.size() );
     unsigned i = 0;
     for( auto& epp : ep->prev_events ) {
       ord_sets[i] = local_ordered[epp];
       if( check_ppo( epp, e ) ) {
         ord_sets[i].insert( epp );
-        helpers::set_insert( ord_sets[i], p.must_before[epp] );
+        set_insert( ord_sets[i], b_obj.must_before[epp] );
       }
       i++;
     }
-    helpers::set_intersection( ord_sets, local_ordered[ep] );
+    set_intersection( ord_sets, local_ordered[ep] );
     if( e == ep ) break;
   }
-  p.must_before[e] = local_ordered[e];
+  b_obj.must_before[e] = local_ordered[e];
 }
 
 
-void wmm_event_cons::update_must_after( const hb_enc::se_vec& es,
-                                        hb_enc::se_ptr e ) {
-  hb_enc::se_to_ses_map local_ordered;
+void event_cons::update_must_after( const me_vec& es,
+                                        me_ptr e ) {
+  me_to_ses_map local_ordered;
   auto rit = es.rbegin();
   auto rend = es.rend();
   for (; rit!= rend; ++rit) {
     auto& ep = *rit;
     if( ep->get_topological_order() < e->get_topological_order() )
       continue;
-    std::vector<hb_enc::se_set> ord_sets( ep->post_events.size() );
+    std::vector<me_set> ord_sets( ep->post_events.size() );
     unsigned i = 0;
     for( auto it = ep->post_events.begin(); it != ep->post_events.end(); it++) {
-      const hb_enc::depends& dep = *it;
-      hb_enc::se_ptr epp = dep.e;
+      const depends& dep = *it;
+      me_ptr epp = dep.e;
       ord_sets[i] = local_ordered[epp];
       if( check_ppo( e, epp ) ) {
         ord_sets[i].insert( epp );
-        helpers::set_insert( ord_sets[i], p.must_after[epp] );
+        set_insert( ord_sets[i], b_obj.must_after[epp] );
       }
       i++;
     }
-    helpers::set_intersection( ord_sets, local_ordered[ep] );
+    set_intersection( ord_sets, local_ordered[ep] );
     if( e == ep ) break;
   }
-  p.must_after[e] = local_ordered[e];
+  b_obj.must_after[e] = local_ordered[e];
 }
 
-void wmm_event_cons::pointwise_and( const hb_enc::depends_set& dep_in,
-                                    z3::expr cond,
-                                    hb_enc::depends_set& dep_out ) {
-  for( const hb_enc::depends& d : dep_in ) {
-    z3::expr c = d.cond && cond;
+void event_cons::pointwise_and( const depends_set& dep_in,
+                                    expr cond,
+                                    depends_set& dep_out ) {
+  for( const depends& d : dep_in ) {
+    expr c = d.cond && cond;
     c = c.simplify();
-    dep_out.insert( hb_enc::depends( d.e, c ));
+    dep_out.insert( depends( d.e, c ));
   }
 }
 
-void wmm_event_cons::update_may_after( const hb_enc::se_vec& es,
-                                       hb_enc::se_ptr e ) {
-  hb_enc::se_to_depends_map local_ordered;
+void event_cons::update_may_after( const me_vec& es,
+                                       me_ptr e ) {
+  me_to_depends_map local_ordered;
   auto rit = es.rbegin();
   auto rend = es.rend();
   for (; rit!= rend; ++rit) {
     auto ep = *rit;
     if( ep->get_topological_order() < e->get_topological_order() )
       continue;
-    std::vector<hb_enc::depends_set> temp_vector;
+    std::vector<depends_set> temp_vector;
     // unsigned i = 0;
-    for( const hb_enc::depends& dep : ep->post_events ){
-      const hb_enc::se_ptr epp = dep.e;
-      hb_enc::depends_set temp;
-      z3::expr epp_cond = z3.mk_false();
+    for( const depends& dep : ep->post_events ){
+      const me_ptr epp = dep.e;
+      depends_set temp;
+      expr epp_cond = solver_ctx.bool_val(false);
       // std::cout << e->name() << " "<< ep->name() << " "<< epp->name();
       // std::cout << "\n";
       // tara::debug_print( std::cout, p.may_after[epp] );
@@ -622,50 +590,50 @@ void wmm_event_cons::update_may_after( const hb_enc::se_vec& es,
       //todo: rmo support is to be added
       //      check_ppo does the half work for rmo
       if( check_ppo( e, epp ) ) {
-        hb_enc::depends_set temp3;
-        hb_enc::join_depends_set( p.may_after[epp], local_ordered[epp], temp3 );
+        depends_set temp3;
+        join_depends_set( b_obj.may_after[epp], local_ordered[epp], temp3 );
         pointwise_and( temp3, dep.cond, temp );
         epp_cond = dep.cond;
       } else {
      	pointwise_and( local_ordered[epp], dep.cond, temp );
       }
-      temp.insert( hb_enc::depends( epp, epp_cond ) );
+      temp.insert( depends( epp, epp_cond ) );
       temp_vector.push_back( temp );
       // i++;
     }
-    hb_enc::join_depends_set( temp_vector, local_ordered[ep] );
+    join_depends_set( temp_vector, local_ordered[ep] );
     if( e == ep ) break;
   }
-  p.may_after[e] = local_ordered[e];
+  b_obj.may_after[e] = local_ordered[e];
 }
 
-void wmm_event_cons::update_ppo_before( const hb_enc::se_vec& es,
-                                       hb_enc::se_ptr e ) {
-  hb_enc::se_to_depends_map local_ordered;
+void event_cons::update_ppo_before( const me_vec& es,
+                                       me_ptr e ) {
+  me_to_depends_map local_ordered;
   for( auto& ep : es ) {
     if( ep->get_topological_order() > e->get_topological_order() ) continue;
-    std::vector<hb_enc::depends_set> ord_sets( ep->prev_events.size() );
+    std::vector<depends_set> ord_sets( ep->prev_events.size() );
     unsigned i = 0;
     for( auto& epp : ep->prev_events ) {
       ord_sets[i] = local_ordered[epp];
       if( check_ppo( epp, e ) ) {
         if( epp->is_mem_op() )
-                hb_enc::join_depends_set(  epp, z3.mk_true(), ord_sets[i] );
-        hb_enc::join_depends_set(   p.ppo_before[epp], ord_sets[i] );
+                join_depends_set(  epp, solver_ctx.bool_val(true), ord_sets[i] );
+        join_depends_set(   b_obj.ppo_before[epp], ord_sets[i] );
       }else{
         if( epp->is_mem_op() )
-          hb_enc::join_depends_set( epp, z3.mk_false(), ord_sets[i] );
+          join_depends_set( epp, solver_ctx.bool_val(true), ord_sets[i] );
       }
       i++;
     }
-    hb_enc::meet_depends_set( ord_sets, local_ordered[ep] );
+    meet_depends_set( ord_sets, local_ordered[ep] );
     if( e == ep ) break;
   }
-  p.ppo_before[e] = local_ordered[e];
+  b_obj.ppo_before[e] = local_ordered[e];
 }
 
 //////////////////////////////////////////////////////////////need to be deleted
-void wmm_event_cons::print_rel(std::map<event_pair,z3::expr>& a,std::ostream& out)
+/* void event_cons::print_rel(std::map<event_pair,expr>& a,std::ostream& out)
 {
 	std::string s="";
 	for(auto a1:a)
@@ -674,49 +642,47 @@ void wmm_event_cons::print_rel(std::map<event_pair,z3::expr>& a,std::ostream& ou
 			 <<a1.first.first->name()<<" "
 			 <<a1.first.second->name()<<"))\n";
 	}
-}
+} */
 //////////////////////////////////////////////////////////////
 
-void wmm_event_cons::run() {
+void event_cons::run() {
   // update_orderings();
 
   ppo(); // build hb formulas to encode the preserved program order
   distinct_events();
   ses();
 
-  if ( o.print_phi ) {
-    o.out() << "(" << endl
-            << "phi_po : \n" << (po && dist) << endl
-            << "wf     : \n" << wf           << endl
-            << "rf     : \n" << rf           << endl
-            << "grf    : \n" << grf          << endl
-            << "fr     : \n" << fr           << endl
-            << "ws     : \n" << ws           << endl
-						<< "co     : \n" << co_expr      << endl
-            << "thin   : \n" << thin         << endl
-            << "phi_prp: \n" << p.phi_prp    << endl
-            << ")" << endl;
-    if(p.is_mm_power()) {
-    	o.out()<<"ii0 :  ";
-    	print_rel(ii0,o.out());
-    	o.out()<<"ci0 :  ";
-    	print_rel(ci0,o.out());
-    	o.out()<<"cc0 :  ";
-    	print_rel(cc0,o.out());
-    	o.out()<< "ppo : \n" 	<< ppo_expr << endl
-						 << "     &&" 	<< fixpoint << endl
-						 << "fence :" 	<< fence 		<< endl
-						 << "hb : \n" 	<< "ppo && grf && fence" << endl
-						 << "obs : \n"  << obs_expr	<< endl
-						 << "prop : \n" << prop_expr<< endl;
-    }
-  }
+//  if ( o.print_phi ) {
+//    o.out() << "(" << endl
+//            << "phi_po : \n" << (po && dist) << endl
+//            << "wf     : \n" << wf           << endl
+//            << "rf     : \n" << rf           << endl
+//            << "grf    : \n" << grf          << endl
+//            << "fr     : \n" << fr           << endl
+//            << "ws     : \n" << ws           << endl
+//						<< "co     : \n" << co_expr      << endl
+//            << "thin   : \n" << thin         << endl
+//            << "phi_prp: \n" << b_obj.phi_prp    << endl
+//            << ")" << endl;
+//    if(p.is_mm_power()) {
+//    	o.out()<<"ii0 :  ";
+//    	print_rel(ii0,o.out());
+//    	o.out()<<"ci0 :  ";
+//    	print_rel(ci0,o.out());
+//    	o.out()<<"cc0 :  ";
+//    	print_rel(cc0,o.out());
+//    	o.out()<< "ppo : \n" 	<< ppo_expr << endl
+//						 << "     &&" 	<< fixpoint << endl
+//						 << "fence :" 	<< fence 		<< endl
+//						 << "hb : \n" 	<< "ppo && grf && fence" << endl
+//						 << "obs : \n"  << obs_expr	<< endl
+//						 << "prop : \n" << prop_expr<< endl;
+//    }
+//  }
 
-  p.phi_po  = po && dist;
-  p.phi_ses = wf && grf && fr && ws && po_loc;
-  if( !p.is_mm_arm8_2() ) {
-    p.phi_ses = p.phi_ses && thin; //todo : undo this update
-  }
+  b_obj.phi_po  = po && dist;
+  b_obj.phi_ses = wf && grf && fr && ws; // && po_loc; ///Confirm not needed
+  //if( !p.is_mm_arm8_2() ) {
+    b_obj.phi_ses = b_obj.phi_ses && thin; //todo : undo this update
+  //}
 }
-
-

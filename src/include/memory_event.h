@@ -56,6 +56,7 @@
     bool operator<( const variable& rhs) const {
       return this->name < rhs.name;
     }
+  };
 
     struct variable_hash {
       size_t operator () (const variable &v) const { return std::hash<std::string>()(v.name); }
@@ -74,8 +75,6 @@
     //support for gdb
     void debug_print( const variable_set& , std::ostream& out);
     //--------------------------------------------------------------------------
-
-  };
 
 
 struct tstamp {
@@ -555,11 +554,11 @@ private:
   typedef std::set< me_ptr, me_cmp > me_tord_set;
   // typedef std::unordered_set<me_ptr, me_hash, me_equal> me_set;
 
-typedef std::unordered_map<variable, me_ptr, variable::variable_hash, variable::variable_equal> var_to_me_map;
+typedef std::unordered_map<variable, me_ptr, variable_hash, variable_equal> var_to_me_map;
 
-  typedef std::unordered_map<variable, me_set, variable::variable_hash, variable::variable_equal> var_to_ses_map;
+  typedef std::unordered_map<variable, me_set, variable_hash, variable_equal> var_to_ses_map;
 
-  typedef std::unordered_map<variable, me_vec, variable::variable_hash, variable::variable_equal> var_to_me_vec_map;
+  typedef std::unordered_map<variable, me_vec, variable_hash, variable_equal> var_to_me_vec_map;
 
   typedef std::unordered_map<me_ptr, me_set, me_hash, me_equal> me_to_ses_map;
 
@@ -576,8 +575,8 @@ typedef std::unordered_map<variable, me_ptr, variable::variable_hash, variable::
   typedef std::unordered_map<me_ptr, depends_set, me_hash, me_equal> me_to_depends_map;
   typedef std::unordered_map< variable,
                               depends_set,
-                              variable::variable_hash,
-                              variable::variable_equal> var_to_depends_map;   
+                              variable_hash,
+                              variable_equal> var_to_depends_map;   
 
   depends pick_maximal_depends_set( depends_set& set );
   void join_depends_set( const me_ptr&, const expr, depends_set& set );
