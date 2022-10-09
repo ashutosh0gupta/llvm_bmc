@@ -7,11 +7,14 @@
 #include "include/memory_cons.h"
 #include <boost/concept_check.hpp>
 
+//----------------------------------------------------------------------
+//          SYMBOLIC EVENT STRUCTURE
+//----------------------------------------------------------------------
   // class for constructing constraints on events
   // depending on the memory model
-  class event_cons {
+class ses {
   public:
-    event_cons( options& , solver_context& , memory_cons&, bmc& );
+    ses( options& , solver_context& , memory_cons&, bmc& );
     void run();
 
     //static bool check_ppo( const me_ptr&, const me_ptr& );
@@ -62,7 +65,7 @@
     //expr get_rel_seq_bvar( hb_enc::se_ptr wrp, hb_enc::se_ptr wr,
                                //bool record=true );
 
-    void ses();
+    void ses_();
 
     // -----------------------------------------------------------------------
     // rmo functions

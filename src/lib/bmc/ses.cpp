@@ -1,18 +1,15 @@
 #include "ses.h"
 #include "include/memory_event.h"
 
-//----------------------------------------------------------------------------
-// New code
-//----------------------------------------------------------------------------
 
-event_cons::event_cons( options& o, solver_context& solver_ctx__, 
+ses::ses( options& o, solver_context& solver_ctx__,
                         memory_cons& mem_enc_, bmc& b)
-  : o(o), solver_ctx(solver_ctx__), 
+  : o(o), solver_ctx(solver_ctx__),
     mem_enc(mem_enc_), b_obj(b) {
 }
 
 
-//bool event_cons::is_po( me_ptr x, me_ptr y ) {
+//bool ses::is_po( me_ptr x, me_ptr y ) {
 //  if( x == y )
 //    return true;
 //  if( x->is_pre() || y->is_post() ) return true;
@@ -28,7 +25,7 @@ event_cons::event_cons( options& o, solver_context& solver_ctx__,
 // memory model utilities
 
 
-bool event_cons::in_grf( const me_ptr& wr,
+bool ses::in_grf( const me_ptr& wr,
                              const me_ptr& rd ) {
   return true;
   // if( p.is_mm_sc() ) {
@@ -42,7 +39,7 @@ bool event_cons::in_grf( const me_ptr& wr,
   // }
 }
 
-bool event_cons::is_no_thin_mm() const {
+bool ses::is_no_thin_mm() const {
   return false;
   // if( p.is_mm_sc() || p.is_mm_arm8_2() || p.is_mm_power() ) {
   //   return false;
@@ -73,7 +70,7 @@ bool event_cons::is_no_thin_mm() const {
 //  - ws;rf   (w->r)   r->w  n    n     n     n     n      r
 
 
-bool event_cons::is_rd_rd_coherence_preserved() {
+bool ses::is_rd_rd_coherence_preserved() {
   return true;
   // if( p.is_mm_sc() ) {
   //   return true;
@@ -90,7 +87,7 @@ bool event_cons::is_rd_rd_coherence_preserved() {
 // In original implementation this part of constraints are
 // referred as pi constraints
 
-expr event_cons::get_rf_bvar( const variable& v1,
+expr ses::get_rf_bvar( const variable& v1,
                                       me_ptr wr, me_ptr rd,
                                       bool record ) {
   expr b = mem_enc.get_rf_bit( v1, wr, rd );
@@ -108,7 +105,7 @@ expr event_cons::get_rf_bvar( const variable& v1,
 
 
 //----------------------------------------------------------------------------
-bool event_cons::anti_po_read( const me_ptr& wr,
+bool ses::anti_po_read( const me_ptr& wr,
                                    const me_ptr& rd ) {
   // preventing coherence violation - rf
   // (if rf is local then may not visible to global ordering)
@@ -128,7 +125,7 @@ bool event_cons::anti_po_read( const me_ptr& wr,
 }
 
 
-bool event_cons::anti_po_loc_fr( const me_ptr& rd,
+bool ses::anti_po_loc_fr( const me_ptr& rd,
                                      const me_ptr& wr ) {
   // preventing coherence violation - fr;
   // (if rf is local then it may not be visible to the global ordering)
@@ -147,7 +144,7 @@ bool event_cons::anti_po_loc_fr( const me_ptr& rd,
   return false;
 }
 
-bool event_cons::is_wr_wr_coherence_needed() {
+bool ses::is_wr_wr_coherence_needed() {
   // if( p.is_mm_sc()
   //     || p.is_mm_tso()
   //     || p.is_mm_pso()
@@ -162,12 +159,12 @@ bool event_cons::is_wr_wr_coherence_needed() {
 }
 
 
-bool event_cons::is_rd_wr_coherence_needed() {
+bool ses::is_rd_wr_coherence_needed() {
   return false;//dummy return
 }
 
 
-void event_cons::ses() {
+void ses::ses_() {
   // For each global variable we need to construct
   // - wf  well formed
   // - rf  read from
@@ -292,7 +289,7 @@ void event_cons::ses() {
 //----------------------------------------------------------------------------
 // declare all events happen at different time points
 
-void event_cons::distinct_events() {
+void ses::distinct_events() {
 
   expr_vector es( solver_ctx );
 
@@ -320,7 +317,7 @@ void event_cons::distinct_events() {
 
 
 
-void event_cons::ppo_sc( const spec_thread& thread ) {
+void ses::ppo_sc( const spec_thread& thread ) {
 
   for( auto& e : thread.events ) {
     po = po && mem_enc.mk_ghbs( e->prev_events, e );
@@ -329,7 +326,7 @@ void event_cons::ppo_sc( const spec_thread& thread ) {
   po = po && mem_enc.mk_ghbs( e->prev_events, e );
 }
 
-bool event_cons::is_non_mem_ordered( const me_ptr& e1,
+bool ses::is_non_mem_ordered( const me_ptr& e1,
                                          const me_ptr& e2  ) {
   if( e1->is_block_head() || e2->is_block_head()  ) return false;
   if( e2->is_barrier() ||e2->is_before_barrier() ||e2->is_thread_create())
@@ -342,7 +339,7 @@ bool event_cons::is_non_mem_ordered( const me_ptr& e1,
   return false;
 }
 
-bool event_cons::is_ordered_sc( const me_ptr& e1,
+bool ses::is_ordered_sc( const me_ptr& e1,
                                     const me_ptr& e2  ) {
   assert( e1->is_mem_op() && e2->is_mem_op() );
 
@@ -353,7 +350,7 @@ bool event_cons::is_ordered_sc( const me_ptr& e1,
 
 
 
-bool event_cons::check_ppo( //mm_t mm,
+bool ses::check_ppo( //mm_t mm,
                                 const me_ptr& e1,
                                 const me_ptr& e2 ) {
   if( e1->is_non_mem_op() || e2->is_non_mem_op() ) {
@@ -372,13 +369,13 @@ bool event_cons::check_ppo( //mm_t mm,
   return false; // dummy return
 }
 
-/* bool event_cons::check_ppo( const me_ptr& e1,
+/* bool ses::check_ppo( const me_ptr& e1,
                                 const me_ptr& e2 ) {
   //return check_ppo( p.get_mm(), e1, e2 );
   return false; // dummy return
 } */
 
-// void event_cons::ppo_traverse( const tara::thread& thread ) {
+// void ses::ppo_traverse( const tara::thread& thread ) {
 //   hb_enc::se_to_ses_map pending_map, ordered_map;
 //   auto& se = thread.start_event;
 //   pending_map[se].insert(se); // this is how it should start
@@ -414,7 +411,7 @@ bool event_cons::check_ppo( //mm_t mm,
 //   }
 // }
 
-void event_cons::ppo() {
+void ses::ppo() {
   // wmm_test_ppo();
 
   for( unsigned t=0; t < b_obj.threads.size(); t++ ) {
@@ -441,7 +438,7 @@ void event_cons::ppo() {
 
 
 // collecting stats about the events
-void event_cons::update_orderings() {
+void ses::update_orderings() {
   for( unsigned i = 0; i < b_obj.threads.size(); i ++ ) {
     for( auto& e : b_obj.get_thread(i).events ) {
       update_must_before( b_obj.get_thread(i).events, e );
@@ -507,7 +504,7 @@ void event_cons::update_orderings() {
   }
 }
 
-void event_cons::update_must_before( const me_vec& es,
+void ses::update_must_before( const me_vec& es,
                                          me_ptr e ) {
   // hb_enc::se_tord_set to_be_visited = { e };
   me_to_ses_map local_ordered;
@@ -531,7 +528,7 @@ void event_cons::update_must_before( const me_vec& es,
 }
 
 
-void event_cons::update_must_after( const me_vec& es,
+void ses::update_must_after( const me_vec& es,
                                         me_ptr e ) {
   me_to_ses_map local_ordered;
   auto rit = es.rbegin();
@@ -558,7 +555,7 @@ void event_cons::update_must_after( const me_vec& es,
   b_obj.must_after[e] = local_ordered[e];
 }
 
-void event_cons::pointwise_and( const depends_set& dep_in,
+void ses::pointwise_and( const depends_set& dep_in,
                                     expr cond,
                                     depends_set& dep_out ) {
   for( const depends& d : dep_in ) {
@@ -568,7 +565,7 @@ void event_cons::pointwise_and( const depends_set& dep_in,
   }
 }
 
-void event_cons::update_may_after( const me_vec& es,
+void ses::update_may_after( const me_vec& es,
                                        me_ptr e ) {
   me_to_depends_map local_ordered;
   auto rit = es.rbegin();
@@ -607,7 +604,7 @@ void event_cons::update_may_after( const me_vec& es,
   b_obj.may_after[e] = local_ordered[e];
 }
 
-void event_cons::update_ppo_before( const me_vec& es,
+void ses::update_ppo_before( const me_vec& es,
                                        me_ptr e ) {
   me_to_depends_map local_ordered;
   for( auto& ep : es ) {
@@ -633,7 +630,7 @@ void event_cons::update_ppo_before( const me_vec& es,
 }
 
 //////////////////////////////////////////////////////////////need to be deleted
-/* void event_cons::print_rel(std::map<event_pair,expr>& a,std::ostream& out)
+/* void ses::print_rel(std::map<event_pair,expr>& a,std::ostream& out)
 {
 	std::string s="";
 	for(auto a1:a)
@@ -645,12 +642,12 @@ void event_cons::update_ppo_before( const me_vec& es,
 } */
 //////////////////////////////////////////////////////////////
 
-void event_cons::run() {
+void ses::run() {
   // update_orderings();
 
   ppo(); // build hb formulas to encode the preserved program order
   distinct_events();
-  ses();
+  ses_();
 
 //  if ( o.print_phi ) {
 //    o.out() << "(" << endl

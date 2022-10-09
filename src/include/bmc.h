@@ -13,6 +13,8 @@
 
 #define OUTSIDE_ANY_LOOP_CODE_PTR NULL
 
+
+
 class bmc {
 public:
   options& o;
