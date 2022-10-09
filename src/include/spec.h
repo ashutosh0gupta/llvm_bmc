@@ -2,7 +2,7 @@
 #define LLVMBMC_SPEC_H
 
 #include "include/options.h"
-#include "include/memory_event.h"
+// #include "include/memory_event.h"
 
 class bmc;
 
@@ -17,8 +17,8 @@ public:
   std::vector <expr> envs;
   std::vector <expr> posts;
   std::vector < std::pair <std::string, std::string> > call_seqs;
-  me_vec events;
-  me_ptr start_event, final_event;
+  // me_vec events;
+  // me_ptr start_event, final_event;
   unsigned period; // in ms
   unsigned priority;
   unsigned thread_num;

@@ -28,6 +28,7 @@ bmc::bmc( std::unique_ptr<llvm::Module>& m_,
     , def_map(o_)
     , module(m_)
     , bb_comment_map( bb_comment_map_ )
+    , edata(o_) // concurrency data store
     , m_model(o_.solver_ctx)
 {}
 

@@ -13,39 +13,16 @@
 
 #define OUTSIDE_ANY_LOOP_CODE_PTR NULL
 
+struct thread_events {
+  me_vec events;
+  me_ptr start_event, final_event;
+};
 
-
-class bmc {
-public:
+class events_data {
   options& o;
-  // solver_context& solver_ctx;
-  value_expr_map def_map;
-  std::unique_ptr<llvm::Module>& module;
-  std::map< const llvm::BasicBlock*, comments >& bb_comment_map;
 
-  std::map< const llvm::Function*, bmc_fun*> func_formula_map;
+  std::vector< thread_events > threads;
 
-  // loop_formula_map[NULL] maps to data for the code that is not in any loop
-  std::map< const llvm::Loop*, bmc_loop*> loop_formula_map;
-  std::map<llvm::Loop*, loopdata*> ld_map;
-
-  name_map localNameMap;
-  std::map< const llvm::BasicBlock*,rev_name_map > revStartLocalNameMap;//todo:likely useless
-  std::map< const llvm::BasicBlock*, rev_name_map > revEndLocalNameMap;
-
-  //--------------------------------------------------
-  // add data structure to store information collected
-  // from specification file
-  //std::map< std::string, unsigned > fn_to_thread;
-  //typedef std::pair<std::string, std::string> threads;
-  //typedef std::pair<std::string, expr> condition;
-  //std::vector <threads> thread_list;
-  //std::vector<condition> prop;
-  //std::vector<condition> precond;
-
-  std::vector< spec_thread > threads; //todo : populate this
-  std::vector<const llvm::GlobalVariable*> concurrent_vars;
-  //std::map< me_ptr, unsigned > all_events;
   me_set all_events;
   std::set< std::tuple<std::string,me_ptr,me_ptr> > reading_map;
   variable_set globals;
@@ -96,6 +73,41 @@ public:
       variable g(o.solver_ctx); // dummy code to suppress warning
       return g;
     }
+
+};
+
+class bmc {
+public:
+  options& o;
+  // solver_context& solver_ctx;
+  value_expr_map def_map;
+  std::unique_ptr<llvm::Module>& module;
+  std::map< const llvm::BasicBlock*, comments >& bb_comment_map;
+
+  std::map< const llvm::Function*, bmc_fun*> func_formula_map;
+
+  // loop_formula_map[NULL] maps to data for the code that is not in any loop
+  std::map< const llvm::Loop*, bmc_loop*> loop_formula_map;
+  std::map<llvm::Loop*, loopdata*> ld_map;
+
+  name_map localNameMap;
+  std::map< const llvm::BasicBlock*,rev_name_map > revStartLocalNameMap;//todo:likely useless
+  std::map< const llvm::BasicBlock*, rev_name_map > revEndLocalNameMap;
+
+  //--------------------------------------------------
+  // add data structure to store information collected
+  // from specification file
+  //std::map< std::string, unsigned > fn_to_thread;
+  //typedef std::pair<std::string, std::string> threads;
+  //typedef std::pair<std::string, expr> condition;
+  //std::vector <threads> thread_list;
+  //std::vector<condition> prop;
+  //std::vector<condition> precond;
+
+  std::vector< spec_thread > threads; //todo : populate this
+  std::vector<const llvm::GlobalVariable*> concurrent_vars;
+  //std::map< me_ptr, unsigned > all_events;
+  event_data edata;
 
   bool verify_prop();
   //--------------------------------------------
