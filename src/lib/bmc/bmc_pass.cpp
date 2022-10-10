@@ -873,9 +873,9 @@ void bmc_pass::create_read_event( unsigned bidx,
     auto evt = mk_me_ptr(o.mem_enc, tid, prev_events, path_cond, history, glb, loc, event_t::r, translate_ordering_tags( load->getOrdering()) ); //NULL, true, NULL, val_expr, loc.
   //bmc_ds_ptr->all_events.insert( std::make_pair( evt, tid ) );
     //bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
-    bmc_obj.all_events.insert( evt );
+    bmc_obj.edata.all_events.insert( evt );
     prev_events = {evt};
-    bmc_obj.threads[tid-1].events.push_back( evt );
+    bmc_obj.edata.ev_threads[tid].events.push_back( evt );
   }
 }
 
@@ -900,8 +900,8 @@ void bmc_pass::create_write_event( unsigned bidx,
   // cgp_obj.add_event(tid, evt);
   //bmc_ds_ptr->all_events.insert( std::make_pair( evt, tid ) );
   //bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
-    bmc_obj.all_events.insert( evt );
-    bmc_obj.threads[tid-1].events.push_back( evt );
+    bmc_obj.edata.all_events.insert( evt );
+    bmc_obj.edata.ev_threads[tid].events.push_back( evt );
  }
 }
 
@@ -1392,7 +1392,7 @@ void bmc_pass::do_bmc() {
     set_start_event( thr_id, start, start_bit );
     prev_events = { start };
     //bmc_obj.all_events.insert( start );
-    bmc_obj.threads[bmc_ds_ptr->thread_id-1].start_event = start;
+    bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].start_event = start;
   }
 
   // init_array_model( bmc_ds_ptr->bb_vec, bmc_ds_ptr->eb );
@@ -1461,7 +1461,7 @@ void bmc_pass::do_bmc() {
                             history_exprs, floc, event_t::barr );
     set_final_event( thr_id, final, exit_cond );
     //bmc_obj.all_events.insert( final );
-    bmc_obj.threads[bmc_ds_ptr->thread_id-1].final_event = final;
+    bmc_obj.edata. ev_threads[bmc_ds_ptr->thread_id].final_event = final;
  }
 
 }

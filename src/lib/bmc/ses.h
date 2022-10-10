@@ -36,7 +36,7 @@ class ses {
 
     //void ppo_traverse ( const tara::thread& );
 
-    void ppo_sc ( const spec_thread& thread );
+    void ppo_sc ( const thread_events& thread );
     bool check_ppo( const me_ptr&, const me_ptr& );
     void ppo();
 

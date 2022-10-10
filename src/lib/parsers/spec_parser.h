@@ -34,7 +34,7 @@ public:
 
      std::map <std::pair <std::string, std::string>, std::string> callseq_map; */
      std::map< std::string, unsigned > fn_thread_map;
-     unsigned thread_num = 0;
+     unsigned thread_num = -1;
 
      //std::map <std::pair <std::string, uint16_t>, uint16_t> thread_exec_map;
 

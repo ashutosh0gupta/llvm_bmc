@@ -79,7 +79,7 @@ void bmc::run_bmc_pass() {
   }
   else if ( threads.size() > 1 ) {
     //collect_globals( module, o.solver_ctx, o.mem_enc, o, *this );
-    collect_globals( module, *this );
+    collect_globals( module, *this, o.mem_enc, o.solver_ctx, o );
     passMan.add( new bmc_concur_pass(o,o.solver_ctx, *this) );
     passMan.run( *module.get() );
 
@@ -89,7 +89,7 @@ void bmc::run_bmc_pass() {
     for ( unsigned tid = 1; tid < threads.size()+1; tid++  ) {
       std::cout << "-----------------------------------\n";
       std::cout << "Thread ID " << tid << "\n";
-      for (auto m : all_events) {
+      for (auto m : edata.all_events) {
         //auto& e =  *(m.first);
         auto& e =  *m;
         if( e.tid != tid ) continue;
@@ -155,18 +155,6 @@ void bmc::init() {
 
 memory_state bmc::populate_mem_state() {
 
-  me_set prev_events;
-  src_loc sloc,floc;  //"the_launcher",   "the_finisher";  
-  std::vector<expr> history;
-  expr tru = o.solver_ctx.bool_val(true);
-  auto start = mk_me_ptr( o.mem_enc, INT_MAX, prev_events, tru, history, sloc,
-                          event_t::pre, o_tag_t::sc);
-  auto final = mk_me_ptr( o.mem_enc, INT_MAX, prev_events, tru, history, floc,
-                          event_t::post, o_tag_t::sc);
-
-  init_loc = start;
-  post_loc = final;
-
   memory_state mem_st;
   // TODO : Add setter and getters
   auto& vec = mem_st.mem_state_vec;
@@ -177,7 +165,7 @@ memory_state bmc::populate_mem_state() {
 
     llvm::GlobalVariable* glb = &*iter_glb; //3.8
     llvm::Type* ty = glb->getType();
-    const std::string gvar = (std::string)(glb->getName());
+    //const std::string gvar = (std::string)(glb->getName());
 
     if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
       assert(pty);
@@ -196,8 +184,8 @@ memory_state bmc::populate_mem_state() {
       state_obj tem_state_obj(new_glb,ty);
       vec.push_back(tem_state_obj);
 
-      add_global( gvar, z_sort );
-      wr_events[ get_global( gvar ) ].insert( start );
+      //add_global( gvar, z_sort );
+      //wr_events[ get_global( gvar ) ].insert( start );
 
       if( glb->hasUniqueInitializer() ) {
         auto c = glb->getInitializer();

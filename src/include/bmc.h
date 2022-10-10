@@ -9,72 +9,10 @@
 #include "include/spec.h"
 #include "include/llvm_decls.h"
 #include "include/memory_event.h"
+#include "lib/bmc/events_data.h"
 
 
 #define OUTSIDE_ANY_LOOP_CODE_PTR NULL
-
-struct thread_events {
-  me_vec events;
-  me_ptr start_event, final_event;
-};
-
-class events_data {
-  options& o;
-
-  std::vector< thread_events > threads;
-
-  me_set all_events;
-  std::set< std::tuple<std::string,me_ptr,me_ptr> > reading_map;
-  variable_set globals;
-  var_to_ses_map wr_events;
-  var_to_me_vec_map rd_events;
-  me_ptr init_loc; // todo : remove their prev/post to avoid leaks
-  me_ptr post_loc;
-  std::map< std::string, me_ptr> create_map;
-  std::map< std::string, std::pair<me_ptr, expr > > join_map;
-
-  me_to_ses_map seq_before;
-  me_to_ses_map seq_dom_wr_before;
-  me_to_ses_map seq_dom_wr_after;  
-  
-  // pre calculation of orderings
-  me_to_ses_map must_after;
-  me_to_ses_map must_before;
-  me_to_depends_map may_after;
-  me_to_depends_map ppo_before;
-  me_to_depends_map c11_rs_heads; // c11 release sequence heads
-
-  expr phi_ses      = o.solver_ctx.bool_val(true);
-  expr phi_post     = o.solver_ctx.bool_val(true);
-  expr phi_pre      = o.solver_ctx.bool_val(true); //z3.c.bool_val(true);
-  expr phi_po       = o.solver_ctx.bool_val(true);
-  expr phi_vd       = o.solver_ctx.bool_val(true);
-  expr phi_pi       = o.solver_ctx.bool_val(true);
-  expr phi_prp      = o.solver_ctx.bool_val(true);
-  expr phi_fea      = o.solver_ctx.bool_val(true); // feasable traces
-  expr phi_distinct = o.solver_ctx.bool_val(true); //ensures that all locations are distinct
-
-  inline const spec_thread& get_thread(unsigned t) const { //To be moved?
-      assert( t < threads.size() );
-      return threads[t];
-    }
-
-  void add_global( std::string g, sort sort ) {
-      globals.insert( variable(g, sort) );
-    }
-
-    // todo: only return const reference??
-    variable get_global( std::string gname ) {
-      for( auto& g : globals ) {
-        if( gname == g.name )
-          return g;
-      }
-      llvm_bmc_error( "bmc","global variable " << gname << " not found!" );
-      variable g(o.solver_ctx); // dummy code to suppress warning
-      return g;
-    }
-
-};
 
 class bmc {
 public:
@@ -107,7 +45,7 @@ public:
   std::vector< spec_thread > threads; //todo : populate this
   std::vector<const llvm::GlobalVariable*> concurrent_vars;
   //std::map< me_ptr, unsigned > all_events;
-  event_data edata;
+  events_data edata;
 
   bool verify_prop();
   //--------------------------------------------

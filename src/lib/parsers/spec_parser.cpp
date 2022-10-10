@@ -304,6 +304,7 @@ void spec_parser::read_postcond( std::istream& in ) {
 void spec_parser::clear_threadobj( std::istream& in, bmc& b ) {
    std::string symb1 = read_symbol( in );
    b.threads.push_back(thread_obj);
+   b.edata.ev_threads[thread_num].name = thread_obj.name;
    thread_obj.name = " ";
    thread_obj.entry_function = " ";
    thread_obj.pres.clear();

@@ -1,6 +1,6 @@
 #include "lib/bmc/collect_globals.h"
 //#include "lib/utils/utils.h"
-//#include "lib/utils/llvm_utils.h"
+#include "lib/utils/llvm_utils.h"
 //#include "include/value_expr_map.h"
 
 //collect_globals::collect_globals( std::unique_ptr<llvm::Module>& m_,
@@ -15,10 +15,11 @@
 //}
 
 collect_globals::collect_globals( std::unique_ptr<llvm::Module>& m_,
-                                  bmc& b)
-  : module(m_), b(b) {
+                                  bmc& b, memory_cons& mem_enc_,
+                                  solver_context& solver_ctx__, options& o )
+  : module(m_), b(b), mem_enc(mem_enc_), solver_ctx(solver_ctx__), o(o) {
   collect_globals_internal(module, b);
-  insert_concurrent(b);
+  insert_concurrent(b, mem_enc, solver_ctx, o);
   //CreateRdWrEvents(module, b);
 }
 
@@ -86,8 +87,21 @@ collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
 }
 
 
-void collect_globals::insert_concurrent( bmc& b )
+void collect_globals::insert_concurrent( bmc& b, memory_cons& mem_enc,
+                                  solver_context& solver_ctx, options& o )
 {
+  me_set prev_events;
+  src_loc sloc,floc;  //"the_launcher",   "the_finisher";  
+  std::vector<expr> history;
+  expr tru = solver_ctx.bool_val(true);
+  auto start = mk_me_ptr( mem_enc, INT_MAX, prev_events, tru, history, sloc,
+                          event_t::pre, o_tag_t::sc);
+  auto final = mk_me_ptr( mem_enc, INT_MAX, prev_events, tru, history, floc,
+                          event_t::post, o_tag_t::sc);
+
+  b.edata.init_loc = start;
+  b.edata.post_loc = final;  
+ 
   for (unsigned k = 0; k < b.threads.size(); k++) {
     auto FnName1 = b.threads.at(k).entry_function;
     if( fn_gvars_map.find(FnName1) != fn_gvars_map.end() ) {
@@ -99,20 +113,30 @@ void collect_globals::insert_concurrent( bmc& b )
         //     auto g1 = list_gvars.at(j);
         for( auto g1 : list_gvars ) {
             if (find(i->second.begin(), i->second.end(), g1) != i->second.end()) {
-              if (b.concurrent_vars.empty())
-                b.concurrent_vars.push_back(g1);
+	      const std::string gvar = (std::string)(g1->getName());
+	      llvm::Type* ty = g1->getType();
+	      if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
+	      auto el_ty = pty->getPointerElementType();
+      	      sort z_sort = llvm_to_sort( o, el_ty);
+	      b.edata.add_global( gvar, z_sort );
+	      b.edata.wr_events[ b.edata.get_global( gvar ) ].insert( start );
+	     }
+              if (b.concurrent_vars.empty()) {
+                b.concurrent_vars.push_back(g1);		
+		}
               else {
-                if (find(b.concurrent_vars.begin(), b.concurrent_vars.end(), g1) == b.concurrent_vars.end())
+                if (find(b.concurrent_vars.begin(), b.concurrent_vars.end(), g1) == b.concurrent_vars.end()) {
                   b.concurrent_vars.push_back(g1);
+		}
               }
             }
           }
+	}
       }
     }
   }
- }
-  //for(unsigned i=0; i < b.concurrent_vars.size(); i++)
-    //std::cout << "Concurrent variable number " << i << " is " << (std::string)((b.concurrent_vars.at(i))->getName()) << "\n";
+  /*for(unsigned i=0; i < b.concurrent_vars.size(); i++)
+    std::cout << "Concurrent variable number " << i << " is " << (std::string)((b.concurrent_vars.at(i))->getName()) << "\n"; */
 
 }
 

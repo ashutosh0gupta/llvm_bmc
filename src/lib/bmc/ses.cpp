@@ -95,7 +95,7 @@ expr ses::get_rf_bvar( const variable& v1,
   // std::string bname = v1+"-"+wr->name()+"-"+rd->name();
   // z3::expr b = z3.c.bool_const(  bname.c_str() );
   if( record ) {
-    b_obj.reading_map.insert( std::make_tuple(bname, wr, rd) );
+    b_obj.edata.reading_map.insert( std::make_tuple(bname, wr, rd) );
     //if( p.is_mm_c11() ) // keep a copy in encoding object//todo: remove copy
       mem_enc.rf_map.insert( std::make_tuple(bname, wr, rd) );
   }
@@ -109,7 +109,7 @@ bool ses::anti_po_read( const me_ptr& wr,
                                    const me_ptr& rd ) {
   // preventing coherence violation - rf
   // (if rf is local then may not visible to global ordering)
-  assert( wr->tid > b_obj.threads.size() || rd->tid > b_obj.threads.size() ||
+  assert( wr->tid >= b_obj.edata.ev_threads.size() || rd->tid >= b_obj.edata.ev_threads.size() ||
           wr->prog_v-> getName() == rd->prog_v-> getName() );
   //if( p.is_mm_sc() ) {
     // should come here for those memory models where rd-wr on
@@ -130,7 +130,7 @@ bool ses::anti_po_loc_fr( const me_ptr& rd,
   // preventing coherence violation - fr;
   // (if rf is local then it may not be visible to the global ordering)
   // coherance disallows rf(rd,wr') and ws(wr',wr) and po-loc( wr, rd)
-  assert( wr->tid > b_obj.threads.size() || rd->tid > b_obj.threads.size() ||
+  assert( wr->tid >= b_obj.edata.ev_threads.size() || rd->tid >= b_obj.edata.ev_threads.size() ||
           wr->prog_v-> getName() == rd->prog_v-> getName() );
   //if( p.is_mm_sc() ) {
     if( wr->is_update() && rd == wr ) return false;
@@ -178,8 +178,8 @@ void ses::ses_() {
   //todo: disable the following code if rd rd coherence not preserved
   //todo: remove the following. seq_before also calculates the following info
   me_to_ses_map prev_rds;
-  for( unsigned t = 0; t < b_obj.threads.size()+1; t++ ) {
-     const auto& thr = b_obj.get_thread( t );
+  for( unsigned t = 0; t < b_obj.edata.ev_threads.size(); t++ ) {
+     const auto& thr = b_obj.edata.get_thread( t );
   // for( const auto& thr : p.threads ) {
     for( auto e : thr.events ) {
       me_set& rds = prev_rds[e];
@@ -190,9 +190,9 @@ void ses::ses_() {
     }
   }
 
-  for( const auto& v1 : b_obj.globals ) {
-    const me_vec& rds = b_obj.rd_events[v1];
-    const me_set& wrs = b_obj.wr_events[v1];
+  for( const auto& v1 : b_obj.edata.globals ) {
+    const me_vec& rds = b_obj.edata.rd_events[v1];
+    const me_set& wrs = b_obj.edata.wr_events[v1];
     for( const me_ptr& rd : rds ) {
       expr some_rfs = solver_ctx.bool_val(false);
       expr rd_v = rd->get_rd_expr(v1);
@@ -293,13 +293,13 @@ void ses::distinct_events() {
 
   expr_vector es( solver_ctx );
 
-  es.push_back( b_obj.init_loc->get_solver_symbol() );
+  es.push_back( b_obj.edata.init_loc->get_solver_symbol() );
 
-  if( b_obj.post_loc )
-    es.push_back( b_obj.post_loc->get_solver_symbol() );
+  if( b_obj.edata.post_loc )
+    es.push_back( b_obj.edata.post_loc->get_solver_symbol() );
 
-  for( unsigned t=0; t < b_obj.threads.size(); t++ ) {
-    auto& thread = b_obj.get_thread(t);
+  for( unsigned t=0; t < b_obj.edata.ev_threads.size(); t++ ) {
+    auto& thread = b_obj.edata.get_thread(t);
     for(auto& e : thread.events )
       es.push_back( e->get_solver_symbol() );
     es.push_back( thread.start_event->get_solver_symbol() );
@@ -317,7 +317,7 @@ void ses::distinct_events() {
 
 
 
-void ses::ppo_sc( const spec_thread& thread ) {
+void ses::ppo_sc( const thread_events& thread ) {
 
   for( auto& e : thread.events ) {
     po = po && mem_enc.mk_ghbs( e->prev_events, e );
@@ -414,18 +414,18 @@ bool ses::check_ppo( //mm_t mm,
 void ses::ppo() {
   // wmm_test_ppo();
 
-  for( unsigned t=0; t < b_obj.threads.size(); t++ ) {
-    auto& thr = b_obj.get_thread(t);
+  for( unsigned t=0; t < b_obj.edata.ev_threads.size(); t++ ) {
+    auto& thr = b_obj.edata.get_thread(t);
 
     // May be not needed
-    auto& cr_e = b_obj.create_map[thr.name];
+    auto& cr_e = b_obj.edata.create_map[thr.name];
     expr cr_ord = mem_enc.mk_hbs( cr_e ,thr.start_event );
     po = po && z3::implies( cr_e->guard, thr.start_event->guard && cr_ord );
 
     ppo_sc ( thr );
 
-    const auto& it = b_obj.join_map.find( thr.name );
-    if( it != b_obj.join_map.end() ) {
+    const auto& it = b_obj.edata.join_map.find( thr.name );
+    if( it != b_obj.edata.join_map.end() ) {
       const auto& jp_pair = it->second;
       const auto join_point = jp_pair.first;
       expr join_guard = jp_pair.second;
@@ -439,20 +439,20 @@ void ses::ppo() {
 
 // collecting stats about the events
 void ses::update_orderings() {
-  for( unsigned i = 0; i < b_obj.threads.size(); i ++ ) {
-    for( auto& e : b_obj.get_thread(i).events ) {
-      update_must_before( b_obj.get_thread(i).events, e );
+  for( unsigned i = 0; i < b_obj.edata.ev_threads.size(); i ++ ) {
+    for( auto& e : b_obj.edata.get_thread(i).events ) {
+      update_must_before( b_obj.edata.get_thread(i).events, e );
     }
   }
    
   /// To be added
   //p.update_seq_orderings();
 
-  for( unsigned i = 0; i < b_obj.threads.size(); i ++ ) {
-    auto rit = b_obj.get_thread(i).events.rbegin();
-    auto rend = b_obj.get_thread(i).events.rend();
+  for( unsigned i = 0; i < b_obj.edata.ev_threads.size(); i ++ ) {
+    auto rit = b_obj.edata.get_thread(i).events.rbegin();
+    auto rend = b_obj.edata.get_thread(i).events.rend();
     for (; rit!= rend; ++rit)
-      update_must_after( b_obj.get_thread(i).events, *rit );
+      update_must_after( b_obj.edata.get_thread(i).events, *rit );
   }
   /* if( !p.is_mm_c11() && !p.is_mm_power()) {
     //todo: check if this condition is correct
@@ -465,11 +465,11 @@ void ses::update_orderings() {
   } */
 
   if(0) { // todo : may after disabled for now
-    for( unsigned i = 0; i < b_obj.threads.size(); i ++ ) {
-      auto rit = b_obj.get_thread(i).events.rbegin();
-      auto rend = b_obj.get_thread(i).events.rend();
+    for( unsigned i = 0; i < b_obj.edata.ev_threads.size(); i ++ ) {
+      auto rit = b_obj.edata.get_thread(i).events.rbegin();
+      auto rend = b_obj.edata.get_thread(i).events.rend();
       for (; rit!= rend; ++rit)
-        update_may_after( b_obj.get_thread(i).events, *rit );
+        update_may_after( b_obj.edata.get_thread(i).events, *rit );
     }
   }
 
@@ -477,27 +477,27 @@ void ses::update_orderings() {
     std::cout << "============================\n";
     std::cout << "must after/before relations:\n";
     std::cout << "============================\n";
-    for( unsigned i = 0; i < b_obj.threads.size(); i ++ ) {
-      me_vec es = b_obj.get_thread(i).events;
-      es.push_back( b_obj.get_thread(i).start_event );
-      es.push_back( b_obj.get_thread(i).final_event );
+    for( unsigned i = 0; i < b_obj.edata.ev_threads.size(); i ++ ) {
+      me_vec es = b_obj.edata.get_thread(i).events;
+      es.push_back( b_obj.edata.get_thread(i).start_event );
+      es.push_back( b_obj.edata.get_thread(i).final_event );
       for( auto& e : es ) {
         std::cout << e->name() << "\nbefore: ";
-        debug_print( std::cout, b_obj.must_before[e] );
+        debug_print( std::cout, b_obj.edata.must_before[e] );
         std::cout << "after: ";
-        debug_print( std::cout, b_obj.must_after [e] );
+        debug_print( std::cout, b_obj.edata.must_after [e] );
         std::cout << "may after: ";
-        debug_print( std::cout, b_obj.may_after [e] );
+        debug_print( std::cout, b_obj.edata.may_after [e] );
         std::cout << "ppo before: ";
-        debug_print( std::cout, b_obj.ppo_before [e] );
+        debug_print( std::cout, b_obj.edata.ppo_before [e] );
         std::cout << "c11 release sequence heads: ";
-        debug_print( std::cout, b_obj.c11_rs_heads [e] );
+        debug_print( std::cout, b_obj.edata.c11_rs_heads [e] );
         std::cout << "seq dominated wr before: ";
-        debug_print( std::cout, b_obj.seq_dom_wr_before [e] );
+        debug_print( std::cout, b_obj.edata.seq_dom_wr_before [e] );
         std::cout << "seq dominated wr after: ";
-        debug_print( std::cout, b_obj.seq_dom_wr_after [e] );
+        debug_print( std::cout, b_obj.edata.seq_dom_wr_after [e] );
         std::cout << "seq before: ";
-        debug_print( std::cout, b_obj.seq_before[e] );
+        debug_print( std::cout, b_obj.edata.seq_before[e] );
         std::cout << "\n";
       }
     }
@@ -517,14 +517,14 @@ void ses::update_must_before( const me_vec& es,
       ord_sets[i] = local_ordered[epp];
       if( check_ppo( epp, e ) ) {
         ord_sets[i].insert( epp );
-        set_insert( ord_sets[i], b_obj.must_before[epp] );
+        set_insert( ord_sets[i], b_obj.edata.must_before[epp] );
       }
       i++;
     }
     set_intersection( ord_sets, local_ordered[ep] );
     if( e == ep ) break;
   }
-  b_obj.must_before[e] = local_ordered[e];
+  b_obj.edata.must_before[e] = local_ordered[e];
 }
 
 
@@ -545,14 +545,14 @@ void ses::update_must_after( const me_vec& es,
       ord_sets[i] = local_ordered[epp];
       if( check_ppo( e, epp ) ) {
         ord_sets[i].insert( epp );
-        set_insert( ord_sets[i], b_obj.must_after[epp] );
+        set_insert( ord_sets[i], b_obj.edata.must_after[epp] );
       }
       i++;
     }
     set_intersection( ord_sets, local_ordered[ep] );
     if( e == ep ) break;
   }
-  b_obj.must_after[e] = local_ordered[e];
+  b_obj.edata.must_after[e] = local_ordered[e];
 }
 
 void ses::pointwise_and( const depends_set& dep_in,
@@ -588,7 +588,7 @@ void ses::update_may_after( const me_vec& es,
       //      check_ppo does the half work for rmo
       if( check_ppo( e, epp ) ) {
         depends_set temp3;
-        join_depends_set( b_obj.may_after[epp], local_ordered[epp], temp3 );
+        join_depends_set( b_obj.edata.may_after[epp], local_ordered[epp], temp3 );
         pointwise_and( temp3, dep.cond, temp );
         epp_cond = dep.cond;
       } else {
@@ -601,7 +601,7 @@ void ses::update_may_after( const me_vec& es,
     join_depends_set( temp_vector, local_ordered[ep] );
     if( e == ep ) break;
   }
-  b_obj.may_after[e] = local_ordered[e];
+  b_obj.edata.may_after[e] = local_ordered[e];
 }
 
 void ses::update_ppo_before( const me_vec& es,
@@ -616,7 +616,7 @@ void ses::update_ppo_before( const me_vec& es,
       if( check_ppo( epp, e ) ) {
         if( epp->is_mem_op() )
                 join_depends_set(  epp, solver_ctx.bool_val(true), ord_sets[i] );
-        join_depends_set(   b_obj.ppo_before[epp], ord_sets[i] );
+        join_depends_set(   b_obj.edata.ppo_before[epp], ord_sets[i] );
       }else{
         if( epp->is_mem_op() )
           join_depends_set( epp, solver_ctx.bool_val(true), ord_sets[i] );
@@ -626,7 +626,7 @@ void ses::update_ppo_before( const me_vec& es,
     meet_depends_set( ord_sets, local_ordered[ep] );
     if( e == ep ) break;
   }
-  b_obj.ppo_before[e] = local_ordered[e];
+  b_obj.edata.ppo_before[e] = local_ordered[e];
 }
 
 //////////////////////////////////////////////////////////////need to be deleted
@@ -677,9 +677,9 @@ void ses::run() {
 //    }
 //  }
 
-  b_obj.phi_po  = po && dist;
-  b_obj.phi_ses = wf && grf && fr && ws; // && po_loc; ///Confirm not needed
+  b_obj.edata.phi_po  = po && dist;
+  b_obj.edata.phi_ses = wf && grf && fr && ws; // && po_loc; ///Confirm not needed
   //if( !p.is_mm_arm8_2() ) {
-    b_obj.phi_ses = b_obj.phi_ses && thin; //todo : undo this update
+    b_obj.edata.phi_ses = b_obj.edata.phi_ses && thin; //todo : undo this update
   //}
 }
