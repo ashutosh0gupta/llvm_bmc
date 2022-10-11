@@ -102,6 +102,7 @@ void bmc::run_bmc_pass() {
       }
       std::cout << "-----------------------------------\n";
     }
+    //todo: call ses and put the constraints inside edata
    }
   // Add code for stitching the events, when both are processed
   else {
