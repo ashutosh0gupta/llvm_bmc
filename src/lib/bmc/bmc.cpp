@@ -7,6 +7,7 @@
 #include "lib/utils/llvm_utils.h"
 // #include "lib/bmc/bmc_loop_pass.h"
 #include "lib/bmc/collect_globals.h"
+#include "lib/bmc/ses.h"
 #include "bmc_utils.h"
 #include "witness.h"
 
@@ -86,7 +87,7 @@ void bmc::run_bmc_pass() {
     //if( o.verbosity > 10 ) {
     // Print collected events events here
     // for (auto m = all_events.begin(); m != all_events.end(); m++) {
-    for ( unsigned tid = 1; tid < threads.size()+1; tid++  ) {
+    for ( unsigned tid = 0; tid < threads.size(); tid++  ) {
       std::cout << "-----------------------------------\n";
       std::cout << "Thread ID " << tid << "\n";
       for (auto m : edata.all_events) {
@@ -103,6 +104,8 @@ void bmc::run_bmc_pass() {
       std::cout << "-----------------------------------\n";
     }
     //todo: call ses and put the constraints inside edata
+    ses ses_obj( o, o.solver_ctx, o.mem_enc, *this );
+    ses_obj.run();
    }
   // Add code for stitching the events, when both are processed
   else {
