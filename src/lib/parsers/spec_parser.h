@@ -2,6 +2,7 @@
 #include "lib/utils/solver_utils.h"
 #include "include/spec.h"
 #include "include/bmc.h"
+#include "lib/bmc/events_data.h"
 #include <string.h>
 #include<iostream>
 #include<algorithm>
@@ -21,9 +22,9 @@ public:
      std::vector <expr> declarations;
 
      spec_thread  thread_obj;
+     thread_events  th_ev_obj;
 
-     std::map <unsigned, expr> array_map;    
-   
+     std::map <unsigned, expr> array_map; 
      /* typedef std::pair<std::string, std::string> thread_details;
      typedef std::pair<std::string, expr> condition;
 

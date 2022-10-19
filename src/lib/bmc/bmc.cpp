@@ -7,6 +7,9 @@
 #include "lib/utils/llvm_utils.h"
 // #include "lib/bmc/bmc_loop_pass.h"
 #include "lib/bmc/collect_globals.h"
+#include "lib/bmc/ses.h"
+#include "lib/kbound/kbound.h"
+
 #include "bmc_utils.h"
 #include "witness.h"
 
@@ -73,10 +76,16 @@ void bmc::run_bmc_pass() {
   passMan.add( new collect_loopdata(o, ld_map, localNameMap, module) );
   passMan.run( *module.get() );
 
+  if( false ) {
+    kbound kbnd(module, o);
+    kbnd.run();
+    return;
+  }
+
   if(o.loop_aggr) {
     passMan.add( new bmc_loop_pass(o,o.solver_ctx, def_map, *this));
     passMan.run( *module.get() );
-  }
+  } 
   else if ( threads.size() > 1 ) {
     //collect_globals( module, o.solver_ctx, o.mem_enc, o, *this );
     collect_globals( module, *this, o.mem_enc, o.solver_ctx, o );
@@ -86,7 +95,7 @@ void bmc::run_bmc_pass() {
     //if( o.verbosity > 10 ) {
     // Print collected events events here
     // for (auto m = all_events.begin(); m != all_events.end(); m++) {
-    for ( unsigned tid = 1; tid < threads.size()+1; tid++  ) {
+    for ( unsigned tid = 0; tid < threads.size(); tid++  ) {
       std::cout << "-----------------------------------\n";
       std::cout << "Thread ID " << tid << "\n";
       for (auto m : edata.all_events) {
@@ -103,9 +112,11 @@ void bmc::run_bmc_pass() {
       std::cout << "-----------------------------------\n";
     }
     //todo: call ses and put the constraints inside edata
-   }
-  // Add code for stitching the events, when both are processed
-  else {
+    ses ses_obj( o, o.solver_ctx, o.mem_enc, *this );
+    ses_obj.run();
+  // }
+  // else if( o.kbound ) {
+  }else {
     // todo: enable the following code if funcName is missing
     // if( threads.size() == 1) {
     //   o.funcName = threads[0].entry_function;

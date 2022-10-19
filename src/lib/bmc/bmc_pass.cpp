@@ -1393,6 +1393,8 @@ void bmc_pass::do_bmc() {
     prev_events = { start };
     //bmc_obj.all_events.insert( start );
     bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].start_event = start;
+    for( unsigned t = 0; t < bmc_obj.threads.size(); t++ ) bmc_obj.edata.create_map[ bmc_obj.threads[t].name ] = start;
+
   }
 
   // init_array_model( bmc_ds_ptr->bb_vec, bmc_ds_ptr->eb );
