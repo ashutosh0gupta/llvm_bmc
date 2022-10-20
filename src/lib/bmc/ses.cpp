@@ -650,33 +650,33 @@ void ses::run() {
   distinct_events();
   ses_();
 
-//  if ( o.print_phi ) {
-//    o.out() << "(" << endl
-//            << "phi_po : \n" << (po && dist) << endl
-//            << "wf     : \n" << wf           << endl
-//            << "rf     : \n" << rf           << endl
-//            << "grf    : \n" << grf          << endl
-//            << "fr     : \n" << fr           << endl
-//            << "ws     : \n" << ws           << endl
-//						<< "co     : \n" << co_expr      << endl
-//            << "thin   : \n" << thin         << endl
-//            << "phi_prp: \n" << b_obj.phi_prp    << endl
-//            << ")" << endl;
-//    if(p.is_mm_power()) {
-//    	o.out()<<"ii0 :  ";
-//    	print_rel(ii0,o.out());
-//    	o.out()<<"ci0 :  ";
-//    	print_rel(ci0,o.out());
-//    	o.out()<<"cc0 :  ";
-//    	print_rel(cc0,o.out());
-//    	o.out()<< "ppo : \n" 	<< ppo_expr << endl
-//						 << "     &&" 	<< fixpoint << endl
-//						 << "fence :" 	<< fence 		<< endl
-//						 << "hb : \n" 	<< "ppo && grf && fence" << endl
-//						 << "obs : \n"  << obs_expr	<< endl
-//						 << "prop : \n" << prop_expr<< endl;
-//    }
-//  }
+ if ( o.verbosity > 2 ) {
+   std::cout << "(" << "\n"
+           << "phi_po : \n" << (po && dist) << "\n"
+           << "wf     : \n" << wf           << "\n"
+           << "rf     : \n" << rf           << "\n"
+           << "grf    : \n" << grf          << "\n"
+           << "fr     : \n" << fr           << "\n"
+           << "ws     : \n" << ws           << "\n"
+           // << "co     : \n" << co_expr      << "\n"
+           << "thin   : \n" << thin         << "\n"
+           // << "phi_prp: \n" << b_obj.phi_prp    << "\n"
+           << ")\n";
+   // if(p.is_mm_power()) {
+   // 	o.out()<<"ii0 :  ";
+   // 	print_rel(ii0,o.out());
+   // 	o.out()<<"ci0 :  ";
+   // 	print_rel(ci0,o.out());
+   // 	o.out()<<"cc0 :  ";
+   // 	print_rel(cc0,o.out());
+   // 	o.out()<< "ppo : \n" 	<< ppo_expr << endl
+   //      					 << "     &&" 	<< fixpoint << endl
+   //      					 << "fence :" 	<< fence 		<< endl
+   //      					 << "hb : \n" 	<< "ppo && grf && fence" << endl
+   //      					 << "obs : \n"  << obs_expr	<< endl
+   //      					 << "prop : \n" << prop_expr<< endl;
+   // }
+ }
 
   b_obj.edata.phi_po  = po && dist;
   b_obj.edata.phi_ses = wf && grf && fr && ws; // && po_loc; ///Confirm not needed
