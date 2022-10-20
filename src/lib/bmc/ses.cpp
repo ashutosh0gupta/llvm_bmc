@@ -629,6 +629,7 @@ void ses::update_ppo_before( const me_vec& es,
   b_obj.edata.ppo_before[e] = local_ordered[e];
 }
 
+
 //////////////////////////////////////////////////////////////need to be deleted
 /* void ses::print_rel(std::map<event_pair,expr>& a,std::ostream& out)
 {
@@ -643,7 +644,7 @@ void ses::update_ppo_before( const me_vec& es,
 //////////////////////////////////////////////////////////////
 
 void ses::run() {
-  // update_orderings();
+  update_orderings();
 
   ppo(); // build hb formulas to encode the preserved program order
   distinct_events();
@@ -682,4 +683,130 @@ void ses::run() {
   //if( !p.is_mm_arm8_2() ) {
     b_obj.edata.phi_ses = b_obj.edata.phi_ses && thin; //todo : undo this update
   //}
+}
+
+
+void accesses( const me_ptr& ep,
+                 const me_set& ep_sets,
+                 me_set& new_prevs ) {
+    // if( ep->is_pre() || ep->is_mem_op() )
+    if( !ep->is_block_head() )
+      new_prevs.insert( ep );
+    for( auto& epp : ep_sets )
+      // if( ep->is_pre() || epp->is_mem_op() )
+      if( !epp->is_block_head() )
+        new_prevs.insert( epp );
+  }
+
+
+void dominate_wr_accesses( const me_ptr& ep,
+                             const me_set& ep_sets,
+                             me_set& new_prevs ) {
+    if( ep->is_wr() )
+      new_prevs.insert( ep );
+    for( auto& epp : ep_sets )
+      if( epp->is_wr() )
+        if( !ep->is_wr() || !ep->access_same_var( epp ) )
+          new_prevs.insert( epp );
+  }
+
+
+bool events_data::is_seq_before( me_ptr x, me_ptr y ) const {
+  if( !seq_ordering_has_been_called )
+    llvm_bmc_error( "bmc", "update_seq_orderning has not been called yet!!" );
+  assert( !x->is_block_head() && !y->is_block_head() );
+  auto& bfr = seq_before.at(y);
+  return exists( bfr , x );
+}
+
+
+void events_data::update_seq_orderings() {
+  if( seq_ordering_has_been_called )
+    llvm_bmc_error( "bmc", "update_seq_orderning must not be called twice!!" );
+  seq_ordering_has_been_called = true;
+
+  seq_dom_wr_before.clear();
+  seq_before.clear();
+  seq_dom_wr_after.clear();
+
+  // create solver
+  std::vector< std::pair<me_ptr,me_ptr> > thread_syncs;
+
+  all_es.push_back( init_loc );
+  for( unsigned i = 0; i < ev_threads.size(); i++ ) {
+    for( auto& e : get_thread(i).events ) {
+      all_es.push_back(e);
+//      for( auto& ep : e->prev_events ) {
+//        ord_solver.add( mem_enc.mk_hbs(ep,e) );
+//      }
+    }
+    auto& se = get_thread(i).start_event;
+    auto& fe = get_thread(i).final_event;
+    all_es.push_back(se);
+    all_es.push_back(fe);//todo: check if the final event is in (i).events
+    //for( auto& ep : get_thread(i).final_event->prev_events ) {
+    //  ord_solver.add( mem_enc.mk_hbs(ep,fe) );
+    //}
+    auto& ce = get_create_event(i);
+    if( ce ) {
+      //ord_solver.add( mem_enc.mk_hbs(ce,se));
+      thread_syncs.push_back({ce,se});
+    }
+    auto& je = get_join_event(i);
+    if( je ) {
+      //ord_solver.add( mem_enc.mk_hbs(fe,je));
+      thread_syncs.push_back({fe,je});
+    }
+  }
+  if( post_loc ) all_es.push_back( post_loc );
+
+  //auto res = ord_solver.check();
+  //assert( res == z3::check_result::sat);
+  //auto m = ord_solver.get_model();
+
+  std::map< me_ptr, int > order_map;
+  //for( auto e : all_es ) {
+    //auto v = m.eval( e->get_solver_symbol() );
+    //unsigned  o_val = _z3.get_numeral_int( v );
+    //order_map[e] = o_val;
+    //e->set_topological_order( o_val );
+  //}
+
+  std::sort( all_es.begin(), all_es.end(),
+             [&](const me_ptr& x, const me_ptr& y) {
+               return order_map.at(x) < order_map.at(y);
+               } );
+
+  for( auto e : all_es ) {
+    auto& prevs = seq_dom_wr_before[e];
+    auto& rd_prevs = seq_before[e];
+    prevs.clear();
+    for( auto& ep : e->prev_events ) {
+      dominate_wr_accesses( ep, seq_dom_wr_before.at(ep), prevs );
+      accesses( ep, seq_before.at(ep), rd_prevs );
+    }
+    for( const auto& sync : thread_syncs ) {
+      if( sync.second != e ) continue;
+      me_ptr ep = sync.first;
+      dominate_wr_accesses( ep, seq_dom_wr_before.at(ep), prevs );
+      accesses( ep, seq_before.at(ep), rd_prevs );
+    }
+  }
+
+  auto rit = all_es.rbegin(), rend = all_es.rend();
+  for (; rit!= rend; ++rit) {
+    me_ptr e = *rit;
+    auto& prevs = seq_dom_wr_after[e];
+    prevs.clear();
+    for( auto& ep : e->post_events ) {
+      dominate_wr_accesses( ep.e, seq_dom_wr_after.at(ep.e), prevs );
+    }
+    for( const auto& sync : thread_syncs ) {
+      if( sync.first != e ) continue;
+      me_ptr ep = sync.second;
+      dominate_wr_accesses( ep, seq_dom_wr_after.at(ep), prevs );
+    }
+  }
+
+
 }

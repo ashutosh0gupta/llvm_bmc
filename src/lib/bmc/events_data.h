@@ -35,6 +35,9 @@ public:
   me_to_ses_map seq_dom_wr_before;
   me_to_ses_map seq_dom_wr_after;  
   
+  me_vec all_es;
+  bool seq_ordering_has_been_called = false;
+
   // pre calculation of orderings
   me_to_ses_map must_after;
   me_to_ses_map must_before;
@@ -71,6 +74,29 @@ public:
       variable g(o.solver_ctx); // dummy code to suppress warning
       return g;
     }
+
+   inline const me_ptr get_create_event(unsigned t) const {
+      assert( t < ev_threads.size() );
+      std::string n = ev_threads[t].name;
+      auto it = create_map.find( n );
+      if( it != create_map.end() )
+        return create_map.at(n); //todo : rewrite to end double search
+      else
+        return nullptr;
+    }
+
+    inline const me_ptr get_join_event(unsigned t) const {
+      assert( t < ev_threads.size() );
+      std::string n = ev_threads[t].name;
+      auto it = join_map.find( n );
+      if( it != join_map.end() )
+        return join_map.at(n).first; //todo : rewrite to end double search
+      else
+        return nullptr;
+    }
+
+    bool is_seq_before( me_ptr x, me_ptr y ) const;
+    void update_seq_orderings();
 
 };
 
