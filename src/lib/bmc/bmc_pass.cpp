@@ -1450,8 +1450,8 @@ void bmc_pass::do_bmc() {
   // Insert global variable definitions
   bmc_ds_ptr->add_bmc_formulas(  bmc_obj.glb_bmc_vec );
 
-  if( o.verbosity > 2 )
-    bmc_ds_ptr->print_formulas();
+//  if( o.verbosity > 2 )
+//    bmc_ds_ptr->print_formulas();
   
   // create final event of the thread
   if ( bmc_obj.threads.size() > 1 ) {
