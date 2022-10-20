@@ -114,6 +114,7 @@ void bmc::run_bmc_pass() {
     //todo: call ses and put the constraints inside edata
     ses ses_obj( o, o.solver_ctx, o.mem_enc, *this );
     ses_obj.run();
+    //todo: print the results 
   // }
   // else if( o.kbound ) {
   }else {
