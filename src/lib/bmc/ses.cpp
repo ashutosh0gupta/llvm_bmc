@@ -445,8 +445,8 @@ void ses::update_orderings() {
     }
   }
    
-  /// To be added
-  //p.update_seq_orderings();
+  /// To be added?
+  //b_obj.edata.update_seq_orderings();
 
   for( unsigned i = 0; i < b_obj.edata.ev_threads.size(); i ++ ) {
     auto rit = b_obj.edata.get_thread(i).events.rbegin();
@@ -772,10 +772,10 @@ void events_data::update_seq_orderings() {
     //e->set_topological_order( o_val );
   //}
 
-  std::sort( all_es.begin(), all_es.end(),
-             [&](const me_ptr& x, const me_ptr& y) {
-               return order_map.at(x) < order_map.at(y);
-               } );
+//  std::sort( all_es.begin(), all_es.end(),
+//             [&](const me_ptr& x, const me_ptr& y) {
+//               return order_map.at(x) < order_map.at(y);
+//               } );
 
   for( auto e : all_es ) {
     auto& prevs = seq_dom_wr_before[e];

@@ -876,6 +876,7 @@ void bmc_pass::create_read_event( unsigned bidx,
     bmc_obj.edata.all_events.insert( evt );
     prev_events = {evt};
     bmc_obj.edata.ev_threads[tid].events.push_back( evt );
+    bmc_obj.edata.rd_events[evt->v].push_back( evt );
   }
 }
 
@@ -902,6 +903,7 @@ void bmc_pass::create_write_event( unsigned bidx,
   //bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
     bmc_obj.edata.all_events.insert( evt );
     bmc_obj.edata.ev_threads[tid].events.push_back( evt );
+    bmc_obj.edata.wr_events[evt->v].insert( evt );
  }
 }
 
