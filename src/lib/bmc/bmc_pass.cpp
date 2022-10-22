@@ -870,13 +870,14 @@ void bmc_pass::create_read_event( unsigned bidx,
   unsigned tid = bmc_ds_ptr->thread_id;
   
   if (auto glb = llvm::dyn_cast<llvm::GlobalVariable>(addr)) {
-    auto evt = mk_me_ptr(o.mem_enc, tid, prev_events, path_cond, history, glb, loc, event_t::r, translate_ordering_tags( load->getOrdering()) ); //NULL, true, NULL, val_expr, loc.
+    auto gv = bmc_obj.edata.get_global( (std::string)(glb->getName()) );
+    auto evt = mk_me_ptr(o.mem_enc, tid, prev_events, path_cond, history, gv, loc, event_t::r, translate_ordering_tags( load->getOrdering()) ); //NULL, true, NULL, val_expr, loc.
   //bmc_ds_ptr->all_events.insert( std::make_pair( evt, tid ) );
     //bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
     bmc_obj.edata.all_events.insert( evt );
     prev_events = {evt};
     bmc_obj.edata.ev_threads[tid].events.push_back( evt );
-    bmc_obj.edata.rd_events[evt->v].push_back( evt );
+    bmc_obj.edata.rd_events[gv].push_back( evt );
   }
 }
 
@@ -894,7 +895,8 @@ void bmc_pass::create_write_event( unsigned bidx,
   //unsigned tid = bmc_ds_ptr->get_thread_id();
   unsigned tid = bmc_ds_ptr->thread_id;
   if (auto glb = llvm::dyn_cast<llvm::GlobalVariable>(addr)) {
-    auto evt = mk_me_ptr(o.mem_enc, tid, prev_events, path_cond, history, glb, loc, event_t::w, translate_ordering_tags( store->getOrdering()) );
+    auto gv = bmc_obj.edata.get_global( (std::string)(glb->getName()) );
+    auto evt = mk_me_ptr(o.mem_enc, tid, prev_events, path_cond, history, gv, loc, event_t::w, translate_ordering_tags( store->getOrdering()) );
     prev_events = {evt};
   //NULL, true, NULL, val_expr, loc.
   // collect_globals_pass cgp_obj;
@@ -903,7 +905,7 @@ void bmc_pass::create_write_event( unsigned bidx,
   //bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
     bmc_obj.edata.all_events.insert( evt );
     bmc_obj.edata.ev_threads[tid].events.push_back( evt );
-    bmc_obj.edata.wr_events[evt->v].insert( evt );
+    bmc_obj.edata.wr_events[gv].insert( evt );
  }
 }
 

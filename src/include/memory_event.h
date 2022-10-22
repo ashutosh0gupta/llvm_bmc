@@ -255,7 +255,7 @@ private:
     memory_event( solver_context& sol_ctx,
                     unsigned _tid, me_set& _prev_events, unsigned i,
                     //const tara::variable& _v, const tara::variable& _prog_v,
-		    const variable& _v, const llvm::GlobalVariable* _prog_v,
+		    const variable& _v, const variable& _prog_v,
                     std::string loc, event_t _et );
 
     memory_event(  solver_context& sol_ctx,
@@ -265,7 +265,7 @@ private:
 
     memory_event( solver_context& sol_ctx, unsigned _tid,
                     me_set& _prev_events, //const tara::variable& _prog_v,
-		    const llvm::GlobalVariable* _prog_v,
+		    const variable& _prog_v,
                     expr& path_cond, std::vector<expr>& history_,
                     src_loc& _loc, event_t _et, o_tag_t ord_tag );
 
@@ -282,8 +282,8 @@ private:
                                  // v_copy is same as v for normal rd and wr
                                  // only for update instruction v_copy is diff
     //tara::variable prog_v;
-    //variable prog_v;       // variable name in the program
-    const llvm::GlobalVariable* prog_v;       // variable name in the program
+    variable prog_v;       // variable name in the program
+    //const llvm::GlobalVariable* prog_v;       // variable name in the program
     std::string loc_name;
     //tara::variable rd_v() { return v; }
     variable rd_v() { return v; }
@@ -479,7 +479,7 @@ private:
   inline me_ptr
   mk_me_ptr( memory_cons& mem_enc, unsigned tid, me_set prev_es,
              expr& path_cond, std::vector<expr>& history_,
-             const llvm::GlobalVariable* prog_v, src_loc& loc,
+             const variable& prog_v, src_loc& loc,
              event_t _et, o_tag_t ord_tag ) {
     me_ptr e = std::make_shared<memory_event>( mem_enc.solver_ctx, tid, prev_es,prog_v,
                                                path_cond, history_, loc, _et,
