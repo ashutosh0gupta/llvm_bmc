@@ -71,10 +71,6 @@ private:
   void assert_to_spec( unsigned bidx, const llvm::CallInst*);
   void populate_globals_map( std::unique_ptr<llvm::Module>& );
 
-  // recognizing function calls
-  bool is_assume(const llvm::CallInst*);
-  bool is_assert(const llvm::CallInst*);
-  bool is_nondet(const llvm::CallInst*);
 
   // expr extend_path( const bb* pre_b, unsigned idx_succ );
   // expr extend_path( const bb* b, const bb* pre_b );

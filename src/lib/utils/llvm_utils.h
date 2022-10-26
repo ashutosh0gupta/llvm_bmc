@@ -69,6 +69,14 @@ std::string getVarName(const llvm::DbgValueInst* dbgVal );
 std::string getVarName(const llvm::DbgDeclareInst* dbgVal );
 
 
+bool match_function_names( const llvm::CallInst* call,
+                           std::vector<std::string>& names );
+
+// recognizing function calls
+bool is_assume(const llvm::CallInst*);
+bool is_assert(const llvm::CallInst*);
+bool is_nondet(const llvm::CallInst*);
+
 bool isInHeader(llvm::Instruction *, llvm::Loop *);
 bool isOutOfLoop(llvm::Instruction *, llvm::Loop *);
 bool isInLatch(llvm::Instruction *, llvm::Loop *);
@@ -174,6 +182,7 @@ sort llvm_to_bv_sort( solver_context& , const llvm::Type* );
 sort llvm_to_sort( options& , const llvm::Type* );
 // expr read_const( const llvm::Value*, solver_context& );
 expr read_const( options&, const llvm::Value*);
+std::string read_const_str( options& o, const llvm::Value* op );
 
 expr llvm_min_val( solver_context&, const llvm::Value*);
 expr llvm_max_val( solver_context&, const llvm::Value*);

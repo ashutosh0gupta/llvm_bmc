@@ -194,6 +194,7 @@ void ses::ses_() {
     const me_vec& rds = b_obj.edata.rd_events[v1];
     const me_set& wrs = b_obj.edata.wr_events[v1];
     for( const me_ptr& rd : rds ) {
+      std::cout << "I am here" << rd << "\n";
       expr some_rfs = solver_ctx.bool_val(false);
       expr rd_v = rd->get_rd_expr(v1);
       for( const me_ptr& wr : wrs ) {

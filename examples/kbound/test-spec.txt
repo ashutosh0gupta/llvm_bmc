@@ -1,0 +1,14 @@
+; This is a comment
+
+;; -----------------------------------------
+;; Declare major thread
+;; -----------------------------------------
+;; Declare threads
+(declare-thread one fun2) ; param name entry_function
+
+;; -----------------------------------------
+;; Declare minor thread
+;; -----------------------------------------
+;
+(declare-thread two fun1)
+(end-thread minor)

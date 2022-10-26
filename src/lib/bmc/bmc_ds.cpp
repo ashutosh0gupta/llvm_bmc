@@ -572,6 +572,16 @@ expr bmc_ds::join_array_state(std::vector<expr>& cs,
   }
 }
 
+void bmc_ds::fun_initialize(llvm::Pass *p, llvm::Function& f) {
+  collect_loop_backedges(p, loop_ignore_edges, rev_loop_ignore_edges);
+  bb_vec.clear();
+  computeTopologicalOrder(f, rev_loop_ignore_edges, bb_vec, block_to_id);
+  eb = &f.getEntryBlock();
+  setup_prevs_non_repeating();
+  init_array_model(FULL);
+}
+
+
 //---------------------------------------------------------------------
 
 unsigned bmc_fun::get_call_count( const llvm::CallInst* call ) {

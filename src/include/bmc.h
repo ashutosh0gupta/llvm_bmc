@@ -42,7 +42,7 @@ public:
   //std::vector<condition> prop;
   //std::vector<condition> precond;
 
-  std::vector< spec_thread > threads; //todo : populate this
+  std::vector< spec_thread > threads;
   std::vector<const llvm::GlobalVariable*> concurrent_vars;
   //std::map< me_ptr, unsigned > all_events;
   events_data edata;

@@ -1517,6 +1517,48 @@ sort llvm_to_sort( solver_context& c, const llvm::Type* t ) {
   return c.int_sort(); // dummy return
 }
 
+bool has_name( llvm::StringRef str, std::vector<std::string>& names) {
+  for( auto& s : names ) {
+    if(str == s) return true;
+  }
+  return false;
+}
+
+bool match_function_names( const llvm::CallInst* call,
+                           std::vector<std::string>& names ) {
+  assert( call );
+
+  llvm::Function* fp = call->getCalledFunction();
+  if( fp != NULL && has_name( fp->getName(), names ) ) {
+    return true;
+  } else if (fp == NULL) {
+    const llvm::Value * val = call->getCalledOperand();
+    if( auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val) ) {
+      if(CE->isCast() && has_name( CE->getOperand(0)->getName(), names)) {
+          return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool is_assert( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z6assertb", "assert",
+                                     "_Z17__VERIFIER_assertb" };
+  return match_function_names( call, names );
+}
+
+bool is_nondet( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z22__VERIFIER_nondet_charv",
+                                     "_Z21__VERIFIER_nondet_intv",};
+  return match_function_names( call, names );
+}
+
+bool is_assume( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z6assumeb", "assume", "_Z17__VERIFIER_assumeb" };
+  return match_function_names( call, names );
+}
+
 #define DEFAULT_INDEX_SORT 64
 
 sort llvm_to_bv_sort( solver_context& c, const llvm::Type* t ) {
@@ -1574,6 +1616,15 @@ sort llvm_to_sort( options& o, const llvm::Type* t) {
   }
 }
 
+std::string read_const_str( options& o, const llvm::Value* op ) {
+  expr e = read_const( o, op );
+  if(e) {
+    std::stringstream str_strm;
+    str_strm << e;
+    return str_strm.str();
+  }
+  return "";
+}
 
 expr read_const( options& o, const llvm::Value* op ) {
 // expr read_const( const llvm::Value* op, solver_context& ctx ) {

@@ -8,6 +8,8 @@
 #include "include/value_expr_map.h"
 #include "include/memory_event.h"
 
+namespace llvm { class Pass; }
+
 enum spec_reason_t{
   UNKNOWN,      // unspecified
   UNREACHABLE,  // unreachable istruction in LLVM IR;
@@ -57,6 +59,8 @@ public:
     , ar_model_full( o )
     , ary_to_int(aim)
 {}
+
+  void fun_initialize(llvm::Pass *p, llvm::Function& f);
   //--------------------------------------------------------------------------
   //interface to memory model
 

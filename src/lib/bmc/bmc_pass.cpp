@@ -398,47 +398,8 @@ void bmc_pass::assert_to_spec(unsigned bidx, const llvm::CallInst* call) {
 //   return false;
 // }
 
-bool has_name( llvm::StringRef str, std::vector<std::string>& names) {
-  for( auto& s : names ) {
-    if(str == s) return true;
-  }
-  return false;
-}
 
-bool match_function_names( const llvm::CallInst* call,
-                           std::vector<std::string>& names ) {
-  assert( call );
 
-  llvm::Function* fp = call->getCalledFunction();
-  if( fp != NULL && has_name( fp->getName(), names ) ) {
-    return true;
-  } else if (fp == NULL) {
-    const llvm::Value * val = call->getCalledOperand();
-    if( auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val) ) {
-      if(CE->isCast() && has_name( CE->getOperand(0)->getName(), names)) {
-          return true;
-      }
-    }
-  }
-  return false;
-}
-
-bool bmc_pass::is_assert( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z6assertb", "assert",
-                                     "_Z17__VERIFIER_assertb" };
-  return match_function_names( call, names );
-}
-
-bool bmc_pass::is_nondet( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z22__VERIFIER_nondet_charv",
-                                     "_Z21__VERIFIER_nondet_intv",};
-  return match_function_names( call, names );
-}
-
-bool bmc_pass::is_assume( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z6assumeb", "assume", "_Z17__VERIFIER_assumeb" };
-  return match_function_names( call, names );
-}
 
 void bmc_pass::translateNondet(unsigned bidx, const llvm::CallInst* call) {
   assert(call);
