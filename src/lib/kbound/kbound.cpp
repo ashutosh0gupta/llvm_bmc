@@ -42,18 +42,26 @@ llvm::StringRef kbound::getPassName() const {
 //
 
 void kbound::add_reg_map( const llvm::Value* v, std::string name) {
-  // assert(false); //implement constant
+  // v->print( llvm::outs() );std::cout<< "\n";
   ssa_name[v] = name;
 }
 
 std::string kbound::get_reg( const llvm::Value* v) {
-  // v->print( llvm::outs() );std::cout<< "\n";
   // return ssa_name[v];
   auto s = read_const_str( o, v );
   if( s != "" ) {
     return s;
   }
   return ssa_name.at(v);
+}
+
+std::string kbound::get_reg_time( const llvm::Value* v) {
+  // return ssa_name[v];
+  auto s = read_const_str( o, v );
+  if( s != "" ) {
+    return "0";
+  }
+  return "creg_"+ssa_name.at(v);
 }
 
 std::string kbound::add_reg_map( const llvm::Value* v) {
@@ -65,6 +73,12 @@ std::string kbound::add_reg_map( const llvm::Value* v) {
   return get_reg(v);
 }
 
+std::string kbound::get_global_idx( const llvm::GlobalVariable* v) {
+  // std::cout << "Global size:" << bmc_obj.m_model.ind_in_mem_state.size();
+  // bmc_obj.m_model.print();
+  unsigned gid = bmc_obj.m_model.ind_in_mem_state.at(v);
+  return std::to_string(gid);
+}
 
 //----------------------------------------------------------------------------
 // Dumping sequencial encoding of the concurrent progam in a file
@@ -81,6 +95,9 @@ void kbound::dump_Label(std::string s) {
 }
 
 void kbound::dump_Assume(std::string s) { dump_String("ASSUME("+s+");"); }
+void kbound::dump_Assume_geq(std::string s1,std::string s2) {
+  dump_Assume( s1 + ">="+ s2 );
+}
 
 void kbound::dump_Assign(std::string r, std::string term) {
   dump_String( r + " = "+ term + ";" );
@@ -92,6 +109,10 @@ void kbound::dump_Decl_assign(std::string r, std::string term) {
 
 void kbound::dump_Assign_rand(std::string v, std::string b ) {
   dump_String( v + " = get_rng(0," + b + ");" );
+}
+
+void kbound::dump_Assign_max( std::string v, std::string r1, std::string r2 ) {
+  dump_String( v + " = max(" + r1 + ","+ r2 + ");" );
 }
 
 void kbound::dump_Assign_rand_ctx(std::string v) {
@@ -166,24 +187,26 @@ void kbound::dump_Arrays( std::string type,
 
 bool kbound::runOnFunction( llvm::Function &f ) {
   EntryFn = demangle(f.getName().str());
-
+  std::cout<< "Function " << EntryFn << "\n";
   unsigned j = 0;
   for (;j < bmc_obj.threads.size(); j++) {
-    if (bmc_obj.threads.at(j).entry_function == EntryFn) break;
+    if (bmc_obj.threads[j].entry_function == EntryFn) break;
   }
   if( j == bmc_obj.threads.size() ) return false;
   thread_id = j;
+  tid = std::to_string(thread_id);
   thread_name = bmc_obj.threads.at(j).name;
 
   populate_array_name_map(&f);
   auto bmc_fun_ptr = new bmc_fun(o, ary_to_int, bmc_obj.m_model);
   bmc_ds_ptr = bmc_fun_ptr; // set the pointer in base cla
   bmc_fun_ptr->fun_initialize( this, f);
-  bmc_ds_ptr->thread_id = bmc_obj.threads.at(j).thread_num;
+  // bmc_ds_ptr->thread_id = bmc_obj.threads.at(j).thread_num;
 
   dump_Params(f);
   // dump_Thread();
   dump_Thread();
+  return false;
 }
 
 
@@ -294,6 +317,9 @@ void kbound::postfix_seq() {
   dump_Close_scope();
 }
 
+void kbound::dump_Active( std::string ctx) {
+  dump_Assume("active["+ctx+"] == "+tid);
+}
 
 void kbound::dump_Params(llvm::Function &f) {
   //  for (auto& f_arg : f.getArgumentList()) {
@@ -364,10 +390,11 @@ void kbound::dump_RetInst(const llvm::ReturnInst *ret ) {
 
   if( v ) {
     auto r = get_reg(v);
-    dump_String("thread_"+std::to_string(thread_id) + " = " + r + ";");
+    dump_String("ret_thread_"+tid + " = " + r + ";");
   }//  else {
   // }
 }
+
 
 void kbound::dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop) {
   assert( bop );
@@ -388,13 +415,20 @@ void kbound::dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop) {
     llvm_bmc_error("kbound", "unsupported instruction \"" << opName << "\" occurred!!");
    }
   }
-  dump_Assign_rand_ctx("int creg_"+ro);
-  dump_Assume("active[creg+_"+ro+"] == "+std::to_string(thread_id));
+
+  auto rt  = get_reg_time( bop );
+  auto r1t = get_reg_time( op0 );
+  auto r2t = get_reg_time( op1 );
+
+  dump_Assign_rand_ctx( rt );
+  dump_Active( rt );
+  dump_Assign_max( rt, r1t, r2t );
+
 }
 
 
 void kbound::dump_IntrinsicInst( unsigned bidx,
-                                   const llvm::IntrinsicInst* I ) {
+                                 const llvm::IntrinsicInst* I ) {
   assert( I );
 
   if( auto dbg = llvm::dyn_cast<llvm::DbgInfoIntrinsic>(I) ) {
@@ -468,6 +502,69 @@ void kbound::dump_CallInst( unsigned bidx, const llvm::CallInst* call ) {
   }
 }
 
+void kbound::dump_CastInst( unsigned bidx, const llvm::CastInst* cast ) {
+  auto v = cast->getOperand(0);
+  auto r = get_reg(v);
+  add_reg_map(cast, r);
+}
+
+void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
+  assert( load );
+  auto r = add_reg_map(load);
+  auto addr = load->getOperand(0);
+  std::string cr = "";
+  std::string gid = "";
+  std::string addr_depend_regs = "";
+  // jump over casting
+  while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
+    addr = bcast->getOperand(0);
+  }
+  if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
+    assert(false);
+    // add address dependencies
+    // ASSUME(cr >= all_depend_regs);
+    // accessing arrays
+  } else if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr) ) {
+    auto gid = get_global_idx(gv);
+    auto gaccess = "("+ tid + ","+ gid + ")";
+    auto cr = "cr_"+gaccess;
+    dump_Assign( "old_CR",  cr);
+    dump_Assign_rand_ctx( cr );
+    dump_Active( cr );
+    dump_Assume_geq( cr, "iw_"+gaccess );
+    dump_Assume_geq( cr, "max(cdy["+ tid + "],cisb["+ tid + "])" );
+    dump_Assume_geq( cr, "cdl["+ tid + "]" );
+    
+    // dump_Assume_geq( cr, "iw_("+ tid + ","+ gid + ")" );
+    // auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
+    // bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
+  } else if( llvm::isa<const llvm::AllocaInst>(addr) ) {
+    assert(false);
+  } else {
+    LLVM_DUMP( load );
+    llvm_bmc_error("kbound", "Only array and global write/read supported!");
+  }
+}
+
+
+void kbound::dump_UnaryInst( unsigned bidx,
+                             const llvm::UnaryInstruction* I ) {
+  assert( I );
+
+  if( auto cast = llvm::dyn_cast<llvm::CastInst>(I) ) {
+    dump_CastInst( bidx, cast );
+  // } else if( auto alloca = llvm::dyn_cast<llvm::AllocaInst>(I) ) {
+  //   dump_AllocaInst( alloca );
+  } else if( auto load = llvm::dyn_cast<llvm::LoadInst>(I) ) {
+    dump_LoadInst( bidx, load );
+  } else {
+    KBOUND_UNSUPPORTED_INSTRUCTIONS( VAArgInst,        I );
+    KBOUND_UNSUPPORTED_INSTRUCTIONS( ExtractValueInst, I );
+    LLVM_DUMP(I);
+    llvm_bmc_error("bmc", "unsupported unary instruction!!");
+  }
+}
+
 void kbound::dump_Block( unsigned bidx, const bb* b ) {
   assert( b );
   dump_Label(std::to_string(bidx));
@@ -481,8 +578,8 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
       dump_CmpInst( bidx, cmp );
     } else if( auto call = llvm::dyn_cast<llvm::CallInst>(I) ) {
       dump_CallInst(bidx, call);
-    // } else if( auto unary = llvm::dyn_cast<llvm::UnaryInstruction>(I) ) {
-    //   dump_UnaryInst( bidx, unary );
+    } else if( auto unary = llvm::dyn_cast<llvm::UnaryInstruction>(I) ) {
+      dump_UnaryInst( bidx, unary );
     // } else if( auto store = llvm::dyn_cast<llvm::StoreInst>(I) ) {
     //   dump_StoreInst( bidx, store );
     // } else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(I) ) {
@@ -535,7 +632,7 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
 }
 
 void kbound::dump_Thread() {
-  dump_Comment( "Dumping thread "+ std::to_string(thread_id) );
+  dump_Comment( "Dumping thread "+ tid );
   unsigned bidx = 0;
   for( const bb* src : bmc_ds_ptr->bb_vec ) {
     dump_Block( bidx, src );

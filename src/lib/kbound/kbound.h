@@ -18,6 +18,7 @@ private:
   std::unique_ptr<llvm::Module>& module;
   std::ofstream ofcpp;
   unsigned thread_id = 0;
+  std::string tid;
   unsigned current_indent;
   std::string thread_name, EntryFn;
 
@@ -31,6 +32,8 @@ private:
   void add_reg_map( const llvm::Value*, std::string );
   std::string add_reg_map( const llvm::Value* );
   std::string get_reg( const llvm::Value* );
+  std::string get_reg_time( const llvm::Value* );
+  std::string get_global_idx( const llvm::GlobalVariable* v);
 
   void dump_Params(llvm::Function &f);
 
@@ -40,10 +43,12 @@ private:
   void dump_Label  (std::string s);
   void dump_Comment(std::string s);
   void dump_Assume (std::string s);
+  void dump_Assume_geq(std::string s1,std::string s2);
   void dump_Assign (std::string r, std::string term);
   void dump_Decl_assign(std::string r, std::string term);
   void dump_Assign_rand(std::string r, std::string term);
   void dump_Assign_rand_ctx(std::string r);
+  void dump_Assign_max(std::string, std::string,std::string);
 
   void dump_Indent();
   void dump_Define     (std::string name, std::string val);
@@ -64,10 +69,17 @@ private:
   void dump_CmpInst    ( unsigned bidx, const llvm::CmpInst* cmp);
 
   void dump_CallInst( unsigned bidx, const llvm::CallInst* call);
+
+  void dump_Active( std::string ctx);
   void dump_CallAssume ( unsigned bidx, const llvm::CallInst* cmp);
   void dump_CallAssert ( unsigned bidx, const llvm::CallInst* cmp);
   void dump_CallNondet ( unsigned bidx, const llvm::CallInst* cmp);
   void dump_IntrinsicInst( unsigned bidx, const llvm::IntrinsicInst* I);
+
+  void dump_UnaryInst( unsigned bidx, const llvm::UnaryInstruction* I );
+  void dump_CastInst ( unsigned bidx, const llvm::CastInst* I );
+  void dump_LoadInst ( unsigned bidx, const llvm::LoadInst* load );
+
 
   void dump_RetInst(const llvm::ReturnInst *ret );
   
@@ -84,7 +96,7 @@ public:
          );
   ~kbound();
   bool runOnFunction( llvm::Function &f );
-  
+ 
   void getAnalysisUsage(llvm::AnalysisUsage &au) const;
   llvm::StringRef getPassName() const;
  

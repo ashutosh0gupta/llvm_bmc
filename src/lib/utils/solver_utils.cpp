@@ -826,7 +826,7 @@ expr _forall(expr_vector &vec, expr &e)
 
 expr implies(expr &e1, expr &e2)
 {
-  return implies(e1, e2);
+  return z3::implies(e1, e2);
 }
 
 expr select(expr &e1, exprs &idxs)

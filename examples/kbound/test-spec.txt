@@ -4,11 +4,14 @@
 ;; Declare major thread
 ;; -----------------------------------------
 ;; Declare threads
-(declare-thread one fun2) ; param name entry_function
+(declare-thread one fun1) ; param name entry_function
+(invoke-parameters one repeated 1 priority 1)
+(end-thread one)
 
 ;; -----------------------------------------
 ;; Declare minor thread
 ;; -----------------------------------------
 ;
-(declare-thread two fun1)
-(end-thread minor)
+(declare-thread two fun2)
+(invoke-parameters two repeated 1 priority 1)
+(end-thread two)

@@ -244,7 +244,7 @@ void memory_event::update_topological_order() {
 // new constructor
 memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
                                 me_set& _prev_events,
-                                const llvm::GlobalVariable* _prog_v,
+                                const variable& _prog_v,
                                 expr& path_cond,
                                 std::vector<expr>& _history,
                                 src_loc& _loc, event_t _et,
@@ -267,10 +267,13 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
 
   loc_name = loc.gen_name();
   std::string e_t_name = event_t_name( et );
-  //position_name = e_t_name + "#" + (std::string) (prog_v -> getName()) + "#" + loc.position_name();
-  position_name = e_t_name + "#" + loc.position_name();  //To be modified later
 
-  v = v + (std::string)(prog_v->getName()) + "#" + (std::string)(loc_name);
+  //position_name = e_t_name + "#" + (std::string) (prog_v -> getName()) + "#" + loc.position_name();
+  //position_name = e_t_name + "#" + loc.position_name();  //To be modified later
+  position_name = e_t_name + "#" + prog_v.name + "#" + loc.position_name();
+
+  //v = v + (std::string)(prog_v->getName()) + "#" + (std::string)(loc_name);
+  v = prog_v + "#" + loc_name;
 
   v_copy = (et != event_t::u) ? v : v + "#update_wr";
 
@@ -290,7 +293,7 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
   : tid(_tid)
   , v("dummy",sol_ctx)
   , v_copy("dummy",sol_ctx)
-  , prog_v( NULL )
+  , prog_v("dummy",sol_ctx)
   , loc(_loc)
   , et( _et )
   , o_tag( _o_tag )
@@ -681,8 +684,8 @@ expr memory_cons::get_rf_bit( const variable& v1,
                  const se_ptr& rd ) const {
     assert( ( wr->is_pre() || wr->is_wr() ) &&
             ( rd->is_rd() || rd->is_post() ) );
-    assert( !wr->is_wr() || v1 == wr->v ); //Confirm v is OK instead of prog_v
-    assert( !rd->is_rd() || v1 == rd->v );
+    assert( !wr->is_wr() || v1 == wr->prog_v ); //Confirm v is OK instead of prog_v
+    assert( !rd->is_rd() || v1 == rd->prog_v );
 
     std::string bname = v1+"-"+wr->name()+"-"+rd->name();
     return solver_ctx.bool_const(  bname.c_str() );

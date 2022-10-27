@@ -110,7 +110,7 @@ bool ses::anti_po_read( const me_ptr& wr,
   // preventing coherence violation - rf
   // (if rf is local then may not visible to global ordering)
   assert( wr->tid >= b_obj.edata.ev_threads.size() || rd->tid >= b_obj.edata.ev_threads.size() ||
-          wr->prog_v-> getName() == rd->prog_v-> getName() );
+          wr->prog_v.name == rd->prog_v.name );
   //if( p.is_mm_sc() ) {
     // should come here for those memory models where rd-wr on
     // same variables are in ppo
@@ -131,7 +131,7 @@ bool ses::anti_po_loc_fr( const me_ptr& rd,
   // (if rf is local then it may not be visible to the global ordering)
   // coherance disallows rf(rd,wr') and ws(wr',wr) and po-loc( wr, rd)
   assert( wr->tid >= b_obj.edata.ev_threads.size() || rd->tid >= b_obj.edata.ev_threads.size() ||
-          wr->prog_v-> getName() == rd->prog_v-> getName() );
+          wr->prog_v.name == rd->prog_v.name );
   //if( p.is_mm_sc() ) {
     if( wr->is_update() && rd == wr ) return false;
     if( is_po_new( wr, rd ) ) {
@@ -222,7 +222,7 @@ void ses::ses_() {
               fr = fr && !cond;
             }else if( is_po_new( rd, after_wr ) ) {
               //write-read coherence: avoiding cycles po o (ws;rf)
-              if( is_rd_wr_coherence_needed() )
+              //if( is_rd_wr_coherence_needed() )
                 fr = fr && implies( b, mem_enc.mk_ghbs(wr,after_wr) );
             }else{
               auto new_fr = mem_enc.mk_ghbs( rd, after_wr );
@@ -235,16 +235,16 @@ void ses::ses_() {
                     new_fr = !anti_coherent_b && new_fr;
                   }
                 }
-              // }
+              //}
               // if( auto& rmw_w = rd->rmw_other ) {
               //   // rmw & (fr o mo) empty
               //   new_fr = new_fr && hb_encoding.mk_ghbs( rmw_w, after_wr );
               // }
               fr = fr && implies( cond , new_fr );
-            }
           }
         }
       }
+     }
       wf = wf && implies( rd->guard, some_rfs );
     }
 
@@ -278,9 +278,8 @@ void ses::ses_() {
     //   //   for( auto& dep : rd->ctrl_dependency )
     //   //     thin = thin && z3::implies(dep.cond, hb_encoding.mk_hb_thin( dep.e, rd ));
     // // }
-    // }
+     }
   }
-}
 
 
 
@@ -474,35 +473,35 @@ void ses::update_orderings() {
     }
   }
 
-  if( o.verbosity > 2 ) {
-    std::cout << "============================\n";
-    std::cout << "must after/before relations:\n";
-    std::cout << "============================\n";
-    for( unsigned i = 0; i < b_obj.edata.ev_threads.size(); i ++ ) {
-      me_vec es = b_obj.edata.get_thread(i).events;
-      es.push_back( b_obj.edata.get_thread(i).start_event );
-      es.push_back( b_obj.edata.get_thread(i).final_event );
-      for( auto& e : es ) {
-        std::cout << e->name() << "\nbefore: ";
-        debug_print( std::cout, b_obj.edata.must_before[e] );
-        std::cout << "after: ";
-        debug_print( std::cout, b_obj.edata.must_after [e] );
-        std::cout << "may after: ";
-        debug_print( std::cout, b_obj.edata.may_after [e] );
-        std::cout << "ppo before: ";
-        debug_print( std::cout, b_obj.edata.ppo_before [e] );
-        std::cout << "c11 release sequence heads: ";
-        debug_print( std::cout, b_obj.edata.c11_rs_heads [e] );
-        std::cout << "seq dominated wr before: ";
-        debug_print( std::cout, b_obj.edata.seq_dom_wr_before [e] );
-        std::cout << "seq dominated wr after: ";
-        debug_print( std::cout, b_obj.edata.seq_dom_wr_after [e] );
-        std::cout << "seq before: ";
-        debug_print( std::cout, b_obj.edata.seq_before[e] );
-        std::cout << "\n";
-      }
-    }
-  }
+//  if( o.verbosity > 2 ) {
+//    std::cout << "============================\n";
+//    std::cout << "must after/before relations:\n";
+//    std::cout << "============================\n";
+//    for( unsigned i = 0; i < b_obj.edata.ev_threads.size(); i ++ ) {
+//      me_vec es = b_obj.edata.get_thread(i).events;
+//      es.push_back( b_obj.edata.get_thread(i).start_event );
+//      es.push_back( b_obj.edata.get_thread(i).final_event );
+//      for( auto& e : es ) {
+//        std::cout << e->name() << "\nbefore: ";
+//        debug_print( std::cout, b_obj.edata.must_before[e] );
+//        std::cout << "after: ";
+//        debug_print( std::cout, b_obj.edata.must_after [e] );
+//        std::cout << "may after: ";
+//        debug_print( std::cout, b_obj.edata.may_after [e] );
+//        std::cout << "ppo before: ";
+//        debug_print( std::cout, b_obj.edata.ppo_before [e] );
+//        std::cout << "c11 release sequence heads: ";
+//        debug_print( std::cout, b_obj.edata.c11_rs_heads [e] );
+//        std::cout << "seq dominated wr before: ";
+//        debug_print( std::cout, b_obj.edata.seq_dom_wr_before [e] );
+//        std::cout << "seq dominated wr after: ";
+//        debug_print( std::cout, b_obj.edata.seq_dom_wr_after [e] );
+//        std::cout << "seq before: ";
+//        debug_print( std::cout, b_obj.edata.seq_before[e] );
+//        std::cout << "\n";
+//      }
+//    }
+//  }
 }
 
 void ses::update_must_before( const me_vec& es,

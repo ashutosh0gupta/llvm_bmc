@@ -19,7 +19,7 @@ int fun1(int x)  {
 void fun2()  {
   int y = glb;
   // sleep_for(10ms);
-  glb = 2;
+  // glb = 2;
   
   assert(y == 1);
   // assert(y == 0);

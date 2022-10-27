@@ -76,6 +76,8 @@ bool match_function_names( const llvm::CallInst* call,
 bool is_assume(const llvm::CallInst*);
 bool is_assert(const llvm::CallInst*);
 bool is_nondet(const llvm::CallInst*);
+bool is_error(const llvm::CallInst*);
+ bool ignore_special_functions( const llvm::CallInst* fp );
 
 bool isInHeader(llvm::Instruction *, llvm::Loop *);
 bool isOutOfLoop(llvm::Instruction *, llvm::Loop *);
@@ -84,7 +86,9 @@ bool isMyLatch(llvm::BasicBlock *, llvm::Loop *);
 bool isSupported(llvm::Loop *);
 bool isInSubLoop(llvm::BasicBlock *, llvm::Loop *, llvm::LoopInfo *);
 
+//todo : to be removed (duplicate)
 bool is_assert_call(const llvm::CallInst*);
+
 bool is_assert_loop(llvm::Loop*);
 bool is_pointer( llvm::Value* );
 

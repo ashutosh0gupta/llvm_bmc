@@ -76,10 +76,10 @@ void bmc::run_bmc_pass() {
   passMan.add( new collect_loopdata(o, ld_map, localNameMap, module) );
   passMan.run( *module.get() );
 
-   if( true ) {
+   // if( true ) {
+     if( false ) {
      passMan.add( new kbound(o, module, *this) );
      passMan.run( *module.get() );
-  // if( false ) {
      // kbound kbnd(o, module, *this);
      // kbnd.run();
      return;
@@ -98,22 +98,22 @@ void bmc::run_bmc_pass() {
     //if( o.verbosity > 10 ) {
     // Print collected events events here
     // for (auto m = all_events.begin(); m != all_events.end(); m++) {
-    for ( unsigned tid = 0; tid < threads.size(); tid++  ) {
-      std::cout << "-----------------------------------\n";
-      std::cout << "Thread ID " << tid << "\n";
-      for (auto m : edata.all_events) {
-        //auto& e =  *(m.first);
-        auto& e =  *m;
-        if( e.tid != tid ) continue;
-        //std::cout << "Thread ID is " << m.second << " Event is " << *(m.first) << "\n";
-        std::cout <<  e.v << "\n";
-        // std::cout << "Global Var " << (std::string)(e.prog_v -> getName()) << "\n";
-        //e.update_topological_order();
-        std::ostream& os = std::cout;
-        std::cout << "Prev events:"; debug_print(os, e.prev_events);
-      }
-      std::cout << "-----------------------------------\n";
-    }
+//    for ( unsigned tid = 0; tid < threads.size(); tid++  ) {
+//      std::cout << "-----------------------------------\n";
+//      std::cout << "Thread ID " << tid << "\n";
+//      for (auto m : edata.all_events) {
+//        //auto& e =  *(m.first);
+//        auto& e =  *m;
+//        if( e.tid != tid ) continue;
+//        //std::cout << "Thread ID is " << m.second << " Event is " << *(m.first) << "\n";
+//        std::cout <<  e.v << "\n";
+//        // std::cout << "Global Var " << (std::string)(e.prog_v -> getName()) << "\n";
+//        //e.update_topological_order();
+//        std::ostream& os = std::cout;
+//        std::cout << "Prev events:"; debug_print(os, e.prev_events);
+//      }
+//      std::cout << "-----------------------------------\n";
+//    }
     //todo: call ses and put the constraints inside edata
     ses ses_obj( o, o.solver_ctx, o.mem_enc, *this );
     ses_obj.run();

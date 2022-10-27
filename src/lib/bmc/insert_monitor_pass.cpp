@@ -348,6 +348,7 @@ unsigned gcd(unsigned a, unsigned b) {
  
 // Returns LCM of array elements
 void findlcm(bmc& b) {
+  if(b.threads.size() == 0) return;
     // Initialize result
     unsigned ans = b.threads.at(0).period;
  

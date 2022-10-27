@@ -1559,6 +1559,21 @@ bool is_assume( const llvm::CallInst* call ) {
   return match_function_names( call, names );
 }
 
+bool is_error(const llvm::CallInst* call) {
+  assert( call );
+  std::vector<std::string> names = { "__VERIFIER_error_" };
+  return match_function_names( call, names );
+
+  // auto name = get_called_name( call );
+  // if( name == "__VERIFIER_error_" ) return true;
+  // return false;
+}
+
+bool ignore_special_functions( const llvm::CallInst* call ) {
+  return is_assert( call ) || is_assume( call ) || is_nondet( call )
+    || is_error(call);
+}
+
 #define DEFAULT_INDEX_SORT 64
 
 sort llvm_to_bv_sort( solver_context& c, const llvm::Type* t ) {
