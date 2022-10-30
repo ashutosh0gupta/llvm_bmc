@@ -49,8 +49,8 @@ bool collect_loopdata::runOnLoop(llvm::Loop *L, llvm::LPPassManager &LPM) {
   if(is_assert_loop(L)) {
     ld->is_assert_loop = true;
   }
-  if(o.verbosity>2)
-    ld->print(std::cerr);
+  //if(o.verbosity>2)
+    //ld->print(std::cerr);
 
   return false; // did not modify the loop
 }
