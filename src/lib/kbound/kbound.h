@@ -20,6 +20,7 @@ private:
   unsigned thread_id = 0;
   std::string tid;
   unsigned current_indent;
+  unsigned active_lax = 0;
   std::string thread_name, EntryFn;
 
   svec reg_vals,reg_list;
@@ -44,11 +45,13 @@ private:
   void dump_Comment(std::string s);
   void dump_Assume (std::string s);
   void dump_Assume_geq(std::string s1,std::string s2);
+  void dump_Assume_geq_max(std::string s1,std::string s2,std::string s3);
   void dump_Assign (std::string r, std::string term);
   void dump_Decl_assign(std::string r, std::string term);
   void dump_Assign_rand(std::string r, std::string term);
   void dump_Assign_rand_ctx(std::string r);
   void dump_Assign_max(std::string, std::string,std::string);
+  void dump_Assign_max(std::string, std::string);
 
   void dump_Indent();
   void dump_Define     (std::string name, std::string val);
@@ -57,6 +60,8 @@ private:
   void dump_Decl_fun   (std::string, std::string, std::string);
   void dump_For        (std::string, std::string, std::string);
   void dump_For(std::string, std::string, std::string, std::string);
+  void dump_If(std::string);
+  void dump_Else();
   void dump_Close_scope();
 
   void dump_Macors(std::string name, std::string val);
@@ -79,10 +84,18 @@ private:
   void dump_UnaryInst( unsigned bidx, const llvm::UnaryInstruction* I );
   void dump_CastInst ( unsigned bidx, const llvm::CastInst* I );
   void dump_LoadInst ( unsigned bidx, const llvm::LoadInst* load );
+  void dump_StoreInst( unsigned bidx, const llvm::StoreInst* store );
 
+  void dump_geq_globals( std::string c, std::string prop );
+  void dump_dmbsy();
+  void dump_dmbld();
+  void dump_dmbst();
+  void dump_isb();
+  void dump_ld( std::string, std::string, std::string, std::string);
+  void dump_st( std::string, std::string, std::string, std::string);
 
   void dump_RetInst(const llvm::ReturnInst *ret );
-  
+
   void dump_Thread();
   void dump_Block( unsigned bidx, const bb* b );
 

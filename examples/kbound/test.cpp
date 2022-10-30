@@ -1,9 +1,11 @@
 bool assert(bool);
+void dmbsy();
 
 int glb = 0;
 
 int fun1(int x)  {
   x = x + x;
+  dmbsy();
   assert( x > 0 );
   return x;
   // glb = 1;

@@ -96,7 +96,12 @@ void kbound::dump_Label(std::string s) {
 
 void kbound::dump_Assume(std::string s) { dump_String("ASSUME("+s+");"); }
 void kbound::dump_Assume_geq(std::string s1,std::string s2) {
-  dump_Assume( s1 + ">="+ s2 );
+  if (s1 == s2) return;
+  dump_Assume( s1 + " >= "+ s2 );
+}
+
+void kbound::dump_Assume_geq_max(std::string s1,std::string s2,std::string s3) {
+  dump_Assume_geq( s1 ,"max("+ s2 +","+ s3 + ")" );
 }
 
 void kbound::dump_Assign(std::string r, std::string term) {
@@ -113,6 +118,10 @@ void kbound::dump_Assign_rand(std::string v, std::string b ) {
 
 void kbound::dump_Assign_max( std::string v, std::string r1, std::string r2 ) {
   dump_String( v + " = max(" + r1 + ","+ r2 + ");" );
+}
+
+void kbound::dump_Assign_max( std::string v, std::string r2 ) {
+  dump_Assign_max(v,v,r2);
 }
 
 void kbound::dump_Assign_rand_ctx(std::string v) {
@@ -148,8 +157,7 @@ dump_Decl_fun(std::string type, std::string name, std::string param) {
   current_indent++;
 }
 
-void kbound::
-dump_For(std::string type, std::string v, std::string b) {
+void kbound::dump_For(std::string type, std::string v, std::string b) {
   dump_For( type, v, "0", b);
 }
 
@@ -158,6 +166,17 @@ dump_For(std::string type, std::string v, std::string s, std::string b) {
   dump_Indent();
   ofcpp <<"for(" << type << " "<< v << " = "<< s<< "; "
         << v << " < "<< b << "; " << v << "++) {\n";
+  current_indent++;
+}
+
+void kbound::dump_If(std::string s) {
+  dump_String( "if("+ s + ") {" );
+  current_indent++;
+}
+
+void kbound::dump_Else() {
+  current_indent--;
+  dump_String( "} else {" );
   current_indent++;
 }
 
@@ -431,7 +450,9 @@ void kbound::dump_IntrinsicInst( unsigned bidx,
                                  const llvm::IntrinsicInst* I ) {
   assert( I );
 
-  if( auto dbg = llvm::dyn_cast<llvm::DbgInfoIntrinsic>(I) ) {
+  if( // auto dbg =
+      llvm::isa<llvm::DbgInfoIntrinsic>(I) ) {
+    assert(dbg);
     // do nothing
     // translateDebugInfo( bidx, dbg );
   }else if( I->getIntrinsicID() == llvm::Intrinsic::stacksave ) {
@@ -487,17 +508,111 @@ void kbound::dump_CallNondet(unsigned bidx, const llvm::CallInst* call) {
   dump_String("nondet(" + term + ");");
 }
 
+void kbound::dump_geq_globals( std::string c, std::string prop ) {
+  for( auto pair : bmc_obj.m_model.ind_in_mem_state ) {
+    auto gid = std::to_string(pair.second);
+    dump_Assume_geq( c, prop+"(" + tid +","+ gid+")" );
+  }
+}
+
+void kbound::dump_dmbsy() {
+  auto cdy = "cdy["+tid+"]";
+  dump_Comment("dumbsy: Guess");
+  dump_Assign("old_cdy", cdy);
+  dump_Assign_rand_ctx( cdy );
+  dump_Comment("Check");
+  dump_Assume_geq( cdy, "old_cdy" );
+
+  dump_Assume_geq( cdy, "cisb[" + tid + "]" );
+  dump_Assume_geq( cdy, "cdy["  + tid + "]" );
+  dump_Assume_geq( cdy, "cdl["  + tid + "]" );
+  dump_Assume_geq( cdy, "cds["  + tid + "]" );
+  dump_Assume_geq( cdy, "ctrl[" + tid + "]" );
+
+  dump_geq_globals( cdy, "cw_");
+
+  // for( auto pair : bmc_obj.m_model.ind_in_mem_state ) {
+  //   auto gid = std::to_string(pair.second);
+  //   dump_Assume_geq( cdy, "cw_(" + tid +","+ gid+")" );
+  //   dump_Assume_geq( cdy, "cr_(" + tid +","+ gid+")" );
+  // }
+}
+
+void kbound::dump_dmbld() {
+  auto cdl = "cdl["+tid+"]";
+  dump_Comment("dumbld: Guess");
+  dump_Assign_rand_ctx( cdl );
+  dump_Comment("Check");
+  dump_Assume_geq( cdl, "cdy[" + tid + "]" );
+  dump_geq_globals( cdl, "cr_");
+  // for( auto pair : bmc_obj.m_model.ind_in_mem_state ) {
+  //   auto gid = std::to_string(pair.second);
+  //   dump_Assume_geq( cdl, "cr_(" + tid +","+ gid+")" );
+  // }
+}
+
+void kbound::dump_dmbst() {
+  auto cds = "cds["+tid+"]";
+  dump_Comment("dumbst: Guess");
+  dump_Assign_rand_ctx( cds );
+  dump_Comment("Check");
+  dump_Assume_geq( cds, "cdy[" + tid + "]" );
+  dump_geq_globals( cds, "cw_");
+  // for( auto pair : bmc_obj.m_model.ind_in_mem_state ) {
+  //   auto gid = std::to_string(pair.second);
+  //   dump_Assume_geq( cds, "cw_(" + tid +","+ gid+")" );
+  // }
+}
+
+void kbound::dump_isb() {
+  auto cisb = "cisb["+tid+"]";
+  dump_Comment("isb: Guess");
+  dump_Assign_rand_ctx( cisb );
+  dump_Comment("Check");
+  dump_Assume_geq( cisb, "cdy["   + tid + "]" );
+  dump_Assume_geq( cisb, "ctrl["  + tid + "]" );
+  dump_Assume_geq( cisb, "caddr[" + tid + "]" );
+}
+
+bool is_dmbsy( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z5dmbsyv"};
+  return match_function_names(  call,  names );
+}
+
+bool is_dmbst( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z5dmbstv"};
+  return match_function_names(  call,  names );
+}
+
+bool is_dmbld( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z5dmbldv"};
+  return match_function_names(  call,  names );
+}
+
+bool is_isb( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z3isbv"};
+  return match_function_names(  call,  names );
+}
 
 void kbound::dump_CallInst( unsigned bidx, const llvm::CallInst* call ) {
   assert(call);
-  if( auto dbg_val = llvm::dyn_cast<llvm::IntrinsicInst>(call) ) {
+  if( llvm::isa<llvm::IntrinsicInst>(call) ) {
   } else if( is_assert(call) ) {
     dump_CallAssert(bidx, call);
   } else if( is_assume(call) ) {
     dump_CallAssume( bidx, call);
   } else if( is_nondet(call) ) {
     dump_CallNondet( bidx, call);
+  } else if( is_dmbsy(call) ) {
+    dump_dmbsy();
+  } else if( is_dmbst(call) ) {
+    dump_dmbst();
+  } else if( is_dmbld(call) ) {
+    dump_dmbld();
+  } else if( is_isb(call)   ) {
+    dump_isb();
   }else{
+    LLVM_DUMP(call);
     llvm_bmc_error("kbound", "function call is not recognized !!");
   }
 }
@@ -511,10 +626,10 @@ void kbound::dump_CastInst( unsigned bidx, const llvm::CastInst* cast ) {
 void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
   assert( load );
   auto r = add_reg_map(load);
+  auto creg = get_reg_time(load);
   auto addr = load->getOperand(0);
-  std::string cr = "";
   std::string gid = "";
-  std::string addr_depend_regs = "";
+  std::string caddr = "";
   // jump over casting
   while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
     addr = bcast->getOperand(0);
@@ -525,27 +640,174 @@ void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
     // ASSUME(cr >= all_depend_regs);
     // accessing arrays
   } else if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr) ) {
-    auto gid = get_global_idx(gv);
-    auto gaccess = "("+ tid + ","+ gid + ")";
-    auto cr = "cr_"+gaccess;
-    dump_Assign( "old_CR",  cr);
-    dump_Assign_rand_ctx( cr );
-    dump_Active( cr );
-    dump_Assume_geq( cr, "iw_"+gaccess );
-    dump_Assume_geq( cr, "max(cdy["+ tid + "],cisb["+ tid + "])" );
-    dump_Assume_geq( cr, "cdl["+ tid + "]" );
-    
-    // dump_Assume_geq( cr, "iw_("+ tid + ","+ gid + ")" );
-    // auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
-    // bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
+    gid = get_global_idx(gv);
+    caddr = "0";//in dynamic addressing this will change
   } else if( llvm::isa<const llvm::AllocaInst>(addr) ) {
     assert(false);
   } else {
     LLVM_DUMP( load );
     llvm_bmc_error("kbound", "Only array and global write/read supported!");
   }
+  dump_ld( r, creg, caddr, gid);
 }
 
+void kbound::
+dump_ld( std::string r, std::string cval,std::string caddr, std::string gid) {
+  bool isAcquire = true;
+  bool isExclusive = true;
+
+  auto gaccess = "("+ tid + ","+ gid + ")";
+  auto cr = "cr_"+gaccess;
+  auto gctx_access = "("+ gid +","+ cr + ")";
+
+  dump_Comment("LD: Guess");
+  dump_Assign( "old_CR",  cr);
+  dump_Assign_rand_ctx( cr );
+
+  dump_Comment("Check");
+  dump_Active( cr );
+  dump_Assume_geq( cr, "iw_"+gaccess );
+  dump_Assume_geq( cr, caddr );
+  dump_Assume_geq( cr, "cdy[" + tid + "]" );
+  dump_Assume_geq( cr, "cisb["+ tid + "]" );
+  dump_Assume_geq( cr, "cdl[" + tid + "]" );
+  dump_Assume_geq( cr, "cl["  + tid + "]" );
+  if( isExclusive ) dump_Assume_geq( cr, "old_CR" );
+  if( isAcquire ) dump_Assume_geq( cr, "cx_"+gaccess ); // extra in lda
+  if( isAcquire ) dump_geq_globals( cr, "cs_"); // extra in lda
+
+  dump_Comment("Update");
+  dump_Assign( cval, cr );
+  dump_Assign_max( "caddr["+tid+"]", caddr);
+  dump_If( cr + " < " + "cw_"+gaccess );
+  dump_Assign(r, "nu_"+gaccess);
+  dump_Else();
+  dump_If( "pw_" +gaccess + " != " + "nw_"+gctx_access );
+  dump_Assume_geq( cr, "old_CR" );
+  dump_Close_scope();
+  dump_Assign( "pw_"+gaccess, "nw_"+ gctx_access );
+  dump_Assign( r, "mu_"+ gctx_access );
+  dump_Close_scope();
+
+  if( isAcquire   ) dump_Assign_max( "cl[" + tid + "]", cr   );
+  if( isExclusive ) dump_Assign( "delta_"+gctx_access, tid );
+}
+
+
+void kbound::dump_StoreInst(unsigned bidx, const llvm::StoreInst* store ) {
+  assert( store );
+  auto val = store->getOperand(0);
+  auto addr = store->getOperand(1);
+  auto v    = add_reg_map(val);
+  auto cval = get_reg_time(val);
+  std::string gid = "";
+  std::string caddr = "";
+
+  // jump over casting
+  while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
+    addr = bcast->getOperand(0);
+  }
+  if( llvm::isa<llvm::GEPOperator>(addr) ) {
+    assert(false);
+    // exprs idxs;
+    // translateGEP( gop, idxs);
+    // storeToArrayHelper(bidx, store, val, idxs);
+  } else if(auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
+    gid = get_global_idx(gv);
+    caddr = "0";//in dynamic addressing this will change
+  } else if( llvm::isa<const llvm::AllocaInst>(addr) ||
+             llvm::isa<const llvm::Argument>(addr) ) {
+    assert(false);
+  } else if( llvm::isa<llvm::Constant>(addr) ) {
+    llvm_bmc_error("bmc", "constant access to the memory!");
+  }else {
+    LLVM_DUMP( store );
+    llvm_bmc_error("bmc", "Only local array and global write/read supported!");
+  }
+  dump_st( v, cval, caddr, gid);
+  // auto gaccess = "("+ tid + ","+ gid + ")";
+  // auto iw = "iw_"+gaccess;
+  // auto cw = "cw_"+gaccess;
+  // auto gctx_access = "("+ gid +","+ cw + ")";
+  // dump_Comment("ST: Guess");
+  // dump_Assign_rand_ctx( iw );
+  // dump_Assign( "old_cw",  cw);
+  // dump_Assign_rand_ctx( cw );
+  // dump_Comment("Check");
+  // dump_Active( iw );
+  // dump_Active( cw );
+  // dump_Assume_geq( iw, cval  );
+  // dump_Assume_geq( iw, caddr );
+  // dump_Assume_geq( cw, iw );
+
+  // dump_Assume_geq( cw, "old_cw" );
+  // dump_Assume_geq( cw, "cr_"+gaccess );
+
+  // dump_Assume_geq( cw, "cl["  + tid + "]" );
+
+  // dump_Assume_geq( cw, "cisb["+ tid + "]" );
+  // dump_Assume_geq( cw, "cdy[" + tid + "]" );
+  // dump_Assume_geq( cw, "cdl[" + tid + "]" );
+  // dump_Assume_geq( cw, "cds[" + tid + "]" );
+  // dump_Assume_geq( cw, "ctrl[" + tid + "]" );
+  // dump_Assume_geq( cw, "caddr[" + tid + "]" );
+
+  // dump_Comment("Update");
+  // dump_Assign_max( "caddr[" + tid + "]", cval );
+  // dump_Assign( "nu_"   +gaccess    , v);
+  // dump_Assign( "mu_"   +gctx_access, v);
+  // dump_String( "nw_"   +gctx_access + "+=1");
+  // dump_String( "delta_"+gctx_access + "-=1");
+}
+
+void kbound::
+dump_st( std::string v, std::string cval,std::string caddr, std::string gid) {
+  bool isRelease = true;
+  bool isExclusive = true;
+
+  auto gaccess = "("+ tid + ","+ gid + ")";
+  auto iw = "iw_"+gaccess;
+  auto cw = "cw_"+gaccess;
+  auto gctx_access = "("+ gid +","+ cw + ")";
+
+  dump_Comment("ST: Guess");
+  dump_Assign_rand_ctx( iw );
+  dump_Assign( "old_cw",  cw);
+  dump_Assign_rand_ctx( cw );
+
+  dump_Comment("Check");
+  dump_Active( iw );
+  dump_Active( cw );
+  dump_Assume_geq( iw, cval  );
+  dump_Assume_geq( iw, caddr );
+  dump_Assume_geq( cw, iw );
+  dump_Assume_geq( cw, "old_cw" );
+  dump_Assume_geq( cw, "cr_"    + gaccess   );
+  dump_Assume_geq( cw,    "cl[" + tid + "]" );
+  dump_Assume_geq( cw,  "cisb[" + tid + "]" );
+  dump_Assume_geq( cw,   "cdy[" + tid + "]" );
+  dump_Assume_geq( cw,   "cdl[" + tid + "]" );
+  dump_Assume_geq( cw,   "cds[" + tid + "]" );
+  dump_Assume_geq( cw,  "ctrl[" + tid + "]" );
+  dump_Assume_geq( cw, "caddr[" + tid + "]" );
+  if( isRelease ) dump_geq_globals( cw, "cr_");
+  if( isRelease ) dump_geq_globals( cw, "cw_");
+  if( isExclusive ) dump_Assume( "delta_" + gctx_access + " = "+ tid );
+
+  dump_Comment("Update");
+  dump_Assign_max( "caddr[" + tid + "]", cval );
+  dump_Assign( "nu_"   + gaccess    , v);
+  dump_Assign( "mu_"   + gctx_access, v);
+  if( isExclusive ) dump_Assign( "cx_"   + gaccess, v);
+  dump_String( "nw_"   + gctx_access + "+=1");
+  dump_String( "delta_"+ gctx_access + "= -1");
+
+  if( isRelease ) dump_Assign( "is_"+gaccess, iw);
+  if( isRelease ) dump_Assign( "cs_"+gaccess, cw);
+  if( active_lax > 0 ) dump_Assign( "cx_"+gaccess, cw);
+
+  active_lax = active_lax - 1;
+}
 
 void kbound::dump_UnaryInst( unsigned bidx,
                              const llvm::UnaryInstruction* I ) {
@@ -580,8 +842,8 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
       dump_CallInst(bidx, call);
     } else if( auto unary = llvm::dyn_cast<llvm::UnaryInstruction>(I) ) {
       dump_UnaryInst( bidx, unary );
-    // } else if( auto store = llvm::dyn_cast<llvm::StoreInst>(I) ) {
-    //   dump_StoreInst( bidx, store );
+    } else if( auto store = llvm::dyn_cast<llvm::StoreInst>(I) ) {
+      dump_StoreInst( bidx, store );
     // } else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(I) ) {
     //   dump_GetElementPtrInst( gep );
     //   // Terminator instructions
