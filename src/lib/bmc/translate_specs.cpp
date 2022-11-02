@@ -8,11 +8,11 @@ translate_specs::~translate_specs() {}
 
 void translate_specs::translatePrecond( bmc& b, bmc_ds* bmc_ds_ptr, solver_context& ctx ) {
   std::vector<std::string> glb_names;
-  for (unsigned k = 0; k < b.threads.size(); k++) { 
-   for (unsigned i = 0; i < b.threads.at(k).pres.size(); i++) {
+  for (unsigned k = 0; k < b.sys_spec.threads.size(); k++) { 
+   for (unsigned i = 0; i < b.sys_spec.threads.at(k).pres.size(); i++) {
   //for(unsigned i = 0; i < b.precond.size(); i++) {
     //if (i -> first == thread_name) {
-    expr e = b.threads.at(k).pres.at(i);
+    expr e = b.sys_spec.threads.at(k).pres.at(i);
     //expr e = b.precond.at(i);
     //std::cout << "Precond is " << to_string(e) << "\n";
     std::string orig_precond = to_string(e);
@@ -86,11 +86,11 @@ void translate_specs::translatePostcond( bmc& b, bmc_ds* bmc_ds_ptr, solver_cont
   // ary_to_int[llvmValue] -> get an index
 
   std::vector<std::string> glb_names;
- for (unsigned k = 0; k < b.threads.size(); k++) { 
-  for (unsigned i = 0; i < b.threads.at(k).posts.size(); i++) {
+ for (unsigned k = 0; k < b.sys_spec.threads.size(); k++) { 
+  for (unsigned i = 0; i < b.sys_spec.threads.at(k).posts.size(); i++) {
   //for(unsigned i = 0; i < b.prop.size(); i++) {
     //if (i -> first == thread_name) {
-    expr e = b.threads.at(k).posts.at(i);
+    expr e = b.sys_spec.threads.at(k).posts.at(i);
     //expr e = b.prop.at(i);
     //std::cout << "Postcond is " << to_string(e) << " Block num is " << bidx << "\n";
     std::string orig_postcond = to_string(e);

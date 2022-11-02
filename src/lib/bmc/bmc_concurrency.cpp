@@ -19,13 +19,13 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
   std::string fname = demangle(f.getName().str());
 
   unsigned j = 0;
-  for (;j < bmc_obj.threads.size(); j++) {
-    thread_name = bmc_obj.threads.at(j).name;
-    EntryFn = bmc_obj.threads.at(j).entry_function;
+  for (;j < bmc_obj.sys_spec.threads.size(); j++) {
+    thread_name = bmc_obj.sys_spec.threads.at(j).name;
+    EntryFn = bmc_obj.sys_spec.threads.at(j).entry_function;
     if (fname != EntryFn) continue;
     else break;
   }
-  if( j == bmc_obj.threads.size() ) return false;
+  if( j == bmc_obj.sys_spec.threads.size() ) return false;
   // collect all the declared arrays in the function
   populate_array_name_map(&f);
 
@@ -46,7 +46,7 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
 
   bmc_ds_ptr->init_array_model( o.ar_model );
 
-  bmc_ds_ptr->thread_id = bmc_obj.threads.at(j).thread_num;
+  bmc_ds_ptr->thread_id = bmc_obj.sys_spec.threads.at(j).thread_num;
 
   translateParams(f);
   //translate pre condition here <<---
@@ -54,7 +54,7 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
 
   translatePrecond(bmc_obj, bmc_ds_ptr, o.solver_ctx);
   
-  for (unsigned l = 0; l < bmc_obj.threads.at(j).period; l++) {
+  for (unsigned l = 0; l < bmc_obj.sys_spec.threads.at(j).period; l++) {
     do_bmc();
 
      unsigned bidx = 0;

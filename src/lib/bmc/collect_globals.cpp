@@ -27,8 +27,8 @@ collect_globals::~collect_globals() {}
 
 void collect_globals::
 collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
-  for (unsigned j = 0; j < b.threads.size(); j++) {
-     auto EntryFn = b.threads.at(j).entry_function;
+  for (unsigned j = 0; j < b.sys_spec.threads.size(); j++) {
+     auto EntryFn = b.sys_spec.threads.at(j).entry_function;
      for (auto mit = m->begin(); mit != m->end(); mit++) { //Iterate over functions in module
 
       std::string Str1 = mit->getName().str();
@@ -102,8 +102,8 @@ void collect_globals::insert_concurrent( bmc& b, memory_cons& mem_enc,
   b.edata.init_loc = start;
   b.edata.post_loc = final;  
  
-  for (unsigned k = 0; k < b.threads.size(); k++) {
-    auto FnName1 = b.threads.at(k).entry_function;
+  for (unsigned k = 0; k < b.sys_spec.threads.size(); k++) {
+    auto FnName1 = b.sys_spec.threads.at(k).entry_function;
     if( fn_gvars_map.find(FnName1) != fn_gvars_map.end() ) {
      list_gvars = fn_gvars_map[FnName1];
      for (auto i = fn_gvars_map.begin(); i != fn_gvars_map.end(); i++) {
@@ -147,9 +147,9 @@ void collect_globals::insert_concurrent( bmc& b, memory_cons& mem_enc,
 //  auto f = &(*mit);
 //  //std::cout << "Fn is " << name << "\n";
 
-//  for (unsigned i = 0; i < b.threads.size(); i++) {
-//  	if (name == b.threads.at(i).entry_function) {
-//      		thread_num = b.threads.at(i).thread_num;
+//  for (unsigned i = 0; i < b.sys_spec.threads.size(); i++) {
+//  	if (name == b.sys_spec.threads.at(i).entry_function) {
+//      		thread_num = b.sys_spec.threads.at(i).thread_num;
 //		//std::cout << "Fn is " << name << " Thread num " << thread_num << "\n";
 //	    }
 //  }
@@ -242,7 +242,7 @@ void collect_globals::insert_concurrent( bmc& b, memory_cons& mem_enc,
 
 //unsigned collect_globals::add_thread( std::string str) {
 //  //auto thr = std::make_shared<thread>( _z3, str );
-//  //b.threads.push_back( str );
+//  //b.sys_spec.threads.push_back( str );
 //  thread_num++;
 //  return thread_num-1;
 //}
@@ -278,7 +278,7 @@ void collect_globals::insert_concurrent( bmc& b, memory_cons& mem_enc,
 
 
 //void collect_globals::add_event( unsigned i, me_ptr e )   {
-//  if( i < b.threads.size() ) {
+//  if( i < b.sys_spec.threads.size() ) {
 //    add_event( e );
 //    /*if( e->is_rd() ) rd_events[e->prog_v].push_back( e );
 //      if( e->is_wr() ) wr_events[e->prog_v].insert( e );

@@ -43,6 +43,7 @@ public:
   //std::vector<condition> precond;
 
   std::vector< spec_thread > threads;
+  spec_system sys_spec;
   std::vector<const llvm::GlobalVariable*> concurrent_vars;
   //std::map< me_ptr, unsigned > all_events;
   events_data edata;

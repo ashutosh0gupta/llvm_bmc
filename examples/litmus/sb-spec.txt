@@ -23,5 +23,7 @@
 (declare-thread p1 sb__thread_p1) ; param name entry_function
 (invoke-parameters p1 repeated 20 priority 1)
 (pre-condition p1 (assert(and (= @sb__x #x0000) (= @sb__y #x0000))))
-(post-condition p1 (assert(or (= @sb__s #x0001) (= @sb__r #x0001))))
 (end-thread p1)
+
+
+(post-condition (or (= @sb__s #x0001) (= @sb__r #x0001)))

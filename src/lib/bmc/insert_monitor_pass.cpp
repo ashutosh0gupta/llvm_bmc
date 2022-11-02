@@ -38,19 +38,19 @@ init_parse(llvm::Module &m, options& o, bmc& b)
 //     }
 //   }
 
-  for (unsigned j = 0; j < b.threads.size(); j++) { 
-  if (!b.threads.at(j).call_seqs.empty()) {
+  for (unsigned j = 0; j < b.sys_spec.threads.size(); j++) { 
+  if (!b.sys_spec.threads.at(j).call_seqs.empty()) {
   callseq_num = -1;
   //for (auto i = pd.callseq_map.begin(); i != pd.callseq_map.end(); i++) {
     callseq_num++;
-    ThName = b.threads.at(j).name;
-    EntryFnName = b.threads.at(j).entry_function;
-    Th_num1 = b.threads.at(j).thread_num;
-    auto CallSeqs = b.threads.at(j).call_seqs;
+    ThName = b.sys_spec.threads.at(j).name;
+    EntryFnName = b.sys_spec.threads.at(j).entry_function;
+    Th_num1 = b.sys_spec.threads.at(j).thread_num;
+    auto CallSeqs = b.sys_spec.threads.at(j).call_seqs;
 
-    auto size_cs = b.threads.at(j).call_seqs.size();
+    auto size_cs = b.sys_spec.threads.at(j).call_seqs.size();
     for (unsigned k = 0; k < size_cs; k++) {
-	auto CallSeqpair = b.threads.at(j).call_seqs.at(k);
+	auto CallSeqpair = b.sys_spec.threads.at(j).call_seqs.at(k);
     /* for (auto j = pd.list_threads.begin(); j != pd.list_threads.end(); j++) {
       if (ThName == j->first) EntryFnName = j->second;
     }
@@ -82,10 +82,10 @@ init_parse(llvm::Module &m, options& o, bmc& b)
  }
 
 
-  /* if (b.threads.call_seqs.empty()) {
-    for (auto j = b.threads.begin(); j != b.threads.end(); j++) {
-      ThName = b.threads.at(j).name;
-      EntryFnName = b.threads.at(j).entry_function;
+  /* if (b.sys_spec.threads.call_seqs.empty()) {
+    for (auto j = b.sys_spec.threads.begin(); j != b.sys_spec.threads.end(); j++) {
+      ThName = b.sys_spec.threads.at(j).name;
+      EntryFnName = b.sys_spec.threads.at(j).entry_function;
       //std::cout << "Entry Fn is " << EntryFnName << " Thread is " << ThName << "\n";
       for (auto mit = m.begin(); mit != m.end(); mit++) { //Iterate over functions in module
 
@@ -93,7 +93,7 @@ init_parse(llvm::Module &m, options& o, bmc& b)
       if (Str1 == EntryFnName) {
 	//for (auto i = pd.fn_thread_map.begin(); i != pd.fn_thread_map.end(); i++) {
       		//if (Str1 == i->first) {
-      		unsigned Th_num = b.threads.at(j).thread_num;
+      		unsigned Th_num = b.sys_spec.threads.at(j).thread_num;
 		//std::cout << "Fn is " << EntryFnName << " Thread is " << ThName << "\n";
         	CollectThreadInfo(*mit, Th_num, b);
 	    //}
@@ -327,8 +327,8 @@ void import_spec_file( std::unique_ptr<llvm::Module>& module,
 
 //Find LCM of time period of all threads and calculate number of times each thread should run
     findlcm(b);
-//   for (unsigned j=0 ;j < b.threads.size(); j++) {
-//   std::cout << "Period of thread " << j << " is " << b.threads.at(j).period << "\n"; 
+//   for (unsigned j=0 ;j < b.sys_spec.threads.size(); j++) {
+//   std::cout << "Period of thread " << j << " is " << b.sys_spec.threads.at(j).period << "\n"; 
 //   }
   }
 
@@ -348,18 +348,18 @@ unsigned gcd(unsigned a, unsigned b) {
  
 // Returns LCM of array elements
 void findlcm(bmc& b) {
-  if(b.threads.size() == 0) return;
+  if(b.sys_spec.threads.size() == 0) return;
     // Initialize result
-    unsigned ans = b.threads.at(0).period;
+    unsigned ans = b.sys_spec.threads.at(0).period;
  
     // ans contains LCM of arr[0], ..arr[i]
     // after i'th iteration,
-    for (unsigned i = 1; i < b.threads.size(); i++) {
-        ans = (((b.threads.at(i).period * ans)) /
-                (gcd(b.threads.at(i).period, ans)));
+    for (unsigned i = 1; i < b.sys_spec.threads.size(); i++) {
+        ans = (((b.sys_spec.threads.at(i).period * ans)) /
+                (gcd(b.sys_spec.threads.at(i).period, ans)));
     }
  
-    for (unsigned i = 0; i < b.threads.size(); i++) {
-	b.threads.at(i).period = ans/ b.threads.at(i).period;
+    for (unsigned i = 0; i < b.sys_spec.threads.size(); i++) {
+	b.sys_spec.threads.at(i).period = ans/ b.sys_spec.threads.at(i).period;
     }
 }

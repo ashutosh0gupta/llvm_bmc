@@ -11,8 +11,8 @@ bmc_fun_pass::~bmc_fun_pass() {}
 bool bmc_fun_pass::runOnFunction( llvm::Function &f ) {
   std::string fname = demangle(f.getName().str());
   if (o.check_spec) {
-    thread_name = bmc_obj.threads.at(0).name;
-    EntryFn = bmc_obj.threads.at(0).entry_function;
+    thread_name = bmc_obj.sys_spec.threads.at(0).name;
+    EntryFn = bmc_obj.sys_spec.threads.at(0).entry_function;
     if( fname != EntryFn ) return false;
   }
   else {

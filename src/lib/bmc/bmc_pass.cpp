@@ -1081,7 +1081,7 @@ void bmc_pass::translateRetInst(const llvm::ReturnInst *ret ) {
   }
   //todo : if you have specs, translate the spec to the current names
   //bmc_ds_ptr->add_spec( !path_bit || translate_cons, spec_reason_t::FROM_SPEC_FILE );
-  if ( bmc_obj.threads.size() > 1 ) {
+  if ( bmc_obj.sys_spec.threads.size() > 1 ) {
     final_prev_events.insert( prev_events.begin(), prev_events.end() );
   }
 }
@@ -1346,7 +1346,7 @@ expr bmc_pass::extend_path( unsigned bidx, unsigned pre_bidx ) {
 void bmc_pass::do_bmc() {
   assert(bmc_ds_ptr);
 
-  if ( bmc_obj.threads.size() > 1 ) {
+  if ( bmc_obj.sys_spec.threads.size() > 1 ) {
     // todo: support incremental calls???
     expr start_bit = get_fresh_bool(solver_ctx,"start");
     std::vector< expr > history = { start_bit };
@@ -1358,7 +1358,7 @@ void bmc_pass::do_bmc() {
     prev_events = { start };
     //bmc_obj.all_events.insert( start );
     bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].start_event = start;
-    for( unsigned t = 0; t < bmc_obj.threads.size(); t++ ) bmc_obj.edata.create_map[ bmc_obj.threads[t].name ] = start;
+    for( unsigned t = 0; t < bmc_obj.sys_spec.threads.size(); t++ ) bmc_obj.edata.create_map[ bmc_obj.sys_spec.threads[t].name ] = start;
 
   }
 
@@ -1372,7 +1372,7 @@ void bmc_pass::do_bmc() {
       continue; // todo: hack! We are ignoring returned exceptions.
     }
 
-  if ( bmc_obj.threads.size() > 1 ) {
+  if ( bmc_obj.sys_spec.threads.size() > 1 ) {
     for(auto PI = llvm::pred_begin(src),E = llvm::pred_end(src);PI != E;++PI) {
       const llvm::BasicBlock *prev = *PI;
       //collect incoming branch conditions
@@ -1405,7 +1405,7 @@ void bmc_pass::do_bmc() {
     if( o.verbosity > 3 )
       print_bb_vecs();
 
-    if ( bmc_obj.threads.size() > 1 ) {
+    if ( bmc_obj.sys_spec.threads.size() > 1 ) {
       bmc_ds_ptr->block_to_trailing_events[src] = prev_events;
       prev_events.clear();
     }
@@ -1419,7 +1419,7 @@ void bmc_pass::do_bmc() {
 //    bmc_ds_ptr->print_formulas();
   
   // create final event of the thread
-  if ( bmc_obj.threads.size() > 1 ) {
+  if ( bmc_obj.sys_spec.threads.size() > 1 ) {
     expr exit_cond = solver_ctx.bool_val(true);
     std::vector<expr> history_exprs;
     src_loc floc;

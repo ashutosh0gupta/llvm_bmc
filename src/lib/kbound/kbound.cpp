@@ -235,19 +235,19 @@ bool kbound::runOnFunction( llvm::Function &f ) {
   EntryFn = demangle(f.getName().str());
   std::cout<< "Function " << EntryFn << "\n";
   unsigned j = 0;
-  for (;j < bmc_obj.threads.size(); j++) {
-    if (bmc_obj.threads[j].entry_function == EntryFn) break;
+  for (;j < bmc_obj.sys_spec.threads.size(); j++) {
+    if (bmc_obj.sys_spec.threads[j].entry_function == EntryFn) break;
   }
-  if( j == bmc_obj.threads.size() ) return false;
+  if( j == bmc_obj.sys_spec.threads.size() ) return false;
   thread_id = j;
   tid = std::to_string(thread_id);
-  thread_name = bmc_obj.threads.at(j).name;
+  thread_name = bmc_obj.sys_spec.threads.at(j).name;
 
   populate_array_name_map(&f);
   auto bmc_fun_ptr = new bmc_fun(o, ary_to_int, bmc_obj.m_model);
   bmc_ds_ptr = bmc_fun_ptr; // set the pointer in base cla
   bmc_fun_ptr->fun_initialize( this, f);
-  // bmc_ds_ptr->thread_id = bmc_obj.threads.at(j).thread_num;
+  // bmc_ds_ptr->thread_id = bmc_obj.sys_spec.threads.at(j).thread_num;
 
   dump_Params(f);
   // dump_Thread();
@@ -266,7 +266,7 @@ void kbound::prefix_seq() {
   std::cout << "Running k bound\n";
   
   dump_Define( "ADDRSIZE", std::to_string( bmc_obj.m_model.state_size() ) );
-  dump_Define( "NPROC"   , std::to_string( bmc_obj.threads.size() ) );
+  dump_Define( "NPROC"   , std::to_string( bmc_obj.sys_spec.threads.size() ) );
   dump_Define( "NCONTEXT", std::to_string(ncontext) );
   dump_Newline();
 
@@ -337,7 +337,7 @@ void kbound::prefix_seq() {
   // dump_Close_scope();
   // dump_Newline();
 
-  for( unsigned p = 0; p < bmc_obj.threads.size(); p++ ) {
+  for( unsigned p = 0; p < bmc_obj.sys_spec.threads.size(); p++ ) {
     auto pn = std::to_string(p);
     for( unsigned x = 0; x < bmc_obj.m_model.state_size(); x++ ) {
       auto xn = std::to_string(x);
