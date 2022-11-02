@@ -356,6 +356,11 @@ void kbound::prefix_seq() {
   // dump_Close_scope();
   // dump_Newline();
 
+  auto num_proc  = std::to_string(bmc_obj.m_model.state_size()-1);
+  for( unsigned k = 0; 0 < ncontext; k++ ) {
+    auto kn = std::to_string(k);
+    dump_Assign( "active["+kn+"]", "get_rng_th(0," + num_proc +")" );
+  }
   for( unsigned x = 0; x < bmc_obj.m_model.state_size(); x++ ) {
     auto xn = std::to_string(x);
     for( auto ary: val_list ) dump_String( ary + "("+xn+",0) = 0;" );
@@ -942,12 +947,12 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
   auto path = get_path(bidx);
   dump_Assign( path, "1");
 
-  for( auto& pre_bidx : bmc_ds_ptr->pred_idxs[bidx] ) {
-    assert( pre_bidx < bidx );
+  // for( auto& pre_bidx : bmc_ds_ptr->pred_idxs[bidx] ) {
+  //   assert( pre_bidx < bidx );
     
-    // expr p = extend_path( bidx, pre_bidx );
-    // incoming_paths.push_back( p );
-  }
+  //   // expr p = extend_path( bidx, pre_bidx );
+  //   // incoming_paths.push_back( p );
+  // }
 
   for( const llvm::Instruction& Iobj : b->getInstList() ) {
     const llvm::Instruction* I = &(Iobj);
