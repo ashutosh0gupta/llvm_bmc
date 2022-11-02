@@ -44,6 +44,7 @@ public:
   std::map<const llvm::GlobalVariable*,unsigned> ind_in_mem_state;
   std::map<unsigned,memory_state> store_state_map; // block -> global state map
 
+  inline unsigned state_size() { return ind_in_mem_state.size(); }
   //todo: thread name may change to a class reference
   //std::vector<std::string> threads; // thread names
   std::map< std::string, me_set1&> events;

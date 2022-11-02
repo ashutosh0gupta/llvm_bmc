@@ -17,6 +17,7 @@ private:
   static char ID;
   std::unique_ptr<llvm::Module>& module;
   std::ofstream ofcpp;
+  unsigned ncontext = 10;
   unsigned thread_id = 0;
   std::string tid;
   unsigned current_indent;
@@ -30,18 +31,22 @@ private:
 
   unsigned ssa_count = 0;
   std::map<const llvm::Value*, std::string> ssa_name;
+  std::map<const llvm::BasicBlock*, std::string> path_name;
+  std::map<const llvm::Value*, svec> ctrl_dep_ord;
   void add_reg_map( const llvm::Value*, std::string );
   std::string add_reg_map( const llvm::Value* );
   std::string get_reg( const llvm::Value* );
   std::string get_reg_time( const llvm::Value* );
   std::string get_global_idx( const llvm::GlobalVariable* v);
-
+  std::string get_path( unsigned bidx );
+  std::string block_name(unsigned bidx);
   void dump_Params(llvm::Function &f);
 
   // dump to kbound
   void dump_Newline();
   void dump_String (std::string s);
   void dump_Label  (std::string s);
+  void dump_Goto(std::string s);
   void dump_Comment(std::string s);
   void dump_Assume (std::string s);
   void dump_Assume_geq(std::string s1,std::string s2);
@@ -63,6 +68,7 @@ private:
   void dump_If(std::string);
   void dump_Else();
   void dump_Close_scope();
+  void dump_locals();
 
   void dump_Macors(std::string name, std::string val);
 
@@ -94,7 +100,9 @@ private:
   void dump_ld( std::string, std::string, std::string, std::string);
   void dump_st( std::string, std::string, std::string, std::string);
 
+  void dump_PhiNode( unsigned bidx, const llvm::PHINode* phi );
   void dump_RetInst(const llvm::ReturnInst *ret );
+  void dump_Branch( unsigned bidx, const llvm::BranchInst* br );
 
   void dump_Thread();
   void dump_Block( unsigned bidx, const bb* b );

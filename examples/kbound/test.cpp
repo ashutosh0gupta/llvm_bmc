@@ -6,7 +6,9 @@ int glb = 0;
 int fun1(int x)  {
   x = x + x;
   dmbsy();
-  assert( x > 0 );
+  if( x > 2 ) {
+    assert( x > 0 );
+  }
   return x;
   // glb = 1;
   // // sleep_for(10ms);

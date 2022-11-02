@@ -27,6 +27,7 @@ kbound::kbound( options& o_, std::unique_ptr<llvm::Module>& m_,
 kbound::~kbound() {
   postfix_seq();
   ofcpp.close();
+  dump_locals();
 }
 
 void kbound::getAnalysisUsage(llvm::AnalysisUsage &au) const {
@@ -40,6 +41,24 @@ llvm::StringRef kbound::getPassName() const {
 
 //----------------------------------------------------------------------------
 //
+
+// void kbound::add_path( const llvm::BasicBlock* b, std::string path ) {
+//   path_name[b] = path;
+// }
+
+std::string kbound::get_path( unsigned bidx ) {
+  return "path_"+tid+"_"+std::to_string(bidx);
+}
+
+// std::string kbound::get_path_time( const llvm::BasicBlock* b) {
+//   return "creg_"+path_name.at(b);
+// }
+
+// std::string kbound::add_path( const llvm::BasicBlock* b) {
+//   add_path(b, "r"+std::to_string(ssa_count));
+//   ssa_count++;
+//   return get_path(v);
+// }
 
 void kbound::add_reg_map( const llvm::Value* v, std::string name) {
   // v->print( llvm::outs() );std::cout<< "\n";
@@ -91,7 +110,15 @@ void kbound::dump_String(std::string s) {
 }
 
 void kbound::dump_Label(std::string s) {
-  ofcpp << "BLOCK" << s << ":\n";
+  ofcpp << "T"<< tid <<"BLOCK" << s << ":\n";
+}
+
+void kbound::dump_Goto(std::string s) {
+  dump_String( "goto " + s + ";");
+}
+
+std::string kbound::block_name(unsigned bidx) {
+  return "T"+tid+"BLOCK"+std::to_string(bidx);
 }
 
 void kbound::dump_Assume(std::string s) { dump_String("ASSUME("+s+");"); }
@@ -153,7 +180,7 @@ dump_Decl_array(std::string type, std::string name, std::string size) {
 void kbound::
 dump_Decl_fun(std::string type, std::string name, std::string param) {
   dump_Indent();
-  ofcpp << type << " " << name << "("<< param <<"){;\n";
+  ofcpp << type << " " << name << "("<< param <<") {\n";
   current_indent++;
 }
 
@@ -237,32 +264,32 @@ void kbound::prefix_seq() {
   // todo: pickup these values from bmc_obj
   //
   std::cout << "Running k bound\n";
-  dump_Define( "NREGS"   , "5" );
-  dump_Define( "ADDRSIZE", "3" );
-  dump_Define( "NPROC"   , "2" );
-  dump_Define( "NCONTEXT", "10");
+  
+  dump_Define( "ADDRSIZE", std::to_string( bmc_obj.m_model.state_size() ) );
+  dump_Define( "NPROC"   , std::to_string( bmc_obj.threads.size() ) );
+  dump_Define( "NCONTEXT", std::to_string(ncontext) );
   dump_Newline();
 
-  dump_Comment("declare arrays for register values");
-  reg_vals = { "reg" }; //"ireg",
-  dump_Arrays( "int", reg_vals, "NPROC", "NREGS");
+  // dump_Comment("declare arrays for register values");
+  // reg_vals = { "reg" }; //"ireg",
+  // dump_Arrays( "int", reg_vals, "NPROC", "NREGS");
 
   dump_Comment("declare arrays for value version in contexts");
   val_init_list = {"muinit", "nwinit", "deltainit"};
   dump_Arrays( "int", val_init_list, "ADDRSIZE", "NCONTEXT");
-  val_list = { "mu", "nu",  "delta"};
+  val_list = { "mu", "nw",  "delta"};
   dump_Arrays( "int", val_list, "ADDRSIZE", "NCONTEXT");
 
   dump_Comment("declare arrays for context stamps");
   time_list = { "nu", "pw", "cr", "iw", "cw", "cx", "is", "cs"};
   dump_Arrays( "int", time_list, "NPROC", "ADDRSIZE");
 
-  dump_Comment("declare arrays for registers");
-  reg_list = { "cl", "creg" }; //"ireg",
-  dump_Arrays( "int", reg_list, "NPROC", "NREGS");
+  // dump_Comment("declare arrays for registers");
+  // reg_list = { , "creg" }; //"ireg",
+  // dump_Arrays( "int", reg_list, "NPROC", "NREGS");
 
   dump_Comment("declare arrays for synchronizations");
-  proc_list = { "cdy", "cds", "cdl", "cisb", "caddr", "ctrl" };
+  proc_list = { "cl", "cdy", "cds", "cdl", "cisb", "caddr", "ctrl" };
   for( auto ary: proc_list ) dump_Decl_array("int", ary, "NPROC");
   dump_Newline();
 
@@ -271,8 +298,8 @@ void kbound::prefix_seq() {
   for( auto ary: ctx_list ) dump_Decl_array( "int", ary, "NCONTEXT" );
   dump_Newline();
 
-  var_list = { "old_cr", "old_cdy", "new_iw",
-    "old_cw", "new_cw",   "new_ireg", "new_creg"};
+  var_list = { "old_cr", "old_cdy", "old_cw", //, "new_iw", "new_cw",  // "new_ireg", "new_creg"
+  };
   for( auto v: var_list ) dump_Decl_scalar( "int", v);
   dump_Newline();
 
@@ -285,55 +312,108 @@ void kbound::prefix_seq() {
 
   dump_String("char __get_rng();");
   dump_String("char get_rng( char from, char to ) {");
-  dump_String("   char ret = __get_rng(););");
+  dump_String("   char ret = __get_rng();");
   dump_String("   ASSUME(ret >= from && ret <= to);");
-  dump_String("   CTX_USED(ret) = 1;");
+  dump_String("   ctx_used[ret] = 1;");
   dump_String("   return ret;");
   dump_String("}");
 
   dump_String("char get_rng_th( char from, char to ) {");
-  dump_String("   char ret = __get_rng(););");
+  dump_String("   char ret = __get_rng();");
   dump_String("   ASSUME(ret >= from && ret <= to);");
   dump_String("   return ret;");
   dump_String("}");
   dump_Decl_fun("int", "main", "int argc, char **argv");
 
+
+  dump_String("__LOCALS__");
+
   //initializing timing constraints
-  dump_For("char", "p", "NPROC");
-  dump_For("char", "x", "ADDRSIZE");
-  for( auto ary: time_list ) dump_String( ary + "_(p,x) = 0;" );
-  dump_Close_scope();
-  dump_For("char", "r", "NREGS");
-  for( auto ary: reg_list ) dump_String( ary + "_(p,r) = 0;" );
-  dump_Close_scope();
-  for( auto ary: proc_list ) dump_String( ary + "[p] = 0;" );
-  dump_Close_scope();
-  dump_Newline();
+  // dump_For("char", "p", "NPROC");
+  // dump_For("char", "x", "ADDRSIZE");
+  // for( auto ary: time_list ) dump_String( ary + "_(p,x) = 0;" );
+  // dump_Close_scope();
+  // for( auto ary: proc_list ) dump_String( ary + "[p] = 0;" );
+  // dump_Close_scope();
+  // dump_Newline();
+
+  for( unsigned p = 0; p < bmc_obj.threads.size(); p++ ) {
+    auto pn = std::to_string(p);
+    for( unsigned x = 0; x < bmc_obj.m_model.state_size(); x++ ) {
+      auto xn = std::to_string(x);
+      for( auto ary: time_list ) dump_String( ary + "("+pn+","+xn+") = 0;" );
+    }
+    for( auto ary: proc_list ) dump_String( ary + "["+ pn + "] = 0;" );
+  }
 
   //initializing value arrays
-  dump_For("char", "x", "ADDRSIZE");
-  for( auto ary: val_list ) dump_String( ary + "_(x,0) = 0;" );
-  dump_For("char", "k", "1", "NCONTEXT");
-  for( auto ary: val_init_list ) dump_String( ary + "_(x,k) = __get_rng();" );
-  for( auto ary: val_list ) dump_String( ary + "_(x,k) = "+ary+"init_(x,k);" );
-  dump_Close_scope();
-  dump_Close_scope();
-  dump_Newline();
+  // dump_For("char", "x", "ADDRSIZE");
+  // for( auto ary: val_list ) dump_String( ary + "_(x,0) = 0;" );
+  // dump_For("char", "k", "1", "NCONTEXT");
+  // for( auto ary: val_init_list ) dump_String( ary + "_(x,k) = __get_rng();" );
+  // for( auto ary: val_list ) dump_String( ary + "_(x,k) = "+ary+"init_(x,k);" );
+  // dump_Close_scope();
+  // dump_Close_scope();
+  // dump_Newline();
 
-  // for(auto& thread: bmc_obj.threads) dump_Thread(thread);
+  for( unsigned x = 0; x < bmc_obj.m_model.state_size(); x++ ) {
+    auto xn = std::to_string(x);
+    for( auto ary: val_list ) dump_String( ary + "("+xn+",0) = 0;" );
+    for( unsigned k = 1; k < ncontext; k++ ) {
+      auto kn = std::to_string(k);
+      auto xkn = "("+xn+","+kn+")";
+      for( auto ary: val_init_list ) dump_String(ary +xkn+" = __get_rng();");
+      for( auto ary: val_list ) dump_Assign( ary+xkn, ary+"init"+xkn );
+
+    }
+  }
+
 }
 
 void kbound::postfix_seq() {
   //initializing value matching
-  dump_For("char", "x", "ADDRSIZE");
-  dump_For("char", "k", "NCONTEXT-1");
-  for( auto ary: val_list )
-    dump_Assume( ary+"_(x,k) == " + ary + "init_(x,k+1)" );
-  dump_Close_scope();
-  dump_Close_scope();
+  for( unsigned x = 0; x < bmc_obj.m_model.state_size(); x++ ) {
+    auto xn = std::to_string(x);
+    for( unsigned k = 1; k < ncontext-1; k++ ) {
+      auto xkn = "("+xn+","+std::to_string(k)+")";
+      auto xknp = "("+xn+","+std::to_string(k+1)+")";
+      for( auto ary: val_list ) dump_Assume(ary+"init"+xknp +" == "+ary+xkn);
+    }
+  }
+
+  // dump_For("char", "x", "ADDRSIZE");
+  // dump_For("char", "k", "NCONTEXT-1");
+  // for( auto ary: val_list )
+  //   dump_Assume( ary+"_(x,k) == " + ary + "init_(x,k+1)" );
+  // dump_Close_scope();
+  // dump_Close_scope();
   dump_Newline();
 
   dump_Close_scope();
+}
+
+void kbound::dump_locals() {
+
+  std::ifstream in(o.outDirPath.string()+"/cmbc.cpp");
+  std::ofstream out(o.outDirPath.string()+"/cbmc_out.cpp");
+  std::string line;
+    while (getline(in, line)) {
+      if( line == "  __LOCALS__") {
+        for( auto& pair : ssa_name ) {
+          auto& name = pair.second;
+          if( name[0] != 'r') continue;
+          out << "  int " << name << "= 0;\n";
+          out << "  char " << get_reg_time(pair.first) << "= 0;\n";
+        }
+        for( auto& v : var_list ) {
+          out << "  char " << v << "= 0;\n";
+        }
+      }else{
+        out << line << "\n";
+      }
+    }
+    in.close();
+    out.close();
 }
 
 void kbound::dump_Active( std::string ctx) {
@@ -360,6 +440,9 @@ void kbound::dump_CmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
 
   auto r1 = get_reg( lhs );
   auto r2 = get_reg( rhs );
+
+  auto cr1 = get_reg_time( lhs );
+  auto cr2 = get_reg_time( rhs );
 
   // construct expression for comparision
   std::string cnd;
@@ -396,6 +479,10 @@ void kbound::dump_CmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
 
   // double the reg_map for conditions
   add_reg_map(cmp, cnd);
+
+  if(cr1 != "") ctrl_dep_ord[cmp].push_back(cr1);
+  if(cr2 != "") ctrl_dep_ord[cmp].push_back(cr2);
+
   // ssa_name[cmp] = cnd;
 
   // //store the expression
@@ -452,7 +539,6 @@ void kbound::dump_IntrinsicInst( unsigned bidx,
 
   if( // auto dbg =
       llvm::isa<llvm::DbgInfoIntrinsic>(I) ) {
-    //assert(dbg);
     // do nothing
     // translateDebugInfo( bidx, dbg );
   }else if( I->getIntrinsicID() == llvm::Intrinsic::stacksave ) {
@@ -493,19 +579,19 @@ void kbound::dump_IntrinsicInst( unsigned bidx,
 void kbound::dump_CallAssume(unsigned bidx, const llvm::CallInst* call) {
   assert(call);
   auto term = get_reg( call->getArgOperand(0) );
-  dump_String("assume(" + term + ");");
+  dump_Assume( term );
 }
 
 void kbound::dump_CallAssert(unsigned bidx, const llvm::CallInst* call) {
   assert(call);
   auto term = get_reg( call->getArgOperand(0) );
-  dump_String("assume(" + term + ");");
+  dump_String("ASSERT(" + term + ");");
 }
 
 void kbound::dump_CallNondet(unsigned bidx, const llvm::CallInst* call) {
   assert(call);
   auto term = get_reg( call->getArgOperand(0) );
-  dump_String("nondet(" + term + ");");
+  dump_String("NONDET(" + term + ");");
 }
 
 void kbound::dump_geq_globals( std::string c, std::string prop ) {
@@ -529,13 +615,8 @@ void kbound::dump_dmbsy() {
   dump_Assume_geq( cdy, "cds["  + tid + "]" );
   dump_Assume_geq( cdy, "ctrl[" + tid + "]" );
 
-  dump_geq_globals( cdy, "cw_");
+  dump_geq_globals( cdy, "cw");
 
-  // for( auto pair : bmc_obj.m_model.ind_in_mem_state ) {
-  //   auto gid = std::to_string(pair.second);
-  //   dump_Assume_geq( cdy, "cw_(" + tid +","+ gid+")" );
-  //   dump_Assume_geq( cdy, "cr_(" + tid +","+ gid+")" );
-  // }
 }
 
 void kbound::dump_dmbld() {
@@ -544,11 +625,7 @@ void kbound::dump_dmbld() {
   dump_Assign_rand_ctx( cdl );
   dump_Comment("Check");
   dump_Assume_geq( cdl, "cdy[" + tid + "]" );
-  dump_geq_globals( cdl, "cr_");
-  // for( auto pair : bmc_obj.m_model.ind_in_mem_state ) {
-  //   auto gid = std::to_string(pair.second);
-  //   dump_Assume_geq( cdl, "cr_(" + tid +","+ gid+")" );
-  // }
+  dump_geq_globals( cdl, "cr");
 }
 
 void kbound::dump_dmbst() {
@@ -557,7 +634,7 @@ void kbound::dump_dmbst() {
   dump_Assign_rand_ctx( cds );
   dump_Comment("Check");
   dump_Assume_geq( cds, "cdy[" + tid + "]" );
-  dump_geq_globals( cds, "cw_");
+  dump_geq_globals( cds, "cw");
   // for( auto pair : bmc_obj.m_model.ind_in_mem_state ) {
   //   auto gid = std::to_string(pair.second);
   //   dump_Assume_geq( cds, "cw_(" + tid +","+ gid+")" );
@@ -657,40 +734,40 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid) {
   bool isExclusive = true;
 
   auto gaccess = "("+ tid + ","+ gid + ")";
-  auto cr = "cr_"+gaccess;
+  auto cr = "cr"+gaccess;
   auto gctx_access = "("+ gid +","+ cr + ")";
 
   dump_Comment("LD: Guess");
-  dump_Assign( "old_CR",  cr);
+  dump_Assign( "old_cr",  cr);
   dump_Assign_rand_ctx( cr );
 
   dump_Comment("Check");
   dump_Active( cr );
-  dump_Assume_geq( cr, "iw_"+gaccess );
+  dump_Assume_geq( cr, "iw"+gaccess );
   dump_Assume_geq( cr, caddr );
   dump_Assume_geq( cr, "cdy[" + tid + "]" );
   dump_Assume_geq( cr, "cisb["+ tid + "]" );
   dump_Assume_geq( cr, "cdl[" + tid + "]" );
   dump_Assume_geq( cr, "cl["  + tid + "]" );
-  if( isExclusive ) dump_Assume_geq( cr, "old_CR" );
-  if( isAcquire ) dump_Assume_geq( cr, "cx_"+gaccess ); // extra in lda
-  if( isAcquire ) dump_geq_globals( cr, "cs_"); // extra in lda
+  if( isExclusive ) dump_Assume_geq( cr, "old_cr" );
+  if( isAcquire ) dump_Assume_geq( cr, "cx"+gaccess ); // extra in lda
+  if( isAcquire ) dump_geq_globals( cr, "cs"); // extra in lda
 
   dump_Comment("Update");
   dump_Assign( cval, cr );
   dump_Assign_max( "caddr["+tid+"]", caddr);
-  dump_If( cr + " < " + "cw_"+gaccess );
-  dump_Assign(r, "nu_"+gaccess);
+  dump_If( cr + " < " + "cw"+gaccess );
+  dump_Assign(r, "nu"+gaccess);
   dump_Else();
-  dump_If( "pw_" +gaccess + " != " + "nw_"+gctx_access );
-  dump_Assume_geq( cr, "old_CR" );
+  dump_If( "pw" +gaccess + " != " + "nw"+gctx_access );
+  dump_Assume_geq( cr, "old_cr" );
   dump_Close_scope();
-  dump_Assign( "pw_"+gaccess, "nw_"+ gctx_access );
-  dump_Assign( r, "mu_"+ gctx_access );
+  dump_Assign( "pw"+gaccess, "nw"+ gctx_access );
+  dump_Assign( r, "mu"+ gctx_access );
   dump_Close_scope();
 
   if( isAcquire   ) dump_Assign_max( "cl[" + tid + "]", cr   );
-  if( isExclusive ) dump_Assign( "delta_"+gctx_access, tid );
+  if( isExclusive ) dump_Assign( "delta"+gctx_access, tid );
 }
 
 
@@ -725,39 +802,6 @@ void kbound::dump_StoreInst(unsigned bidx, const llvm::StoreInst* store ) {
     llvm_bmc_error("bmc", "Only local array and global write/read supported!");
   }
   dump_st( v, cval, caddr, gid);
-  // auto gaccess = "("+ tid + ","+ gid + ")";
-  // auto iw = "iw_"+gaccess;
-  // auto cw = "cw_"+gaccess;
-  // auto gctx_access = "("+ gid +","+ cw + ")";
-  // dump_Comment("ST: Guess");
-  // dump_Assign_rand_ctx( iw );
-  // dump_Assign( "old_cw",  cw);
-  // dump_Assign_rand_ctx( cw );
-  // dump_Comment("Check");
-  // dump_Active( iw );
-  // dump_Active( cw );
-  // dump_Assume_geq( iw, cval  );
-  // dump_Assume_geq( iw, caddr );
-  // dump_Assume_geq( cw, iw );
-
-  // dump_Assume_geq( cw, "old_cw" );
-  // dump_Assume_geq( cw, "cr_"+gaccess );
-
-  // dump_Assume_geq( cw, "cl["  + tid + "]" );
-
-  // dump_Assume_geq( cw, "cisb["+ tid + "]" );
-  // dump_Assume_geq( cw, "cdy[" + tid + "]" );
-  // dump_Assume_geq( cw, "cdl[" + tid + "]" );
-  // dump_Assume_geq( cw, "cds[" + tid + "]" );
-  // dump_Assume_geq( cw, "ctrl[" + tid + "]" );
-  // dump_Assume_geq( cw, "caddr[" + tid + "]" );
-
-  // dump_Comment("Update");
-  // dump_Assign_max( "caddr[" + tid + "]", cval );
-  // dump_Assign( "nu_"   +gaccess    , v);
-  // dump_Assign( "mu_"   +gctx_access, v);
-  // dump_String( "nw_"   +gctx_access + "+=1");
-  // dump_String( "delta_"+gctx_access + "-=1");
 }
 
 void kbound::
@@ -766,8 +810,8 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid) {
   bool isExclusive = true;
 
   auto gaccess = "("+ tid + ","+ gid + ")";
-  auto iw = "iw_"+gaccess;
-  auto cw = "cw_"+gaccess;
+  auto iw = "iw"+gaccess;
+  auto cw = "cw"+gaccess;
   auto gctx_access = "("+ gid +","+ cw + ")";
 
   dump_Comment("ST: Guess");
@@ -782,7 +826,7 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid) {
   dump_Assume_geq( iw, caddr );
   dump_Assume_geq( cw, iw );
   dump_Assume_geq( cw, "old_cw" );
-  dump_Assume_geq( cw, "cr_"    + gaccess   );
+  dump_Assume_geq( cw, "cr"    + gaccess   );
   dump_Assume_geq( cw,    "cl[" + tid + "]" );
   dump_Assume_geq( cw,  "cisb[" + tid + "]" );
   dump_Assume_geq( cw,   "cdy[" + tid + "]" );
@@ -790,21 +834,21 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid) {
   dump_Assume_geq( cw,   "cds[" + tid + "]" );
   dump_Assume_geq( cw,  "ctrl[" + tid + "]" );
   dump_Assume_geq( cw, "caddr[" + tid + "]" );
-  if( isRelease ) dump_geq_globals( cw, "cr_");
-  if( isRelease ) dump_geq_globals( cw, "cw_");
-  if( isExclusive ) dump_Assume( "delta_" + gctx_access + " = "+ tid );
+  if( isRelease ) dump_geq_globals( cw, "cr");
+  if( isRelease ) dump_geq_globals( cw, "cw");
+  if( isExclusive ) dump_Assume( "delta" + gctx_access + " = "+ tid );
 
   dump_Comment("Update");
   dump_Assign_max( "caddr[" + tid + "]", cval );
-  dump_Assign( "nu_"   + gaccess    , v);
-  dump_Assign( "mu_"   + gctx_access, v);
-  if( isExclusive ) dump_Assign( "cx_"   + gaccess, v);
-  dump_String( "nw_"   + gctx_access + "+=1");
-  dump_String( "delta_"+ gctx_access + "= -1");
+  dump_Assign( "nu"   + gaccess    , v);
+  dump_Assign( "mu"   + gctx_access, v);
+  if( isExclusive ) dump_Assign( "cx"   + gaccess, v);
+  dump_String( "nw"   + gctx_access + "+=1");
+  dump_String( "delta"+ gctx_access + "= -1");
 
-  if( isRelease ) dump_Assign( "is_"+gaccess, iw);
-  if( isRelease ) dump_Assign( "cs_"+gaccess, cw);
-  if( active_lax > 0 ) dump_Assign( "cx_"+gaccess, cw);
+  if( isRelease ) dump_Assign( "is"+gaccess, iw);
+  if( isRelease ) dump_Assign( "cs"+gaccess, cw);
+  if( active_lax > 0 ) dump_Assign( "cx"+gaccess, cw);
 
   active_lax = active_lax - 1;
 }
@@ -827,15 +871,90 @@ void kbound::dump_UnaryInst( unsigned bidx,
   }
 }
 
+void kbound::dump_Branch( unsigned bidx, const llvm::BranchInst* br ) {
+  assert( br );
+
+  auto path = get_path( bidx );
+  // auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
+  if( !br->isUnconditional() ) {
+    auto r = get_reg( br->getCondition() );
+    for( auto& dep : ctrl_dep_ord.at(br->getCondition()) ) {
+      dump_Assume_geq( "ctrl["+tid+"]", dep);
+    }
+    dump_If( r );
+    auto succ_bidx = bmc_ds_ptr->find_block_idx( br->getSuccessor(0) );
+    dump_Goto( block_name(succ_bidx) );
+    dump_Else();
+    succ_bidx = bmc_ds_ptr->find_block_idx( br->getSuccessor(1) );
+    dump_Goto( block_name(succ_bidx) );
+    dump_Close_scope();
+  }else{
+    auto succ_bidx = bmc_ds_ptr->find_block_idx( br->getSuccessor(0) );
+    dump_Goto( block_name(succ_bidx) );
+    // for unconditional branch, there is no need of constraints
+    // bmc_ds_ptr->bmc_vec.push_back( exit_bit );
+  }
+}
+
+void kbound::dump_PhiNode( unsigned bidx, const llvm::PHINode* phi ) {
+  assert( phi );
+
+  unsigned num = phi->getNumIncomingValues();
+
+  if( !phi->getType()->isIntegerTy() && !phi->getType()->isFloatTy() ) {
+    // phi->getParent()->dump();
+    llvm_bmc_error("kbound", "phi nodes with non integers not supported !!");
+  }
+
+  auto v    = add_reg_map(phi);
+  auto cval = get_reg_time(phi);
+
+  // std::vector<expr> phi_cons;
+  for( unsigned i = 0 ; i < num ; i++ ) {
+    auto prev    = phi->getIncomingBlock(i);
+    auto prev_v_ = phi->getIncomingValue(i);
+    auto v_      = add_reg_map( prev_v_ );
+    auto cval_   = add_reg_map( prev_v_ );
+
+    // condition to skip??
+    std::vector<unsigned> pre_bidxes;
+    for( unsigned pre_b_local: bmc_ds_ptr->pred_idxs[bidx]) {
+      if( prev == bmc_ds_ptr->bb_vec[pre_b_local] ) {
+        pre_bidxes.push_back( pre_b_local );
+      }
+    }
+    assert( pre_bidxes.size() < 2 );
+    //todo: check if this works
+    for( unsigned pre_bidx : pre_bidxes) {
+      dump_If( get_path(pre_bidx) + "== 1"  );
+      dump_Assign( v_, v );
+      dump_Assume_geq( cval, cval_ );
+      dump_Close_scope();
+    }
+  }
+
+}
+
+
 void kbound::dump_Block( unsigned bidx, const bb* b ) {
   assert( b );
   dump_Label(std::to_string(bidx));
+  auto path = get_path(bidx);
+  dump_Assign( path, "1");
+
+  for( auto& pre_bidx : bmc_ds_ptr->pred_idxs[bidx] ) {
+    assert( pre_bidx < bidx );
+    
+    // expr p = extend_path( bidx, pre_bidx );
+    // incoming_paths.push_back( p );
+  }
+
   for( const llvm::Instruction& Iobj : b->getInstList() ) {
     const llvm::Instruction* I = &(Iobj);
     if(auto bop = llvm::dyn_cast<llvm::BinaryOperator>(I) ) {
       dump_BinOp( bidx, bop );
-    // }else if( auto phi = llvm::dyn_cast<llvm::PHINode>(I) ) {
-    //   dump_PhiNode( bidx, phi );
+    }else if( auto phi = llvm::dyn_cast<llvm::PHINode>(I) ) {
+      dump_PhiNode( bidx, phi );
     } else if( auto cmp = llvm::dyn_cast<llvm::CmpInst>(I) ) {
       dump_CmpInst( bidx, cmp );
     } else if( auto call = llvm::dyn_cast<llvm::CallInst>(I) ) {
@@ -847,8 +966,8 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
     // } else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(I) ) {
     //   dump_GetElementPtrInst( gep );
     //   // Terminator instructions
-    // } else if( auto br = llvm::dyn_cast<llvm::BranchInst>(I) ) {
-    //   dump_Branch( bidx, br );
+    } else if( auto br = llvm::dyn_cast<llvm::BranchInst>(I) ) {
+      dump_Branch( bidx, br );
     } else if( auto ret = llvm::dyn_cast<llvm::ReturnInst>(I) ) {
       dump_RetInst( ret );
     // } else if( auto swch = llvm::dyn_cast<llvm::SwitchInst>(I) ) {
@@ -895,6 +1014,10 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
 
 void kbound::dump_Thread() {
   dump_Comment( "Dumping thread "+ tid );
+  for( unsigned i = 0; i < bmc_ds_ptr->bb_vec.size(); i++ ) {
+    dump_Assign( "char "+ get_path(i), "0" );
+  }
+  dump_Assign( "int ret_thread_"+ tid, "0" );
   unsigned bidx = 0;
   for( const bb* src : bmc_ds_ptr->bb_vec ) {
     dump_Block( bidx, src );
