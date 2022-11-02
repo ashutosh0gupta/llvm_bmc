@@ -452,7 +452,7 @@ void kbound::dump_IntrinsicInst( unsigned bidx,
 
   if( // auto dbg =
       llvm::isa<llvm::DbgInfoIntrinsic>(I) ) {
-    assert(dbg);
+    //assert(dbg);
     // do nothing
     // translateDebugInfo( bidx, dbg );
   }else if( I->getIntrinsicID() == llvm::Intrinsic::stacksave ) {

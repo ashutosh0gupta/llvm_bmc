@@ -105,7 +105,7 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
   b.run_bmc_pass();
 
  for( auto& it : b.func_formula_map ) {
-   b.check_all_spec( it.second );
+   b.check_all_spec( it.second, b );
  }
 
   // bool verify_result = b.verify_prop();
