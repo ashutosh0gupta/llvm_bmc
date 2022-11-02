@@ -76,8 +76,8 @@ void bmc::run_bmc_pass() {
   passMan.add( new collect_loopdata(o, ld_map, localNameMap, module) );
   passMan.run( *module.get() );
 
-   // if( true ) {
-     if( false ) {
+   if( true ) {
+     // if( false ) {
      passMan.add( new kbound(o, module, *this) );
      passMan.run( *module.get() );
      // kbound kbnd(o, module, *this);
