@@ -222,7 +222,7 @@ memory_state bmc::populate_mem_state() {
 //   eliminate_vars( bmc_f, bmc_ds_ptr->quant_elim_vars, bmc_ds_ptr->bmc_vec );
 // }
 
-void bmc::check_all_spec( bmc_ds* bmc_ds_ptr ) {
+void bmc::check_all_spec( bmc_ds* bmc_ds_ptr, bmc& b ) {
   std::ostream& os = std::cout;
   for(spec s : bmc_ds_ptr->spec_vec) {
     if( o.verbosity > 3 ) {
@@ -230,14 +230,14 @@ void bmc::check_all_spec( bmc_ds* bmc_ds_ptr ) {
       s.print( os );
     }
     // expr prop = s.get_formula();
-    if( run_solver( s, bmc_ds_ptr) ) {
+    if( run_solver( s, bmc_ds_ptr, b) ) {
       return;
     } else { } // contine with other specifications
   }
   os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
 }
 
-bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
+bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr, bmc& b) {
   std::ostream& os = std::cout;
 
   // skipping specifications due to unreachable instructions
@@ -268,6 +268,14 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
 
   //add function encoding
   for(expr e : bmc_ds_ptr->bmc_vec) {
+    s.add(e);
+  }
+
+  //add constraints
+  for(expr e : b.edata.phi_po) {
+    s.add(e);
+  }
+  for(expr e : b.edata.phi_ses) {
     s.add(e);
   }
 
