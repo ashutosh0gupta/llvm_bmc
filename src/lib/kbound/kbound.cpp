@@ -80,13 +80,27 @@ std::string kbound::get_reg_time( const llvm::Value* v) {
   if( s != "" ) {
     return "0";
   }
+  auto name = ssa_name.at(v);
+  if( name[0] != 'r' ) {
+    auto vec = ctrl_dep_ord.at(v);
+    if( vec.size() == 0 ) return "0";
+    if( vec.size() == 1 ) return vec[0];
+    if( vec.size() == 2 ) return "max("+vec[0]+","+vec[1]+")";
+    assert(false);
+  }
   return "creg_"+ssa_name.at(v);
 }
 
 std::string kbound::add_reg_map( const llvm::Value* v) {
-  v->print( llvm::outs() ); std::cout<< "\n";
+  // v->print( llvm::outs() ); std::cout<< "\n";
   // assert(false); //implement constant
   // ssa_name[v] = "r"+std::to_string(ssa_count);
+
+  auto s = read_const_str( o, v );
+  if( s != "" ) {
+    return "";
+  }
+  if( ssa_name.find(v) != ssa_name.end() ) return ssa_name.at(v);
   add_reg_map(v, "r"+std::to_string(ssa_count));
   ssa_count++;
   return get_reg(v);
@@ -158,6 +172,9 @@ void kbound::dump_Assign_rand_ctx(std::string v) {
 void kbound::dump_Comment(std::string s) { dump_String("// "+s); }
 
 void kbound::dump_Indent() {
+  if(current_indent > 20) {
+    llvm_bmc_error( "kbound", "Large indent is not ok!" );
+  }
   for(unsigned i=0; i < current_indent; i++ ) ofcpp << "  ";
 }
 
@@ -209,7 +226,10 @@ void kbound::dump_Else() {
 
 void kbound::
 dump_Close_scope() {
-  assert(current_indent > 0);
+  if( current_indent == 0 ) {
+    return;
+    // llvm_bmc_error("kbound", "Bad scoping in dumping output!");
+  }
   current_indent--;
   dump_Indent();
   ofcpp <<"}\n";
@@ -264,16 +284,40 @@ void kbound::prefix_seq() {
   // todo: pickup these values from bmc_obj
   //
   std::cout << "Running k bound\n";
-  
+ 
   dump_Define( "ADDRSIZE", std::to_string( bmc_obj.m_model.state_size() ) );
   dump_Define( "NPROC"   , std::to_string( bmc_obj.sys_spec.threads.size() ) );
   dump_Define( "NCONTEXT", std::to_string(ncontext) );
+  dump_Newline();
+
+  dump_Define("ASSUME(stmt)", "__CPROVER_assume(stmt)");
+  dump_Define("ASSERT(stmt)", "__CPROVER_assert(stmt, \"error\")");
+  dump_Newline();
+
+  dump_Define("max(a,b)", "(a>b?a:b)");
+  dump_Newline();
+
+  dump_String("char __get_rng();");
+  dump_String("char get_rng( char from, char to ) {");
+  dump_String("   char ret = __get_rng();");
+  dump_String("   ASSUME(ret >= from && ret <= to);");
+  // dump_String("   ctx_used[ret] = 1;");
+  dump_String("   return ret;");
+  dump_String("}");
+  dump_Newline();
+
+  dump_String("char get_rng_th( char from, char to ) {");
+  dump_String("   char ret = __get_rng();");
+  dump_String("   ASSUME(ret >= from && ret <= to);");
+  dump_String("   return ret;");
+  dump_String("}");
   dump_Newline();
 
   // dump_Comment("declare arrays for register values");
   // reg_vals = { "reg" }; //"ireg",
   // dump_Arrays( "int", reg_vals, "NPROC", "NREGS");
 
+  dump_Decl_fun("int", "main", "int argc, char **argv");
   dump_Comment("declare arrays for value version in contexts");
   val_init_list = {"muinit", "nwinit", "deltainit"};
   dump_Arrays( "int", val_init_list, "ADDRSIZE", "NCONTEXT");
@@ -298,44 +342,15 @@ void kbound::prefix_seq() {
   for( auto ary: ctx_list ) dump_Decl_array( "int", ary, "NCONTEXT" );
   dump_Newline();
 
-  var_list = { "old_cr", "old_cdy", "old_cw", //, "new_iw", "new_cw",  // "new_ireg", "new_creg"
+  var_list = { "old_ctrl", "old_cr", "old_cdy", "old_cw",  "new_creg" //, "new_iw", "new_cw",  // "new_ireg",
   };
-  for( auto v: var_list ) dump_Decl_scalar( "int", v);
+  // for( auto v: var_list ) dump_Decl_scalar( "int", v);
   dump_Newline();
 
-  dump_Define("ASSUME(stmt)", "__CPROVER_assume(stmt)");
-  dump_Define("ASSERT(stmt)", "__CPROVER_assert(stmt, \"error\")");
-  dump_Newline();
-
-  dump_Define("max(a,b)", "{a>b?a:b}");
-  dump_Newline();
-
-  dump_String("char __get_rng();");
-  dump_String("char get_rng( char from, char to ) {");
-  dump_String("   char ret = __get_rng();");
-  dump_String("   ASSUME(ret >= from && ret <= to);");
-  dump_String("   ctx_used[ret] = 1;");
-  dump_String("   return ret;");
-  dump_String("}");
-
-  dump_String("char get_rng_th( char from, char to ) {");
-  dump_String("   char ret = __get_rng();");
-  dump_String("   ASSUME(ret >= from && ret <= to);");
-  dump_String("   return ret;");
-  dump_String("}");
-  dump_Decl_fun("int", "main", "int argc, char **argv");
 
 
   dump_String("__LOCALS__");
 
-  //initializing timing constraints
-  // dump_For("char", "p", "NPROC");
-  // dump_For("char", "x", "ADDRSIZE");
-  // for( auto ary: time_list ) dump_String( ary + "_(p,x) = 0;" );
-  // dump_Close_scope();
-  // for( auto ary: proc_list ) dump_String( ary + "[p] = 0;" );
-  // dump_Close_scope();
-  // dump_Newline();
 
   for( unsigned p = 0; p < bmc_obj.sys_spec.threads.size(); p++ ) {
     auto pn = std::to_string(p);
@@ -346,28 +361,19 @@ void kbound::prefix_seq() {
     for( auto ary: proc_list ) dump_String( ary + "["+ pn + "] = 0;" );
   }
 
-  //initializing value arrays
-  // dump_For("char", "x", "ADDRSIZE");
-  // for( auto ary: val_list ) dump_String( ary + "_(x,0) = 0;" );
-  // dump_For("char", "k", "1", "NCONTEXT");
-  // for( auto ary: val_init_list ) dump_String( ary + "_(x,k) = __get_rng();" );
-  // for( auto ary: val_list ) dump_String( ary + "_(x,k) = "+ary+"init_(x,k);" );
-  // dump_Close_scope();
-  // dump_Close_scope();
-  // dump_Newline();
+  // auto num_proc  = std::to_string(bmc_obj.sys_spec.threads.size()-1);
+  // for( unsigned k = 0; k < ncontext; k++ ) {
+  //   auto kn = std::to_string(k);
+  //   dump_Assign( "active["+kn+"]", "get_rng_th(0," + num_proc +")" );
+  // }
 
-  auto num_proc  = std::to_string(bmc_obj.m_model.state_size()-1);
-  for( unsigned k = 0; 0 < ncontext; k++ ) {
-    auto kn = std::to_string(k);
-    dump_Assign( "active["+kn+"]", "get_rng_th(0," + num_proc +")" );
-  }
   for( unsigned x = 0; x < bmc_obj.m_model.state_size(); x++ ) {
     auto xn = std::to_string(x);
     for( auto ary: val_list ) dump_String( ary + "("+xn+",0) = 0;" );
     for( unsigned k = 1; k < ncontext; k++ ) {
       auto kn = std::to_string(k);
       auto xkn = "("+xn+","+kn+")";
-      for( auto ary: val_init_list ) dump_String(ary +xkn+" = __get_rng();");
+      // for( auto ary: val_init_list ) dump_String(ary +xkn+" = __get_rng();");
       for( auto ary: val_list ) dump_Assign( ary+xkn, ary+"init"+xkn );
 
     }
@@ -379,12 +385,14 @@ void kbound::postfix_seq() {
   //initializing value matching
   for( unsigned x = 0; x < bmc_obj.m_model.state_size(); x++ ) {
     auto xn = std::to_string(x);
-    for( unsigned k = 1; k < ncontext-1; k++ ) {
+    for( unsigned k = 0; k < ncontext-1; k++ ) {
       auto xkn = "("+xn+","+std::to_string(k)+")";
       auto xknp = "("+xn+","+std::to_string(k+1)+")";
       for( auto ary: val_list ) dump_Assume(ary+"init"+xknp +" == "+ary+xkn);
     }
   }
+  dump_Newline();
+  for(auto& term: in_code_spec ) dump_String("ASSERT(" + term + ");");
 
   // dump_For("char", "x", "ADDRSIZE");
   // dump_For("char", "k", "NCONTEXT-1");
@@ -393,11 +401,11 @@ void kbound::postfix_seq() {
   // dump_Close_scope();
   // dump_Close_scope();
   dump_Newline();
-
   dump_Close_scope();
 }
 
 void kbound::dump_locals() {
+  std::cout << bmc_obj.m_model.state_size();
 
   std::ifstream in(o.outDirPath.string()+"/cmbc.cpp");
   std::ofstream out(o.outDirPath.string()+"/cbmc_out.cpp");
@@ -408,7 +416,7 @@ void kbound::dump_locals() {
           auto& name = pair.second;
           if( name[0] != 'r') continue;
           out << "  int " << name << "= 0;\n";
-          out << "  char " << get_reg_time(pair.first) << "= 0;\n";
+          out << "  char " << get_reg_time(pair.first) << ";\n"; //<< "= 0;\n";
         }
         for( auto& v : var_list ) {
           out << "  char " << v << "= 0;\n";
@@ -515,6 +523,20 @@ void kbound::dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop) {
   auto r1 = get_reg( op0 );
   auto r2 = get_reg( op1 );
 
+  auto rt  = get_reg_time( bop );
+  auto r1t = get_reg_time( op0 );
+  auto r2t = get_reg_time( op1 );
+
+  // dump_Assign_rand_ctx( "new_creg" );
+  // dump_Active( "new_creg" );
+  // dump_Assume_geq( "new_creg", r1t);
+  // dump_Assume_geq( "new_creg", r2t);
+  // dump_Assign_max( rt, "new_creg" );
+
+  // dump_Assign_rand_ctx( rt );
+  dump_Assign_max( rt, r1t, r2t );
+  dump_Active( rt );
+
   unsigned op = bop->getOpcode();
   expr result = solver_ctx.bool_val(true);
   switch( op ) {
@@ -527,13 +549,6 @@ void kbound::dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop) {
    }
   }
 
-  auto rt  = get_reg_time( bop );
-  auto r1t = get_reg_time( op0 );
-  auto r2t = get_reg_time( op1 );
-
-  dump_Assign_rand_ctx( rt );
-  dump_Active( rt );
-  dump_Assign_max( rt, r1t, r2t );
 
 }
 
@@ -590,7 +605,7 @@ void kbound::dump_CallAssume(unsigned bidx, const llvm::CallInst* call) {
 void kbound::dump_CallAssert(unsigned bidx, const llvm::CallInst* call) {
   assert(call);
   auto term = get_reg( call->getArgOperand(0) );
-  dump_String("ASSERT(" + term + ");");
+  in_code_spec.push_back( term );
 }
 
 void kbound::dump_CallNondet(unsigned bidx, const llvm::CallInst* call) {
@@ -656,6 +671,7 @@ void kbound::dump_isb() {
   dump_Assume_geq( cisb, "caddr[" + tid + "]" );
 }
 
+
 bool is_dmbsy( const llvm::CallInst* call ) {
   std::vector<std::string> names = { "_Z5dmbsyv"};
   return match_function_names(  call,  names );
@@ -676,23 +692,38 @@ bool is_isb( const llvm::CallInst* call ) {
   return match_function_names(  call,  names );
 }
 
+bool is_stl( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z3stlPii"};
+  return match_function_names(  call,  names );
+}
+
+bool is_stx( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z3stlPii"};
+  return match_function_names(  call,  names );
+}
+
+bool is_stlx( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z4stlxPii"};
+  return match_function_names(  call,  names );
+}
+
+
 void kbound::dump_CallInst( unsigned bidx, const llvm::CallInst* call ) {
   assert(call);
   if( llvm::isa<llvm::IntrinsicInst>(call) ) {
-  } else if( is_assert(call) ) {
-    dump_CallAssert(bidx, call);
-  } else if( is_assume(call) ) {
-    dump_CallAssume( bidx, call);
-  } else if( is_nondet(call) ) {
-    dump_CallNondet( bidx, call);
-  } else if( is_dmbsy(call) ) {
-    dump_dmbsy();
-  } else if( is_dmbst(call) ) {
-    dump_dmbst();
-  } else if( is_dmbld(call) ) {
-    dump_dmbld();
-  } else if( is_isb(call)   ) {
-    dump_isb();
+  } else if( is_assert(call) ) { dump_CallAssert(bidx, call);
+  } else if( is_assume(call) ) { dump_CallAssume( bidx, call);
+  } else if( is_nondet(call) ) { dump_CallNondet( bidx, call);
+  } else if( is_dmbsy(call)  ) { dump_dmbsy();
+  } else if( is_dmbst(call)  ) { dump_dmbst();
+  } else if( is_dmbld(call)  ) { dump_dmbld();
+  } else if( is_isb(call)    ) { dump_isb();
+  } else if( is_stl(call)    ) { dump_ST_(bidx, call, true, false);
+  } else if( is_stx(call)    ) { dump_ST_(bidx, call, false, true);
+  } else if( is_stlx(call)   ) { dump_ST_(bidx, call, true,  true);
+  // } else if( is_lda(call)    ) { dump_LD_(bidx, call, true, false);
+  // } else if( is_ldx(call)    ) { dump_LD_(bidx, call, false, true);
+  // } else if( is_ldxa(call)   ) { dump_LD_(bidx, call, true,  true);
   }else{
     LLVM_DUMP(call);
     llvm_bmc_error("kbound", "function call is not recognized !!");
@@ -703,6 +734,17 @@ void kbound::dump_CastInst( unsigned bidx, const llvm::CastInst* cast ) {
   auto v = cast->getOperand(0);
   auto r = get_reg(v);
   add_reg_map(cast, r);
+}
+
+//--------------------------------------------------------------------------
+
+void kbound::addr_name( const llvm::Value* addr,
+                        std::string& gid, std::string& caddr ) {
+  if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
+    gid = get_global_idx(gv);
+    caddr = "0";//in dynamic addressing this will change
+  }
+  assert(false);
 }
 
 void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
@@ -730,13 +772,22 @@ void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
     LLVM_DUMP( load );
     llvm_bmc_error("kbound", "Only array and global write/read supported!");
   }
-  dump_ld( r, creg, caddr, gid);
+  dump_ld( r, creg, caddr, gid, false, false);
+}
+
+void kbound::dump_LD_(unsigned bidx, const llvm::CallInst* call,
+                      bool isAcquire, bool isExclusive) {
+  auto val = call->getArgOperand(1);
+  auto v    = get_reg(call);
+  auto cval = get_reg_time(call);
+  std::string gid, caddr;
+  addr_name(call->getArgOperand(0), gid, caddr );
+  dump_ld( r, cval, caddr, gid, isAcquire, isExclusive);
 }
 
 void kbound::
-dump_ld( std::string r, std::string cval,std::string caddr, std::string gid) {
-  bool isAcquire = true;
-  bool isExclusive = true;
+dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
+         bool isAcquire, bool isExclusive ) {
 
   auto gaccess = "("+ tid + ","+ gid + ")";
   auto cr = "cr"+gaccess;
@@ -780,7 +831,7 @@ void kbound::dump_StoreInst(unsigned bidx, const llvm::StoreInst* store ) {
   assert( store );
   auto val = store->getOperand(0);
   auto addr = store->getOperand(1);
-  auto v    = add_reg_map(val);
+  auto v    = get_reg(val);
   auto cval = get_reg_time(val);
   std::string gid = "";
   std::string caddr = "";
@@ -806,13 +857,25 @@ void kbound::dump_StoreInst(unsigned bidx, const llvm::StoreInst* store ) {
     LLVM_DUMP( store );
     llvm_bmc_error("bmc", "Only local array and global write/read supported!");
   }
-  dump_st( v, cval, caddr, gid);
+  dump_st( v, cval, caddr, gid, false, false);
+}
+
+
+void kbound::dump_ST_(unsigned bidx, const llvm::CallInst* call,
+                      bool isRelease, bool isExclusive) {
+  auto val = call->getArgOperand(1);
+  auto v    = get_reg(val);
+  auto cval = get_reg_time(val);
+  std::string gid, caddr;
+  addr_name(call->getArgOperand(0), gid, caddr );
+  dump_st( v, cval, caddr, gid, isRelease, isExclusive);
 }
 
 void kbound::
-dump_st( std::string v, std::string cval,std::string caddr, std::string gid) {
-  bool isRelease = true;
-  bool isExclusive = true;
+dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
+         bool isRelease, bool isExclusive) {
+  // bool isRelease = false;
+  // bool isExclusive = false;
 
   auto gaccess = "("+ tid + ","+ gid + ")";
   auto iw = "iw"+gaccess;
@@ -841,15 +904,15 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid) {
   dump_Assume_geq( cw, "caddr[" + tid + "]" );
   if( isRelease ) dump_geq_globals( cw, "cr");
   if( isRelease ) dump_geq_globals( cw, "cw");
-  if( isExclusive ) dump_Assume( "delta" + gctx_access + " = "+ tid );
+  if( isExclusive ) dump_Assume( "delta" + gctx_access + " == "+ tid );
 
   dump_Comment("Update");
   dump_Assign_max( "caddr[" + tid + "]", cval );
   dump_Assign( "nu"   + gaccess    , v);
   dump_Assign( "mu"   + gctx_access, v);
   if( isExclusive ) dump_Assign( "cx"   + gaccess, v);
-  dump_String( "nw"   + gctx_access + "+=1");
-  dump_String( "delta"+ gctx_access + "= -1");
+  dump_String( "nw"   + gctx_access + "+=1;");
+  dump_Assign( "delta"+ gctx_access, "-1");
 
   if( isRelease ) dump_Assign( "is"+gaccess, iw);
   if( isRelease ) dump_Assign( "cs"+gaccess, cw);
@@ -876,18 +939,89 @@ void kbound::dump_UnaryInst( unsigned bidx,
   }
 }
 
+void kbound::dump_PhiNode( unsigned bidx, const llvm::PHINode* phi ) {
+  assert( phi );
+  return;
+  
+  // unsigned num = phi->getNumIncomingValues();
+
+  // if( !phi->getType()->isIntegerTy() && !phi->getType()->isFloatTy() ) {
+  //   // phi->getParent()->dump();
+  //   llvm_bmc_error("kbound", "phi nodes with non integers not supported !!");
+  // }
+
+  // auto v    = add_reg_map(phi);
+  // auto cval = get_reg_time(phi);
+
+  // // std::vector<expr> phi_cons;
+  // for( unsigned i = 0 ; i < num ; i++ ) {
+  //   auto prev    = phi->getIncomingBlock(i);
+  //   auto prev_v_ = phi->getIncomingValue(i);
+  //   auto v_      = get_reg( prev_v_ );
+  //   auto cval_   = get_reg_time( prev_v_ );
+
+  //   // condition to skip??
+  //   std::vector<unsigned> pre_bidxes;
+  //   for( unsigned pre_b_local: bmc_ds_ptr->pred_idxs[bidx]) {
+  //     if( prev == bmc_ds_ptr->bb_vec[pre_b_local] ) {
+  //       pre_bidxes.push_back( pre_b_local );
+  //     }
+  //   }
+  //   assert( pre_bidxes.size() < 2 );
+  //   //todo: check if this works
+  //   for( unsigned pre_bidx : pre_bidxes) {
+  //     dump_If( get_path(pre_bidx) + "== 1"  );
+  //     dump_Assign( v, v_ );
+  //     dump_Assume_geq( cval, cval_ );
+  //     dump_Close_scope();
+  //   }
+  // }
+
+}
+
+void kbound::dump_PhiNodes( const bb* b, const bb* prev_b ) {
+  for( const llvm::Instruction& Iobj : b->getInstList() ) {
+    const llvm::Instruction* I = &(Iobj);
+    if( auto phi = llvm::dyn_cast<llvm::PHINode>(I) ) {
+      unsigned num = phi->getNumIncomingValues();
+      if( !phi->getType()->isIntegerTy() && !phi->getType()->isFloatTy() ) {
+        // phi->getParent()->dump();
+        llvm_bmc_error("kbound","phi nodes with non integers not supported!!");
+      }
+      auto v    = add_reg_map(phi);
+      auto cval = get_reg_time(phi);
+      for( unsigned i = 0 ; i < num ; i++ ) {
+        if( phi->getIncomingBlock(i) != prev_b) continue;
+        auto prev_v_ = phi->getIncomingValue(i);
+        auto v_      = get_reg( prev_v_ );
+        auto cval_   = get_reg_time( prev_v_ );
+        dump_Assign( v, v_ );
+        dump_Assume_geq( cval, cval_ );
+      }
+
+    }else{
+      break;
+    }
+  }
+}
+
 void kbound::dump_Branch( unsigned bidx, const llvm::BranchInst* br ) {
   assert( br );
 
   auto path = get_path( bidx );
   // auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
   if( !br->isUnconditional() ) {
+    auto ctrl = "ctrl["+tid+"]";
+    dump_Assign("old_ctrl", ctrl);
+    dump_Assign_rand_ctx( ctrl );
+    dump_Assume_geq( ctrl, "old_ctrl" );
     auto r = get_reg( br->getCondition() );
     for( auto& dep : ctrl_dep_ord.at(br->getCondition()) ) {
       dump_Assume_geq( "ctrl["+tid+"]", dep);
     }
     dump_If( r );
     auto succ_bidx = bmc_ds_ptr->find_block_idx( br->getSuccessor(0) );
+    dump_PhiNodes( br->getSuccessor(0), bmc_ds_ptr->bb_vec[bidx] );
     dump_Goto( block_name(succ_bidx) );
     dump_Else();
     succ_bidx = bmc_ds_ptr->find_block_idx( br->getSuccessor(1) );
@@ -895,50 +1029,13 @@ void kbound::dump_Branch( unsigned bidx, const llvm::BranchInst* br ) {
     dump_Close_scope();
   }else{
     auto succ_bidx = bmc_ds_ptr->find_block_idx( br->getSuccessor(0) );
+    dump_PhiNodes( br->getSuccessor(0), bmc_ds_ptr->bb_vec[bidx] );
     dump_Goto( block_name(succ_bidx) );
     // for unconditional branch, there is no need of constraints
     // bmc_ds_ptr->bmc_vec.push_back( exit_bit );
   }
 }
 
-void kbound::dump_PhiNode( unsigned bidx, const llvm::PHINode* phi ) {
-  assert( phi );
-
-  unsigned num = phi->getNumIncomingValues();
-
-  if( !phi->getType()->isIntegerTy() && !phi->getType()->isFloatTy() ) {
-    // phi->getParent()->dump();
-    llvm_bmc_error("kbound", "phi nodes with non integers not supported !!");
-  }
-
-  auto v    = add_reg_map(phi);
-  auto cval = get_reg_time(phi);
-
-  // std::vector<expr> phi_cons;
-  for( unsigned i = 0 ; i < num ; i++ ) {
-    auto prev    = phi->getIncomingBlock(i);
-    auto prev_v_ = phi->getIncomingValue(i);
-    auto v_      = add_reg_map( prev_v_ );
-    auto cval_   = add_reg_map( prev_v_ );
-
-    // condition to skip??
-    std::vector<unsigned> pre_bidxes;
-    for( unsigned pre_b_local: bmc_ds_ptr->pred_idxs[bidx]) {
-      if( prev == bmc_ds_ptr->bb_vec[pre_b_local] ) {
-        pre_bidxes.push_back( pre_b_local );
-      }
-    }
-    assert( pre_bidxes.size() < 2 );
-    //todo: check if this works
-    for( unsigned pre_bidx : pre_bidxes) {
-      dump_If( get_path(pre_bidx) + "== 1"  );
-      dump_Assign( v_, v );
-      dump_Assume_geq( cval, cval_ );
-      dump_Close_scope();
-    }
-  }
-
-}
 
 
 void kbound::dump_Block( unsigned bidx, const bb* b ) {
@@ -1056,3 +1153,22 @@ void kbound::dump_Thread() {
   //     bmc_fun_ptr->fun_initialize( this, f);
   //   }
   // }
+
+  //initializing timing constraints
+  // dump_For("char", "p", "NPROC");
+  // dump_For("char", "x", "ADDRSIZE");
+  // for( auto ary: time_list ) dump_String( ary + "_(p,x) = 0;" );
+  // dump_Close_scope();
+  // for( auto ary: proc_list ) dump_String( ary + "[p] = 0;" );
+  // dump_Close_scope();
+  // dump_Newline();
+
+  //initializing value arrays
+  // dump_For("char", "x", "ADDRSIZE");
+  // for( auto ary: val_list ) dump_String( ary + "_(x,0) = 0;" );
+  // dump_For("char", "k", "1", "NCONTEXT");
+  // for( auto ary: val_init_list ) dump_String( ary + "_(x,k) = __get_rng();" );
+  // for( auto ary: val_list ) dump_String( ary + "_(x,k) = "+ary+"init_(x,k);" );
+  // dump_Close_scope();
+  // dump_Close_scope();
+  // dump_Newline();
