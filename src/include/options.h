@@ -68,6 +68,7 @@ public:
   //----------------------------------------
   // configuration for concurrent programs
   bool concurrent = false;
+  bool kbound = false;
 
 
   //----------------------------------------

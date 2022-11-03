@@ -1,15 +1,19 @@
 bool assert(bool);
 void dmbsy();
 
-int glb = 0;
+int m = 0;
+int s = 0;
 
-int fun1(int x)  {
-  x = x + x;
-  dmbsy();
-  // if( x > 2 ) {
-    // assert( x > 0 );
-  // }
-  return x;
+void fun1(int x)  {
+  m = 1;
+  //dmbsy();
+  s = 1;
+  // x = x + x;
+  // dmbsy();
+  // // if( x > 2 ) {
+  //   // assert( x > 0 );
+  // // }
+  // return x;
   // glb = 1;
   // // sleep_for(10ms);
   // glb = 3;
@@ -21,11 +25,12 @@ int fun1(int x)  {
 }
 
 void fun2()  {
-  int y = glb;
+  int s1 = s;
+  int m1 = m;
   // sleep_for(10ms);
   // glb = 2;
-  
-  assert(y == 1);
+  assert(s1 != 1 || m1 == 1);
+  // assert(s1 != 1 || m1 == 0);
   // assert(y == 0);
 }
 

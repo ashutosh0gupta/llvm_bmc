@@ -76,13 +76,10 @@ void bmc::run_bmc_pass() {
   passMan.add( new collect_loopdata(o, ld_map, localNameMap, module) );
   passMan.run( *module.get() );
 
-   // if( true ) {
-  if( false ) {
-     passMan.add( new kbound(o, module, *this) );
-     passMan.run( *module.get() );
-     // kbound kbnd(o, module, *this);
-     // kbnd.run();
-     return;
+  if( o.kbound ) {
+    passMan.add( new kbound(o, module, *this) );
+    passMan.run( *module.get() );
+    return;
   }
 
   if(o.loop_aggr) {
