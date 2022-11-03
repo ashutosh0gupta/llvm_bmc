@@ -86,7 +86,7 @@ void bmc::run_bmc_pass() {
     passMan.add( new bmc_loop_pass(o,o.solver_ctx, def_map, *this));
     passMan.run( *module.get() );
   } 
-  else if ( threads.size() > 1 ) {
+  else if ( sys_spec.threads.size() > 1 ) {
     //collect_globals( module, o.solver_ctx, o.mem_enc, o, *this );
     collect_globals( module, *this, o.mem_enc, o.solver_ctx, o );
     passMan.add( new bmc_concur_pass(o,o.solver_ctx, *this) );
@@ -148,8 +148,8 @@ void bmc::init() {
     std::string fname = demangle(fit->getName().str());
 
     if (o.check_spec) {
-	for (unsigned j = 0; j < threads.size(); j++) {
-	        std::string EntryFn = threads.at(j).entry_function;
+	for (unsigned j = 0; j < sys_spec.threads.size(); j++) {
+	        std::string EntryFn = sys_spec.threads.at(j).entry_function;
 		if (fname == EntryFn) {
 	  		m_model.store_state_map[0] = mem_st;
     		}

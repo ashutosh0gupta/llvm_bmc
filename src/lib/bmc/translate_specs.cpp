@@ -14,7 +14,7 @@ void translate_specs::translatePrecond( bmc& b, bmc_ds* bmc_ds_ptr, solver_conte
     //if (i -> first == thread_name) {
     //expr e = b.sys_spec.threads.at(k).pres.at(i);
     expr e = cond.at(i);
-    //std::cout << "Precond is " << to_string(e) << "\n";
+    std::cout << "Precond is " << to_string(e) << "\n";
     std::string orig_precond = to_string(e);
     glb_names = read_variables(orig_precond);
     //std::cout << "size is " << glb_names.size(); 
@@ -70,7 +70,7 @@ void translate_specs::translatePrecond( bmc& b, bmc_ds* bmc_ds_ptr, solver_conte
       }	    
     }
     expr e1 = parseFormula(ctx, orig_precond, precond_var_names, precond_declarations);
-    //std::cout << "Modified precond is " << e1 << "\n";
+    std::cout << "Modified precond is " << e1 << "\n";
     //b.precond.at(i) = e1;
     bmc_ds_ptr->add_pre_cond( e1, spec_reason_t::ASSUME );
    //}
@@ -92,7 +92,7 @@ void translate_specs::translatePostcond( bmc& b, bmc_ds* bmc_ds_ptr, solver_cont
     //if (i -> first == thread_name) {
     //expr e = b.sys_spec.threads.at(k).posts.at(i);
     expr e = cond.at(i);
-    //std::cout << "Postcond is " << to_string(e) << " Block num is " << bidx << "\n";
+    std::cout << "Postcond is " << to_string(e) << " Block num is " << bidx << "\n";
     std::string orig_postcond = to_string(e);
     glb_names = read_variables(orig_postcond);
     //std::cout << "size is " << glb_names.size(); 
@@ -202,7 +202,7 @@ void translate_specs::translatePostcond( bmc& b, bmc_ds* bmc_ds_ptr, solver_cont
       }
      }
     expr e1 = parseFormula(ctx, orig_postcond, postcond_var_names, postcond_declarations);
-    //std::cout << "Modified postcond is " << to_string(e1) << "\n";
+    std::cout << "Modified postcond is " << to_string(e1) << "\n";
     //b.prop.at(i) = e1;
     expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
     bmc_ds_ptr->add_spec( !path_bit || e1, spec_reason_t::SPEC_FILE );
