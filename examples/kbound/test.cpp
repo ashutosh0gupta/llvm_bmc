@@ -1,5 +1,6 @@
 bool assert(bool);
 void dmbsy();
+int sta(int *, int);
 
 int m = 0;
 int s = 0;
@@ -8,6 +9,9 @@ void fun1(int x)  {
   m = 1;
   //dmbsy();
   s = 1;
+
+  sta( &m, 1 );
+
   // x = x + x;
   // dmbsy();
   // // if( x > 2 ) {

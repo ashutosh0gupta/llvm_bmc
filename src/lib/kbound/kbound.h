@@ -99,8 +99,13 @@ private:
   void dump_dmbld();
   void dump_dmbst();
   void dump_isb();
-  void dump_ld( std::string, std::string, std::string, std::string);
-  void dump_st( std::string, std::string, std::string, std::string);
+
+  void addr_name( const llvm::Value* addr, std::string& , std::string& );
+
+  void dump_ld( std::string, std::string, std::string, std::string,bool,bool);
+  void dump_st( std::string, std::string, std::string, std::string,bool,bool);
+  void dump_ST_(unsigned bidx, const llvm::CallInst* cmp,bool,bool);
+  void dump_LD_(unsigned bidx, const llvm::CallInst* cmp,bool,bool);
 
   void dump_PhiNodes( const bb* b, const bb* prev_b );
   void dump_PhiNode( unsigned bidx, const llvm::PHINode* phi );

@@ -671,6 +671,7 @@ void kbound::dump_isb() {
   dump_Assume_geq( cisb, "caddr[" + tid + "]" );
 }
 
+
 bool is_dmbsy( const llvm::CallInst* call ) {
   std::vector<std::string> names = { "_Z5dmbsyv"};
   return match_function_names(  call,  names );
@@ -691,23 +692,38 @@ bool is_isb( const llvm::CallInst* call ) {
   return match_function_names(  call,  names );
 }
 
+bool is_stl( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z3stlPii"};
+  return match_function_names(  call,  names );
+}
+
+bool is_stx( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z3stlPii"};
+  return match_function_names(  call,  names );
+}
+
+bool is_stlx( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z4stlxPii"};
+  return match_function_names(  call,  names );
+}
+
+
 void kbound::dump_CallInst( unsigned bidx, const llvm::CallInst* call ) {
   assert(call);
   if( llvm::isa<llvm::IntrinsicInst>(call) ) {
-  } else if( is_assert(call) ) {
-    dump_CallAssert(bidx, call);
-  } else if( is_assume(call) ) {
-    dump_CallAssume( bidx, call);
-  } else if( is_nondet(call) ) {
-    dump_CallNondet( bidx, call);
-  } else if( is_dmbsy(call) ) {
-    dump_dmbsy();
-  } else if( is_dmbst(call) ) {
-    dump_dmbst();
-  } else if( is_dmbld(call) ) {
-    dump_dmbld();
-  } else if( is_isb(call)   ) {
-    dump_isb();
+  } else if( is_assert(call) ) { dump_CallAssert(bidx, call);
+  } else if( is_assume(call) ) { dump_CallAssume( bidx, call);
+  } else if( is_nondet(call) ) { dump_CallNondet( bidx, call);
+  } else if( is_dmbsy(call)  ) { dump_dmbsy();
+  } else if( is_dmbst(call)  ) { dump_dmbst();
+  } else if( is_dmbld(call)  ) { dump_dmbld();
+  } else if( is_isb(call)    ) { dump_isb();
+  } else if( is_stl(call)    ) { dump_ST_(bidx, call, true, false);
+  } else if( is_stx(call)    ) { dump_ST_(bidx, call, false, true);
+  } else if( is_stlx(call)   ) { dump_ST_(bidx, call, true,  true);
+  // } else if( is_lda(call)    ) { dump_LD_(bidx, call, true, false);
+  // } else if( is_ldx(call)    ) { dump_LD_(bidx, call, false, true);
+  // } else if( is_ldxa(call)   ) { dump_LD_(bidx, call, true,  true);
   }else{
     LLVM_DUMP(call);
     llvm_bmc_error("kbound", "function call is not recognized !!");
@@ -718,6 +734,17 @@ void kbound::dump_CastInst( unsigned bidx, const llvm::CastInst* cast ) {
   auto v = cast->getOperand(0);
   auto r = get_reg(v);
   add_reg_map(cast, r);
+}
+
+//--------------------------------------------------------------------------
+
+void kbound::addr_name( const llvm::Value* addr,
+                        std::string& gid, std::string& caddr ) {
+  if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
+    gid = get_global_idx(gv);
+    caddr = "0";//in dynamic addressing this will change
+  }
+  assert(false);
 }
 
 void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
@@ -745,13 +772,22 @@ void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
     LLVM_DUMP( load );
     llvm_bmc_error("kbound", "Only array and global write/read supported!");
   }
-  dump_ld( r, creg, caddr, gid);
+  dump_ld( r, creg, caddr, gid, false, false);
+}
+
+void kbound::dump_LD_(unsigned bidx, const llvm::CallInst* call,
+                      bool isAcquire, bool isExclusive) {
+  auto val = call->getArgOperand(1);
+  auto v    = get_reg(call);
+  auto cval = get_reg_time(call);
+  std::string gid, caddr;
+  addr_name(call->getArgOperand(0), gid, caddr );
+  dump_ld( r, cval, caddr, gid, isAcquire, isExclusive);
 }
 
 void kbound::
-dump_ld( std::string r, std::string cval,std::string caddr, std::string gid) {
-  bool isAcquire = false;
-  bool isExclusive = false;
+dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
+         bool isAcquire, bool isExclusive ) {
 
   auto gaccess = "("+ tid + ","+ gid + ")";
   auto cr = "cr"+gaccess;
@@ -821,13 +857,25 @@ void kbound::dump_StoreInst(unsigned bidx, const llvm::StoreInst* store ) {
     LLVM_DUMP( store );
     llvm_bmc_error("bmc", "Only local array and global write/read supported!");
   }
-  dump_st( v, cval, caddr, gid);
+  dump_st( v, cval, caddr, gid, false, false);
+}
+
+
+void kbound::dump_ST_(unsigned bidx, const llvm::CallInst* call,
+                      bool isRelease, bool isExclusive) {
+  auto val = call->getArgOperand(1);
+  auto v    = get_reg(val);
+  auto cval = get_reg_time(val);
+  std::string gid, caddr;
+  addr_name(call->getArgOperand(0), gid, caddr );
+  dump_st( v, cval, caddr, gid, isRelease, isExclusive);
 }
 
 void kbound::
-dump_st( std::string v, std::string cval,std::string caddr, std::string gid) {
-  bool isRelease = false;
-  bool isExclusive = false;
+dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
+         bool isRelease, bool isExclusive) {
+  // bool isRelease = false;
+  // bool isExclusive = false;
 
   auto gaccess = "("+ tid + ","+ gid + ")";
   auto iw = "iw"+gaccess;
