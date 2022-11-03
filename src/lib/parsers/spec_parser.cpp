@@ -232,7 +232,7 @@ void spec_parser::read_invokeparam( std::istream& in ) {
 }
 
 
-void spec_parser::read_precond( std::istream& in ) {
+void spec_parser::read_precond( std::istream& in, bmc& b ) {
   std::string symb1 = read_symbol( in );
   std::string symb2 = read_formula( in );
 
@@ -252,12 +252,16 @@ void spec_parser::read_precond( std::istream& in ) {
     expr e = parseFormula(solver_ctx, symb4, names, declarations);
     //auto pair = std::make_pair( symb1, e);
     //list_precond.push_back(pair);
-    thread_obj.pres.push_back(e);
+
+    if (symb1 == "all") 
+	b.sys_spec.pres.push_back(e);
+    else
+        thread_obj.pres.push_back(e);
   }
 }
 
 
-void spec_parser::read_postcond( std::istream& in ) {
+void spec_parser::read_postcond( std::istream& in, bmc& b ) {
   std::string symb1 = read_symbol( in );
   std::string symb2 = read_formula( in );
 
@@ -290,7 +294,11 @@ void spec_parser::read_postcond( std::istream& in ) {
 
     expr e = parseFormula(solver_ctx, symb4, names, declarations);
     //auto pair = std::make_pair( symb1, e);
-    thread_obj.posts.push_back(e);
+  
+    if (symb1 == "all") 
+	b.sys_spec.posts.push_back(e);
+    else
+	thread_obj.posts.push_back(e);
   }
 }
 
@@ -332,9 +340,9 @@ void spec_parser::read_file( std::istream& in, bmc& b ) {
     }else if( cmd == "invoke-parameters" ) {
       read_invokeparam( in );
     }else if( cmd == "pre-condition" ) {
-      read_precond( in );
+      read_precond( in, b );
     }else if( cmd == "post-condition" ) {
-      read_postcond( in );
+      read_postcond( in, b );
     }else if( cmd == "end-thread" ) {
       clear_threadobj(in, b);
     }else{

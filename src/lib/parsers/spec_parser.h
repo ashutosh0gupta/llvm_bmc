@@ -58,8 +58,8 @@ public:
   void read_variable( std::istream& in );
   void read_thread( std::istream& in );
   void read_invokeparam( std::istream& in ); 
-  void read_precond( std::istream& in );
-  void read_postcond( std::istream& in );
+  void read_precond( std::istream& in, bmc& b );
+  void read_postcond( std::istream& in, bmc& b );
   void read_envinv( std::istream& in );
   void clear_threadobj( std::istream& in, bmc& b );
   void read_file( std::istream& in, bmc& b );

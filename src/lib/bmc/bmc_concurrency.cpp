@@ -51,8 +51,11 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
   translateParams(f);
   //translate pre condition here <<---
   //bmc_obj.m_model.print();
+   
+  if ( bmc_obj.sys_spec.threads.at(j).thread_num == 0 )
+	translatePrecond(bmc_obj, bmc_ds_ptr, o.solver_ctx, bmc_obj.sys_spec.pres);
 
-  translatePrecond(bmc_obj, bmc_ds_ptr, o.solver_ctx);
+  translatePrecond(bmc_obj, bmc_ds_ptr, o.solver_ctx, bmc_obj.sys_spec.threads.at(j).pres);
   
   for (unsigned l = 0; l < bmc_obj.sys_spec.threads.at(j).period; l++) {
     do_bmc();
@@ -60,7 +63,11 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
      unsigned bidx = 0;
      for( const bb* src : bmc_ds_ptr->bb_vec ) {
      if (llvm::isa<llvm::ReturnInst>(src->getTerminator() )) {
-      translatePostcond(bmc_obj, bmc_ds_ptr, o.solver_ctx, bidx);
+      translatePostcond(bmc_obj, bmc_ds_ptr, o.solver_ctx, bidx, bmc_obj.sys_spec.posts);
+
+     if ( bmc_obj.sys_spec.threads.at(j).thread_num == bmc_obj.sys_spec.threads.size() - 1 )
+	translatePostcond(bmc_obj, bmc_ds_ptr, o.solver_ctx, bidx, bmc_obj.sys_spec.threads.at(j).posts);
+
      }
      bidx++;
     }
