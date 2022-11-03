@@ -24,9 +24,10 @@ memory_model::write( unsigned bidx, const llvm::StoreInst* I,
   // print();
   if(auto g_var = llvm::dyn_cast<llvm::GlobalVariable>(I->getPointerOperand())) {
     auto i = ind_in_mem_state.at(g_var);
-    expr new_expr = get_fresh_name(mem_st.mem_state_vec[i].t.type,g_var->getName().str());
+    assert( i < mem_st.mem_state_vec.size() );
+    expr new_expr = get_fresh_name(mem_st.mem_state_vec.at(i).t.type,g_var->getName().str());
 
-    datatype ty(mem_st.mem_state_vec[i].t.type);
+    datatype ty(mem_st.mem_state_vec.at(i).t.type);
     state_obj tem_state_obj(new_expr,ty);
     mem_st.mem_state_vec[i] = tem_state_obj;
     return std::make_pair( (new_expr == val), new_expr);
