@@ -13,7 +13,6 @@
 ;; Declare threads
 (declare-thread p0 sb__thread_p0) ; param name entry_function
 (invoke-parameters p0 repeated 500 priority 2)
-;(post-condition p0 (assert(or (= @sb__s #x0001) (= @sb__r #x0001))))
 (end-thread p0)
 
 ;; -----------------------------------------
@@ -26,4 +25,4 @@
 (end-thread p1)
 
 
-(post-condition (or (= @sb__s #x0001) (= @sb__r #x0001)))
+(post-condition all (assert(or (= @sb__s #x0001) (= @sb__r #x0001))))

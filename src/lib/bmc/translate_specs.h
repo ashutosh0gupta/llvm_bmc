@@ -19,8 +19,8 @@ public:
   translate_specs();
   ~translate_specs();
 
-  void translatePrecond( bmc&, bmc_ds*, solver_context& );
-  void translatePostcond( bmc&, bmc_ds*, solver_context&, unsigned );
+  void translatePrecond( bmc&, bmc_ds*, solver_context&, std::vector <expr> );
+  void translatePostcond( bmc&, bmc_ds*, solver_context&, unsigned, std::vector <expr> );
   std::vector<std::string> read_variables( std::string );
 
 };
