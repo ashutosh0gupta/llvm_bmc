@@ -1,16 +1,35 @@
 bool assert(bool);
 void dmbsy();
-int sta(int *, int);
+
+void str (int *, int);
+void stl (int *, int);
+void stx (int *, int);
+void stlx(int *, int);
+
+int ldr (int *);
+int lda (int *);
+int ldx (int *);
+int ldax(int *);
 
 int m = 0;
 int s = 0;
 
 void fun1(int x)  {
+  int f = m;
   m = 1;
+  int *p = &s;
+  if( x> 0 ) {
+    p = &m;
+  }
   //dmbsy();
-  s = 1;
+  stl(p,1);
 
-  sta( &m, 1 );
+  // stl( &m, 1 );
+  // stx( &m, 1 );
+  // stlx( &m, 1 );
+  // int p = lda ( &m);
+  // int k = ldx ( &m );
+  // int z = ldax( &m );
 
   // x = x + x;
   // dmbsy();
@@ -29,7 +48,7 @@ void fun1(int x)  {
 }
 
 void fun2()  {
-  int s1 = s;
+  int s1 = ldr(&s); //s;
   int m1 = m;
   // sleep_for(10ms);
   // glb = 2;

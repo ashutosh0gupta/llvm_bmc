@@ -655,10 +655,6 @@ void kbound::dump_dmbst() {
   dump_Comment("Check");
   dump_Assume_geq( cds, "cdy[" + tid + "]" );
   dump_geq_globals( cds, "cw");
-  // for( auto pair : bmc_obj.m_model.ind_in_mem_state ) {
-  //   auto gid = std::to_string(pair.second);
-  //   dump_Assume_geq( cds, "cw_(" + tid +","+ gid+")" );
-  // }
 }
 
 void kbound::dump_isb() {
@@ -692,18 +688,43 @@ bool is_isb( const llvm::CallInst* call ) {
   return match_function_names(  call,  names );
 }
 
+bool is_str( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z3strPii"};
+  return match_function_names(  call,  names );
+}
+
 bool is_stl( const llvm::CallInst* call ) {
   std::vector<std::string> names = { "_Z3stlPii"};
   return match_function_names(  call,  names );
 }
 
 bool is_stx( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z3stlPii"};
+  std::vector<std::string> names = { "_Z3stxPii"};
   return match_function_names(  call,  names );
 }
 
 bool is_stlx( const llvm::CallInst* call ) {
   std::vector<std::string> names = { "_Z4stlxPii"};
+  return match_function_names(  call,  names );
+}
+
+bool is_ldr( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z3ldrPi"};
+  return match_function_names(  call,  names );
+}
+
+bool is_lda( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z3ldaPi"};
+  return match_function_names(  call,  names );
+}
+
+bool is_ldx( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z3ldxPi"};
+  return match_function_names(  call,  names );
+}
+
+bool is_ldax( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z4ldaxxPi"};
   return match_function_names(  call,  names );
 }
 
@@ -714,16 +735,18 @@ void kbound::dump_CallInst( unsigned bidx, const llvm::CallInst* call ) {
   } else if( is_assert(call) ) { dump_CallAssert(bidx, call);
   } else if( is_assume(call) ) { dump_CallAssume( bidx, call);
   } else if( is_nondet(call) ) { dump_CallNondet( bidx, call);
-  } else if( is_dmbsy(call)  ) { dump_dmbsy();
-  } else if( is_dmbst(call)  ) { dump_dmbst();
-  } else if( is_dmbld(call)  ) { dump_dmbld();
-  } else if( is_isb(call)    ) { dump_isb();
-  } else if( is_stl(call)    ) { dump_ST_(bidx, call, true, false);
-  } else if( is_stx(call)    ) { dump_ST_(bidx, call, false, true);
-  } else if( is_stlx(call)   ) { dump_ST_(bidx, call, true,  true);
-  // } else if( is_lda(call)    ) { dump_LD_(bidx, call, true, false);
-  // } else if( is_ldx(call)    ) { dump_LD_(bidx, call, false, true);
-  // } else if( is_ldxa(call)   ) { dump_LD_(bidx, call, true,  true);
+  } else if( is_dmbsy (call) ) { dump_dmbsy();
+  } else if( is_dmbst (call) ) { dump_dmbst();
+  } else if( is_dmbld (call) ) { dump_dmbld();
+  } else if( is_isb   (call) ) { dump_isb();
+  } else if( is_str   (call) ) { dump_ST_(bidx, call, false, false);
+  } else if( is_stl   (call) ) { dump_ST_(bidx, call, true,  false);
+  } else if( is_stx   (call) ) { dump_ST_(bidx, call, false, true );
+  } else if( is_stlx  (call) ) { dump_ST_(bidx, call, true,  true );
+  } else if( is_ldr   (call) ) { dump_LD_(bidx, call, false, false);
+  } else if( is_lda   (call) ) { dump_LD_(bidx, call, true,  false);
+  } else if( is_ldx   (call) ) { dump_LD_(bidx, call, false, true );
+  } else if( is_ldax  (call) ) { dump_LD_(bidx, call, true,  true );
   }else{
     LLVM_DUMP(call);
     llvm_bmc_error("kbound", "function call is not recognized !!");
@@ -743,7 +766,10 @@ void kbound::addr_name( const llvm::Value* addr,
   if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
     gid = get_global_idx(gv);
     caddr = "0";//in dynamic addressing this will change
+    return;
   }
+  LLVM_DUMP(addr);
+  llvm_bmc_error( "knound", "failed to identify address" );
   assert(false);
 }
 
@@ -758,9 +784,9 @@ void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
   while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
     addr = bcast->getOperand(0);
   }
-  if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
+  if( llvm::isa<llvm::GEPOperator>(addr) ) {
     assert(false);
-    // add address dependencies
+     // add address dependencies
     // ASSUME(cr >= all_depend_regs);
     // accessing arrays
   } else if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr) ) {
@@ -777,12 +803,11 @@ void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
 
 void kbound::dump_LD_(unsigned bidx, const llvm::CallInst* call,
                       bool isAcquire, bool isExclusive) {
-  auto val = call->getArgOperand(1);
-  auto v    = get_reg(call);
+  auto v    = add_reg_map(call);
   auto cval = get_reg_time(call);
   std::string gid, caddr;
   addr_name(call->getArgOperand(0), gid, caddr );
-  dump_ld( r, cval, caddr, gid, isAcquire, isExclusive);
+  dump_ld( v, cval, caddr, gid, isAcquire, isExclusive);
 }
 
 void kbound::
