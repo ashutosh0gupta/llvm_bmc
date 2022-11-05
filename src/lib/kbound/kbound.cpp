@@ -65,21 +65,24 @@ void kbound::add_reg_map( const llvm::Value* v, std::string name) {
   ssa_name[v] = name;
 }
 
-std::string kbound::get_reg( const llvm::Value* v) {
-  // return ssa_name[v];
-  auto s = read_const_str( o, v );
-  if( s != "" ) {
-    return s;
+std::string kbound::read_const( const llvm::Value* v ) {
+  if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(v) ) {
+    return get_global_idx(gv);
   }
+  return read_const_str( o, v );
+}
+
+std::string kbound::get_reg( const llvm::Value* v) {
+  auto s = read_const(v);
+  if( s != "" ) return s;
+
   return ssa_name.at(v);
 }
 
 std::string kbound::get_reg_time( const llvm::Value* v) {
-  // return ssa_name[v];
-  auto s = read_const_str( o, v );
-  if( s != "" ) {
-    return "0";
-  }
+  auto s = read_const(v);
+  if( s != "" ) return "0";
+
   auto name = ssa_name.at(v);
   if( name[0] != 'r' ) {
     auto vec = ctrl_dep_ord.at(v);
@@ -92,14 +95,9 @@ std::string kbound::get_reg_time( const llvm::Value* v) {
 }
 
 std::string kbound::add_reg_map( const llvm::Value* v) {
-  // v->print( llvm::outs() ); std::cout<< "\n";
-  // assert(false); //implement constant
-  // ssa_name[v] = "r"+std::to_string(ssa_count);
+  auto s = read_const(v);
+  if( s != "" ) return "";
 
-  auto s = read_const_str( o, v );
-  if( s != "" ) {
-    return "";
-  }
   if( ssa_name.find(v) != ssa_name.end() ) return ssa_name.at(v);
   add_reg_map(v, "r"+std::to_string(ssa_count));
   ssa_count++;
@@ -768,6 +766,11 @@ void kbound::addr_name( const llvm::Value* addr,
     caddr = "0";//in dynamic addressing this will change
     return;
   }
+  gid = add_reg_map( addr );
+  if( gid != "" ) {
+    caddr = get_reg_time(addr);
+    return;
+  } 
   LLVM_DUMP(addr);
   llvm_bmc_error( "knound", "failed to identify address" );
   assert(false);
@@ -1009,10 +1012,10 @@ void kbound::dump_PhiNodes( const bb* b, const bb* prev_b ) {
     const llvm::Instruction* I = &(Iobj);
     if( auto phi = llvm::dyn_cast<llvm::PHINode>(I) ) {
       unsigned num = phi->getNumIncomingValues();
-      if( !phi->getType()->isIntegerTy() && !phi->getType()->isFloatTy() ) {
-        // phi->getParent()->dump();
-        llvm_bmc_error("kbound","phi nodes with non integers not supported!!");
-      }
+      // if( !phi->getType()->isIntegerTy() && !phi->getType()->isFloatTy() ) {
+      //   // phi->getParent()->dump();
+      //   llvm_bmc_error("kbound","phi nodes with non integers not supported!!");
+      // }
       auto v    = add_reg_map(phi);
       auto cval = get_reg_time(phi);
       for( unsigned i = 0 ; i < num ; i++ ) {
@@ -1050,6 +1053,7 @@ void kbound::dump_Branch( unsigned bidx, const llvm::BranchInst* br ) {
     dump_Goto( block_name(succ_bidx) );
     dump_Else();
     succ_bidx = bmc_ds_ptr->find_block_idx( br->getSuccessor(1) );
+    dump_PhiNodes( br->getSuccessor(1), bmc_ds_ptr->bb_vec[bidx] );
     dump_Goto( block_name(succ_bidx) );
     dump_Close_scope();
   }else{

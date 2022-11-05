@@ -932,11 +932,9 @@ void bmc_pass::translateLoadInst( unsigned bidx,
   //   translateGEP( gep, idxs);
   //   loadFromArrayHelper(bidx, load, idxs);
   } else if(auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
-    //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
     bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
     if ( exists( bmc_obj.concurrent_vars, gv ) ) {
-    // if (find(bmc_obj.concurrent_vars.begin(), bmc_obj.concurrent_vars.end(), addr) != bmc_obj.concurrent_vars.end() ) { //todo: add check if the grobal variable is truly global
       create_read_event( bidx, load, addr );
       //load->print( llvm::outs() ); std::cout << "\n";
       //addr->print( llvm::outs() );  std::cout << "\n";
@@ -1029,6 +1027,8 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     if ( exists( bmc_obj.concurrent_vars, gv ) ) {
         // find(bmc_obj.concurrent_vars.begin(), bmc_obj.concurrent_vars.end(), addr) != bmc_obj.concurrent_vars.end() ) { //todo: add check if the grobal variable is truly global
       create_write_event( bidx, store, addr );
+      // todo: add constraints that two names are equal
+      // However, read case is tricky.
       //store->print( llvm::outs() ); std::cout << "\n";
       //addr->print( llvm::outs() );  std::cout << "\n";
     }

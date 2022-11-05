@@ -35,6 +35,7 @@ private:
   std::map<const llvm::Value*, svec> ctrl_dep_ord;
   svec in_code_spec;
 
+  std::string read_const( const llvm::Value* v );
   void add_reg_map( const llvm::Value*, std::string );
   std::string add_reg_map( const llvm::Value* );
   std::string get_reg( const llvm::Value* );
