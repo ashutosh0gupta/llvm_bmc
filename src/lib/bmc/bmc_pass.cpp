@@ -687,10 +687,34 @@ void bmc_pass::translateCastInst( unsigned bidx,
      expr ex_v_int = bv2int(ex_v_s16, false);
      bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v_int );
      }
+    }
+   else if( llvm::isa<llvm::FPExtInst>(cast) ) {
+    expr ex_v = bmc_ds_ptr->m.get_term(v);
+    expr ex_v_f64 = fpa_to_fpa( ex_v, solver_ctx.fpa_sort<64>() );
+    if ( o.bit_precise ) {
+    bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v_f64 );
+    }
+    else {
+     expr ex_v_int = round_fpa_to_closest_integer(ex_v);
+     expr ex_v_real = to_real(ex_v_int);
+     bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v_real );
+     }
+    }
+   else if( llvm::isa<llvm::FPTruncInst>(cast) ) {
+    expr ex_v = bmc_ds_ptr->m.get_term(v);
+    expr ex_v_f32 = fpa_to_fpa( ex_v, solver_ctx.fpa_sort<32>() );
+    if ( o.bit_precise ) {
+    bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v_f32 );
+    }
+    else {
+     expr ex_v_int = round_fpa_to_closest_integer(ex_v);
+     expr ex_v_real = to_real(ex_v_int);
+     bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v_real );
+     }
     }     
    else{
-    BMC_UNSUPPORTED_INSTRUCTIONS( FPTruncInst,       cast);
-    BMC_UNSUPPORTED_INSTRUCTIONS( FPExtInst,         cast);
+    //BMC_UNSUPPORTED_INSTRUCTIONS( FPTruncInst,       cast);
+    //BMC_UNSUPPORTED_INSTRUCTIONS( FPExtInst,         cast);
     //BMC_UNSUPPORTED_INSTRUCTIONS( UIToFPInst,        cast);
     //BMC_UNSUPPORTED_INSTRUCTIONS( SIToFPInst,        cast);
     //BMC_UNSUPPORTED_INSTRUCTIONS( FPToUIInst,        cast);

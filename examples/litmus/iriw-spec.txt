@@ -14,7 +14,7 @@
 ;; -----------------------------------------
 ;; Declare threads
 (declare-thread p0 iriw__thread_p0) ; param name entry_function
-(invoke-parameters p0 repeated 500 priority 2)
+(invoke-parameters p0 repeated 20 priority 2)
 ;(post-condition p0 (assert(or (= @sb__s #x0001) (= @sb__r #x0001))))
 (end-thread p0)
 ;; -----------------------------------------
@@ -41,7 +41,8 @@
 ;
 (declare-thread p3 iriw__thread_p3) ; param name entry_function
 (invoke-parameters p3 repeated 20 priority 4)
-(pre-condition p4 (assert (and (= @iriw__x #x0000) (= @iriw__y #x0000))))
-(post-condition p3 (assert(or (= @iriw__r #x0000) (= @iriw__s #x0001) (= @iriw__t #x0000) (= @iriw__u #x0001))))
 (end-thread p3)
+
+(pre-condition all (assert (and (= @iriw__x #x0000) (= @iriw__y #x0000))))
+(post-condition all (assert(or (= @iriw__r #x0000) (= @iriw__s #x0001) (= @iriw__t #x0000) (= @iriw__u #x0001))))
 

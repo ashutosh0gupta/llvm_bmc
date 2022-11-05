@@ -12,7 +12,7 @@
 ;; -----------------------------------------
 ;; Declare threads
 (declare-thread p0 sb__thread_p0) ; param name entry_function
-(invoke-parameters p0 repeated 500 priority 2)
+(invoke-parameters p0 repeated 20 priority 2)
 (end-thread p0)
 
 ;; -----------------------------------------

@@ -677,8 +677,12 @@ expr get_fresh_const(solver_context &c, sort s, std::string suff)
     return get_fresh_int(c, suff);
   if (s.is_bool())
     return get_fresh_bool(c, suff);
-  if (s.is_fpa())
-    return get_fresh_float(c, suff);
+  if (s.is_fpa()) {
+    if ((s.fpa_ebits() == 8) && (s.fpa_sbits() == 24))
+      return get_fresh_float(c, suff);
+    else
+      return get_fresh_double(c, suff);
+  }  
   if (s.is_real())
     return get_fresh_real(c, suff);
   //
