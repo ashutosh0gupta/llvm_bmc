@@ -81,7 +81,17 @@ void options::interpret_options(po::variables_map& vm) {
     specFileName = sf.filename().string();
     check_spec = true;
   }
-
+  if( check_spec == false ) {
+    boost::filesystem::path cf( filePath);
+    cf.replace_extension();
+    cf += ("-spec.txt");
+    if (boost::filesystem::exists( cf )) {
+      std::cout << "Auto detected spec file " << cf;
+      specFilePath = cf.string();
+      specFileName = cf.filename().string();
+      check_spec = true;
+    }
+  }
 }
 
 void options::parse_config(boost::filesystem::path filename) {

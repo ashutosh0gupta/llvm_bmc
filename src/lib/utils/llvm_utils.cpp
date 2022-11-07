@@ -394,12 +394,12 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   std::vector<std::string> include_dirs;
 
   //standard include directories
-  include_dirs.push_back( "/usr/include/x86_64-linux-gnu/c++/11/");    // bits/c++config.h
   include_dirs.push_back( "/usr/include/");               // for features.h, locale.h, pthread.h
   // include_dirs.push_back( "/usr/include/linux");          // for stddef.h
   include_dirs.push_back( "/usr/include/c++/11/");         // for iostream
-  // include_dirs.push_back( "/usr/include/x86_64-linux-gnu/bits/");      // for wchar.h
-  
+  include_dirs.push_back( "/usr/include/x86_64-linux-gnu/");      // for wchar.h
+  include_dirs.push_back( "/usr/include/x86_64-linux-gnu/c++/11/");    // bits/c++config.h
+
   include_dirs.push_back( "/usr/lib/gcc/x86_64-linux-gnu/11/include/");   // for stdarg.h
   include_dirs.push_back( "/usr/include/c++/11/tr1");      // for stdarg.h, wchar.h
   include_dirs.push_back( "/usr/lib/llvm-12/lib/clang/12.0.0/include/");  // for stddef.h
@@ -429,6 +429,7 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   args.push_back( "-O1" );
   args.push_back( "-disable-O0-optnone" );
   args.push_back( "-fcxx-exceptions" );
+  args.push_back( "-fgnuc-version=4.2.1" ); // to ensure inclusion of some predefines
   for( std::string& i_dir : include_dirs ) {
     i_dir = "-I" + i_dir;
     args.push_back( i_dir.c_str() );
