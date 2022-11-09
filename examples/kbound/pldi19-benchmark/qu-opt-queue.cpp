@@ -1,0 +1,215 @@
+/**
+ * Michael-Scott Queue
+ */
+
+#include <atomic>
+#include <thread>
+
+template<typename T, size_t n>
+class Allocator {
+  T objects[n];
+  size_t idx;
+
+public:
+  Allocator() {
+    this->idx = 0;
+  }
+
+  T *alloc() {
+    if (idx < n) {
+      return &objects[idx++];
+    } else {
+      return nullptr;
+    }
+  }
+};
+
+class Node {
+public:
+  int64_t data;
+  std::atomic<Node*> next;
+};
+
+class Queue {
+  Node init;
+  std::atomic<Node*> head;
+  std::atomic<Node*> tail;
+  std::atomic<int64_t> is_initialized;
+
+  Node* find_tail();
+
+public:
+  void initialize();
+  int64_t get_is_initialized();
+
+  template<size_t n>
+  int64_t try_enq(Allocator<Node, n> &allocator, int64_t data); // -2 if lost, -3 if oom
+  int64_t try_deq(int64_t& data); // -1 if empty, -2 if lost
+};
+
+__attribute__((always_inline)) inline void Queue::initialize() {
+  this->init.next.store(nullptr, std::memory_order_release);
+  this->head.store(&this->init, std::memory_order_release);
+  this->tail.store(&this->init, std::memory_order_release);
+  this->is_initialized.store(1, std::memory_order_release);
+}
+
+__attribute__((always_inline)) inline int64_t Queue::get_is_initialized() {
+    return this->is_initialized.load(std::memory_order_acquire);
+}
+
+__attribute__((always_inline)) inline Node* Queue::find_tail() {
+  Node* node = this->tail.load(std::memory_order_relaxed);
+  Node* next = node->next.load(std::memory_order_relaxed);
+
+  if (next == nullptr)
+    return node;
+
+  this->tail.store(next, std::memory_order_relaxed);
+  return nullptr;
+}
+
+template<size_t n>
+__attribute__((always_inline)) inline
+int64_t Queue::try_enq(Allocator<Node, n> &allocator, int64_t data) {
+  Node* node = allocator.alloc();
+
+  if (node == nullptr) {
+    return -3; // oom
+  }
+
+  node->data = data;
+  node->next.store(nullptr, std::memory_order_relaxed);
+
+  Node* tail = nullptr;
+  do {
+    tail = this->find_tail();
+  } while (tail == nullptr);
+
+  Node* v = nullptr;
+  if (tail->next.compare_exchange_strong(v, node, std::memory_order_release)) {
+    this->tail.store(node, std::memory_order_relaxed);
+    return 0;
+  }
+  
+  return -2; // CAVEAT: memory leak
+}
+
+__attribute__((always_inline)) inline int64_t Queue::try_deq(int64_t& data) {
+  Node* head = (Node *) this->head.load(std::memory_order_relaxed);
+  Node* node = (Node *) head->next.load(std::memory_order_relaxed);
+
+  if (node == nullptr)
+    return -1;
+
+  if (this->head.compare_exchange_strong(head, node, std::memory_order_relaxed)) {
+    data = node->data;
+    return 0; // CAVEAT: memory leak
+  }
+
+  return -2;
+}
+
+void thread0(Queue& q, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2, int64_t X3, int64_t& result1, int64_t& result2, int64_t& result3) {
+  int64_t count(1);
+  int64_t data;
+  int64_t res;
+
+  q.initialize();
+
+  res = 0;
+  for (int64_t i = 0; i < X1; i++) {
+    if (q.try_enq(allocator, count) >= 0) {
+      res += count;
+      count *= 2;
+    }
+  }
+  result1 = res;
+
+  res = 0;
+  for (int64_t i = 0; i < X2; i++) {
+    if (q.try_deq(data) >= 0) {
+      res += data;
+    }
+  }
+  result2 = res;
+
+  res = 0;
+  for (int64_t i = 0; i < X3; i++) {
+    if (q.try_enq(allocator, count) >= 0) {
+      res += count;
+      count *= 2;
+    }
+  }
+  result3 = res;
+}
+
+void thread1(Queue& q, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2, int64_t X3, int64_t& result1, int64_t& result2, int64_t& result3) {
+  int64_t count(1);
+  int64_t data;
+  int64_t res;
+
+  if (q.get_is_initialized() != 1)
+    return;
+
+  res = 0;
+  for (int64_t i = 0; i < X1; i++) {
+    if (q.try_enq(allocator, count) >= 0) {
+      res += count;
+      count *= 2;
+    }
+  }
+  result1 = res;
+
+  res = 0;
+  for (int64_t i = 0; i < X2; i++) {
+    if (q.try_deq(data) >= 0) {
+      res += data;
+    }
+  }
+  result2 = res;
+
+  res = 0;
+  for (int64_t i = 0; i < X3; i++) {
+    if (q.try_enq(allocator, count) >= 0) {
+      res += count;
+      count *= 2;
+    }
+  }
+  result3 = res;
+}
+
+void thread2(Queue& q, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2, int64_t X3, int64_t& result1, int64_t& result2, int64_t& result3) {
+  int64_t count(1);
+  int64_t data;
+  int64_t res;
+
+  if (q.get_is_initialized() != 1)
+    return;
+
+  res = 0;
+  for (int64_t i = 0; i < X1; i++) {
+    if (q.try_enq(allocator, count) >= 0) {
+      res += count;
+      count *= 2;
+    }
+  }
+  result1 = res;
+
+  res = 0;
+  for (int64_t i = 0; i < X2; i++) {
+    if (q.try_deq(data) >= 0) {
+      res += data;
+    }
+  }
+  result2 = res;
+
+  res = 0;
+  for (int64_t i = 0; i < X3; i++) {
+    if (q.try_enq(allocator, count) >= 0) {
+      res += count;
+      count *= 2;
+    }
+  }
+  result3 = res;
+}
