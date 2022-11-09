@@ -18,8 +18,9 @@ kbound::kbound( options& o_, std::unique_ptr<llvm::Module>& m_,
   : bmc_pass( o_, o_.solver_ctx, bmc_ )
   , llvm::FunctionPass(ID)
   , module(m_)
-  , ofcpp(o_.outDirPath.string()+"/cmbc.cpp")
+  , ofcpp(o_.outDirPath.string()+"/cbmc.cpp")
   , current_indent(0)
+  , ncontext(o.ctx_bound)
 {
   prefix_seq();
 }
@@ -209,9 +210,11 @@ void kbound::prefix_seq() {
 
   unsigned i = 0;
   for( auto v : bmc_obj.concurrent_vars ) {
-    global_position[v] = i;
     auto size = 1;
+    global_position[v] = i;
+    global_size[v] = 1;
     i += size;
+    dump_Comment( std::to_string(i) + ":" + v->getName().str() );
   }
   num_globals = i;
 
@@ -348,7 +351,7 @@ void kbound::postfix_seq() {
 
 void kbound::dump_locals() {
 
-  std::ifstream in(o.outDirPath.string()+"/cmbc.cpp");
+  std::ifstream in(o.outDirPath.string()+"/cbmc.cpp");
   std::ofstream out(o.outDirPath.string()+"/cbmc_out.cpp");
   std::string line;
     while (getline(in, line)) {
@@ -389,6 +392,8 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
   auto gctx_access = "("+ gid +","+ cr + ")";
 
   dump_Comment("LD: Guess");
+  if(isExclusive)   dump_Comment("  : Exlusive");
+  if(isAcquire)     dump_Comment("  : Acquire");
   dump_Assign( "old_cr",  cr);
   dump_Assign_rand_ctx( cr );
 
@@ -419,13 +424,12 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
 
   if( isAcquire   ) dump_Assign_max( "cl[" + tid + "]", cr   );
   if( isExclusive ) dump_Assign( "delta"+gctx_access, tid );
+  if( isExclusive ) active_lax = active_lax + 1;
 }
 
 void kbound::
 dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
          bool isRelease, bool isExclusive) {
-  // bool isRelease = false;
-  // bool isExclusive = false;
 
   auto gaccess = "("+ tid + ","+ gid + ")";
   auto iw = "iw"+gaccess;
@@ -433,6 +437,8 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
   auto gctx_access = "("+ gid +","+ cw + ")";
 
   dump_Comment("ST: Guess");
+  if(isExclusive)   dump_Comment("  : Exlusive");
+  if(isRelease)   dump_Comment("  : Release");
   dump_Assign_rand_ctx( iw );
   dump_Assign( "old_cw",  cw);
   dump_Assign_rand_ctx( cw );
@@ -460,15 +466,14 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
   dump_Assign_max( "caddr[" + tid + "]", cval );
   dump_Assign( "nu"   + gaccess    , v);
   dump_Assign( "mu"   + gctx_access, v);
-  if( isExclusive ) dump_Assign( "cx"   + gaccess, v);
+  if( isExclusive ) dump_Assign( "cx"   + gaccess, cw);
   dump_String( "nw"   + gctx_access + "+=1;");
   dump_Assign( "delta"+ gctx_access, "-1");
 
   if( isRelease ) dump_Assign( "is"+gaccess, iw);
   if( isRelease ) dump_Assign( "cs"+gaccess, cw);
   if( active_lax > 0 ) dump_Assign( "cx"+gaccess, cw);
-
-  active_lax = active_lax - 1;
+  if( isExclusive ) active_lax = active_lax - 1;
 }
 
 
@@ -572,12 +577,12 @@ bool kbound::is_acquire( llvm::AtomicOrdering ord ) {
   // return hb_enc::o_tag_t::sc; // test return;
   switch( ord ) {
   case llvm::AtomicOrdering::NotAtomic: return false; break;
-  // case llvm::AtomicOrdering::Unordered: return false; break;
-  // case llvm::AtomicOrdering::Monotonic: return false; break;
+  case llvm::AtomicOrdering::Unordered: return false; break;
+  case llvm::AtomicOrdering::Monotonic: return false; break;
   case llvm::AtomicOrdering::Acquire:   return true;  break;
   case llvm::AtomicOrdering::Release:   return false; break;
   case llvm::AtomicOrdering::AcquireRelease: return true; break;
- //  case llvm::AtomicOrdering::SequentiallyConsistent: return false; break;
+ case llvm::AtomicOrdering::SequentiallyConsistent: return false; break;
   default:
     llvm_bmc_error( "kbound", "unrecognized C++ ordering returned!!" );
   }
@@ -590,10 +595,10 @@ bool kbound::is_release( llvm::AtomicOrdering ord ) {
   case llvm::AtomicOrdering::NotAtomic: return false; break;
   case llvm::AtomicOrdering::Unordered: return false; break;
   case llvm::AtomicOrdering::Monotonic: return false; break;
-  case llvm::AtomicOrdering::Acquire:   return true;  break;
-  case llvm::AtomicOrdering::Release:   return false; break;
+  case llvm::AtomicOrdering::Acquire:   return false;  break;
+  case llvm::AtomicOrdering::Release:   return true; break;
   case llvm::AtomicOrdering::AcquireRelease: return true; break;
-  // case llvm::AtomicOrdering::SequentiallyConsistent: return false; break;
+  case llvm::AtomicOrdering::SequentiallyConsistent: return false; break;
   default:
     llvm_bmc_error( "kbound", "unrecognized C++ ordering returned!!" );
   }
@@ -693,9 +698,9 @@ void kbound::dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop) {
   unsigned op = bop->getOpcode();
   expr result = solver_ctx.bool_val(true);
   switch( op ) {
-  case llvm::Instruction::Add : dump_Decl_assign( ro, r1 +" + "+ r2); break;
-  case llvm::Instruction::Sub : dump_Decl_assign( ro, r1 +" - "+ r2); break;
-  case llvm::Instruction::Mul : dump_Decl_assign( ro, r1 +" * "+ r2); break;
+  case llvm::Instruction::Add : dump_Assign( ro, r1 +" + "+ r2); break;
+  case llvm::Instruction::Sub : dump_Assign( ro, r1 +" - "+ r2); break;
+  case llvm::Instruction::Mul : dump_Assign( ro, r1 +" * "+ r2); break;
   default: {
     const char* opName = bop->getOpcodeName();
     llvm_bmc_error("kbound", "unsupported instruction \"" << opName << "\" occurred!!");
@@ -828,6 +833,7 @@ void kbound::dump_AtomicRMWInst( const llvm::AtomicRMWInst* rmw ) {
 void kbound::dump_CallAssume(unsigned bidx, const llvm::CallInst* call) {
   assert(call);
   auto term = get_reg( call->getArgOperand(0) );
+  dump_Comment( "Dump assume from code");
   dump_Assume( term );
 }
 
@@ -844,9 +850,12 @@ void kbound::dump_CallNondet(unsigned bidx, const llvm::CallInst* call) {
 }
 
 void kbound::dump_geq_globals( std::string c, std::string prop ) {
-  for( auto pair : bmc_obj.m_model.ind_in_mem_state ) {
+  for( auto pair : global_position ) {
     auto gid = std::to_string(pair.second);
-    dump_Assume_geq( c, prop+"(" + tid +","+ gid+")" );
+    for( unsigned i = 0; i < global_size.at(pair.first); i++ ) {
+      auto si = std::to_string(i);
+      dump_Assume_geq( c, prop+"(" + tid +","+ gid+"+"+si+")" );
+    }
   }
 }
 
@@ -1053,12 +1062,13 @@ std::string kbound::get_GEPOperator(const llvm::GEPOperator* gep) {
 
 void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
   assert( load );
+  auto addr = load->getOperand(0);
+  auto ord  = load->getOrdering();
   auto r = add_reg_map(load);
   auto creg = get_reg_time(load);
-  auto addr = load->getOperand(0);
   std::string gid, caddr;
   addr_name( addr, gid, caddr );
-  dump_ld( r, creg, caddr, gid, false, false);
+  dump_ld( r, creg, caddr, gid, is_acquire( ord ), false);
   // // jump over casting
   // while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
   //   addr = bcast->getOperand(0);
@@ -1094,12 +1104,14 @@ void kbound::dump_StoreInst(unsigned bidx, const llvm::StoreInst* store ) {
   assert( store );
   auto val = store->getOperand(0);
   auto addr = store->getOperand(1);
+  auto ord  = store->getOrdering();
+
   auto v    = get_reg(val);
   auto cval = get_reg_time(val);
   std::string gid = "";
   std::string caddr = "";
   addr_name( addr, gid, caddr );
-  dump_st( v, cval, caddr, gid, false, false);
+  dump_st( v, cval, caddr, gid, is_release(ord), false);
 
   // // jump over casting
   // while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {

@@ -17,13 +17,14 @@ private:
   static char ID;
   std::unique_ptr<llvm::Module>& module;
   std::ofstream ofcpp;
-  unsigned ncontext = 3;
   unsigned thread_id = 0;
   std::string tid;
   unsigned current_indent;
+  unsigned ncontext = 10;
   unsigned active_lax = 0;
   unsigned num_globals = 0;
   std::map<const llvm::Value*, unsigned> global_position;
+  std::map<const llvm::Value*, unsigned> global_size;
   std::string thread_name, EntryFn;
 
   svec reg_vals,reg_list;
