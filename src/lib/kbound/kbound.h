@@ -17,11 +17,13 @@ private:
   static char ID;
   std::unique_ptr<llvm::Module>& module;
   std::ofstream ofcpp;
-  unsigned ncontext = 10;
+  unsigned ncontext = 3;
   unsigned thread_id = 0;
   std::string tid;
   unsigned current_indent;
   unsigned active_lax = 0;
+  unsigned num_globals = 0;
+  std::map<const llvm::Value*, unsigned> global_position;
   std::string thread_name, EntryFn;
 
   svec reg_vals,reg_list;
@@ -31,10 +33,13 @@ private:
 
   unsigned ssa_count = 0;
   std::map<const llvm::Value*, std::string> ssa_name;
+  std::vector<std::string> unmapped_names;
   std::map<const llvm::BasicBlock*, std::string> path_name;
   std::map<const llvm::Value*, svec> ctrl_dep_ord;
   svec in_code_spec;
 
+  std::string time_name( std::string name );
+  std::string fresh_name();
   std::string read_const( const llvm::Value* v );
   void add_reg_map( const llvm::Value*, std::string );
   std::string add_reg_map( const llvm::Value* );
@@ -78,7 +83,17 @@ private:
   void dump_Arrays( std::string type,
                     std::vector<std::string> arys,
                     std::string dim1, std::string dim2 );
- 
+
+  void dump_ld( std::string, std::string, std::string, std::string,bool,bool);
+  void dump_st( std::string, std::string, std::string, std::string,bool,bool);
+
+  //---------------------------------------------------------------------
+
+  bool is_acquire( llvm::AtomicOrdering ord );
+  bool is_release( llvm::AtomicOrdering ord );
+
+  std::string get_GEPOperator(const llvm::GEPOperator* gep);
+
   void dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop);
   void dump_CmpInst    ( unsigned bidx, const llvm::CmpInst* cmp);
 
@@ -94,6 +109,8 @@ private:
   void dump_CastInst ( unsigned bidx, const llvm::CastInst* I );
   void dump_LoadInst ( unsigned bidx, const llvm::LoadInst* load );
   void dump_StoreInst( unsigned bidx, const llvm::StoreInst* store );
+  void dump_GetElementPtrInst(const llvm::GetElementPtrInst* gep);
+  void dump_AtomicRMWInst( const llvm::AtomicRMWInst* rmw );
 
   void dump_geq_globals( std::string c, std::string prop );
   void dump_dmbsy();
@@ -103,8 +120,6 @@ private:
 
   void addr_name( const llvm::Value* addr, std::string& , std::string& );
 
-  void dump_ld( std::string, std::string, std::string, std::string,bool,bool);
-  void dump_st( std::string, std::string, std::string, std::string,bool,bool);
   void dump_ST_(unsigned bidx, const llvm::CallInst* cmp,bool,bool);
   void dump_LD_(unsigned bidx, const llvm::CallInst* cmp,bool,bool);
 

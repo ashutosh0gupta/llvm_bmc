@@ -336,90 +336,7 @@ expr bmc_ds::join_state( std::vector<expr>& cs,
 //----------------------------------------------------------------------------
 // manage array model
 
-const llvm::Value*
-identify_array_in_gep(const llvm::GEPOperator* gep ) {
-  auto op_gep_ptr = gep->getPointerOperand();
-//  op_gep_ptr->print( llvm::outs() ); std::cout <<"\n";
-  if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
-    op_gep_ptr = cast->getOperand(0);
-  }
 
-  // assuming alloc instruction
-  if( auto addr = llvm::dyn_cast<const llvm::AllocaInst>(op_gep_ptr) ) {
-    return addr;
-  }
-
-  // passed pointer in the function
-  if(auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
-    return addr;
-  }
-
-  // accessing global variable
-  if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr)) {
-    return glb;
-  }
- // if(auto sub_gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_gep_ptr)) {
-    // auto sub_op_gep_ptr = sub_gep->getPointerOperand();
-    // todo: add conditions that all the positions are 0
-    // gep( gep( glb , 0), 3 ) === *(glb+3) << Good <<<
-    //
-    // gep( gep( glb , 1), 3 ) === *(glb+4) << Bad <<<
-    //
-    //assert(false); // remove this assert only if the above condition is added;
-    //if( false ) {
-  if( auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr) ) {
-     // if (sub_gep->hasAllZeroIndices()) {
-      return identify_array_in_gep(sub_gep);
-    // }
-  }
-  llvm_bmc_error("bmc", "unseen GEP pattern detected!");
-}
-
-const llvm::Value*
-identify_array( const llvm::Value* op) {
-  if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
-    op = cast->getOperand(0);
-  }
-  if(auto gep = llvm::dyn_cast<const llvm::GEPOperator>(op)) {
-    return identify_array_in_gep( gep );
-    // auto op_gep_ptr = gep->getPointerOperand();
-    // if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
-    //   op_gep_ptr = cast->getOperand(0);
-    // }
-    // if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_gep_ptr)) {
-    //   return addr;
-    // }
-    // if(auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
-    //   return addr;
-    // }
-    // if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr)) {
-    //   return glb;
-    // }
-    // gep->print( llvm::outs() );
-    // llvm_bmc_error("bmc", "unseen GEP pattern detected!");
-    // op_gep_ptr->print( llvm::outs() );
-  }else if( llvm::dyn_cast<const llvm::AllocaInst>(op) ) {
-    // auto alloc =
-    // To handle a[0] when a is dynamic sized array
-    if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op)) {
-      // actual allocation in the code
-      return addr;
-    }
-  }else if( auto addr = llvm::dyn_cast<const llvm::Argument>(op) ) {
-    // passed as an argument
-    return addr;
-  }else if( auto cnst = llvm::dyn_cast<const llvm::ConstantExpr>(op)) {
-    if( auto gep = llvm::dyn_cast<llvm::GEPOperator>(cnst) ) {
-      auto const_ptr = gep->getPointerOperand();
-      return const_ptr;
-    }
-    llvm_bmc_error("bmc", "non GEP constant expression!");
-  }else{
-    // llvm_bmc_error("bmc", "non array global write/read not supported!");
-  }
-  // op->print( llvm::outs() );
-  return NULL;
-}
 
 void bmc_ds::init_array_model( array_model_t ar_model_local,
                                array_state& s ) {
@@ -431,10 +348,12 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
       auto I = &(*it);
       if( auto load = llvm::dyn_cast<const llvm::LoadInst>(I) ) {
         auto ary  = identify_array( load->getPointerOperand() );
-        if( ary ) ary_access_to_index[load] = ary_to_int.at( ary );
+        if( ary && exists( ary_to_int, ary ) )
+          ary_access_to_index[load] = ary_to_int.at( ary );
       }else if( auto store = llvm::dyn_cast<const llvm::StoreInst>(I) ) {
         auto ary  = identify_array( store->getPointerOperand() );
-        if( ary ) ary_access_to_index[store] = ary_to_int.at( ary );
+        if( ary && exists( ary_to_int, ary ) )
+          ary_access_to_index[store] = ary_to_int.at( ary );
       }
       // if( auto load = llvm::dyn_cast<const llvm::LoadInst>(I) ) {
       //   auto op_ptr = load->getPointerOperand();

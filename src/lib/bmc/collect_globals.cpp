@@ -25,73 +25,92 @@ collect_globals::collect_globals( std::unique_ptr<llvm::Module>& m_,
 
 collect_globals::~collect_globals() {}
 
+
 void collect_globals::
 collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
+  std::set<const llvm::Value*> written;
   for (unsigned j = 0; j < b.sys_spec.threads.size(); j++) {
-     auto EntryFn = b.sys_spec.threads.at(j).entry_function;
-     for (auto mit = m->begin(); mit != m->end(); mit++) { //Iterate over functions in module
+    auto EntryFn = b.sys_spec.threads.at(j).entry_function;
+    for (auto mit = m->begin(); mit != m->end(); mit++) {
+      auto Str1 = mit->getName().str();
+      auto dstr = demangle( Str1);
+      if ( Str1 != EntryFn && dstr != EntryFn ) continue;
+      auto f = &(*mit);
+      auto& list_gvars = fn_gvars_map[f->getName().str()];
+      for (auto bbit = f->begin(); bbit != f->end(); bbit++) {
+        auto bb = &(*bbit);
+        for( auto it = bb->begin(); it != bb->end(); ++it) {
+          auto I = &(*it);
+          llvm::Value* addr = NULL;
+          //I->print( llvm::outs() );     std::cout << "\n";
+          if( auto store = llvm::dyn_cast<llvm::StoreInst>(I) ) {
+            addr = store->getOperand(1);
+            auto glb = identify_global_in_addr( addr );
+            if( glb && !exists( list_gvars, glb ) )
+              list_gvars.push_back(glb);
+            if(glb) written.insert( glb );
 
-      std::string Str1 = mit->getName().str();
-      if (Str1 == EntryFn) {
-    auto f = &(*mit);
-    for (auto bbit = f->begin(); bbit != f->end(); bbit++) { //Iterate over basic blocks in function
-
-      auto bb = &(*bbit);
-      for( auto it = bb->begin(); it != bb->end(); ++it) {
-        auto I = &(*it);
-//I->print( llvm::outs() );     std::cout << "\n";
-        if( auto store = llvm::dyn_cast<llvm::StoreInst>(I) ) {
-          llvm::Value* addr = store->getOperand(1);
-//	I->print( llvm::outs() );     std::cout << "\n";
-//	std::cout << "Store var is " << (std::string)((addr)->getName()) << "\n";
-          if( auto g = llvm::dyn_cast<llvm::GlobalVariable>( addr ) ) {
-
-            if (list_gvars.empty())
-              list_gvars.push_back(g);
-            else {
-              if (find(list_gvars.begin(), list_gvars.end(), g) == list_gvars.end())
-                list_gvars.push_back(g);
+            // if( auto g = llvm::dyn_cast<llvm::GlobalVariable>( addr ) ) {
+            //   if (list_gvars.empty())
+            //     list_gvars.push_back(g);
+            //   else {
+            //     if (find(list_gvars.begin(), list_gvars.end(), g) == list_gvars.end())
+            //       list_gvars.push_back(g);
+            //   }
+            // }
+          }else if( auto load = llvm::dyn_cast<llvm::LoadInst>(I) ) {
+            addr = load->getOperand(0);
+            auto glb = identify_global_in_addr( addr );
+            if( glb && !exists( list_gvars, glb ) ) {
+              list_gvars.push_back(glb);
             }
-          }
+            // if( auto g = llvm::dyn_cast<llvm::GlobalVariable>( addr ) ) {
+            //   if (list_gvars.empty())
+            //     list_gvars.push_back(g);
+            //   else {
+            //     if (find(list_gvars.begin(), list_gvars.end(), g) == list_gvars.end())
+            //       list_gvars.push_back(g);
+            //   }
+            // }
+          }else if( auto rmw = llvm::dyn_cast<llvm::AtomicRMWInst>(I) ) {
+            addr = rmw->getPointerOperand();
+            auto glb = identify_global_in_addr( addr );
+            if( glb && !exists( list_gvars, glb ) )
+              list_gvars.push_back(glb);
+            if(glb) written.insert( glb );
+          }else {continue;}
         }
+        // auto pair = std::make_pair( f->getName().str() , list_gvars );
+        // fn_gvars_map.insert( pair );
 
-        if( auto load = llvm::dyn_cast<llvm::LoadInst>(I) ) {
-          llvm::Value* addr = load->getOperand(0);
-//I->print( llvm::outs() );     std::cout << "\n";
-//std::cout << "Load var is " << (std::string)((addr)->getName()) << "\n";
-          if( auto g = llvm::dyn_cast<llvm::GlobalVariable>( addr ) ) {
-            if (list_gvars.empty())
-              list_gvars.push_back(g);
-            else {
-              if (find(list_gvars.begin(), list_gvars.end(), g) == list_gvars.end())
-                list_gvars.push_back(g);
-            }
+        // list_gvars.clear();
+      }
+    }
+  }
+  for (auto fpair1 : fn_gvars_map) {
+    auto& glist1 = fpair1.second;
+    for (auto fpair2 : fn_gvars_map) {
+      if( fpair1.first == fpair2.first ) continue;
+      for( auto g : glist1 ) {
+        if( !exists( fpair2.second, g ) ) continue;
+        if( !exists( written, g) ) continue;
+        if( auto g1 = llvm::dyn_cast<llvm::GlobalVariable>(g) ) {
+          if ( !exists(b.concurrent_vars, g1) ) {
+            b.concurrent_vars.push_back(g1);
           }
         }
       }
     }
-
-    //std::cout << "Function name is " << f->getName().str() << "\n" << "No. of global variables is " << list_gvars.size() << " \n";
-
-    //for(int i=0; i < list_gvars.size(); i++)
-    //std::cout << (std::string)((list_gvars.at(i))->getName()) << "\n";
-
-    auto pair = std::make_pair( f->getName().str() , list_gvars );
-    fn_gvars_map.insert( pair );
-
-    list_gvars.clear();
-   }
   }
- }
-  //return true;
 }
+
 
 
 void collect_globals::insert_concurrent( bmc& b, memory_cons& mem_enc,
                                   solver_context& solver_ctx, options& o )
 {
   me_set prev_events;
-  src_loc sloc,floc;  //"the_launcher",   "the_finisher";  
+  src_loc sloc,floc;  //"the_launcher",   "the_finisher";
   std::vector<expr> history;
   expr tru = solver_ctx.bool_val(true);
   auto start = mk_me_ptr( mem_enc, INT_MAX, prev_events, tru, history, sloc,
@@ -100,38 +119,39 @@ void collect_globals::insert_concurrent( bmc& b, memory_cons& mem_enc,
                           event_t::post, o_tag_t::sc);
 
   b.edata.init_loc = start;
-  b.edata.post_loc = final;  
- 
+  b.edata.post_loc = final;
+
   for (unsigned k = 0; k < b.sys_spec.threads.size(); k++) {
     auto FnName1 = b.sys_spec.threads.at(k).entry_function;
     if( fn_gvars_map.find(FnName1) != fn_gvars_map.end() ) {
-     list_gvars = fn_gvars_map[FnName1];
-     for (auto i = fn_gvars_map.begin(); i != fn_gvars_map.end(); i++) {
-      if (i->first !=  FnName1) {
-        // for(unsigned j=0; j < list_gvars.size(); j++)
-        //   {
-        //     auto g1 = list_gvars.at(j);
-        for( auto g1 : list_gvars ) {
-            if (find(i->second.begin(), i->second.end(), g1) != i->second.end()) {
-	      const std::string gvar = (std::string)(g1->getName());
-	      llvm::Type* ty = g1->getType();
-	      if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
-	      auto el_ty = pty->getPointerElementType();
-      	      sort z_sort = llvm_to_sort( o, el_ty);
-	      b.edata.add_global( gvar, z_sort );
-	      b.edata.wr_events[ b.edata.get_global( gvar ) ].insert( start );
-	     }
-              if (b.concurrent_vars.empty()) {
-                b.concurrent_vars.push_back(g1);		
-		}
-              else {
-                if (find(b.concurrent_vars.begin(), b.concurrent_vars.end(), g1) == b.concurrent_vars.end()) {
-                  b.concurrent_vars.push_back(g1);
-		}
+      list_gvars = fn_gvars_map[FnName1];
+      for (auto i = fn_gvars_map.begin(); i != fn_gvars_map.end(); i++) {
+        if (i->first !=  FnName1) {
+          // for(unsigned j=0; j < list_gvars.size(); j++)
+          //   {
+          //     auto g1 = list_gvars.at(j);
+          for( auto g : list_gvars ) {
+            if( !exists( i->second, g) ) continue;
+            if( auto g1 = llvm::dyn_cast<llvm::GlobalVariable>(g) ) {
+            // if (find(i->second.begin(), i->second.end(), g1) != i->second.end()) {
+            const std::string gvar = (std::string)(g1->getName());
+            llvm::Type* ty = g1->getType();
+            if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
+              auto el_ty = pty->getPointerElementType();
+              sort z_sort = llvm_to_sort( o, el_ty);
+              b.edata.add_global( gvar, z_sort );
+              b.edata.wr_events[ b.edata.get_global( gvar ) ].insert( start );
+            }
+            if (b.concurrent_vars.empty()) {
+              b.concurrent_vars.push_back(g1);
+            }else{
+              if (find(b.concurrent_vars.begin(), b.concurrent_vars.end(), g1) == b.concurrent_vars.end()) {
+                b.concurrent_vars.push_back(g1);
               }
             }
+            }
           }
-	}
+        }
       }
     }
   }

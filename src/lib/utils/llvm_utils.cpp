@@ -1697,7 +1697,7 @@ expr read_const( options& o, const llvm::Value* op ) {
     llvm_bmc_error("llvm_utils", "unsupported type: "<< ty << "!!");
   }//else if( llvm::isa<llvm::ConstantFP>(op) ) {
    //const llvm::APFloat& n = c->getValueAPF();
-    if( const llvm::ConstantFP* c = llvm::dyn_cast<llvm::ConstantFP>(op) ) {
+  if( const llvm::ConstantFP* c = llvm::dyn_cast<llvm::ConstantFP>(op) ) {
      llvm::Type* ty = op->getType();
      if (ty->isFloatTy() ) {
 			    if (o.bit_precise) {
@@ -1721,6 +1721,8 @@ expr read_const( options& o, const llvm::Value* op ) {
     // double v = n.convertToDouble();
     //return ctx.real_val(v);
     //llvm_bmc_error("llvm_utils", "Floating point constant not implemented!!" );
+  }else if( llvm::isa<llvm::ConstantAggregateZero>(op) ) {
+    // return ctx.int_val(0);// todo: match types in z3
   }else if( llvm::isa<llvm::Instruction>(op) ) {
 
   }else if( llvm::isa<llvm::Constant>(op) ) {
@@ -1853,4 +1855,104 @@ void prepare_module(std::unique_ptr<llvm::Module>& module ) {
   passMan.add( llvm::createSCCPPass() );
   passMan.run( *module.get() );
 }
+
+
+const llvm::Value*
+identify_array_in_gep(const llvm::GEPOperator* gep ) {
+  auto op_gep_ptr = gep->getPointerOperand();
+//  op_gep_ptr->print( llvm::outs() ); std::cout <<"\n";
+  if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
+    op_gep_ptr = cast->getOperand(0);
+  }
+
+  // assuming alloc instruction
+  if( auto addr = llvm::dyn_cast<const llvm::AllocaInst>(op_gep_ptr) ) {
+    return addr;
+  }
+
+  // passed pointer in the function
+  if(auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
+    return addr;
+  }
+
+  // accessing global variable
+  if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr)) {
+    return glb;
+  }
+ // if(auto sub_gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_gep_ptr)) {
+    // auto sub_op_gep_ptr = sub_gep->getPointerOperand();
+    // todo: add conditions that all the positions are 0
+    // gep( gep( glb , 0), 3 ) === *(glb+3) << Good <<<
+    //
+    // gep( gep( glb , 1), 3 ) === *(glb+4) << Bad <<<
+    //
+    //assert(false); // remove this assert only if the above condition is added;
+    //if( false ) {
+  if( auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr) ) {
+     // if (sub_gep->hasAllZeroIndices()) {
+      return identify_array_in_gep(sub_gep);
+    // }
+  }
+  llvm_bmc_error("bmc", "unseen GEP pattern detected!");
+}
+
+const llvm::Value*
+identify_array( const llvm::Value* op) {
+  if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
+    op = cast->getOperand(0);
+  }
+  if(auto gep = llvm::dyn_cast<const llvm::GEPOperator>(op)) {
+    return identify_array_in_gep( gep );
+    // auto op_gep_ptr = gep->getPointerOperand();
+    // if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
+    //   op_gep_ptr = cast->getOperand(0);
+    // }
+    // if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_gep_ptr)) {
+    //   return addr;
+    // }
+    // if(auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
+    //   return addr;
+    // }
+    // if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr)) {
+    //   return glb;
+    // }
+    // gep->print( llvm::outs() );
+    // llvm_bmc_error("bmc", "unseen GEP pattern detected!");
+    // op_gep_ptr->print( llvm::outs() );
+  }else if( llvm::dyn_cast<const llvm::AllocaInst>(op) ) {
+    // auto alloc =
+    // To handle a[0] when a is dynamic sized array
+    if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op)) {
+      // actual allocation in the code
+      return addr;
+    }
+  }else if( auto addr = llvm::dyn_cast<const llvm::Argument>(op) ) {
+    // passed as an argument
+    return addr;
+  }else if( auto cnst = llvm::dyn_cast<const llvm::ConstantExpr>(op) ) {
+    if( auto gep = llvm::dyn_cast<llvm::GEPOperator>(cnst) ) {
+      auto const_ptr = gep->getPointerOperand();
+      return const_ptr;
+    }
+    llvm_bmc_error("bmc", "non GEP constant expression!");
+  }else{
+    // llvm_bmc_error("bmc", "non array global write/read not supported!");
+  }
+  // op->print( llvm::outs() );
+  return NULL;
+}
+
+// TODO: the following and the above functions make
+//       pointless distinction between array and global
+const llvm::Value*
+identify_global_in_addr( const llvm::Value* op) {
+  if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
+    op = cast->getOperand(0);
+  }
+  if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op)) {
+    return glb;
+  }
+  return identify_array( op );
+}
+
 
