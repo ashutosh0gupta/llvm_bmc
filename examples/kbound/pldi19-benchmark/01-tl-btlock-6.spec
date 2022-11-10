@@ -26,8 +26,6 @@
 (invoke-parameters six repeated 1 priority 1)
 (end-thread six)
 
-;(post-condition all (assert(= data 126)))
-;(post-condition all (assert(= data 168)))
-(post-condition all (assert(= data 211)))
+(post-condition all (assert(= data 252)))
 
 
