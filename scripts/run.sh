@@ -11,8 +11,9 @@ ns=(2 3 4 5 6)
 
 # ns=(2)
 # kinds=("unsafe")
-kinds=("safe")
-ns=(4 5 6)
+# kinds=("safe")
+kinds=("opt-unsafe")
+# ns=(2)
 
 #$kind=unsafe
 

@@ -19,7 +19,7 @@ __attribute__((always_inline)) inline
 int64_t
 //BTLock::
 lock(int64_t X) {
-  int64_t t = tc.fetch_add(1, std::memory_order_acquire);
+  int64_t t = tc.fetch_add(1, std::memory_order_relaxed);
   int64_t n;
 
   // for (int64_t i = 0; i < X; i++) {
@@ -63,7 +63,7 @@ void thread0(//int64_t X
     data += 42;
     //observed = data;
     //l.
-    unlock();
+    unlock_unsafe();
   }
 }
 
