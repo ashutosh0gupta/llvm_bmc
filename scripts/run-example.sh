@@ -8,12 +8,19 @@ if [ "$#" -ne 4 ]; then
 fi
 
 ./llvmbmc --unwind $1 --context-bound $2 -k $3 -s $4 > /dev/null 2>&1
-cbmc /tmp/cbmc_out.cpp --trace > /tmp/tr.tr 2>&1
-./scripts/clean-cmsb.py
+timeout 300s cbmc /tmp/cbmc_out.cpp --trace > /tmp/tr.tr 2>&1
+# ./scripts/clean-cmsb.py
 
-tr_file=/tmp/clean.tr
-if grep -q "VERIFICATION SUCCESSFUL" "$tr_file"; then
-    echo "SAFE"
+tr_file=/tmp/tr.tr
+
+if [ -f "$tr_file" ]; then
+    if grep -q "VERIFICATION SUCCESSFUL" "$tr_file"; then
+        echo -n "SAFE   "
+    elif grep -q "VERIFICATION FAILED" "$tr_file"; then
+        echo -n "UNSAFE "
+    else
+        echo -n "TO     "        
+    fi
 else
-    echo "UNSAFE"
+    echo -n "TO     "
 fi
