@@ -120,6 +120,18 @@ void collect_globals::insert_concurrent( bmc& b, memory_cons& mem_enc,
       	      sort z_sort = llvm_to_sort( o, el_ty);
 	      b.edata.add_global( gvar, z_sort );
 	      b.edata.wr_events[ b.edata.get_global( gvar ) ].insert( start );
+	      
+	      for( auto glb_idx_pair : b.m_model.ind_in_mem_state ) {
+	      auto g = glb_idx_pair.first;
+              auto idx = glb_idx_pair.second;
+              const std::string var_name = (std::string)(g->getName());
+              if (gvar == var_name) {
+		  variable tmp_v = b.edata.get_global( gvar )+"#pre" ;
+                  b.m_model.store_state_map[0].mem_state_vec[idx].e = (expr) (tmp_v);
+		  //std::cout << "Name is " << to_string(tmp_v) << "\n";
+	       }
+	      }
+
 	     }
               if (b.concurrent_vars.empty()) {
                 b.concurrent_vars.push_back(g1);		

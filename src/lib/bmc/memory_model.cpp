@@ -36,6 +36,28 @@ memory_model::write( unsigned bidx, const llvm::StoreInst* I,
   }
 }
 
+
+std::pair<expr,expr>
+memory_model::write_con( unsigned bidx, const llvm::StoreInst* I,
+                      expr& val, expr evt_name ) {
+  // TODO : Add setters and getters
+  memory_state& mem_st = store_state_map[bidx];
+  // print();
+  if(auto g_var = llvm::dyn_cast<llvm::GlobalVariable>(I->getPointerOperand())) {
+    auto i = ind_in_mem_state.at(g_var);
+    assert( i < mem_st.mem_state_vec.size() );
+    //expr new_expr = get_fresh_name(mem_st.mem_state_vec.at(i).t.type,g_var->getName().str());
+
+    datatype ty(mem_st.mem_state_vec.at(i).t.type);
+    state_obj tem_state_obj(evt_name,ty);
+    mem_st.mem_state_vec[i] = tem_state_obj; 
+    return std::make_pair( (evt_name == val), evt_name);
+  } else {
+    llvm_bmc_error("bmc","Unable to determine the global variable!");
+  }
+}
+
+
 expr memory_model::read( unsigned bidx, const llvm::LoadInst* I ) {
   memory_state& mem_st = store_state_map[bidx];
   if(auto g_var = llvm::dyn_cast<llvm::GlobalVariable>(I->getPointerOperand())) {
@@ -46,6 +68,19 @@ expr memory_model::read( unsigned bidx, const llvm::LoadInst* I ) {
     llvm_bmc_error("bmc","Unable to determine the global variable!");
   }
 }
+
+
+expr memory_model::read_con( unsigned bidx, const llvm::LoadInst* I, expr evt_name ) {
+  memory_state& mem_st = store_state_map[bidx];
+  if(auto g_var = llvm::dyn_cast<llvm::GlobalVariable>(I->getPointerOperand())) {
+    auto i = ind_in_mem_state.at(g_var);
+    mem_st.mem_state_vec[i].e = evt_name;   //Replace with event name
+    return evt_name;
+  } else {
+    llvm_bmc_error("bmc","Unable to determine the global variable!");
+  }
+}
+
 
 expr memory_model::join_state( std::vector<expr>& conds,
                                std::vector<unsigned>& prevs,

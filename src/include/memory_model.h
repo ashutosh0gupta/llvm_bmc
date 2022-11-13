@@ -36,7 +36,9 @@ public:
   void update_name( unsigned, std::vector<const llvm::GlobalVariable*>& );
   // 
   std::pair<expr,expr> write(unsigned, const llvm::StoreInst*, expr& );
+  std::pair<expr,expr> write_con(unsigned, const llvm::StoreInst*, expr&, expr );
   expr read( unsigned, const llvm::LoadInst*);
+  expr read_con( unsigned, const llvm::LoadInst*, expr );
   expr join_state( std::vector<expr>&, std::vector<unsigned>&, unsigned );
 
   solver_context& solver_ctx;

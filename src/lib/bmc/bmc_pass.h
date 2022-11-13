@@ -7,6 +7,7 @@
 #include "include/bmc_ds.h"
 #include "include/bmc.h"
 #include "include/array_model.h"
+#include "include/memory_event.h"
 
 class bmc;       // forward declaration of the bmc class
 
@@ -80,8 +81,8 @@ private:
   void print_bb_vecs();
 
   //todo : concurrency support
-  void create_write_event( unsigned, const llvm::StoreInst* store, llvm::Value* );
-  void create_read_event( unsigned, const llvm::LoadInst* load, llvm::Value* );
+  me_ptr create_write_event( unsigned, const llvm::StoreInst* store, llvm::Value* );
+  me_ptr create_read_event( unsigned, const llvm::LoadInst* load, llvm::Value* );
   // void create_read_event( const llvm::StoreInst* store );
   // void create_block_event( const llvm::StoreInst* store );
   // void create_join_event( const llvm::StoreInst* store );
