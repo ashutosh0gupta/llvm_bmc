@@ -77,6 +77,7 @@ void bmc::run_bmc_pass() {
   passMan.run( *module.get() );
 
   if( o.kbound ) {
+    collect_globals( module, *this, o.mem_enc, o.solver_ctx, o );
     passMan.add( new kbound(o, module, *this) );
     passMan.run( *module.get() );
     return;
@@ -204,7 +205,11 @@ memory_state bmc::populate_mem_state() {
         auto c = glb->getInitializer();
         // auto val = get_term( solver_ctx, c, m );
         auto val = read_const( o, c );
-        glb_bmc_vec.push_back(new_glb == val);
+        if( val ) {
+          glb_bmc_vec.push_back(new_glb == val);
+        }else{
+          llvm_bmc_warning( "bmc", "Initializer of an object ");
+        }
       } else {} // do nothing
     } else {
       llvm_bmc_error("bmc", (std::string)(glb->getName()) << " not a global pointer!");

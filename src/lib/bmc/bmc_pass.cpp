@@ -1500,6 +1500,7 @@ void bmc_pass::print_bb_vecs() {
   std::cout << "----------------------------------------------\n";
 }
 
+//todo: move this function to somewhere more general!!
 void bmc_pass::populate_array_name_map(llvm::Function* f) {
   assert(f);
   int arrCntr = 0;
@@ -1508,6 +1509,9 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
   // collect global arrays of the module
   for( auto& glb : f->getParent()->globals()) {
     if( auto ptr = llvm::dyn_cast<llvm::PointerType>( glb.getType() ) ) {
+      // if( ptr->getPointerElementType() ) {
+      //   dump(ptr->getPointerElementType());
+      // }
       if( ptr->getPointerElementType()->isArrayTy() ) {
         ary_to_int[&glb] = arrCntr++;
       }

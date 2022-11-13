@@ -135,61 +135,63 @@ void spec_parser::read_variable( std::istream& in ) {
   std::string var_name = read_symbol( in );
   std::string var_type = read_symbol( in );
 
-  if (in.peek() == ')')
-    {
-      if (var_type == "float32") {
-        expr e = solver_ctx.fpa_const(var_name.c_str(),8,24);
-        list_readvar.push_back(e);
+  if (in.peek() == ')') {
+    if (var_type == "float32") {
+      expr e = solver_ctx.fpa_const(var_name.c_str(),8,24);
+      list_readvar.push_back(e);
 
-        names.push_back(var_name);
-        declarations.push_back(solver_ctx.fpa_const(var_name.c_str(),8,24));
-        var_name = var_name + ".";
-        names.push_back(var_name);
-        declarations.push_back(solver_ctx.fpa_const(var_name.c_str(),8,24)); }
-
-      if ((var_type == "i16") || (var_type == "i32")) {
-        expr e = solver_ctx.int_const(var_name.c_str());
-        list_readvar.push_back(e);
-        names.push_back(var_name);
-        //declarations.push_back(solver_ctx.int_const(var_name.c_str()));
-        declarations.push_back(solver_ctx.bv_const(var_name.c_str(),16));
-        var_name = var_name + ".";
-        names.push_back(var_name);
-        //declarations.push_back(solver_ctx.int_const(var_name.c_str()));
-        declarations.push_back(solver_ctx.bv_const(var_name.c_str(),16)); }
-
-      if (var_type == "flag") {
-        expr e = solver_ctx.bv_const(var_name.c_str(), 16);
-        list_readvar.push_back(e);
-        names.push_back(var_name);
-        declarations.push_back(solver_ctx.bv_const(var_name.c_str(),16));
-        var_name = var_name + ".";
-        names.push_back(var_name);
-        declarations.push_back(solver_ctx.bv_const(var_name.c_str(),16)); }
-
+      names.push_back(var_name);
+      declarations.push_back(solver_ctx.fpa_const(var_name.c_str(),8,24));
+      var_name = var_name + ".";
+      names.push_back(var_name);
+      declarations.push_back(solver_ctx.fpa_const(var_name.c_str(),8,24));
+    }else if ((var_type == "i16") || (var_type == "i32")) {
+      expr e = solver_ctx.int_const(var_name.c_str());
+      list_readvar.push_back(e);
+      names.push_back(var_name);
+      declarations.push_back(solver_ctx.bv_const(var_name.c_str(),16));
+      var_name = var_name + ".";
+      names.push_back(var_name);
+      declarations.push_back(solver_ctx.bv_const(var_name.c_str(),16));
+    }else if ( var_type == "int" ) {
+      expr e = solver_ctx.int_const(var_name.c_str());
+      list_readvar.push_back(e);
+      names.push_back(var_name);
+      declarations.push_back(e);
+      var_name = var_name + ".";
+      names.push_back(var_name);
+      declarations.push_back(solver_ctx.int_const(var_name.c_str()));
+    }else if (var_type == "flag") {
+      expr e = solver_ctx.bv_const(var_name.c_str(), 16);
+      list_readvar.push_back(e);
+      names.push_back(var_name);
+      declarations.push_back(solver_ctx.bv_const(var_name.c_str(),16));
+      var_name = var_name + ".";
+      names.push_back(var_name);
+      declarations.push_back(solver_ctx.bv_const(var_name.c_str(),16));
+    }else{
+      llvm_bmc_error( "Spec_parse", "unknown type " << var_type << " !");
     }
-  else
-    {
-      std::string if_array = read_symbol( in );
-      if (if_array == "array")
-	{
-          sort z_te = solver_ctx.int_sort();
-          if (var_type == "float32") z_te = solver_ctx.fpa_sort<32>();
-          if (var_type == "float64") z_te = solver_ctx.fpa_sort<64>();
-          sort s = solver_ctx.array_sort( solver_ctx.bv_sort(64), z_te );
-          expr e = solver_ctx.constant( var_name.c_str(), s );
+  } else {
+    std::string if_array = read_symbol( in );
+    if (if_array == "array") {
+      sort z_te = solver_ctx.int_sort();
+      if (var_type == "float32") z_te = solver_ctx.fpa_sort<32>();
+      if (var_type == "float64") z_te = solver_ctx.fpa_sort<64>();
+      sort s = solver_ctx.array_sort( solver_ctx.bv_sort(64), z_te );
+      expr e = solver_ctx.constant( var_name.c_str(), s );
 
-          names.push_back(var_name);
-          declarations.push_back(solver_ctx.constant( var_name.c_str(), s ));
-          var_name = var_name + ".";
-          names.push_back(var_name);
-          declarations.push_back(solver_ctx.constant( var_name.c_str(), s ));
+      names.push_back(var_name);
+      declarations.push_back(solver_ctx.constant( var_name.c_str(), s ));
+      var_name = var_name + ".";
+      names.push_back(var_name);
+      declarations.push_back(solver_ctx.constant( var_name.c_str(), s ));
 
-          auto array_size  = read_unsigned(in);
-          auto pair = std::make_pair( array_size, e );
-          array_map.insert( pair );
-	}
+      auto array_size  = read_unsigned(in);
+      auto pair = std::make_pair( array_size, e );
+      array_map.insert( pair );
     }
+  }
 
 }
 

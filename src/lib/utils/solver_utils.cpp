@@ -193,32 +193,36 @@ void dump(std::string dump_path, std::string name, solver &s)
   dump_file.close();
 }
 
+
 std::string display(expr e)
 {
-  if (e.is_numeral())
-  {
+  std::map<std::string,std::string> rename;
+  display(e,rename);
+}
+
+std::string display(expr e,
+                    const std::map<std::string,std::string>& rename)
+{
+  if (e.is_numeral()) {
     int64_t num, den;
-    if (Z3_get_numeral_small(e.ctx(), e, &num, &den))
-    {
+    if (Z3_get_numeral_small(e.ctx(), e, &num, &den)) {
       return std::to_string(num);
     }
-  }
-  else if (e.is_var())
-  {
-    return e.decl().name().str();
-  }
-  else if (e.is_app())
-  {
-    return display_app(e);
-  }
-  else if (e.is_quantifier())
-  {
+  } else if (e.is_var()) {
+    auto n = e.decl().name().str();
+    if( exists(rename,n) ) return rename.at(n);
+    return n;
+  } else if (e.is_app()) {
+    return display_app(e,rename);
+  } else if (e.is_quantifier()) {
     // Ideally quantifier should not occur.
     return "";
   }
 }
 
-std::string display_app(expr e)
+
+std::string display_app(expr e,
+                        const std::map<std::string,std::string>& rename)
 {
   std::list<std::string> argStrList;
 
@@ -226,7 +230,7 @@ std::string display_app(expr e)
   for (unsigned i = 0; i < args; i++)
   {
     expr arg = e.arg(i);
-    argStrList.push_back(display(arg));
+    argStrList.push_back(display(arg,rename));
   }
 
   Z3_decl_kind dk = e.decl().decl_kind();
@@ -345,7 +349,9 @@ std::string display_app(expr e)
   }
   else
   {
-    return e.decl().name().str();
+    auto n = e.decl().name().str();
+    if( exists(rename,n) ) return rename.at(n);
+    return n;
   }
 }
 
