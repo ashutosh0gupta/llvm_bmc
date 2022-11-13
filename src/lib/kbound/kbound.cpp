@@ -279,13 +279,8 @@ void kbound::prefix_seq() {
 
   var_list = { "old_ctrl", "old_cr", "old_cdy", "old_cw",  "new_creg" //, "new_iw", "new_cw",  // "new_ireg",
   };
-  // for( auto v: var_list ) dump_Decl_scalar( "int", v);
   dump_Newline();
-
-
-
   dump_String("__LOCALS__");
-
 
   for( unsigned p = 0; p < bmc_obj.sys_spec.threads.size(); p++ ) {
     auto pn = std::to_string(p);
@@ -295,12 +290,6 @@ void kbound::prefix_seq() {
     }
     for( auto ary: proc_list ) dump_String( ary + "["+ pn + "] = 0;" );
   }
-
-  // auto num_proc  = std::to_string(bmc_obj.sys_spec.threads.size()-1);
-  // for( unsigned k = 0; k < ncontext; k++ ) {
-  //   auto kn = std::to_string(k);
-  //   dump_Assign( "active["+kn+"]", "get_rng_th(0," + num_proc +")" );
-  // }
 
   for( unsigned x = 0; x < num_globals; x++ ) {
     auto xn = std::to_string(x);
@@ -339,12 +328,6 @@ void kbound::postfix_seq() {
     auto term = display(spec, rename);
     dump_String("ASSERT(" + term + ");");
   }
-  // dump_For("char", "x", "ADDRSIZE");
-  // dump_For("char", "k", "NCONTEXT-1");
-  // for( auto ary: val_list )
-  //   dump_Assume( ary+"_(x,k) == " + ary + "init_(x,k+1)" );
-  // dump_Close_scope();
-  // dump_Close_scope();
   dump_Newline();
   dump_Close_scope();
 }
