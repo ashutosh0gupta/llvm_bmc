@@ -3,7 +3,7 @@
 #include "lib/utils/solver_utils.h"
 // TODO : remove reference to heap model and access of public class variables
 #include "include/array_model.h"
-#include "include/memory_event.h"
+//#include "include/memory_event.h"
 // #include "include/collect_globals.h"
 
 //todo: remove reference to bmc_obj which is due to global variables
@@ -847,7 +847,7 @@ o_tag_t bmc_pass::translate_ordering_tags( llvm::AtomicOrdering ord ) {
   return o_tag_t::na; // dummy return;
 }
 
-void bmc_pass::create_read_event( unsigned bidx,
+me_ptr bmc_pass::create_read_event( unsigned bidx,
                                    const llvm::LoadInst* load, llvm::Value* addr ) {
   src_loc loc = getLoc( load );
   expr path_cond = bmc_ds_ptr->get_path_bit( bidx ); 
@@ -863,13 +863,14 @@ void bmc_pass::create_read_event( unsigned bidx,
     prev_events = {evt};
     bmc_obj.edata.ev_threads[tid].events.push_back( evt );
     bmc_obj.edata.rd_events[gv].push_back( evt );
+    return evt;
   }
 }
 
 //
 // concurrency support
 //
-void bmc_pass::create_write_event( unsigned bidx,
+me_ptr bmc_pass::create_write_event( unsigned bidx,
                                    const llvm::StoreInst* store,
                                    llvm::Value* addr ) {
   // todo: write here
@@ -891,6 +892,7 @@ void bmc_pass::create_write_event( unsigned bidx,
     bmc_obj.edata.all_events.insert( evt );
     bmc_obj.edata.ev_threads[tid].events.push_back( evt );
     bmc_obj.edata.wr_events[gv].insert( evt );
+    return evt;
  }
 }
 
@@ -932,12 +934,18 @@ void bmc_pass::translateLoadInst( unsigned bidx,
   //   translateGEP( gep, idxs);
   //   loadFromArrayHelper(bidx, load, idxs);
   } else if(auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
-    auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
-    bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
+    //auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
+    //bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
     if ( exists( bmc_obj.concurrent_vars, gv ) ) {
-      create_read_event( bidx, load, addr );
+      auto r_evt = create_read_event( bidx, load, addr );
+      auto glb_rd = bmc_ds_ptr->m_model.read_con( bidx, load, (expr) (r_evt->v));
+      bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
       //load->print( llvm::outs() ); std::cout << "\n";
       //addr->print( llvm::outs() );  std::cout << "\n";
+    }
+    else {
+	auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
+        bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
     }
   // } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
   } else if( llvm::isa<const llvm::AllocaInst>(addr) ) {
@@ -1022,18 +1030,26 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     storeToArrayHelper(bidx, store, val, idxs);
   } else if(auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
-    auto val_expr = bmc_ds_ptr->m.get_term( val );
-    auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
+    //auto val_expr = bmc_ds_ptr->m.get_term( val );
+    //auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
     if ( exists( bmc_obj.concurrent_vars, gv ) ) {
         // find(bmc_obj.concurrent_vars.begin(), bmc_obj.concurrent_vars.end(), addr) != bmc_obj.concurrent_vars.end() ) { //todo: add check if the grobal variable is truly global
-      create_write_event( bidx, store, addr );
+      auto w_evt = create_write_event( bidx, store, addr );
+      auto val_expr = bmc_ds_ptr->m.get_term( val );
+      auto glb_wrt = bmc_ds_ptr->m_model.write_con(bidx, store, val_expr, (expr) (w_evt->v));
+      bmc_ds_ptr->bmc_vec.push_back( glb_wrt.first );
+      bmc_ds_ptr->m.insert_term_map( store, bidx, glb_wrt.second );
       // todo: add constraints that two names are equal
       // However, read case is tricky.
       //store->print( llvm::outs() ); std::cout << "\n";
       //addr->print( llvm::outs() );  std::cout << "\n";
     }
+   else {
+    auto val_expr = bmc_ds_ptr->m.get_term( val );
+    auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
     bmc_ds_ptr->bmc_vec.push_back( glb_wrt.first );
     bmc_ds_ptr->m.insert_term_map( store, bidx, glb_wrt.second );
+   }
   } else if( llvm::isa<const llvm::AllocaInst>(addr) ||
              llvm::isa<const llvm::Argument>(addr) ) {
     exprs idxs;
