@@ -47,8 +47,7 @@ public:
    ~collect_globals();
 
   void collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b );
-  void insert_concurrent(bmc&, memory_cons&,
-                         solver_context&, options&);
+  void insert_events(bmc&, memory_cons&, solver_context&, options&);
 
 /*  unsigned add_thread( std::string str);*/
 /*  void CreateRdWrEvents(std::unique_ptr<llvm::Module>& m, bmc& b);*/

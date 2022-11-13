@@ -19,7 +19,7 @@ collect_globals::collect_globals( std::unique_ptr<llvm::Module>& m_,
                                   solver_context& solver_ctx__, options& o )
   : module(m_), b(b), mem_enc(mem_enc_), solver_ctx(solver_ctx__), o(o) {
   collect_globals_internal(module, b);
-  insert_concurrent(b, mem_enc, solver_ctx, o);
+  insert_events(b, mem_enc, solver_ctx, o);
   //CreateRdWrEvents(module, b);
 }
 
@@ -49,29 +49,12 @@ collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
             if( glb && !exists( list_gvars, glb ) )
               list_gvars.push_back(glb);
             if(glb) written.insert( glb );
-
-            // if( auto g = llvm::dyn_cast<llvm::GlobalVariable>( addr ) ) {
-            //   if (list_gvars.empty())
-            //     list_gvars.push_back(g);
-            //   else {
-            //     if (find(list_gvars.begin(), list_gvars.end(), g) == list_gvars.end())
-            //       list_gvars.push_back(g);
-            //   }
-            // }
           }else if( auto load = llvm::dyn_cast<llvm::LoadInst>(I) ) {
             addr = load->getOperand(0);
             auto glb = identify_global_in_addr( addr );
             if( glb && !exists( list_gvars, glb ) ) {
               list_gvars.push_back(glb);
             }
-            // if( auto g = llvm::dyn_cast<llvm::GlobalVariable>( addr ) ) {
-            //   if (list_gvars.empty())
-            //     list_gvars.push_back(g);
-            //   else {
-            //     if (find(list_gvars.begin(), list_gvars.end(), g) == list_gvars.end())
-            //       list_gvars.push_back(g);
-            //   }
-            // }
           }else if( auto rmw = llvm::dyn_cast<llvm::AtomicRMWInst>(I) ) {
             addr = rmw->getPointerOperand();
             auto glb = identify_global_in_addr( addr );
@@ -80,10 +63,6 @@ collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
             if(glb) written.insert( glb );
           }else {continue;}
         }
-        // auto pair = std::make_pair( f->getName().str() , list_gvars );
-        // fn_gvars_map.insert( pair );
-
-        // list_gvars.clear();
       }
     }
   }
@@ -106,7 +85,7 @@ collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
 
 
 
-void collect_globals::insert_concurrent( bmc& b, memory_cons& mem_enc,
+void collect_globals::insert_events( bmc& b, memory_cons& mem_enc,
                                   solver_context& solver_ctx, options& o )
 {
   me_set prev_events;
@@ -124,42 +103,42 @@ void collect_globals::insert_concurrent( bmc& b, memory_cons& mem_enc,
   for (unsigned k = 0; k < b.sys_spec.threads.size(); k++) {
     auto FnName1 = b.sys_spec.threads.at(k).entry_function;
     if( fn_gvars_map.find(FnName1) != fn_gvars_map.end() ) {
-     list_gvars = fn_gvars_map[FnName1];
-     for (auto i = fn_gvars_map.begin(); i != fn_gvars_map.end(); i++) {
-      if (i->first !=  FnName1) {
-        // for(unsigned j=0; j < list_gvars.size(); j++)
-        //   {
-        //     auto g1 = list_gvars.at(j);
-        for( auto g1 : list_gvars ) {
-            if (find(i->second.begin(), i->second.end(), g1) != i->second.end()) {
-	      const std::string gvar = (std::string)(g1->getName());
-	      llvm::Type* ty = g1->getType();
-	      if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
-	      auto el_ty = pty->getPointerElementType();
-      	      sort z_sort = llvm_to_sort( o, el_ty);
-	      b.edata.add_global( gvar, z_sort );
-	      b.edata.wr_events[ b.edata.get_global( gvar ) ].insert( start );
+      list_gvars = fn_gvars_map[FnName1];
+      for (auto i = fn_gvars_map.begin(); i != fn_gvars_map.end(); i++) {
+        if (i->first !=  FnName1) {
+          // for(unsigned j=0; j < list_gvars.size(); j++)
+          //   {
+          //     auto g1 = list_gvars.at(j);
+          for( auto g : list_gvars ) {
+            if( !exists( i->second, g) ) continue;
+            if( auto g1 = llvm::dyn_cast<llvm::GlobalVariable>(g) ) {
+            // if (find(i->second.begin(), i->second.end(), g1) != i->second.end()) {
+            const std::string gvar = (std::string)(g1->getName());
+            llvm::Type* ty = g1->getType();
+            if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
+              auto el_ty = pty->getPointerElementType();
+              sort z_sort = llvm_to_sort( o, el_ty);
+              b.edata.add_global( gvar, z_sort );
+              b.edata.wr_events[ b.edata.get_global( gvar ) ].insert( start );
 
-	      for( auto glb_idx_pair : b.m_model.ind_in_mem_state ) {
-	      auto g = glb_idx_pair.first;
-              auto idx = glb_idx_pair.second;
-              const std::string var_name = (std::string)(g->getName());
-              if (gvar == var_name) {
-		  variable tmp_v = b.edata.get_global( gvar )+"#pre" ;
+              for( auto glb_idx_pair : b.m_model.ind_in_mem_state ) {
+                auto g = glb_idx_pair.first;
+                auto idx = glb_idx_pair.second;
+                const std::string var_name = (std::string)(g->getName());
+                if (gvar == var_name) {
+                  variable tmp_v = b.edata.get_global( gvar )+"#pre" ;
                   b.m_model.store_state_map[0].mem_state_vec[idx].e = (expr) (tmp_v);
-		  //std::cout << "Name is " << to_string(tmp_v) << "\n";
-	       }
-	      }
-
-              if (b.concurrent_vars.empty()) {
-                b.concurrent_vars.push_back(g1);		
-		}
-              else {
-                if (find(b.concurrent_vars.begin(), b.concurrent_vars.end(), g1) == b.concurrent_vars.end()) {
-                  b.concurrent_vars.push_back(g1);
-		}
+                  //std::cout << "Name is " << to_string(tmp_v) << "\n";
+                }
               }
             }
+            // if (b.concurrent_vars.empty()) {
+            //   b.concurrent_vars.push_back(g1);
+            // }else{
+            //   if (find(b.concurrent_vars.begin(), b.concurrent_vars.end(), g1) == b.concurrent_vars.end()) {
+            //     b.concurrent_vars.push_back(g1);
+            //   }
+            // }
             }
           }
         }
