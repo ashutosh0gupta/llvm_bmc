@@ -6,7 +6,8 @@
 (declare-var @sb__y i16);
 (declare-var @sb__x i16);
 (declare-var @sb__s i16);
-(declare-var @sb__r i16); 
+(declare-var @sb__r i16);
+(declare-var x i16); 
 ;; -----------------------------------------
 ;; Declare thread P0
 ;; -----------------------------------------
@@ -24,5 +25,6 @@
 ;(pre-condition p1 (assert(and (= @sb__x #x0000) (= @sb__y #x0000))))
 (end-thread p1)
 
-(pre-condition all (assert(and (= @sb__x #x0000) (= @sb__y #x0000))))
+;(pre-condition all (assert (= x x)))
+;(pre-condition all (assert (and (= @sb__x #x0000) (= @sb__y #x0000))))
 (post-condition all (assert(or (= @sb__s #x0001) (= @sb__r #x0001))))
