@@ -126,7 +126,7 @@ void collect_globals::insert_events( bmc& b, memory_cons& mem_enc,
                 auto idx = glb_idx_pair.second;
                 const std::string var_name = (std::string)(g->getName());
                 if (gvar == var_name) {
-                  variable tmp_v = b.edata.get_global( gvar )+"#pre" ;
+                  variable tmp_v = b.edata.get_global( gvar )+"@pre" ;
                   b.m_model.store_state_map[0].mem_state_vec[idx].e = (expr) (tmp_v);
                   //std::cout << "Name is " << to_string(tmp_v) << "\n";
                 }

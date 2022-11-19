@@ -270,14 +270,14 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
 
   //position_name = e_t_name + "#" + (std::string) (prog_v -> getName()) + "#" + loc.position_name();
   //position_name = e_t_name + "#" + loc.position_name();  //To be modified later
-  position_name = e_t_name + "#" + prog_v.name + "#" + loc.position_name();
+  position_name = e_t_name + "@" + prog_v.name + "@" + loc.position_name();
 
   //v = v + (std::string)(prog_v->getName()) + "#" + (std::string)(loc_name);
-  v = prog_v + "#" + loc_name;
+  v = prog_v + "@" + loc_name;
 
-  v_copy = (et != event_t::u) ? v : v + "#update_wr";
+  v_copy = (et != event_t::u) ? v : v + "@update_wr";
 
-  std::string e_name = e_t_name + "#" + v.name;
+  std::string e_name = e_t_name + "@" + v.name;
   e_v    = create_internal_event( sol_ctx,            e_name,tid, 0, false);
   thin_v = create_internal_event(sol_ctx,"__thin__" +e_name,tid, 0, false);
   c11_hb_v=create_internal_event(sol_ctx,"__hb__"   +e_name,tid, 0, false);
@@ -310,9 +310,9 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
     loc_name = loc.gen_name();
   }
 
-  position_name = e_t_name + "#" + loc.position_name();
+  position_name = e_t_name + "@" + loc.position_name();
 
-  std::string e_name = e_t_name + "#" + loc_name;
+  std::string e_name = e_t_name + "@" + loc_name;
   e_v = create_internal_event    (sol_ctx,            e_name,tid,0,true);
   thin_v = create_internal_event (sol_ctx, "__thin__"+e_name,tid,0,true);
   c11_hb_v =create_internal_event(sol_ctx, "__hb__"  +e_name,tid,0,true);
@@ -326,7 +326,7 @@ expr memory_event::get_rd_expr( const variable& g ) {
     expr v_expr = (expr)(v);
     return v_expr;
   }
-  variable tmp_v = g+"#post";
+  variable tmp_v = g+"@post";
   return (expr)(tmp_v);
 }
 
@@ -339,8 +339,10 @@ expr memory_event::get_wr_expr( const variable& g ) {
   variable tmp_v(g.s.ctx());
   switch( et ) {
   // case event_t::barr: { tmp_v = g+"#barr";  break; }
-  case event_t::pre : { tmp_v = g+"#pre" ;  break; }
-  case event_t::post: { tmp_v = g+"#post";  break; }
+  //case event_t::pre : { tmp_v = g+"#pre" ;  break; }
+  //case event_t::post: { tmp_v = g+"#post";  break; }
+  case event_t::pre : { tmp_v = g+"@pre" ;  break; }
+  case event_t::post: { tmp_v = g+"@post";  break; }
   default: llvm_bmc_error( "memory_event", "unreachable code!!");
   }
   return (expr)(tmp_v);

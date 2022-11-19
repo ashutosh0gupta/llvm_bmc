@@ -118,7 +118,7 @@ void translate_specs::translatePostcond( bmc& b, bmc_ds* bmc_ds_ptr, solver_cont
           var_name = '@'+ var_name;
           //oldSize = var_name.length();
           init_name = to_string(mem_st[idx].e);
-          std::cout << "Init name is " << init_name << "\n";
+          //std::cout << "Init name is " << init_name << "\n";
 	 if (find(postcond_var_names.begin(), postcond_var_names.end(), init_name) == postcond_var_names.end()) {
           postcond_var_names.push_back(init_name);
           if (mem_st[idx].t.type.is_fpa()) {

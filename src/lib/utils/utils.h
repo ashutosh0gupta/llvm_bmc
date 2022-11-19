@@ -13,6 +13,7 @@
 #include <list>
 #include <unordered_set>
 #include <unordered_map>
+#include <algorithm>
 
 namespace llvm_bmc {
 class llvm_bmc_exception : public std::runtime_error
