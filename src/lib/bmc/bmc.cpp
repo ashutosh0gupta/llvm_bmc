@@ -224,7 +224,7 @@ memory_state bmc::populate_mem_state() {
 //   eliminate_vars( bmc_f, bmc_ds_ptr->quant_elim_vars, bmc_ds_ptr->bmc_vec );
 // }
 
-void bmc::check_all_spec( bmc_ds* bmc_ds_ptr, bmc& b ) {
+void bmc::check_all_spec( bmc_ds* bmc_ds_ptr ) {
   std::ostream& os = std::cout;
   for(spec s : bmc_ds_ptr->spec_vec) {
     if( o.verbosity > 3 ) {
@@ -232,34 +232,20 @@ void bmc::check_all_spec( bmc_ds* bmc_ds_ptr, bmc& b ) {
       s.print( os );
     }
     // expr prop = s.get_formula();
-    if( run_solver( s, bmc_ds_ptr, b) ) {
+    if( run_solver( s, bmc_ds_ptr) ) {
       return;
     } else { } // contine with other specifications
   }
   os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
 }
 
-bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr, bmc& b) {
+bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
   std::ostream& os = std::cout;
 
   // skipping specifications due to unreachable instructions
   if( !o.include_unreach_specs &&  spec.is_unreach() )
     return false;
  
-//  params p(o.solver_ctx);
-//  //p.set("mul2concat", true);
-//  tactic t = 
-//        tactic(o.solver_ctx, "simplify") &
-//        tactic(o.solver_ctx, "solve-eqs") &
-//        tactic(o.solver_ctx, "elim-term-ite") &
-//        tactic(o.solver_ctx, "fpa2bv");
-//        tactic(o.solver_ctx, "aig");
-//        /*tactic(o.solver_ctx, "bvarray2uf") &
-//	tactic(o.solver_ctx, "ctx_simplify") &
-//        tactic(o.solver_ctx, "psmt"); */
-//  solver s = t.mk_solver();
-  //z3::set_param("parallel.enable", true); 
-
   // setup solver
   solver s(o.solver_ctx);
 
@@ -270,14 +256,6 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr, bmc& b) {
 
   //add function encoding
   for(expr e : bmc_ds_ptr->bmc_vec) {
-    s.add(e);
-  }
-
-  //add constraints
-  for(expr e : b.edata.phi_po) {
-    s.add(e);
-  }
-  for(expr e : b.edata.phi_ses) {
     s.add(e);
   }
 
@@ -292,35 +270,6 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr, bmc& b) {
     dump( o.outDirPath.string(), "test.smt2", s);
     // std::cout << s;
   }
-  //
-
-  
-  // if( o.use_solver == "z3" ) {
-  //   // solving
-  //   auto result = s.check();
-  //   if( result == z3::sat ) {
-  //     model m = s.get_model();
-  //     //produce_witness(m, bmc_ds_ptr);
-  //     os << "\nSpecification that failed the check : \n";
-  //     spec.print( os );
-  //     os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
-  //   return true;
-  //   } else if( result == z3::unknown ){
-  //     os << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
-  //     return true;
-  //   }else {
-  //     return false;
-  //   }
-  // }else if( o.use_solver == "cvc5" ) {
-  //   // dump( o.outDirPath.string(), "test.smt2", s );
-  //   check_cvc5(s,o.outDirPath.string(),o.get_model);
-  //   // do some thing
-  // }else if( o.use_solver == "boolector" ) {
-  //   check_boolector(s,o.outDirPath.string(),o.get_model);
-  // }else{
-  //   llvm_bmc_error( "bmc", "no solver identified!!" );
-  //   return false;// dummy return
-  // }
 
   check_result result;
   Z3CompClass z3compObj;
@@ -368,6 +317,127 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr, bmc& b) {
   }
 
 }
+
+
+void bmc::check_all_spec_con( ) {
+  std::ostream& os = std::cout;
+  for( auto& it : func_formula_map ) {
+    for(spec s : it.second->spec_vec) {
+        if( run_solver_con( s ) ) {
+    	  return;
+        } else { } // contine with other specifications
+    }
+  }
+  os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
+}
+
+bool bmc::run_solver_con(spec &spec) {
+  std::ostream& os = std::cout;
+
+  // skipping specifications due to unreachable instructions
+  if( !o.include_unreach_specs &&  spec.is_unreach() )
+    return false;
+ 
+//  params p(o.solver_ctx);
+//  //p.set("mul2concat", true);
+//  tactic t = 
+//        tactic(o.solver_ctx, "simplify") &
+//        tactic(o.solver_ctx, "solve-eqs") &
+//        tactic(o.solver_ctx, "elim-term-ite") &
+//        tactic(o.solver_ctx, "fpa2bv");
+//        tactic(o.solver_ctx, "aig");
+//        /*tactic(o.solver_ctx, "bvarray2uf") &
+//	tactic(o.solver_ctx, "ctx_simplify") &
+//        tactic(o.solver_ctx, "psmt"); */
+//  solver s = t.mk_solver();
+  //z3::set_param("parallel.enable", true); 
+
+  // setup solver
+  solver s(o.solver_ctx);
+
+  // adding pre conditions
+ for( auto& it : func_formula_map ) {
+  for(auto& pre : it.second->pre_cond_vec) {
+    s.add( pre.get_formula() );
+  }
+ }
+
+  //add function encoding
+ for( auto& it : func_formula_map ) {
+  for(expr e : it.second->bmc_vec) {
+    s.add(e);
+  }
+ }
+
+  //add constraints
+  for(expr e : edata.phi_po) {
+    s.add(e);
+  }
+  for(expr e : edata.phi_ses) {
+    s.add(e);
+  }
+
+  //add assertion
+  s.add( !spec.get_formula() );
+
+  //
+  // todo: optimization other specs can be added as assume
+  //
+
+  if( o.dump_solver_query ) {
+    dump( o.outDirPath.string(), "test.smt2", s);
+    // std::cout << s;
+  }
+  //
+
+  check_result result;
+  Z3CompClass z3compObj;
+  if( o.use_solver == "z3" ) {
+    result = s.check();
+  }else if( o.use_solver == "cvc5" ) {
+    // dump( o.outDirPath.string(), "test.smt2", s );
+    result = z3compObj.check_cvc5( s, o.outDirPath.string(), o.get_solver_model );
+    // do some thing
+  }else if( o.use_solver == "boolector" ) {
+    result = z3compObj.check_boolector( s, o.outDirPath.string(), o.get_solver_model );
+  }else{
+    llvm_bmc_error( "bmc", "no solver identified!!" );
+    return false;// dummy return
+  }
+  if( result == z3::sat && o.witness == 1 ) {
+    model m(o.solver_ctx);
+    if( o.use_solver == "z3" ) {
+      m = s.get_model();
+    }else if( o.use_solver == "cvc5" ) {
+      m = z3compObj.get_cvc5_model();
+      os << "\nPrinting cvc5 model with witness\n";
+      os << m;
+    }else if( o.use_solver == "boolector" ) {
+      m = z3compObj.get_boolector_model();
+      os << "\nPrinting boolector model with witness\n";
+      os << m;
+    }else{
+      llvm_bmc_error( "bmc", "no solver identified!!" );
+    }
+    //produce_witness(m, bmc_ds_ptr);
+  }
+
+  // report if specification check is failed or not
+  if( result == z3::sat ) {
+    os << "\nSpecification that failed the check : \n";
+    spec.print( os );
+    os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
+    return true;
+  } else if( result == z3::unknown ){
+    os << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
+    return true;
+  }else {
+    return false;
+  }
+
+}
+
+
 
 
 bool bmc::is_file_exist(std::string fileName)

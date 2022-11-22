@@ -68,8 +68,11 @@ public:
   //-------------------------------------------
   // Checking Specs and Reporting results
   // void eliminate_vars(bmc_ds*);
-  void check_all_spec(bmc_ds*, bmc&);
-  bool run_solver(spec &, bmc_ds*, bmc&);
+  void check_all_spec(bmc_ds*);
+  bool run_solver(spec &, bmc_ds*);
+  void check_all_spec_con( );
+  bool run_solver_con(spec &);
+
   bool is_file_exist(std::string fileName);
 
   void produce_witness_call( model mdl, const llvm::CallInst* call );
