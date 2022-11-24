@@ -43,3 +43,5 @@ Testing
 ./llvmbmc -f "lookup__output_lookup" -b examples/AssemblyFiles/merged.s
 
 ./llvmbmc -b examples/AssemblyFiles/test-con2.s -s examples/AssemblyFiles/test-con1-spec.txt
+
+./llvmbmc --dump-solver-query -b examples/litmus/sb.s

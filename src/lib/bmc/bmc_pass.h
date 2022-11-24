@@ -98,23 +98,11 @@ public:
   void translateParams(llvm::Function &);
   void do_bmc();
 
-  void set_start_event( me_ptr e, expr cond ) {
-      start_event = e;
-      start_cond = cond;
-  }
+  // void set_start_event( me_ptr e, expr cond ) {
+  // }
 
-  void set_start_event( unsigned i, me_ptr e, expr cond ) {
-      set_start_event( e, cond );
-    }
-
-  void set_final_event( me_ptr e, expr cond ) {
-      final_event = e;
-      final_cond = cond;
-    }
-
-  void set_final_event( unsigned i, me_ptr e, expr cond ) {
-      set_final_event( e, cond );
-    }
+  void set_start_event( unsigned i, me_ptr e, expr cond );
+  void set_final_event( unsigned i, me_ptr e, expr cond );
 
   o_tag_t translate_ordering_tags( llvm::AtomicOrdering ord );
 

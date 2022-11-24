@@ -7,6 +7,7 @@ if [ "$#" -ne 4 ]; then
     exit 0
 fi
 
+echo "./llvmbmc --unwind $1 --context-bound $2 -k $3 -s $4"
 ./llvmbmc --unwind $1 --context-bound $2 -k $3 -s $4 > /dev/null 2>&1
 timeout 300s cbmc /tmp/cbmc_out.cpp --trace > /tmp/tr.tr 2>&1
 # ./scripts/clean-cmsb.py

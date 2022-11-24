@@ -832,6 +832,27 @@ void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
 //
 //-----------------------------------------
 
+void bmc_pass::set_start_event( unsigned i, me_ptr e, expr cond ) {
+  bmc_obj.edata.create_map[ bmc_obj.sys_spec.threads[i].name ] =
+    bmc_obj.edata.init_loc;
+  bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].start_event = e;
+  start_event = e;
+  start_cond = cond;
+  // set_start_event( e, cond );
+}
+
+  // void set_final_event( me_ptr e, expr cond ) {
+  // }
+
+void bmc_pass::set_final_event( unsigned i, me_ptr e, expr cond ) {
+  auto pr = std::make_pair(bmc_obj.edata.post_loc,cond);
+  bmc_obj.edata.join_map.insert( std::make_pair(bmc_obj.sys_spec.threads[i].name, pr));
+  bmc_obj.edata.ev_threads[i].final_event = e;
+  final_event = e;
+  final_cond = cond;
+  // set_final_event( e, cond );
+}
+
 o_tag_t bmc_pass::translate_ordering_tags( llvm::AtomicOrdering ord ) {
   switch( ord ) {
   case llvm::AtomicOrdering::NotAtomic: return o_tag_t::na; break;
@@ -1396,10 +1417,8 @@ void bmc_pass::do_bmc() {
                             history, loc, event_t::barr );
     set_start_event( thr_id, start, start_bit );
     prev_events = { start };
-    //bmc_obj.all_events.insert( start );
-    bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].start_event = start;
-    for( unsigned t = 0; t < bmc_obj.sys_spec.threads.size(); t++ ) bmc_obj.edata.create_map[ bmc_obj.sys_spec.threads[t].name ] = start;
-
+    for( unsigned t = 0; t < bmc_obj.sys_spec.threads.size(); t++ )
+      bmc_obj.edata.create_map[ bmc_obj.sys_spec.threads[t].name ] = start;
   }
 
   // init_array_model( bmc_ds_ptr->bb_vec, bmc_ds_ptr->eb );
@@ -1467,8 +1486,6 @@ void bmc_pass::do_bmc() {
     auto final = mk_me_ptr( o.mem_enc, thr_id, final_prev_events, exit_cond,
                             history_exprs, floc, event_t::barr );
     set_final_event( thr_id, final, exit_cond );
-    //bmc_obj.all_events.insert( final );
-    bmc_obj.edata. ev_threads[bmc_ds_ptr->thread_id].final_event = final;
  }
 
 }

@@ -5,14 +5,16 @@ pldi19=examples/kbound/pldi19-benchmark
 k=10
 l=1
 n=2
-ex=01-tl-btlock
+ex=02-slc-spinlock
+# ex=01-tl-btlock
+spec=01-tl-btlock
 ns=(2 3 4 5 6)
 # kinds=("unsafe" "safe")
 
 # ns=(2)
 # kinds=("unsafe")
-# kinds=("safe")
-kinds=("opt-unsafe")
+kinds=("safe")
+# kinds=("opt-unsafe")
 # ns=(2)
 
 #$kind=unsafe
@@ -22,7 +24,7 @@ echo -e "Name\t\tKind\tN K  L Result Time"
 for kind in ${kinds[@]}; do
     for n in ${ns[@]}; do
         echo -n -e "$ex\t$kind\t$n $k $l "
-        time $run $l $k $pldi19/$ex-$kind.cpp $pldi19/$ex-$n.spec
+        time $run $l $k $pldi19/$ex-$kind.cpp $pldi19/$spec-$n.spec
     done
 done
 

@@ -22,9 +22,6 @@ private:
   unsigned current_indent;
   unsigned ncontext = 10;
   unsigned active_lax = 0;
-  unsigned num_globals = 0;
-  std::map<const llvm::Value*, unsigned> global_position;
-  std::map<const llvm::Value*, unsigned> global_size;
   std::string thread_name, EntryFn;
 
   svec reg_vals,reg_list;
@@ -32,22 +29,32 @@ private:
   svec time_list, proc_list, ctx_list;
   svec var_list;
 
+  unsigned num_globals = 0;
+  std::map<const void*, unsigned> global_position;
+  std::map<const void*, unsigned> global_size;
+  std::map<const void*, std::string> global_name;
   unsigned ssa_count = 0;
-  std::map<const llvm::Value*, std::string> ssa_name;
+  std::map<const void*, std::string> ssa_name;
+  std::map<const void*, svec> ctrl_dep_ord;
+  // std::map<const llvm::Value*, std::string> ssa_name;
+  // std::map<const llvm::Value*, svec> ctrl_dep_ord;
   std::vector<std::string> unmapped_names;
-  std::map<const llvm::BasicBlock*, std::string> path_name;
-  std::map<const llvm::Value*, svec> ctrl_dep_ord;
+  // std::map<const llvm::BasicBlock*, std::string> path_name;
   svec in_code_spec;
 
   std::string time_name( std::string name );
   std::string fresh_name();
-  std::string read_const( const llvm::Value* v );
-  void add_reg_map( const llvm::Value*, std::string );
-  std::string add_reg_map( const llvm::Value* );
-  std::string get_reg( const llvm::Value* );
+  void        add_reg_map   ( const void*, std::string );
+  std::string add_reg_map   ( const void* );
+  std::string get_reg       ( const void* );
+  std::string get_reg_time  ( const void* );
+  std::string get_global_idx( const void* );
+
+  std::string read_const  ( const llvm::Value* );
+  std::string add_reg_map ( const llvm::Value* );
+  std::string get_reg     ( const llvm::Value* );
   std::string get_reg_time( const llvm::Value* );
-  std::string get_global_idx( const llvm::GlobalVariable* v);
-  std::string get_path( unsigned bidx );
+
   std::string block_name(unsigned bidx);
   void dump_Params(llvm::Function &f);
 
