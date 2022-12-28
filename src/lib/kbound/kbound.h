@@ -9,6 +9,11 @@
 
 class bmc;       // forward declaration of the bmc class
 
+struct names {
+  std::map<std::string,names> nmap;
+  std::string name;
+};
+
 typedef std::vector<std::string> svec;
 
 class kbound : public bmc_pass, public llvm::FunctionPass{
@@ -33,8 +38,15 @@ private:
   std::map<const void*, unsigned> global_position;
   std::map<const void*, unsigned> global_size;
   std::map<const void*, std::string> global_name;
+
+  unsigned num_local_globals = 0; // Number of variables that are locally used
+  std::map<const void*, unsigned   > local_global_position;
+  std::map<const void*, unsigned   > local_global_size;
+  std::map<const void*, std::string> local_global_name;
+
   unsigned ssa_count = 0;
   std::map<const void*, std::string> ssa_name;
+  std::map<const void*, names> ssa_name_full;
   std::map<const void*, svec> ctrl_dep_ord;
   // std::map<const llvm::Value*, std::string> ssa_name;
   // std::map<const llvm::Value*, svec> ctrl_dep_ord;
@@ -45,15 +57,24 @@ private:
   std::string time_name( std::string name );
   std::string fresh_name();
   void        add_reg_map   ( const void*, std::string );
+  void        add_reg_map   ( const void*, svec&, std::string);
+  std::string add_reg_map   ( const void*, svec& );
   std::string add_reg_map   ( const void* );
   std::string get_reg       ( const void* );
+  std::string get_reg       ( const void* v, svec& idxs );
   std::string get_reg_time  ( const void* );
+  std::string get_reg_time  ( const void*, svec& idxs );
   std::string get_global_idx( const void* );
-
+  std::string get_global_idx( const void*, std::string );
+  
+  bool is_concurrent( const void* v);
+  
   std::string read_const  ( const llvm::Value* );
   std::string add_reg_map ( const llvm::Value* );
   std::string get_reg     ( const llvm::Value* );
+  std::string get_reg     ( const llvm::Value* , svec idxs );
   std::string get_reg_time( const llvm::Value* );
+  std::string get_reg_time( const llvm::Value* , svec idxs );
 
   std::string block_name(unsigned bidx);
   void dump_Params(llvm::Function &f);
@@ -65,7 +86,8 @@ private:
   void dump_Goto(std::string s);
   void dump_Comment(std::string s);
   void dump_Assume (std::string s);
-  void dump_Assume_geq(std::string s1,std::string s2);
+  void dump_Assume_eq ( std::string s1, std::string s2 );
+  void dump_Assume_geq( std::string s1, std::string s2 );
   void dump_Assume_geq_max(std::string s1,std::string s2,std::string s3);
   void dump_Assign (std::string r, std::string term);
   void dump_Decl_assign(std::string r, std::string term);
@@ -102,6 +124,7 @@ private:
 
   std::string get_GEPOperator(const llvm::GEPOperator* gep);
 
+  void dump_AllocaInst( const llvm::AllocaInst* alloc );
   void dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop);
   void dump_CmpInst    ( unsigned bidx, const llvm::CmpInst* cmp);
 
@@ -119,14 +142,19 @@ private:
   void dump_StoreInst( unsigned bidx, const llvm::StoreInst* store );
   void dump_GetElementPtrInst(const llvm::GetElementPtrInst* gep);
   void dump_AtomicRMWInst( const llvm::AtomicRMWInst* rmw );
-
+  void dump_AtomicCmpXchgInst( const llvm::AtomicCmpXchgInst* xng );
+  void dump_ExtractValue( const llvm::ExtractValueInst* eval);
   void dump_geq_globals( std::string c, std::string prop );
   void dump_dmbsy();
   void dump_dmbld();
   void dump_dmbst();
   void dump_isb();
 
-  void addr_name( const llvm::Value* addr, std::string& , std::string& );
+  void addr_name( const llvm::Value* addr, std::string& , std::string&,
+                  bool isLocalUse = false );
+
+  void addr_local_name( const llvm::Value* addr,
+                        std::string& gid, std::string& caddr);
 
   void dump_ST_(unsigned bidx, const llvm::CallInst* cmp,bool,bool);
   void dump_LD_(unsigned bidx, const llvm::CallInst* cmp,bool,bool);

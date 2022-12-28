@@ -313,7 +313,7 @@ array_model_full::array_read( unsigned bidx, const llvm::LoadInst* I,
   // temp_vec.push_back(lower_bound_arr);
   // temp_vec.push_back(upper_bound_arr);
   // expr bound_guard = _and(temp_vec);
-    // expr bound_guard(idx >= 0);//to be commented
+  // expr bound_guard(idx >= 0);//to be commented
 
   return arr_read_expr( select( ar_name, idxs), bound_guard );
 }
