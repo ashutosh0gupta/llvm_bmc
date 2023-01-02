@@ -439,14 +439,27 @@ void ses::ppo() {
 
 void ses::min_maj() {
     auto& thr1 = b_obj.edata.get_thread(0);
-    auto& thr2 = b_obj.edata.get_thread(1);
+    auto& thr2 = b_obj.edata.get_thread(1); //todo: read from config; never hard code
     if ((thr1.name == "major") && (thr2.name == "minor")) {
-	for( auto e : thr1.events ) {
-//std::cout << "major event is " << *e << "\n";
-	   expr mnmj_ord1 = mem_enc.mk_hbs( thr2.final_event, e );
-           po = po && z3::implies( thr2.final_event->guard, e->guard && mnmj_ord1 );
-  	   expr mnmj_ord2 = mem_enc.mk_hbs( e ,thr2.start_event );
-           po = po && z3::implies( e->guard, thr2.start_event->guard && mnmj_ord2 );
+      for( auto e : thr1.events ) { // e is from low priority
+        //std::cout << "major event is " << *e << "\n";
+
+        //todo: remove this
+        expr mnmj_ord1 = mem_enc.mk_hbs( thr2.final_event, e );
+        expr mnmj_ord2 = mem_enc.mk_hbs( e ,thr2.start_event );
+        po = po && ( z3::implies( thr2.final_event->guard && e->guard, mnmj_ord1 ) ||
+                     z3::implies( e->guard && thr2.start_event->guard, mnmj_ord2 ));
+
+        //todo: enable this
+        // active_intervals = [(start1,end1),......,(start25,end25)]
+        // for( auto act_pair : thr2.active_intervals ) {
+        //   auto start = act_pair.first;
+        //   auto end = act_pair.second;
+        //   expr mnmj_ord1 = mem_enc.mk_hbs( e , start );
+        //   expr mnmj_ord2 = mem_enc.mk_hbs( end, e    );
+        //   po = po && ( z3::implies( start->guard && e->guard, mnmj_ord1 ) ||
+        //                z3::implies( e->guard && end->guard, mnmj_ord2 ) );
+        // }
       }
    }
 }

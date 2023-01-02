@@ -307,6 +307,7 @@ void kbound::dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop) {
   case llvm::Instruction::Add : dump_Assign( ro, r1 +" + "+ r2); break;
   case llvm::Instruction::Sub : dump_Assign( ro, r1 +" - "+ r2); break;
   case llvm::Instruction::Mul : dump_Assign( ro, r1 +" * "+ r2); break;
+  case llvm::Instruction::URem: dump_Assign( ro, r1 +" % "+ r2); break;
   default: {
     const char* opName = bop->getOpcodeName();
     llvm_bmc_error("kbound", "unsupported instruction \"" << opName << "\" occurred!!");
@@ -372,22 +373,79 @@ void kbound::dump_IntrinsicInst( unsigned bidx,
   }
 }
 
+std::string kbound::get_GEPOperator(const llvm::GEPOperator* gep) {
+  assert( gep );
+  gep->dump();
+  std::string index;
+  std::string scale = "1";
+  // assert( gep->getNumIndices() <= 3); //Confirm if correct
+  unsigned i= gep->getNumOperands() == 2 ? 1 : 2;
+  for( ; i < gep->getNumOperands(); i++ ) {
+    auto idx = get_reg( gep->getOperand(i) );
+    if(idx != "0" ) index = '+' + idx + "*" + scale + index;
+  }
+  auto op_gep_ptr = gep->getPointerOperand();
+  auto gid = get_reg(op_gep_ptr);
+  return gid + index;
+}
+
+void kbound::dump_GetElementPtrInst( const llvm::GetElementPtrInst* gep) {
+  bool isLocalUse;
+  dump_GetElementPtrInst( gep, isLocalUse );
+}
+
+void kbound::dump_GetElementPtrInst( const llvm::GetElementPtrInst* gep,
+                                     bool& isLocalUse ) {
+  assert( gep );
+
+  //check if there is recursive access
+  auto op_gep_ptr = gep->getPointerOperand();
+  std::string gid, cgid;
+  addr_name( op_gep_ptr, gid, cgid, isLocalUse );
+  // auto gid = get_reg(op_gep_ptr);
+  // auto cgid = get_reg_time(op_gep_ptr);
+
+  auto o  = add_reg_map( gep );
+  auto co = get_reg_time( gep );
+  svec cidxs;
+  std::string index;
+  std::string scale = "1";
+  assert( gep->getNumIndices() <= 3); //Confirm if correct
+  unsigned i= gep->getNumOperands() == 2 ? 1 : 2;
+  for( ; i < gep->getNumOperands(); i++ ) {
+    auto idx = gep->getOperand(i);
+    auto idx_str = get_reg( idx );
+    if(idx_str != "0" ) index = '+' + idx_str + "*" + scale + index;
+    auto cidx =  get_reg_time( idx );
+    if( cidx != "0" ) cidxs.push_back( cidx );
+  }
+
+  dump_Assign( o, gid + index );
+  dump_Assume_geq( co, cgid );
+  for( auto cidx : cidxs) dump_Assume_geq( co, cidx );
+  dump_Active( co ); // todo: do we need it?
+}
+
+void kbound::addr_name( const llvm::Value* addr,
+                        std::string& gid, std::string& caddr) {
+  bool isLocalUse;
+  addr_name( addr, gid, caddr, isLocalUse );
+}
+
 void kbound::addr_name( const llvm::Value* addr,
                         std::string& gid, std::string& caddr,
-                        bool isLocalUse ) {
+                        bool& isLocalUse ) {
+  assert(addr);
+  // addr->dump();
+  
+  // We detect local use
   // jump over casting
-  assert( !isLocalUse );
   while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
     addr = bcast->getOperand(0);
   }
   if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
-    if( isLocalUse ) {
-      gid = add_reg_map(gv);
-      caddr = "0";//in dynamic addressing this will change
-    } else {
-      gid = get_global_idx(gv);
-      caddr = "0"; //get_reg_time(gv);
-    }
+    gid = get_global_idx(gv);
+    caddr = "0";//in dynamic addressing this will change
     return;
   } else if( auto gop = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
     gid = get_reg( gop );
@@ -418,11 +476,14 @@ void kbound::addr_name( const llvm::Value* addr,
 }
 
 
-void kbound::addr_local_name( const llvm::Value* addr,
-                              std::string& gid, std::string& caddr) {
-  addr_name( addr, gid, caddr, true);
-}
+// void kbound::addr_local_name( const llvm::Value* addr,
+//                               std::string& gid, std::string& caddr) {
+//   addr_name( addr, gid, caddr, true);
+// }
 
+void kbound::dump_FenceInst( const llvm::FenceInst* rmw ) {
+  
+}
 
 void kbound::dump_AtomicRMWInst( const llvm::AtomicRMWInst* rmw ) {
   //get address id
@@ -644,22 +705,6 @@ void kbound::dump_AllocaInst( const llvm::AllocaInst* alloc ) {
 //   }
 //   assert(false);
 // }
-
-std::string kbound::get_GEPOperator(const llvm::GEPOperator* gep) {
-  assert( gep );
-
-  std::string index;
-  std::string scale = "1";
-  assert( gep->getNumIndices() <= 3); //Confirm if correct
-  unsigned i= gep->getNumOperands() == 2 ? 1 : 2;
-  for( ; i < gep->getNumOperands(); i++ ) {
-    auto idx = get_reg( gep->getOperand(i) );
-    if( idx != "0" ) index = " + " + idx + "*" + scale + index;
-  }
-  auto op_gep_ptr = gep->getPointerOperand();
-  auto gid = get_reg(op_gep_ptr);
-  return gid + index;
-}
 
 
 // void kbound::get_global_id( llvm::Value* addr,
@@ -885,28 +930,7 @@ void kbound::dump_Branch( unsigned bidx, const llvm::BranchInst* br ) {
 }
 
 
-void kbound::dump_GetElementPtrInst(const llvm::GetElementPtrInst* gep) {
-  assert( gep );
-  auto o  = add_reg_map( gep );
-  auto co = get_reg_time( gep );
 
-  std::string index, cindex;
-  std::string scale = "1";
-  assert( gep->getNumIndices() <= 3); //Confirm if correct
-  unsigned i= gep->getNumOperands() == 2 ? 1 : 2;
-  for( ; i < gep->getNumOperands(); i++ ) {
-    auto idx = gep->getOperand(i);
-    index = get_reg( idx );
-    cindex = get_reg_time( idx );
-  }
-  auto op_gep_ptr = gep->getPointerOperand();
-  auto gid = get_reg(op_gep_ptr);
-  auto cgid = get_reg_time(op_gep_ptr);
-
-  dump_Assign( o, gid + "+"+ index+"*"+ scale );
-  dump_Assign_max( co, cgid, cindex );
-  dump_Active( co ); // todo: do we need it?
-}
 
 void kbound::dump_Block( unsigned bidx, const bb* b ) {
   assert( b );
@@ -935,6 +959,8 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
     } else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(I) ) {
       dump_GetElementPtrInst( gep );
       // Terminator instructions
+    } else if( auto fence = llvm::dyn_cast<llvm::FenceInst>(I) ) {
+      dump_FenceInst( fence );
     } else if( auto br = llvm::dyn_cast<llvm::BranchInst>(I) ) {
       dump_Branch( bidx, br );
     } else if( auto ret = llvm::dyn_cast<llvm::ReturnInst>(I) ) {
@@ -964,7 +990,7 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
       KBOUND_UNSUPPORTED_INSTRUCTIONS( FuncletPadInst,     I);
       // todo: cases for funclet CleanupPadInst, CatchPadInst
       KBOUND_UNSUPPORTED_INSTRUCTIONS( BinaryOperator,     I);
-      KBOUND_UNSUPPORTED_INSTRUCTIONS( FenceInst,          I);
+      // KBOUND_UNSUPPORTED_INSTRUCTIONS( FenceInst,          I);
       // KBOUND_UNSUPPORTED_INSTRUCTIONS( AtomicCmpXchgInst,  I);
       // KBOUND_UNSUPPORTED_INSTRUCTIONS( AtomicRMWInst,      I);
       // KBOUND_UNSUPPORTED_INSTRUCTIONS( SelectInst,         I);

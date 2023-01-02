@@ -140,9 +140,11 @@ private:
   void dump_CastInst ( unsigned bidx, const llvm::CastInst* I );
   void dump_LoadInst ( unsigned bidx, const llvm::LoadInst* load );
   void dump_StoreInst( unsigned bidx, const llvm::StoreInst* store );
+  void dump_GetElementPtrInst(const llvm::GetElementPtrInst* gep, bool&);
   void dump_GetElementPtrInst(const llvm::GetElementPtrInst* gep);
   void dump_AtomicRMWInst( const llvm::AtomicRMWInst* rmw );
   void dump_AtomicCmpXchgInst( const llvm::AtomicCmpXchgInst* xng );
+  void dump_FenceInst( const llvm::FenceInst* xng );
   void dump_ExtractValue( const llvm::ExtractValueInst* eval);
   void dump_geq_globals( std::string c, std::string prop );
   void dump_dmbsy();
@@ -151,7 +153,9 @@ private:
   void dump_isb();
 
   void addr_name( const llvm::Value* addr, std::string& , std::string&,
-                  bool isLocalUse = false );
+                  bool& isLocalUse );
+
+  void addr_name( const llvm::Value* addr, std::string& , std::string&);
 
   void addr_local_name( const llvm::Value* addr,
                         std::string& gid, std::string& caddr);
