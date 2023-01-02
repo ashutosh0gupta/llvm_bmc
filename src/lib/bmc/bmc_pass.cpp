@@ -514,7 +514,7 @@ void bmc_pass::translateCallInst( unsigned bidx,
     assume_to_bmc( bidx, call);
   } else if( is_nondet(call) ) {
     translateNondet( bidx, call);
-  } else if( fp != NULL && fp->getName() == "fabsf" ) { 
+  } else if( fp != NULL && (( fp->getName() == "fabsf" ) || (fp->getName() == "fabs" ))) { 
     auto arg = fp->getArg(0);
     expr AbsArg = bmc_ds_ptr->m.get_term( arg );
     bmc_ds_ptr->m.insert_term_map( call, bidx, AbsArg );
@@ -1183,12 +1183,20 @@ void bmc_pass::translateInvokeInst( unsigned bidx,
   // auto normal = invoke->getNormalDest();
   // auto landing = invoke->getUnwindDest();
 
+//std::string name = fp->getName().str();
+//std::cout << "Invoked fn is " << name << "\n";
+
   if( (fp != NULL) &&
       ((fp->getName() == "__gnat_rcheck_CE_Index_Check") ||
        (fp->getName() == "__gnat_rcheck_CE_Overflow_Check") )) {
     //Do nothing - throws exception
     // unwind is the second bit in the exit bits??
     bmc_ds_ptr->bmc_vec.push_back( exit_bits[1] );
+  } else if( fp != NULL && fp->getName().startswith("ada__numerics__elementary_functions")) { 
+// To be decided - what to do
+    auto arg = fp->getArg(0);
+    expr NumArg = bmc_ds_ptr->m.get_term( arg );
+    bmc_ds_ptr->m.insert_term_map( invoke, bidx, NumArg );
   } else {
     llvm_bmc_error("bmc", "invoke is not recognized !!");
   }

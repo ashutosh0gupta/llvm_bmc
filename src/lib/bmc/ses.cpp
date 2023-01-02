@@ -432,7 +432,23 @@ void ses::ppo() {
       po = po && z3::implies( thr.final_event->guard, join_guard && join_order);
     }
   }
+  min_maj();
   po = po.simplify();
+}
+
+
+void ses::min_maj() {
+    auto& thr1 = b_obj.edata.get_thread(0);
+    auto& thr2 = b_obj.edata.get_thread(1);
+    if ((thr1.name == "major") && (thr2.name == "minor")) {
+	for( auto e : thr1.events ) {
+//std::cout << "major event is " << *e << "\n";
+	   expr mnmj_ord1 = mem_enc.mk_hbs( thr2.final_event, e );
+           po = po && z3::implies( thr2.final_event->guard, e->guard && mnmj_ord1 );
+  	   expr mnmj_ord2 = mem_enc.mk_hbs( e ,thr2.start_event );
+           po = po && z3::implies( e->guard, thr2.start_event->guard && mnmj_ord2 );
+      }
+   }
 }
 
 

@@ -39,6 +39,7 @@ class ses {
     void ppo_sc ( const thread_events& thread );
     bool check_ppo( const me_ptr&, const me_ptr& );
     void ppo();
+    void min_maj();
 
     // void wmm_test_ppo(); // TODO: remove when confident
 
