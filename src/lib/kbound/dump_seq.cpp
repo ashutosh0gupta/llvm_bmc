@@ -3,10 +3,30 @@
 //----------------------------------------------------------------------------
 // Functions for recording names
 
-std::string kbound::get_global_idx( const void* v) {
-  unsigned gid = global_position.at(v);
-  return std::to_string(gid);
+bool kbound::is_concurrent( const void* v) {
+  return exists( global_position, v );
 }
+
+
+std::string kbound::get_global_idx( const void* v ) {
+  if( is_concurrent(v) ) {
+    unsigned gid = global_position.at(v);
+    return std::to_string(gid);
+  } else {
+    return ""; //dummy return
+    // assert( exists( local_global_position, v ) );
+    // unsigned gid = local_global_position.at(v);
+    // return std::to_string(gid);
+  }
+}
+
+std::string kbound::get_global_idx( const void* v, std::string offset ) {
+  assert( exists( global_position, v ) );
+  unsigned gid = global_position.at(v);
+  return std::to_string(gid) + "+" + offset;
+}
+
+//----------------------------------------------------------------------------
 
 std::string kbound::fresh_name() {
   auto name = "r"+std::to_string(ssa_count);
@@ -15,40 +35,143 @@ std::string kbound::fresh_name() {
   return name;
 }
 
-std::string kbound::get_reg( const void* v) {
-  if( exists( ssa_name, v) ) {
-    return ssa_name.at(v);
+//----------------------------------------------------------------------------
+
+// std::string kbound::get_reg( const void* v ) {
+//   if( exists( ssa_name, v) ) {
+//     return ssa_name.at(v);
+//   }
+//   return "";
+// }
+
+// void kbound::add_reg_map( const void* v, std::string name) {
+//   ssa_name[v] = name;
+// }
+
+// std::string kbound::add_reg_map( const void* v) {
+//   if( ssa_name.find(v) != ssa_name.end() ) return ssa_name.at(v);
+//   auto fname = fresh_name();
+//   add_reg_map(v, fname );
+//   return get_reg(v);
+// }
+
+// std::string kbound::get_reg_time( const void* v) {
+//   auto name = ssa_name.at(v);
+//   if( name[0] != 'r' ) {
+//     auto vec = ctrl_dep_ord.at(v);
+//     if( vec.size() == 0 ) return "0";
+//     if( vec.size() == 1 ) return vec[0];
+//     if( vec.size() == 2 ) return "max("+vec[0]+","+vec[1]+")";
+//     assert(false);
+//   }
+//   return time_name( ssa_name.at(v) );
+// }
+
+//---------------------------------------------------------------------------
+
+std::string kbound::time_name( std::string name ) {
+  return "creg_"+name;
+}
+
+std::string access_name( names& ns,
+                         svec& idxs, unsigned pos ) {
+  if( idxs.size() > pos ) {
+    auto& idx = idxs[pos];
+    auto& np = ns.nmap;
+    if( exists(np, idx) ){
+      auto& names_p = np.at( idx );
+      return access_name( names_p, idxs, pos+1 );
+    }
+    return "";
+    // llvm_bmc_error("kbound", "Bad access of name map");
+  }
+  return ns.name;
+}
+
+names access_names( names& ns, svec& idxs, unsigned pos ) {
+  if( idxs.size() > pos ) {
+    auto& idx = idxs[pos];
+    auto& np = ns.nmap;
+    if( exists(np, idx) ){
+      auto& names_p = np.at( idx );
+      return access_names( names_p, idxs, pos+1 );
+    }
+    llvm_bmc_error("kbound", "Bad access of name map");
+    names dummy;
+    return dummy;
+  }
+  return ns;
+}
+
+void add_access_name( names& ns,
+                      svec& idxs, unsigned pos, std::string name ) {
+  if( idxs.size() > pos ) {
+    auto& idx = idxs[pos];
+    auto& nm = ns.nmap[idx];
+    add_access_name( nm, idxs, pos+1, name );
+  }
+  ns.name = name;
+}
+
+std::string kbound::get_reg( const void* v, svec& idxs ) {
+  if( exists( ssa_name_full, v) ) {
+    auto& nm = ssa_name_full.at(v);
+    return access_name(nm, idxs, 0 );
   }
   return "";
 }
 
-void kbound::add_reg_map( const void* v, std::string name) {
-  // v->print( llvm::outs() );std::cout<< "\n";
-  ssa_name[v] = name;
+void kbound::add_reg_map( const void* v, svec& idxs, std::string name) {
+  auto& nm = ssa_name_full[v];
+  add_access_name( nm, idxs, 0, name );
 }
 
-std::string kbound::add_reg_map( const void* v) {
-  if( ssa_name.find(v) != ssa_name.end() ) return ssa_name.at(v);
-  auto fname = fresh_name();
-  add_reg_map(v, fname );
-  return get_reg(v);
+void kbound::add_reg_map( const void* v, std::string name ) {
+  svec idxs;
+  return add_reg_map( v, idxs, name );
 }
 
-std::string kbound::get_reg_time( const void* v) {
-  auto name = ssa_name.at(v);
+std::string kbound::add_reg_map( const void* v, svec& idxs) {
+  auto name = get_reg(v, idxs);
+  if( name == "" ) {
+    auto fname = fresh_name();
+    add_reg_map( v, idxs, fname );
+    return fname;
+  }
+  return name;
+}
+
+std::string kbound::add_reg_map( const void* v ) {
+  svec idxs;
+  return add_reg_map( v, idxs );
+}
+
+std::string kbound::get_reg( const void* v ) {
+  svec idxs;
+  return get_reg( v, idxs );
+}
+
+std::string kbound::get_reg_time( const void* v, svec& idxs) {
+  auto name = get_reg( v, idxs);
   if( name[0] != 'r' ) {
+    assert( idxs.size() == 0 );
     auto vec = ctrl_dep_ord.at(v);
     if( vec.size() == 0 ) return "0";
     if( vec.size() == 1 ) return vec[0];
     if( vec.size() == 2 ) return "max("+vec[0]+","+vec[1]+")";
     assert(false);
   }
-  return time_name( ssa_name.at(v) );
+  return time_name( name );
 }
 
-std::string kbound::time_name( std::string name ) {
-  return "creg_"+name;
+std::string kbound::get_reg_time( const void* v) {
+  svec idxs;
+  return get_reg_time( v, idxs );
 }
+//---------------------------------------------------------------------------
+
+
+
 
 //----------------------------------------------------------------------------
 // Dumping sequencial encoding of the concurrent progam in a file
@@ -73,6 +196,12 @@ std::string kbound::block_name(unsigned bidx) {
 }
 
 void kbound::dump_Assume(std::string s) { dump_String("ASSUME("+s+");"); }
+
+void kbound::dump_Assume_eq(std::string s1,std::string s2) {
+  if (s1 == s2) return;
+  dump_Assume( s1 + " == "+ s2 );
+}
+
 void kbound::dump_Assume_geq(std::string s1,std::string s2) {
   if (s1 == s2) return;
   dump_Assume( s1 + " >= "+ s2 );
