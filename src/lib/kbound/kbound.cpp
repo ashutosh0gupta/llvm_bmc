@@ -485,6 +485,8 @@ void kbound::dump_FenceInst( const llvm::FenceInst* fence ) {
   auto ord = fence->getOrdering();
   if( ord == llvm::AtomicOrdering::SequentiallyConsistent) {
     dump_dmbsy();
+  }else{
+    llvm_bmc_error( "knound", "Other fences not implemented" );
   }
 }
 
