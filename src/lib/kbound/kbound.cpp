@@ -481,8 +481,11 @@ void kbound::addr_name( const llvm::Value* addr,
 //   addr_name( addr, gid, caddr, true);
 // }
 
-void kbound::dump_FenceInst( const llvm::FenceInst* rmw ) {
-  
+void kbound::dump_FenceInst( const llvm::FenceInst* fence ) {
+  auto ord = fence->getOrdering();
+  if( ord == llvm::AtomicOrdering::SequentiallyConsistent) {
+    dump_dmbsy();
+  }
 }
 
 void kbound::dump_AtomicRMWInst( const llvm::AtomicRMWInst* rmw ) {
