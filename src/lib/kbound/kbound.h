@@ -144,7 +144,7 @@ private:
   void dump_GetElementPtrInst(const llvm::GetElementPtrInst* gep);
   void dump_AtomicRMWInst( const llvm::AtomicRMWInst* rmw );
   void dump_AtomicCmpXchgInst( const llvm::AtomicCmpXchgInst* xng );
-  void dump_FenceInst( const llvm::FenceInst* xng );
+  void dump_FenceInst( const llvm::FenceInst* fence );
   void dump_ExtractValue( const llvm::ExtractValueInst* eval);
   void dump_geq_globals( std::string c, std::string prop );
   void dump_dmbsy();
