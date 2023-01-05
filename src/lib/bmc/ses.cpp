@@ -445,21 +445,22 @@ void ses::min_maj() {
         //std::cout << "major event is " << *e << "\n";
 
         //todo: remove this
-        expr mnmj_ord1 = mem_enc.mk_hbs( thr2.final_event, e );
-        expr mnmj_ord2 = mem_enc.mk_hbs( e ,thr2.start_event );
-        po = po && ( z3::implies( thr2.final_event->guard && e->guard, mnmj_ord1 ) ||
-                     z3::implies( e->guard && thr2.start_event->guard, mnmj_ord2 ));
+//        expr mnmj_ord1 = mem_enc.mk_hbs( thr2.final_event, e );
+//        expr mnmj_ord2 = mem_enc.mk_hbs( e ,thr2.start_event );
+//        po = po && ( z3::implies( thr2.final_event->guard && e->guard, mnmj_ord1 ) ||
+//                     z3::implies( e->guard && thr2.start_event->guard, mnmj_ord2 ));
 
         //todo: enable this
         // active_intervals = [(start1,end1),......,(start25,end25)]
-        // for( auto act_pair : thr2.active_intervals ) {
-        //   auto start = act_pair.first;
-        //   auto end = act_pair.second;
-        //   expr mnmj_ord1 = mem_enc.mk_hbs( e , start );
-        //   expr mnmj_ord2 = mem_enc.mk_hbs( end, e    );
-        //   po = po && ( z3::implies( start->guard && e->guard, mnmj_ord1 ) ||
-        //                z3::implies( e->guard && end->guard, mnmj_ord2 ) );
-        // }
+	for (auto i = thr2.active_intervals.begin(); i != thr2.active_intervals.end(); i++) {
+           auto act_pair = i->second;
+           auto start = act_pair.first;
+           auto end = act_pair.second;
+           expr mnmj_ord1 = mem_enc.mk_hbs( e , start );
+           expr mnmj_ord2 = mem_enc.mk_hbs( end, e    );
+           po = po && ( z3::implies( start->guard && e->guard, mnmj_ord1 ) ||
+                        z3::implies( e->guard && end->guard, mnmj_ord2 ) );
+         }
       }
    }
 }
