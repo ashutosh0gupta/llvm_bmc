@@ -59,13 +59,13 @@ __attribute__((always_inline)) inline int64_t Queue::get_is_initialized() {
 }
 
 __attribute__((always_inline)) inline Node* Queue::find_tail() {
-  Node* node = this->tail.load(std::memory_order_relaxed);
+  Node* node = this->tail.load(std::memory_order_acquire);
   Node* next = node->next.load(std::memory_order_relaxed);
 
   if (next == nullptr)
     return node;
 
-  this->tail.store(next, std::memory_order_relaxed);
+  this->tail.store(next, std::memory_order_release);
   return nullptr;
 }
 
@@ -88,21 +88,21 @@ int64_t Queue::try_enq(Allocator<Node, n> &allocator, int64_t data) {
 
   Node* v = nullptr;
   if (tail->next.compare_exchange_strong(v, node, std::memory_order_release)) {
-    this->tail.store(node, std::memory_order_relaxed);
+    this->tail.store(node, std::memory_order_release);
     return 0;
   }
-  
+
   return -2; // CAVEAT: memory leak
 }
 
 __attribute__((always_inline)) inline int64_t Queue::try_deq(int64_t& data) {
-  Node* head = (Node *) this->head.load(std::memory_order_relaxed);
-  Node* node = (Node *) head->next.load(std::memory_order_relaxed);
+  Node* head = (Node *) this->head.load(std::memory_order_acquire);
+  Node* node = (Node *) head->next.load(std::memory_order_acquire);
 
   if (node == nullptr)
     return -1;
 
-  if (this->head.compare_exchange_strong(head, node, std::memory_order_relaxed)) {
+  if (this->head.compare_exchange_strong(head, node, std::memory_order_release)) {
     data = node->data;
     return 0; // CAVEAT: memory leak
   }
@@ -110,7 +110,27 @@ __attribute__((always_inline)) inline int64_t Queue::try_deq(int64_t& data) {
   return -2;
 }
 
-void thread0(Queue& q, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2, int64_t X3, int64_t& result1, int64_t& result2, int64_t& result3) {
+Queue q;
+Allocator<Node, 10> allocator;
+int64_t result1, result2, result3;
+int64_t result4, result5, result6;
+int64_t result7, result8, result9;
+
+#define X1 2
+#define X2 2
+#define X3 3
+
+#define X4 2
+#define X5 2
+#define X6 3
+
+#define X7 2
+#define X8 2
+#define X9 3
+
+// int64_t X1, int64_t X2, int64_t X3,
+
+void thread0() {
   int64_t count(1);
   int64_t data;
   int64_t res;
@@ -144,7 +164,7 @@ void thread0(Queue& q, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2, i
   result3 = res;
 }
 
-void thread1(Queue& q, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2, int64_t X3, int64_t& result1, int64_t& result2, int64_t& result3) {
+void thread1() {
   int64_t count(1);
   int64_t data;
   int64_t res;
@@ -153,33 +173,33 @@ void thread1(Queue& q, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2, i
     return;
 
   res = 0;
-  for (int64_t i = 0; i < X1; i++) {
+  for (int64_t i = 0; i < X4; i++) {
     if (q.try_enq(allocator, count) >= 0) {
       res += count;
       count *= 2;
     }
   }
-  result1 = res;
+  result4 = res;
 
   res = 0;
-  for (int64_t i = 0; i < X2; i++) {
+  for (int64_t i = 0; i < X5; i++) {
     if (q.try_deq(data) >= 0) {
       res += data;
     }
   }
-  result2 = res;
+  result5 = res;
 
   res = 0;
-  for (int64_t i = 0; i < X3; i++) {
+  for (int64_t i = 0; i < X6; i++) {
     if (q.try_enq(allocator, count) >= 0) {
       res += count;
       count *= 2;
     }
   }
-  result3 = res;
+  result6 = res;
 }
 
-void thread2(Queue& q, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2, int64_t X3, int64_t& result1, int64_t& result2, int64_t& result3) {
+void thread2() {
   int64_t count(1);
   int64_t data;
   int64_t res;
@@ -188,28 +208,28 @@ void thread2(Queue& q, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2, i
     return;
 
   res = 0;
-  for (int64_t i = 0; i < X1; i++) {
+  for (int64_t i = 0; i < X7; i++) {
     if (q.try_enq(allocator, count) >= 0) {
       res += count;
       count *= 2;
     }
   }
-  result1 = res;
+  result7 = res;
 
   res = 0;
-  for (int64_t i = 0; i < X2; i++) {
+  for (int64_t i = 0; i < X8; i++) {
     if (q.try_deq(data) >= 0) {
       res += data;
     }
   }
-  result2 = res;
+  result8 = res;
 
   res = 0;
-  for (int64_t i = 0; i < X3; i++) {
+  for (int64_t i = 0; i < X9; i++) {
     if (q.try_enq(allocator, count) >= 0) {
       res += count;
       count *= 2;
     }
   }
-  result3 = res;
+  result9 = res;
 }

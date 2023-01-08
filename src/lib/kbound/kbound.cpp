@@ -112,6 +112,14 @@ std::string kbound::read_const( const llvm::Value* v ) {
   if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(v) ) {
     return get_global_idx(gv);
   }
+  if( auto cexpr = llvm::dyn_cast<const llvm::ConstantExpr>(v) ) {
+    if( cexpr->getType()->isPointerTy() ) {
+      std::string gid, cgid;
+      bool isLocalUse;
+      addr_name( cexpr, gid, cgid, isLocalUse );
+      return gid;
+    }
+  }
   return read_const_str( o, v );
 }
 
@@ -124,7 +132,7 @@ std::string kbound::get_reg( const llvm::Value* v) {
   // return get_reg( (const void* )v);
 }
 
-std::string kbound::get_reg( const llvm::Value* v, svec idxs ) {
+std::string kbound::get_reg( const llvm::Value* v, svec& idxs ) {
   auto s = read_const(v);
   if( s != "" ) {
     assert( idxs.size() == 0 );
@@ -133,7 +141,7 @@ std::string kbound::get_reg( const llvm::Value* v, svec idxs ) {
   return get_reg( (const void* )v, idxs );
 }
 
-std::string kbound::get_reg_time( const llvm::Value* v, svec idxs) {
+std::string kbound::get_reg_time( const llvm::Value* v, svec& idxs) {
   auto s = read_const(v);
   if( s != "" ) {
     assert( idxs.size() == 0 );
@@ -375,7 +383,6 @@ void kbound::dump_IntrinsicInst( unsigned bidx,
 
 std::string kbound::get_GEPOperator(const llvm::GEPOperator* gep) {
   assert( gep );
-  gep->dump();
   std::string index;
   std::string scale = "1";
   // assert( gep->getNumIndices() <= 3); //Confirm if correct
@@ -436,8 +443,15 @@ void kbound::addr_name( const llvm::Value* addr,
                         std::string& gid, std::string& caddr,
                         bool& isLocalUse ) {
   assert(addr);
-  // addr->dump();
-  
+  if( auto cexpr = llvm::dyn_cast<llvm::ConstantExpr>(addr) ) {
+    if( cexpr->getOpcode() == llvm::Instruction::BitCast ) {
+      addr = cexpr->getOperand(0);
+      addr_name( addr, gid, caddr, isLocalUse );
+      return;
+    }
+    // auto cistr = cexpr->getAsInstruction();
+    // return addr_name( cistr, gid, caddr, isLocalUse );
+  }
   // We detect local use
   // jump over casting
   while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
@@ -449,6 +463,7 @@ void kbound::addr_name( const llvm::Value* addr,
     return;
   } else if( auto gop = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
     gid = get_reg( gop );
+    assert( gid != "");
     caddr = get_reg_time( gop );
     return;
   } else if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
@@ -461,6 +476,7 @@ void kbound::addr_name( const llvm::Value* addr,
   } else if( llvm::isa<const llvm::Argument>(addr) ) {
     assert(false);
   } else if( llvm::isa<llvm::Constant>(addr) ) {
+    addr->dump();
     llvm_bmc_error("kbound", "constant access to the memory!");
   }
 
@@ -899,23 +915,99 @@ void kbound::dump_PhiNodes( const bb* b, const bb* prev_b ) {
   }
 }
 
+void kbound::dump_SelectInst( const llvm::SelectInst *sel ) {
+  assert( sel );
+  auto cond = sel->getCondition();
+  auto tval = sel->getTrueValue();
+  auto fval = sel->getFalseValue();
+
+  auto ro = add_reg_map( sel );
+  auto rc = get_reg( cond );
+  auto rt = get_reg( tval );
+  auto rf = get_reg( fval );
+
+  auto cro = get_reg_time( sel  );
+  auto crc = get_reg_time( cond );
+  auto crt = get_reg_time( tval );
+  auto crf = get_reg_time( fval );
+
+  dump_If( rc );
+  dump_Assign( ro, rt);
+  dump_Assign_max( cro, crc, crt );
+  dump_Else();
+  dump_Assign( ro, rf);
+  dump_Assign_max( cro, crc, crf );
+  dump_Close_scope();
+
+}
+
+void kbound::dump_SwitchInst( unsigned bidx,
+                              const llvm::SwitchInst *swch ) {
+  assert( swch );
+
+  auto cond = swch->getCondition();
+  dump_Comment( "Switch statement");
+  //dumping control ordring
+  auto ctrl = "ctrl["+tid+"]";
+  dump_Assign("old_ctrl", ctrl);
+  dump_Assign_rand_ctx( ctrl );
+  dump_Assume_geq( ctrl, "old_ctrl" );
+  if( exists( ctrl_dep_ord, (const void *)cond ) ) {
+    for( auto& dep : ctrl_dep_ord.at(cond) ) {
+      dump_Assume_geq( "ctrl["+tid+"]", dep);
+    }
+  }else{
+    auto cr = get_reg_time( cond );
+    dump_Assume_geq( "ctrl["+tid+"]", cr );
+  }
+
+
+  // dumping jump
+  auto r = get_reg( cond );
+  for( unsigned i = 1; i < swch->getNumSuccessors(); i++ ) {
+    auto val = get_reg( swch->getOperand(2*i) );
+    if (i == 1) {
+      dump_If( r + " == " + val );
+    }else{
+      dump_ElseIf( r + " == " + val );
+    }
+    auto succ = swch->getSuccessor(i);
+    auto succ_bidx =bmc_ds_ptr->find_block_idx( succ );
+    dump_PhiNodes( succ, bmc_ds_ptr->bb_vec[bidx] );
+    dump_Goto( block_name(succ_bidx) );
+  }
+  dump_Else();
+  auto succ = swch->getSuccessor(0);
+  auto succ_bidx = bmc_ds_ptr->find_block_idx( succ );
+  dump_PhiNodes( succ, bmc_ds_ptr->bb_vec[bidx] );
+  dump_Goto( block_name(succ_bidx) );
+  dump_Close_scope();
+
+}
+
+
 void kbound::dump_Branch( unsigned bidx, const llvm::BranchInst* br ) {
   assert( br );
 
   if( !br->isUnconditional() ) {
+    auto cond = br->getCondition();
+
+    //dumping control ordring
     auto ctrl = "ctrl["+tid+"]";
     dump_Assign("old_ctrl", ctrl);
     dump_Assign_rand_ctx( ctrl );
     dump_Assume_geq( ctrl, "old_ctrl" );
-    auto r = get_reg( br->getCondition() );
-    if( exists( ctrl_dep_ord, (const void *)br->getCondition() ) ) {
-      for( auto& dep : ctrl_dep_ord.at(br->getCondition()) ) {
+    if( exists( ctrl_dep_ord, (const void *)cond ) ) {
+      for( auto& dep : ctrl_dep_ord.at(cond) ) {
         dump_Assume_geq( "ctrl["+tid+"]", dep);
       }
     }else{
-      auto cr = get_reg_time( br->getCondition() );
+      auto cr = get_reg_time( cond );
       dump_Assume_geq( "ctrl["+tid+"]", cr );
     }
+
+    // dumping jump
+    auto r = get_reg( br->getCondition() );
     dump_If( r );
     auto succ_bidx = bmc_ds_ptr->find_block_idx( br->getSuccessor(0) );
     dump_PhiNodes( br->getSuccessor(0), bmc_ds_ptr->bb_vec[bidx] );
@@ -934,6 +1026,12 @@ void kbound::dump_Branch( unsigned bidx, const llvm::BranchInst* br ) {
   }
 }
 
+void kbound::dump_UnreachableInst( unsigned bidx,
+                                   const llvm::UnreachableInst *I) {
+  auto r = add_reg_map( I );
+  dump_Assign( r, "1" );
+  in_code_spec.push_back( r + "== 0" );
+}
 
 
 
@@ -970,12 +1068,12 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
       dump_Branch( bidx, br );
     } else if( auto ret = llvm::dyn_cast<llvm::ReturnInst>(I) ) {
       dump_RetInst( ret );
-    // } else if( auto swch = llvm::dyn_cast<llvm::SwitchInst>(I) ) {
-    //   dump_SwitchInst(bidx, swch);
-    // } else if( auto sel = llvm::dyn_cast<llvm::SelectInst>(I) ) {
-    //   dump_SelectInst(bidx, sel);
-    // } else if( auto unreach = llvm::dyn_cast<llvm::UnreachableInst>(I) ) {
-    //   dump_UnreachableInst(bidx, unreach);
+    } else if( auto swch = llvm::dyn_cast<llvm::SwitchInst>(I) ) {
+      dump_SwitchInst(bidx, swch);
+    } else if( auto sel = llvm::dyn_cast<llvm::SelectInst>(I) ) {
+      dump_SelectInst(sel);
+    } else if( auto unreach = llvm::dyn_cast<llvm::UnreachableInst>(I) ) {
+      dump_UnreachableInst(bidx, unreach);
     // } else if( auto lpad = llvm::dyn_cast<llvm::LandingPadInst>(I) ) {
     //   dump_LandingPadInst(bidx, lpad);
     // } else if( auto invoke = llvm::dyn_cast<llvm::InvokeInst>(I) ) {

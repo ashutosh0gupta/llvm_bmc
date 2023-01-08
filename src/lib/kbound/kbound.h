@@ -72,9 +72,9 @@ private:
   std::string read_const  ( const llvm::Value* );
   std::string add_reg_map ( const llvm::Value* );
   std::string get_reg     ( const llvm::Value* );
-  std::string get_reg     ( const llvm::Value* , svec idxs );
+  std::string get_reg     ( const llvm::Value* , svec& idxs );
   std::string get_reg_time( const llvm::Value* );
-  std::string get_reg_time( const llvm::Value* , svec idxs );
+  std::string get_reg_time( const llvm::Value* , svec& idxs );
 
   std::string block_name(unsigned bidx);
   void dump_Params(llvm::Function &f);
@@ -86,6 +86,7 @@ private:
   void dump_Goto(std::string s);
   void dump_Comment(std::string s);
   void dump_Assume (std::string s);
+  void dump_Assert (std::string s);
   void dump_Assume_eq ( std::string s1, std::string s2 );
   void dump_Assume_geq( std::string s1, std::string s2 );
   void dump_Assume_geq_max(std::string s1,std::string s2,std::string s3);
@@ -104,6 +105,7 @@ private:
   void dump_For        (std::string, std::string, std::string);
   void dump_For(std::string, std::string, std::string, std::string);
   void dump_If(std::string);
+  void dump_ElseIf(std::string);
   void dump_Else();
   void dump_Close_scope();
   void dump_locals();
@@ -127,7 +129,8 @@ private:
   void dump_AllocaInst( const llvm::AllocaInst* alloc );
   void dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop);
   void dump_CmpInst    ( unsigned bidx, const llvm::CmpInst* cmp);
-
+  void dump_SelectInst( const llvm::SelectInst *sel );
+  
   void dump_CallInst( unsigned bidx, const llvm::CallInst* call);
 
   void dump_Active( std::string ctx);
@@ -167,6 +170,8 @@ private:
   void dump_PhiNode( unsigned bidx, const llvm::PHINode* phi );
   void dump_RetInst(const llvm::ReturnInst *ret );
   void dump_Branch( unsigned bidx, const llvm::BranchInst* br );
+  void dump_SwitchInst( unsigned bidx, const llvm::SwitchInst* br );
+  void dump_UnreachableInst( unsigned, const llvm::UnreachableInst *I);
 
   void dump_Thread();
   void dump_Block( unsigned bidx, const bb* b );

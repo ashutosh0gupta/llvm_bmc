@@ -197,6 +197,8 @@ std::string kbound::block_name(unsigned bidx) {
 
 void kbound::dump_Assume(std::string s) { dump_String("ASSUME("+s+");"); }
 
+void kbound::dump_Assert(std::string s) { dump_String("ASSERT("+s+");"); }
+
 void kbound::dump_Assume_eq(std::string s1,std::string s2) {
   if (s1 == s2) return;
   dump_Assume( s1 + " == "+ s2 );
@@ -281,6 +283,12 @@ dump_For(std::string type, std::string v, std::string s, std::string b) {
 
 void kbound::dump_If(std::string s) {
   dump_String( "if("+ s + ") {" );
+  current_indent++;
+}
+
+void kbound::dump_ElseIf(std::string s) {
+  current_indent--;
+  dump_String( "} else if("+ s + ") {" );
   current_indent++;
 }
 

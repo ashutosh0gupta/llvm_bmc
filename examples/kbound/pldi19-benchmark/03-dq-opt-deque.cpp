@@ -78,11 +78,21 @@ __attribute__((always_inline)) inline int64_t Deque::try_steal(int64_t N, int64_
   return (is_successful ? 0 : -2); // success or lost
 }
 
-void thread0(Deque& que, int64_t N, int64_t X1, int64_t X2, int64_t X3, int64_t& result1, int64_t& result2, int64_t& result3) {
+Deque que;
+int64_t N;
+#define X  3
+#define X1 2
+#define X2 2
+#define X3 3
+// int64_t X, X1, X2, X3;
+int64_t result1, result2, result3;
+int64_t result4, result5, result6;
+
+void thread0() {
   int64_t count(1);
   int64_t data;
   int64_t res;
-  
+
   res = 0;
   for (int64_t i = 0; i < X1; ++i) {
     if (que.try_push(N, count) >= 0) {
@@ -110,7 +120,7 @@ void thread0(Deque& que, int64_t N, int64_t X1, int64_t X2, int64_t X3, int64_t&
   result3 = res;
 }
 
-void thread1(Deque& que, int64_t N, int64_t X, int64_t& result) {
+void thread1() {
   int64_t data;
   int64_t res = 0;
   for (int64_t i = 0; i < X; ++i) {
@@ -118,10 +128,10 @@ void thread1(Deque& que, int64_t N, int64_t X, int64_t& result) {
       res += data;
     }
   }
-  result = res;
+  result4 = res;
 }
 
-void thread2(Deque& que, int64_t N, int64_t X, int64_t& result) {
+void thread2() {
   int64_t data;
   int64_t res = 0;
   for (int64_t i = 0; i < X; ++i) {
@@ -129,5 +139,5 @@ void thread2(Deque& que, int64_t N, int64_t X, int64_t& result) {
       res += data;
     }
   }
-  result = res;
+  result5 = res;
 }
