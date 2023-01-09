@@ -438,29 +438,31 @@ void ses::ppo() {
 
 
 void ses::min_maj() {
-    auto& thr1 = b_obj.edata.get_thread(0);
-    auto& thr2 = b_obj.edata.get_thread(1); //todo: read from config; never hard code
-    if ((thr1.name == "major") && (thr2.name == "minor")) {
-      for( auto e : thr1.events ) { // e is from low priority
-        //std::cout << "major event is " << *e << "\n";
-
-        //todo: remove this
-//        expr mnmj_ord1 = mem_enc.mk_hbs( thr2.final_event, e );
-//        expr mnmj_ord2 = mem_enc.mk_hbs( e ,thr2.start_event );
-//        po = po && ( z3::implies( thr2.final_event->guard && e->guard, mnmj_ord1 ) ||
-//                     z3::implies( e->guard && thr2.start_event->guard, mnmj_ord2 ));
-
-        //todo: enable this
-        // active_intervals = [(start1,end1),......,(start25,end25)]
-	for (auto i = thr2.active_intervals.begin(); i != thr2.active_intervals.end(); i++) {
-           auto act_pair = i->second;
-           auto start = act_pair.first;
-           auto end = act_pair.second;
-           expr mnmj_ord1 = mem_enc.mk_hbs( e , start );
-           expr mnmj_ord2 = mem_enc.mk_hbs( end, e    );
-           po = po && ( z3::implies( start->guard && e->guard, mnmj_ord1 ) ||
-                        z3::implies( e->guard && end->guard, mnmj_ord2 ) );
-         }
+    //auto& thr1 = b_obj.edata.get_thread(0);
+    //auto& thr2 = b_obj.edata.get_thread(1); //todo: read from config; never hard code
+    //if ((thr1.name == "major") && (thr2.name == "minor")) {
+    unsigned j = 0;
+    for (;j < b_obj.sys_spec.threads.size(); j++) {
+      unsigned t_id1 = b_obj.sys_spec.threads.at(j).thread_num;
+      auto& thr1 = b_obj.edata.get_thread(t_id1);
+      unsigned t_pr1 = b_obj.sys_spec.threads.at(j).priority;
+      for( auto e : thr1.events ) { //e - events of lower priority thread
+	for (unsigned l=0; l < b_obj.sys_spec.threads.size(); l++) {
+	      unsigned t_id2 = b_obj.sys_spec.threads.at(l).thread_num;
+	      auto& thr2 = b_obj.edata.get_thread(t_id2);
+	      unsigned t_pr2 = b_obj.sys_spec.threads.at(l).priority; 
+	      if (t_pr2 < t_pr1) { //thr2 has higher priority than thr1
+	       for (auto i = thr2.active_intervals.begin(); i != thr2.active_intervals.end(); i++) {
+        	auto act_pair = i->second;
+	        auto start = act_pair.first;
+        	auto end = act_pair.second;
+	        expr ord1 = mem_enc.mk_hbs( e , start );
+        	expr ord2 = mem_enc.mk_hbs( end, e    );
+	        po = po && ( z3::implies( start->guard && e->guard, ord1 ) ||
+                z3::implies( e->guard && end->guard, ord2 ) );
+         	}
+	    }
+	 }
       }
    }
 }
