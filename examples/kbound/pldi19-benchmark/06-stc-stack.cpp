@@ -64,8 +64,26 @@ __attribute__((always_inline)) inline int64_t Stack::try_pop(int64_t& data) {
   return (is_successful ? 0 : -2); // CAVEAT: memory leak if successful
 }
 
-void thread0(Stack& s, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2,
-    int64_t X3, int64_t& result1, int64_t& result2, int64_t& result3) {
+
+Stack s;
+Allocator<Node, 10> allocator;
+int64_t result1, result2, result3;
+int64_t result4, result5, result6;
+int64_t result7, result8, result9;
+
+#define X1 2
+#define X2 2
+#define X3 3
+
+#define X4 2
+#define X5 2
+#define X6 3
+
+#define X7 2
+#define X8 2
+#define X9 3
+
+void thread0() {
   int64_t count(1);
   int64_t data;
   int64_t res;
@@ -97,8 +115,7 @@ void thread0(Stack& s, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2,
   result3 = res;
 }
 
-void thread1(Stack& s, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2,
-    int64_t X3, int64_t& result1, int64_t& result2, int64_t& result3) {
+void thread1() {
   int64_t count(1);
   int64_t data;
   int64_t res;
@@ -110,7 +127,7 @@ void thread1(Stack& s, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2,
       count *= 2;
     }
   }
-  result1 = res;
+  result4 = res;
 
   res = 0;
   for (int64_t i = 0; i < X2; i++) {
@@ -118,7 +135,7 @@ void thread1(Stack& s, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2,
       res += data;
     }
   }
-  result2 = res;
+  result5 = res;
 
   res = 0;
   for (int64_t i = 0; i < X3; i++) {
@@ -127,11 +144,10 @@ void thread1(Stack& s, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2,
       count *= 2;
     }
   }
-  result3 = res;
+  result6 = res;
 }
 
-void thread2(Stack& s, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2,
-    int64_t X3, int64_t& result1, int64_t& result2, int64_t& result3) {
+void thread2() {
   int64_t count(1);
   int64_t data;
   int64_t res;
@@ -143,7 +159,7 @@ void thread2(Stack& s, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2,
       count *= 2;
     }
   }
-  result1 = res;
+  result7 = res;
 
   res = 0;
   for (int64_t i = 0; i < X2; i++) {
@@ -151,7 +167,7 @@ void thread2(Stack& s, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2,
       res += data;
     }
   }
-  result2 = res;
+  result8 = res;
 
   res = 0;
   for (int64_t i = 0; i < X3; i++) {
@@ -160,5 +176,5 @@ void thread2(Stack& s, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2,
       count *= 2;
     }
   }
-  result3 = res;
+  result9 = res;
 }

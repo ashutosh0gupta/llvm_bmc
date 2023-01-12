@@ -54,6 +54,7 @@ private:
   // std::map<const llvm::BasicBlock*, std::string> path_name;
   svec in_code_spec;
 
+  
   std::string time_name( std::string name );
   std::string fresh_name();
   void        add_reg_map   ( const void*, std::string );
@@ -118,6 +119,8 @@ private:
 
   void dump_ld( std::string, std::string, std::string, std::string,bool,bool);
   void dump_st( std::string, std::string, std::string, std::string,bool,bool);
+
+  unsigned get_word_size(const llvm::Value* v );
 
   //---------------------------------------------------------------------
 

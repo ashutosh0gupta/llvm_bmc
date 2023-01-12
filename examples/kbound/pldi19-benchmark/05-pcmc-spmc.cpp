@@ -14,6 +14,7 @@ public:
   int64_t try_cons(int64_t N, int64_t& data); // -1 if empty, -2 if lost
 };
 
+
 inline int64_t Queue::try_prod(int64_t N, int64_t data) {
   int64_t w = this->wi.load(std::memory_order_relaxed);
   int64_t r = this->ri.load(std::memory_order_acquire);
@@ -46,36 +47,45 @@ inline int64_t Queue::try_cons(int64_t N, int64_t& data) {
   }
 }
 
-void thread0(int64_t N, int64_t X, Queue& que, int64_t& result) {
+Queue que;
+int64_t result1, result2, result3;
+
+#define N 2
+#define X1 2
+#define X2 2
+#define X3 2
+
+
+void thread0() {
   int64_t count(1);
   int64_t res = 0;
-  for (int64_t i = 0; i < X; ++i) {
+  for (int64_t i = 0; i < X1; ++i) {
     if (que.try_prod(N, count) >= 0) {
       res += count;
       count *= 2;
     }
   }
-  result = res;
+  result1 = res;
 }
 
-void thread1(int64_t N, int64_t X, Queue& que, int64_t& result) {
+void thread1() {
   int64_t data;
   int64_t res = 0;
-  for (int64_t i = 0; i < X; ++i) {
+  for (int64_t i = 0; i < X2; ++i) {
     if (que.try_cons(N, data) >= 0) {
       res += data;
     }
   }
-  result = res;
+  result2 = res;
 }
 
-void thread2(int64_t N, int64_t X, Queue& que, int64_t& result) {
+void thread2() {
   int64_t data;
   int64_t res = 0;
-  for (int64_t i = 0; i < X; ++i) {
+  for (int64_t i = 0; i < X3; ++i) {
     if (que.try_cons(N, data) >= 0) {
       res += data;
     }
   }
-  result = res;
+  result3 = res;
 }

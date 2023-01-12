@@ -71,7 +71,7 @@ collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
     for (auto fpair2 : fn_gvars_map) {
       if( fpair1.first == fpair2.first ) continue;
       for( auto g : glist1 ) {
-        if( !exists( fpair2.second, g ) ) continue;
+        // if( !exists( fpair2.second, g ) ) continue;
         //if( !exists( written, g) ) continue;
         if( auto g1 = llvm::dyn_cast<llvm::GlobalVariable>(g) ) {
           if( !exists(b.concurrent_vars, g1) ) {

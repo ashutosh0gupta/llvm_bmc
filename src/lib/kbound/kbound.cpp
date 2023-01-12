@@ -1,5 +1,6 @@
 #include "lib/kbound/kbound.h"
 #include "include/bmc.h"
+#include "llvm/IR/DataLayout.h"
 
 #define KBOUND_UNSUPPORTED_INSTRUCTIONS( InstTYPE, Inst )               \
   if(llvm::isa<llvm::InstTYPE>(Inst) ) {                                \
@@ -13,14 +14,21 @@ typedef std::vector<std::string> svec;
 
 char kbound::ID = 0;
 
-unsigned get_word_size(const llvm::Value* v ) {
+unsigned kbound::get_word_size(const llvm::Value* v ) {
+  auto dl = new llvm::DataLayout(module.get());
   auto typ = v->getType();
+  if( typ->isPointerTy() ) {
+    typ = typ->getPointerElementType();
+  }
   if( typ->isSized() ) {
-    auto bitSize = typ->getScalarSizeInBits();
+    auto size = dl->getTypeAllocSizeInBits(typ);
+    auto bitSize = size.getFixedSize();
+    // auto bitSize = typ->getScalarSizeInBits();
     unsigned wsize = bitSize/64;
     if( bitSize % 64 != 0 ) {
       wsize += 1;
     }
+    // std::cout << wsize << "\n";
     return wsize;// Divide by 64
   }else{
     llvm_bmc_error("kbound", "size of global variable is unkown!");
@@ -316,6 +324,7 @@ void kbound::dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop) {
   case llvm::Instruction::Sub : dump_Assign( ro, r1 +" - "+ r2); break;
   case llvm::Instruction::Mul : dump_Assign( ro, r1 +" * "+ r2); break;
   case llvm::Instruction::URem: dump_Assign( ro, r1 +" % "+ r2); break;
+  case llvm::Instruction::SRem: dump_Assign( ro, r1 +" % "+ r2); break;
   default: {
     const char* opName = bop->getOpcodeName();
     llvm_bmc_error("kbound", "unsupported instruction \"" << opName << "\" occurred!!");
@@ -762,6 +771,7 @@ void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
   if( gid != "" ) { // Read variable is global, but used locally.
     dump_ld( r, creg, caddr, gid, is_acquire( ord ), false);
   }else{
+    load->dump();
     llvm_bmc_error("kbound", "we need to support local global optimization!!");
     // addr_local_name( addr, gid, caddr );
     // dump_Assign(    r, gid    );

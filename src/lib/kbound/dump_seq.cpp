@@ -184,10 +184,12 @@ void kbound::dump_String(std::string s) {
 }
 
 void kbound::dump_Label(std::string s) {
+  assert( s != "" );
   ofcpp << "T"<< tid <<"BLOCK" << s << ":\n";
 }
 
 void kbound::dump_Goto(std::string s) {
+  assert( s != "" );
   dump_String( "goto " + s + ";");
 }
 
@@ -195,37 +197,58 @@ std::string kbound::block_name(unsigned bidx) {
   return "T"+tid+"BLOCK"+std::to_string(bidx);
 }
 
-void kbound::dump_Assume(std::string s) { dump_String("ASSUME("+s+");"); }
+void kbound::dump_Assume(std::string s) {
+  assert( s != "" );
+  dump_String("ASSUME("+s+");");
+}
 
-void kbound::dump_Assert(std::string s) { dump_String("ASSERT("+s+");"); }
+void kbound::dump_Assert(std::string s) {
+  assert( s != "" );
+  dump_String("ASSERT("+s+");");
+}
 
 void kbound::dump_Assume_eq(std::string s1,std::string s2) {
+  assert( s1 != "" );
+  assert( s2 != "" );
   if (s1 == s2) return;
   dump_Assume( s1 + " == "+ s2 );
 }
 
 void kbound::dump_Assume_geq(std::string s1,std::string s2) {
+  assert( s1 != "" );
+  assert( s2 != "" );
   if (s1 == s2) return;
   dump_Assume( s1 + " >= "+ s2 );
 }
 
 void kbound::dump_Assume_geq_max(std::string s1,std::string s2,std::string s3) {
+  assert( s1 != "" );
+  assert( s2 != "" );
+  assert( s2 != "" );
   dump_Assume_geq( s1 ,"max("+ s2 +","+ s3 + ")" );
 }
 
 void kbound::dump_Assign(std::string r, std::string term) {
+  assert(    r != "" );
+  assert( term != "" );
   dump_String( r + " = "+ term + ";" );
 }
 
 void kbound::dump_Decl_assign(std::string r, std::string term) {
+  assert(    r != "" );
   dump_Assign( "int " + r, term );
 }
 
 void kbound::dump_Assign_rand(std::string v, std::string b ) {
+  assert( v != "" );
+  assert( b != "" );
   dump_String( v + " = get_rng(0," + b + ");" );
 }
 
 void kbound::dump_Assign_max( std::string v, std::string r1, std::string r2 ) {
+  assert(  v != "" );
+  assert( r1 != "" );
+  assert( r2 != "" );
   dump_String( v + " = max(" + r1 + ","+ r2 + ");" );
 }
 
@@ -247,6 +270,8 @@ void kbound::dump_Indent() {
 }
 
 void kbound::dump_Define(std::string name, std::string val) {
+  assert( name != "" );
+  assert( val != "" );
   dump_Indent();
   ofcpp << "#define " <<  name << " "<< val << "\n";
 }

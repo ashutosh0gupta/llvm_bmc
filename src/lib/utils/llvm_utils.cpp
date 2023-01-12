@@ -1668,7 +1668,7 @@ expr read_const( options& o, const llvm::Value* op ) {
   }else if( llvm::isa<llvm::ConstantPointerNull>(op) ) {
     // llvm_bmc_error("llvm_utils", "Constant pointer are not implemented!!" );
     // }else if( LLCAST( llvm::ConstantPointerNull, c, op) ) {
-    return ctx.int_val(0);
+    return ctx.int_val(-1);
   }else if( llvm::isa<llvm::UndefValue>(op) ) {
     llvm::Type* ty = op->getType();
     if( auto i_ty = llvm::dyn_cast<llvm::IntegerType>(ty) ) {
@@ -1922,12 +1922,11 @@ identify_array( const llvm::Value* op) {
     // if(auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
     //   return addr;
     // }
-    // if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr)) {
-    //   return glb;
-    // }
     // gep->print( llvm::outs() );
     // llvm_bmc_error("bmc", "unseen GEP pattern detected!");
     // op_gep_ptr->print( llvm::outs() );
+  }else if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op)) {
+    return glb;
   }else if( llvm::dyn_cast<const llvm::AllocaInst>(op) ) {
     // auto alloc =
     // To handle a[0] when a is dynamic sized array
@@ -1950,7 +1949,7 @@ identify_array( const llvm::Value* op) {
   }else{
     // llvm_bmc_error("bmc", "non array global write/read not supported!");
   }
-  // op->print( llvm::outs() );
+  op->dump();
   return NULL;
 }
 
