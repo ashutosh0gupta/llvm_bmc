@@ -10,6 +10,7 @@ struct thread_events {
   std::string name;
   me_vec events;
   me_ptr start_event, final_event;
+  std::map< unsigned, std::pair< const me_ptr, const me_ptr >> active_intervals;
 };
 
 class events_data {

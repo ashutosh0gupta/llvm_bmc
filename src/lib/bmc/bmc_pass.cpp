@@ -1495,6 +1495,14 @@ void bmc_pass::do_bmc() {
     auto final = mk_me_ptr( o.mem_enc, thr_id, final_prev_events, exit_cond,
                             history_exprs, floc, event_t::barr );
     set_final_event( thr_id, final, exit_cond );
+    
+    static unsigned iter = 0;
+    iter++;
+    auto pr1 = std::make_pair(bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].start_event,bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].final_event);
+    auto pr2 = std::make_pair(iter, pr1);
+    bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].active_intervals.insert(pr2);
+    if (iter == bmc_obj.sys_spec.threads.at(bmc_ds_ptr->thread_id).period)
+	iter = 1;
  }
 
 }
