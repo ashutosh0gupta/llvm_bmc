@@ -31,7 +31,7 @@
 #pragma GCC diagnostic pop
 
 
-#define CLANG_VERSION "12.0"
+#define CLANG_VERSION "14.0"
 
 void dump( const llvm::Value* v) {
   if(v)
@@ -45,6 +45,17 @@ void dump( const llvm::Type* v) {
     v->print(llvm::outs());
   else
     llvm::outs() << "NULL\n";
+}
+
+std::string toString( const llvm::Value* v ) {
+  std::string buf;
+  llvm::raw_string_ostream os(buf);
+  if(v)
+    v->print(os);
+  else
+    os << "NULL\n";
+  os.flush();
+  return buf;
 }
 
 // void dump( const llvm::Module* module) {

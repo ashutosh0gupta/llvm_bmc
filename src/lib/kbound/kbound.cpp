@@ -338,8 +338,13 @@ void kbound::dump_ExtractValue( const llvm::ExtractValueInst* eval) {
   auto ro = add_reg_map( eval );
   auto cro = get_reg_time( eval );
   auto val = eval->getAggregateOperand();
-  unsigned idx = eval->getAggregateOperandIndex();
-  svec idxs{std::to_string(idx)};
+  svec idxs;
+  auto indcies = eval->getIndices();
+  for( auto idx : indcies ) {
+    idxs.push_back(std::to_string(idx));
+  }
+  // unsigned idx = eval->getAggregateOperandIndex();
+  // svec idxs{std::to_string(idx)};
   auto rv = get_reg(val, idxs);
   assert( rv != "" );
   auto cv = get_reg_time(val, idxs);
@@ -446,6 +451,7 @@ void kbound::addr_name( const llvm::Value* addr,
                         std::string& gid, std::string& caddr) {
   bool isLocalUse;
   addr_name( addr, gid, caddr, isLocalUse );
+  assert( gid != "" );
 }
 
 void kbound::addr_name( const llvm::Value* addr,
@@ -482,6 +488,7 @@ void kbound::addr_name( const llvm::Value* addr,
   } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
     gid = get_global_idx(alloc);
     caddr = "0"; //get_reg_time(gv);
+    return;
   } else if( llvm::isa<const llvm::Argument>(addr) ) {
     assert(false);
   } else if( llvm::isa<llvm::Constant>(addr) ) {
@@ -1053,6 +1060,7 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
 
   for( const llvm::Instruction& Iobj : b->getInstList() ) {
     const llvm::Instruction* I = &(Iobj);
+    dump_Comment( toString( I ) );
     if(auto bop = llvm::dyn_cast<llvm::BinaryOperator>(I) ) {
       dump_BinOp( bidx, bop );
     }else if( auto phi = llvm::dyn_cast<llvm::PHINode>(I) ) {

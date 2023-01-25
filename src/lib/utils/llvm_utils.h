@@ -47,7 +47,7 @@ typedef std::vector<const inst*> inst_vec_t;
 
 void dump( const llvm::Value* );
 void dump( const llvm::Type* );
-
+std::string toString( const llvm::Value* v );
 
 llvm::Instruction*
 estimate_comment_location( std::unique_ptr<llvm::Module>&, src_loc, src_loc);

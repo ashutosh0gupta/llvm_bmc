@@ -23,7 +23,7 @@ lock() {
 __attribute__((always_inline)) inline void
 // SpinLock::
 unlock() {
-  locked.store(0, std::memory_order_release);
+  locked.store(0, std::memory_order_relaxed);
 }
 
 #define X 2

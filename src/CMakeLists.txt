@@ -42,6 +42,8 @@ ELSE(LLVM_DEBUG)
   # find_package(Clang REQUIRED clangTooling libClang)
 ENDIF(LLVM_DEBUG)
 
+# set_target_properties(${LLVMBMC} PROPERTIES TYPE "STATIC_LIBRARY")
+
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 message(STATUS "Using ClangConfig.cmake in: ${Clang_DIR}")
