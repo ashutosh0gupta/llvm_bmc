@@ -50,7 +50,8 @@ private:
   std::map<const void*, svec> ctrl_dep_ord;
   // std::map<const llvm::Value*, std::string> ssa_name;
   // std::map<const llvm::Value*, svec> ctrl_dep_ord;
-  std::vector<std::string> unmapped_names;
+  svec unmapped_names;
+  svec uninit_names;
   // std::map<const llvm::BasicBlock*, std::string> path_name;
   svec in_code_spec;
 

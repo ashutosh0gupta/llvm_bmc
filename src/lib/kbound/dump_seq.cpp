@@ -492,6 +492,9 @@ void kbound::dump_locals() {
           out << "  int " << v << "= 0;\n";
           out << "  char " << time_name(v) << ";\n";
         }
+        for( auto& v : uninit_names ) {
+          out << "  int " << v <<";\n";
+        }
         for( auto& v : var_list ) {
           out << "  char " << v << "= 0;\n";
         }

@@ -143,6 +143,9 @@ std::string kbound::get_reg( const llvm::Value* v) {
 std::string kbound::get_reg( const llvm::Value* v, svec& idxs ) {
   auto s = read_const(v);
   if( s != "" ) {
+    if( llvm::isa<llvm::UndefValue>(v) ) {
+      uninit_names.push_back(s);
+    }
     assert( idxs.size() == 0 );
     return s;
   }

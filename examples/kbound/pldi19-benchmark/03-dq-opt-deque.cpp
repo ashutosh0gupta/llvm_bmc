@@ -79,12 +79,13 @@ __attribute__((always_inline)) inline int64_t Deque::try_steal(int64_t N, int64_
 }
 
 Deque que;
-int64_t N;
-#define X  3
+#define N  5;
 #define X1 2
-#define X2 2
-#define X3 3
-// int64_t X, X1, X2, X3;
+#define X2 1
+#define X3 1
+#define X4 2
+#define X5 1
+
 int64_t result1, result2, result3;
 int64_t result4, result5, result6;
 
@@ -123,7 +124,7 @@ void thread0() {
 void thread1() {
   int64_t data;
   int64_t res = 0;
-  for (int64_t i = 0; i < X; ++i) {
+  for (int64_t i = 0; i < X4; ++i) {
     if (que.try_steal(N, data) >= 0) {
       res += data;
     }
@@ -134,7 +135,7 @@ void thread1() {
 void thread2() {
   int64_t data;
   int64_t res = 0;
-  for (int64_t i = 0; i < X; ++i) {
+  for (int64_t i = 0; i < X5; ++i) {
     if (que.try_steal(N, data) >= 0) {
       res += data;
     }
