@@ -94,7 +94,6 @@ Deque que;
 #define X4 2
 #define X5 1
 
-// int64_t X, X1, X2, X3;
 int64_t result1, result2, result3;
 int64_t result4, result5, result6;
 

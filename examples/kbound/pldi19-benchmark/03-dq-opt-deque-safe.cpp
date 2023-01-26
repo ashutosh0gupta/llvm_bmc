@@ -78,8 +78,16 @@ __attribute__((always_inline)) inline int64_t Deque::try_steal(int64_t N, int64_
   return (is_successful ? 0 : -2); // success or lost
 }
 
+
+// deque-100-1-0.litmus
+// deque-110-1-0.litmus
+// deque-110-1-1.litmus
+// deque-111-1-1.litmus
+// deque-211-1-1.litmus
+// deque-211-2-1.litmus
+
 Deque que;
-#define N  5;
+#define N  5 // Size of the queue
 #define X1 2
 #define X2 1
 #define X3 1
