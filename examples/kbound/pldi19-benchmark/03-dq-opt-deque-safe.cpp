@@ -38,7 +38,7 @@ __attribute__((always_inline)) inline int64_t Deque::try_pop(int64_t N, int64_t&
   uint64_t b = bottom.load(std::memory_order_relaxed);
   bottom.store(b - 1, std::memory_order_relaxed);
 
-  // std::atomic_thread_fence(std::memory_order_seq_cst);
+  std::atomic_thread_fence(std::memory_order_seq_cst);
 
   uint64_t t = top.load(std::memory_order_relaxed);
   int64_t len = static_cast<int64_t>(b - t);
@@ -63,7 +63,7 @@ __attribute__((always_inline)) inline int64_t Deque::try_pop(int64_t N, int64_t&
 __attribute__((always_inline)) inline int64_t Deque::try_steal(int64_t N, int64_t& data) {
   uint64_t t = top.load(std::memory_order_relaxed);
 
-  // std::atomic_thread_fence(std::memory_order_seq_cst);
+  std::atomic_thread_fence(std::memory_order_seq_cst);
 
   uint64_t b = bottom.load(std::memory_order_acquire);
   int64_t len = static_cast<int64_t>(b - t);
