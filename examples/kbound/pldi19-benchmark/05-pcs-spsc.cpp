@@ -45,9 +45,9 @@ inline int64_t Queue::try_cons(int64_t N, int64_t& data) {
 Queue que;
 int64_t result1, result2;
 
-#define N 2
-#define X1 2
-#define X2 2
+#define N 6
+#define X1 3
+#define X2 3
 // #define X3 2
 
 void thread0() {
