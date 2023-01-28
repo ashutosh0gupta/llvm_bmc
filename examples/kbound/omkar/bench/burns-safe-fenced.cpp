@@ -7,67 +7,38 @@ void thread0 (){
       int temp;
       //lock
       dmbsy();/////
-      temp = 1;
-      flag0 = temp;
+      flag0 = 1;
       dmbsy();
-      //while (flag[1] == 1);
-      for (int i = 0; i < 2; i++)
-      {
-            dmbsy();
-            temp = flag1;
-            //dmbsy();
-            if(temp == 1){
-                  continue;
-            }
-            else{
-                  break;
-            }
-          
-      }
+      while ( flag1 == 1 );
       //CS
       dmbsy();
-      temp = var;
-      dmbsy();/////
-      temp = temp + 1;
-      var = temp;
+      var = var + 1;
       //unlock
       dmbsy();
-      temp = 0;
-      flag0= temp;
-      dmbsy();
+      flag0= 0;
 }
 
 void thread1 (){
       int temp;
-      //while (flag[0] == 1);
-      for (int i = 0; i < 2; i++)
-      {
+      // while (flag0 == 1);
+      // for (int i = 0; i < 2; i++)
+      while(1) {
             dmbsy();///
-            temp = 0;
-            flag1 = temp;
+            flag1 = 0;
+            dmbsy();
+            if( flag0 == 1) continue;
+            dmbsy();
+            flag1 = 1;
             dmbsy();
             temp = flag0;
-            if( temp == 1){
-                  continue;
-            }
-            dmbsy();
-            temp = 1;
-            flag1 = temp;
-            dmbsy(); 
-            temp = flag0;
-            if( temp == 1){
-                  continue;
-            }
+            if( flag0 == 1) continue;
+            else break;
       }
       //CS
       dmbsy();
-      temp = var;
-      dmbsy(); ///
-      temp = temp + 1;
-      var = temp;
+      var = var + 1;
       //unlock
       dmbsy();
-      temp = 0;
-      flag1 = temp;
+      flag1 = 0;
       //dmbsy();
 }

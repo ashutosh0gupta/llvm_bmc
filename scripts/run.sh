@@ -4,7 +4,7 @@ rm /tmp/cbmc_out.cpp
 
 run=./scripts/run-example.sh
 pldi19=examples/kbound/omkar/bench
-k=50
+k=10
 l=1
 n=2
 # ex=02-slc-spinlock
@@ -27,12 +27,10 @@ kinds=("safe")
 TIMEFORMAT=%R
 echo -e "Name\t\t\tKind\tN K  L Result Time"
 for kind in ${kinds[@]}; do
-    for n in ${ns[@]}; do
-        #echo -n -e "$ex\t$kind\t$n $k $l "
-        echo -n -e "$ex\t\t$n $k $l "
-        #time $run $l $k $pldi19/$ex-$kind.cpp $pldi19/$spec-$n.spec
-        time $run $l $k $pldi19/$ex.cpp $pldi19/$spec.spec
-    done
+    #echo -n -e "$ex\t$kind\t$n $k $l "
+    echo -n -e "$ex\t\t$n $k $l "
+    #time $run $l $k $pldi19/$ex-$kind.cpp $pldi19/$spec-$n.spec
+    time $run $l $k $pldi19/$ex.cpp $pldi19/$spec.spec
 done
 
 #$run $l $k $pldi19/$ex-$kind.cpp $pldi19/$ex-2.spec
