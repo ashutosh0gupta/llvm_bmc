@@ -28,6 +28,7 @@ private:
   unsigned ncontext = 10;
   unsigned active_lax = 0;
   std::string thread_name, EntryFn;
+  bool is_sc_semantics = false;
 
   svec reg_vals,reg_list;
   svec val_init_list, val_list;
@@ -111,6 +112,7 @@ private:
   void dump_Else();
   void dump_Close_scope();
   void dump_locals();
+  void dump_sc_semantics(std::string tid, std::string ctime);
 
   void dump_Macors(std::string name, std::string val);
 

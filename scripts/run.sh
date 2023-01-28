@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+rm /tmp/cbmc_out.cpp
+
 run=./scripts/run-example.sh
 pldi19=examples/kbound/omkar/bench
 k=50
@@ -19,7 +21,6 @@ spec=burns
 kinds=("safe")
 # kinds=("safe")
 # kinds=("opt-unsafe")
-ns=(3)
 
 #$kind=unsafe
 

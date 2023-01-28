@@ -1,4 +1,5 @@
 #include "lib/kbound/kbound.h"
+#include <boost/algorithm/string.hpp>
 
 //----------------------------------------------------------------------------
 // Functions for recording names
@@ -260,7 +261,10 @@ void kbound::dump_Assign_rand_ctx(std::string v) {
   dump_Assign_rand( v, "NCONTEXT-1" );
 }
 
-void kbound::dump_Comment(std::string s) { dump_String("// "+s); }
+void kbound::dump_Comment(std::string s) {
+  boost::replace_all(s, "\n", " ");
+  dump_String("// "+s);
+}
 
 void kbound::dump_Indent() {
   if(current_indent > 20) {
@@ -506,6 +510,9 @@ void kbound::dump_locals() {
     out.close();
 }
 
+void kbound::dump_sc_semantics( std::string tid, std::string c ) {
+  dump_Assign("cdy[" + tid + "]", c );
+}
 
 void kbound::
 dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
@@ -532,6 +539,8 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
   if( isExclusive ) dump_Assume_geq( cr, "old_cr" );
   if( isAcquire ) dump_Assume_geq( cr, "cx"+gaccess ); // extra in lda
   if( isAcquire ) dump_geq_globals( cr, "cs"); // extra in lda
+
+  if( is_sc_semantics ) dump_sc_semantics( tid, cr );
 
   dump_Comment("Update");
   dump_Assign( cval, cr );
@@ -585,6 +594,8 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
   if( isRelease ) dump_geq_globals( cw, "cr");
   if( isRelease ) dump_geq_globals( cw, "cw");
   if( isExclusive ) dump_Assume( "delta" + gctx_access + " == "+ tid );
+
+  if( is_sc_semantics ) dump_sc_semantics(tid, cw);
 
   dump_Comment("Update");
   dump_Assign_max( "caddr[" + tid + "]", cval );
