@@ -57,7 +57,8 @@ public:
   std::string read_command( std::istream& in );
   void read_variable( std::istream& in );
   void read_thread( std::istream& in );
-  void read_invokeparam( std::istream& in ); 
+  void read_invokeparam( std::istream& in );
+  void read_wmm( std::istream& in );
   void read_precond( std::istream& in, bmc& b );
   void read_postcond( std::istream& in, bmc& b );
   void read_envinv( std::istream& in );

@@ -1135,6 +1135,7 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
 
 void kbound::dump_Thread() {
   dump_Comment( "Dumping thread "+ tid );
+  if(is_sc_semantics) dump_Comment( "Thread semanics = SC");
   // for( unsigned i = 0; i < bmc_ds_ptr->bb_vec.size(); i++ ) {
   //   dump_Assign( "char "+ get_path(i), "0" );
   // }
