@@ -1,17 +1,21 @@
 #!/usr/bin/bash
 
+rm /tmp/cbmc_out.cpp
+
 run=./scripts/run-example.sh
 pldi19=examples/kbound/pldi19-benchmark
-k=10
-l=1
-n=2
+k=2 # context bound
+l=1 # loop unroll if not statically known
+ns=(3) # thread count
 # ex=02-slc-spinlock
 # ex=01-tl-btlock
 # ex=03-dq-deque
-ex=03-dq-opt-deque
+# ex=03-dq-opt-deque
+ex=04-qu-queue
 
 #spec=01-tl-btlock
-spec=03-dq-deque
+# spec=03-dq-deque
+spec=04-qu-queue
 # ns=(2 3 4 5 6)
 # kinds=("unsafe" "safe")
 
@@ -19,7 +23,6 @@ spec=03-dq-deque
 kinds=("safe")
 # kinds=("safe")
 # kinds=("opt-unsafe")
-ns=(3)
 
 #$kind=unsafe
 

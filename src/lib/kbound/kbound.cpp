@@ -94,7 +94,9 @@ bool kbound::runOnFunction( llvm::Function &f ) {
   thread_id = j;
   tid = std::to_string(thread_id);
   thread_name = bmc_obj.sys_spec.threads.at(j).name;
-
+  if(bmc_obj.sys_spec.threads.at(j).wmm == weak_memory_model::SC ) {
+    is_sc_semantics = true;
+  }
   populate_array_name_map(&f);
   auto bmc_fun_ptr = new bmc_fun(o, ary_to_int, bmc_obj.m_model);
   bmc_ds_ptr = bmc_fun_ptr; // set the pointer in base cla

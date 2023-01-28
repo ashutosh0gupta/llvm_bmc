@@ -23,6 +23,8 @@ struct Node {
   std::atomic<Node*> next;
 };
 
+Allocator<Node, 10> allocator;
+
 class Stack {
   std::atomic<Node *> head;
 
@@ -30,12 +32,13 @@ public:
   Stack(): head(nullptr) {
   }
 
-  template<size_t n>
-  int64_t try_push(Allocator<Node, n> &allocator, int64_t data); // -2 if lost, -3 if oom
+  // template<size_t n>
+  int64_t try_push(//Allocator<Node, n> &allocator,
+                   int64_t data); // -2 if lost, -3 if oom
   int64_t try_pop(int64_t& data); // -1 if empty, -2 if lost
 };
 
-template<size_t n>
+// template<size_t n>
 __attribute__((always_inline)) inline
 int64_t Stack::try_push(Allocator<Node, n> &allocator, int64_t data) {
   Node *node = allocator.alloc();
@@ -66,22 +69,21 @@ __attribute__((always_inline)) inline int64_t Stack::try_pop(int64_t& data) {
 
 
 Stack s;
-Allocator<Node, 10> allocator;
 int64_t result1, result2, result3;
 int64_t result4, result5, result6;
 int64_t result7, result8, result9;
 
-#define X1 2
-#define X2 2
-#define X3 3
+#define X1 1
+#define X2 0
+#define X3 0
 
-#define X4 2
-#define X5 2
-#define X6 3
+#define X4 1
+#define X5 0
+#define X6 0
 
-#define X7 2
-#define X8 2
-#define X9 3
+#define X7 1
+#define X8 0
+#define X9 0
 
 void thread0() {
   int64_t count(1);
@@ -90,7 +92,8 @@ void thread0() {
 
   res = 0;
   for (int64_t i = 0; i < X1; i++) {
-    if (s.try_push(allocator, count) >= 0) {
+    if (s.try_push(//allocator,
+                   count) >= 0) {
       res += count;
       count *= 2;
     }
@@ -107,7 +110,8 @@ void thread0() {
 
   res = 0;
   for (int64_t i = 0; i < X3; i++) {
-    if (s.try_push(allocator, count) >= 0) {
+    if (s.try_push(//allocator,
+                   count) >= 0) {
       res += count;
       count *= 2;
     }
@@ -122,7 +126,8 @@ void thread1() {
 
   res = 0;
   for (int64_t i = 0; i < X1; i++) {
-    if (s.try_push(allocator, count) >= 0) {
+    if (s.try_push(//allocator,
+                   count) >= 0) {
       res += count;
       count *= 2;
     }
@@ -139,7 +144,8 @@ void thread1() {
 
   res = 0;
   for (int64_t i = 0; i < X3; i++) {
-    if (s.try_push(allocator, count) >= 0) {
+    if (s.try_push(//allocator,
+                   count) >= 0) {
       res += count;
       count *= 2;
     }
@@ -154,7 +160,8 @@ void thread2() {
 
   res = 0;
   for (int64_t i = 0; i < X1; i++) {
-    if (s.try_push(allocator, count) >= 0) {
+    if (s.try_push(//allocator,
+                   count) >= 0) {
       res += count;
       count *= 2;
     }
@@ -171,7 +178,8 @@ void thread2() {
 
   res = 0;
   for (int64_t i = 0; i < X3; i++) {
-    if (s.try_push(allocator, count) >= 0) {
+    if (s.try_push(//allocator,
+                   count) >= 0) {
       res += count;
       count *= 2;
     }

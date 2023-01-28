@@ -6,6 +6,12 @@
 
 class bmc;
 
+enum weak_memory_model {
+  SC,
+  ARM,
+  WMM_UNKNOWN
+};
+
 //
 // specification of a thread
 //
@@ -22,6 +28,7 @@ public:
   unsigned period; // in ms
   unsigned priority;
   unsigned thread_num;
+  weak_memory_model wmm = WMM_UNKNOWN; // if analyzer wants to treat a thread differently
 };
 
 //
@@ -32,6 +39,7 @@ class spec_system {
   std::vector<spec_thread> threads;
   std::vector <expr> pres;
   std::vector <expr> posts;
+  weak_memory_model wmm = WMM_UNKNOWN;
 };
 
 void import_spec_file( std::unique_ptr<llvm::Module>& module,

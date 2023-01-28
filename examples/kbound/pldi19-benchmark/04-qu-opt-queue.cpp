@@ -5,6 +5,8 @@
 #include <atomic>
 #include <thread>
 
+void assume(bool);
+
 template<typename T, size_t n>
 class Allocator {
   T objects[n];
@@ -30,6 +32,8 @@ public:
   std::atomic<Node*> next;
 };
 
+Allocator<Node, 10> allocator;
+
 class Queue {
   Node init;
   std::atomic<Node*> head;
@@ -42,8 +46,9 @@ public:
   void initialize();
   int64_t get_is_initialized();
 
-  template<size_t n>
-  int64_t try_enq(Allocator<Node, n> &allocator, int64_t data); // -2 if lost, -3 if oom
+  // template<size_t n>
+  int64_t try_enq(//Allocator<Node, n> &allocator,
+                  int64_t data); // -2 if lost, -3 if oom
   int64_t try_deq(int64_t& data); // -1 if empty, -2 if lost
 };
 
@@ -69,9 +74,10 @@ __attribute__((always_inline)) inline Node* Queue::find_tail() {
   return nullptr;
 }
 
-template<size_t n>
+// template<size_t n>
 __attribute__((always_inline)) inline
-int64_t Queue::try_enq(Allocator<Node, n> &allocator, int64_t data) {
+int64_t Queue::try_enq(//Allocator<Node, n> &allocator,
+                       int64_t data) {
   Node* node = allocator.alloc();
 
   if (node == nullptr) {
@@ -110,23 +116,23 @@ __attribute__((always_inline)) inline int64_t Queue::try_deq(int64_t& data) {
   return -2;
 }
 
+#define X1 1
+#define X2 0
+#define X3 0
+
+#define X4 1
+#define X5 0
+#define X6 0
+
+#define X7 1
+#define X8 0
+#define X9 0
+
 Queue q;
-Allocator<Node, 10> allocator;
 int64_t result1, result2, result3;
 int64_t result4, result5, result6;
 int64_t result7, result8, result9;
 
-#define X1 2
-#define X2 2
-#define X3 3
-
-#define X4 2
-#define X5 2
-#define X6 3
-
-#define X7 2
-#define X8 2
-#define X9 3
 
 // int64_t X1, int64_t X2, int64_t X3,
 
@@ -139,7 +145,8 @@ void thread0() {
 
   res = 0;
   for (int64_t i = 0; i < X1; i++) {
-    if (q.try_enq(allocator, count) >= 0) {
+    if (q.try_enq(//allocator,
+                  count) >= 0) {
       res += count;
       count *= 2;
     }
@@ -156,7 +163,8 @@ void thread0() {
 
   res = 0;
   for (int64_t i = 0; i < X3; i++) {
-    if (q.try_enq(allocator, count) >= 0) {
+    if (q.try_enq(//allocator,
+                  count) >= 0) {
       res += count;
       count *= 2;
     }
@@ -174,7 +182,8 @@ void thread1() {
 
   res = 0;
   for (int64_t i = 0; i < X4; i++) {
-    if (q.try_enq(allocator, count) >= 0) {
+    if (q.try_enq(//allocator,
+                  count) >= 0) {
       res += count;
       count *= 2;
     }
@@ -191,7 +200,8 @@ void thread1() {
 
   res = 0;
   for (int64_t i = 0; i < X6; i++) {
-    if (q.try_enq(allocator, count) >= 0) {
+    if (q.try_enq(//allocator,
+                  count) >= 0) {
       res += count;
       count *= 2;
     }
@@ -209,7 +219,8 @@ void thread2() {
 
   res = 0;
   for (int64_t i = 0; i < X7; i++) {
-    if (q.try_enq(allocator, count) >= 0) {
+    if (q.try_enq(//allocator,
+                  count) >= 0) {
       res += count;
       count *= 2;
     }
@@ -226,7 +237,8 @@ void thread2() {
 
   res = 0;
   for (int64_t i = 0; i < X9; i++) {
-    if (q.try_enq(allocator, count) >= 0) {
+    if (q.try_enq(//allocator,
+                  count) >= 0) {
       res += count;
       count *= 2;
     }
