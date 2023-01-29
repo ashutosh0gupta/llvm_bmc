@@ -6,9 +6,11 @@ timeout=300s
 
 if [ "$#" -ne 4 ]; then
     echo "Illegal number of parameters"
-    echo "Usage: ./run-example.sh [unwind] [context-bound] [spec-file] [file-name]"
+    echo "Usage: ./run-example.sh [unwind] [context-bound] [file-name] [spec-file]"
     exit 0
 fi
+
+rm /tmp/cbmc_out.cpp
 
 echo "./llvmbmc --unwind $1 --context-bound $2 -k $3 -s $4"
 ./llvmbmc --unwind $1 --context-bound $2 -k $3 -s $4 > /dev/null 2>&1
@@ -22,6 +24,8 @@ if [ -f "$tr_file" ]; then
         echo -n "SAFE   "
     elif grep -q "VERIFICATION FAILED" "$tr_file"; then
         echo -n "UNSAFE "
+    elif grep -q "CONVERSION ERROR" "$tr_file"; then
+        echo -n "ERROR  "     
     else
         echo -n "TO     "        
     fi
