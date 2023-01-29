@@ -214,9 +214,13 @@ void spec_parser::read_thread( std::istream& in ) {
 
 
 void spec_parser::read_invokeparam( std::istream& in ) {
-  std::string symb1 = read_symbol( in );
+  std::string tname = read_symbol( in );
   std::string symb2 = read_symbol( in );
-  
+  if( tname != thread_obj.name ) {
+    llvm_bmc_error( "Spec_parse",
+                    "syntax error, expecting thread name" << AT_L );
+  }
+
   if (symb2 == "repeated") {
   	auto periodicity  = read_unsigned(in);
 	//auto pair1 = std::make_pair( symb1, periodicity );
@@ -230,6 +234,19 @@ void spec_parser::read_invokeparam( std::istream& in ) {
     		//read_close_parentheses(in);
 		//std::cout << "Thread name is " << symb1 << " Periodicity is " << periodicity << " Priority is " << priority << "\n";
 	}
+  }
+}
+
+void spec_parser::read_wmm( std::istream& in ) {
+  std::string tname = read_symbol( in );
+  std::string wmm = read_symbol( in );
+  if( tname != thread_obj.name ) {
+    llvm_bmc_error("Spec_parse","syntax error, expecting thread name" << AT_L);
+  }
+  if(wmm == "SC" )     { thread_obj.wmm = weak_memory_model::SC;  }
+  else if(wmm == "ARM"){  thread_obj.wmm = weak_memory_model::ARM;}
+  else {
+    llvm_bmc_error("Spec_parse","expecting a wmm" << AT_L);
   }
 }
 
@@ -341,6 +358,8 @@ void spec_parser::read_file( std::istream& in, bmc& b ) {
       read_thread( in );
     }else if( cmd == "invoke-parameters" ) {
       read_invokeparam( in );
+    }else if( cmd == "weak-memory-model" ) {
+      read_wmm( in );
     }else if( cmd == "pre-condition" ) {
       read_precond( in, b );
     }else if( cmd == "post-condition" ) {

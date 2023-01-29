@@ -25,13 +25,25 @@ kinds=("safe")
 #$kind=unsafe
 
 TIMEFORMAT=%R
+# echo -e "Name\t\t\tKind\tN K  L Result Time"
+# for kind in ${kinds[@]}; do
+#     #echo -n -e "$ex\t$kind\t$n $k $l "
+#     echo -n -e "$ex\t\t$n $k $l "
+#     #time $run $l $k $pldi19/$ex-$kind.cpp $pldi19/$spec-$n.spec
+#     time $run $l $k $pldi19/$ex.cpp $pldi19/$spec.spec
+# done
+
+
+exes=( ("burns-safe-fenced","burns") )
 echo -e "Name\t\t\tKind\tN K  L Result Time"
-for kind in ${kinds[@]}; do
+for ex in ${exes[@]}; do
+    echo "$ex"
     #echo -n -e "$ex\t$kind\t$n $k $l "
-    echo -n -e "$ex\t\t$n $k $l "
-    #time $run $l $k $pldi19/$ex-$kind.cpp $pldi19/$spec-$n.spec
-    time $run $l $k $pldi19/$ex.cpp $pldi19/$spec.spec
+    # echo -n -e "$ex\t\t$n $k $l "
+    # time $run $l $k $pldi19/$ex.cpp $pldi19/$spec.spec
 done
+
+
 
 #$run $l $k $pldi19/$ex-$kind.cpp $pldi19/$ex-2.spec
 #$run $l $k $pldi19/$ex-$kind.cpp $pldi19/$ex-3.spec
