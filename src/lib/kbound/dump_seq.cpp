@@ -429,6 +429,7 @@ void kbound::prefix_seq() {
   dump_Newline();
   dump_String("__LOCALS__");
 
+  // records time and processes
   for( unsigned p = 0; p < bmc_obj.sys_spec.threads.size(); p++ ) {
     auto pn = std::to_string(p);
     for( unsigned x = 0; x < num_globals; x++ ) {
@@ -438,9 +439,13 @@ void kbound::prefix_seq() {
     for( auto ary: proc_list ) dump_String( ary + "["+ pn + "] = 0;" );
   }
 
+  // records values
   for( unsigned x = 0; x < num_globals; x++ ) {
     auto xn = std::to_string(x);
-    for( auto ary: val_list ) dump_String( ary + "("+xn+",0) = 0;" );
+    // for( auto ary: val_list ) dump_String( ary + "("+xn+",0) = 0;" );
+    // dump_String( ary + "mu("+xn+",0) = 0;" );
+    dump_String( "nu("+xn+",0) = 0;" );
+    dump_String( "delta("+xn+",0) = -1;" );
     for( unsigned k = 1; k < ncontext; k++ ) {
       auto kn = std::to_string(k);
       auto xkn = "("+xn+","+kn+")";

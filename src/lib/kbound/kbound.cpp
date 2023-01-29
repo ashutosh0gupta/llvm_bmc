@@ -50,6 +50,8 @@ kbound::kbound( options& o_, std::unique_ptr<llvm::Module>& m_,
     auto size = get_word_size(v);
     global_size[v] = size;
     global_name[v] = v->getName().str();
+    // if( v->hasInitializer ()  ) {
+    // }
     i += size;
   }
   num_globals = i;

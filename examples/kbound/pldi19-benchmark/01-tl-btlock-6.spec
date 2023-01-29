@@ -4,7 +4,7 @@
 
 (declare-thread one thread0) ; param name entry_function
 (invoke-parameters one repeated 1 priority 1)
-;(weak-memory-model one SC)
+#(weak-memory-model one SC)
 (end-thread one)
 
 (declare-thread two thread1)

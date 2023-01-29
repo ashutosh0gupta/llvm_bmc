@@ -6,6 +6,7 @@ int flag[2] = {1,0};
 int wrong=0;
 
 void thread0(){
+  wrong = 1;
       dmbsy();
       for (int i = 0; i < 4; i++)
       {
