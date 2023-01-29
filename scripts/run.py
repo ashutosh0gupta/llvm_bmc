@@ -12,20 +12,29 @@ subprocess.run(["rm",  "/tmp/cbmc_out.cpp" ])
 run   = "./scripts/run-example.sh"
 k = 10
 l = 1
-n = 2
+# n = 2
 
-folder = "examples/kbound/omkar/bench"
-exs = [ ["burns-safe-fenced","burns"]
+folder = "examples/kbound/pldi19-benchmark"
+exs = [ # ["03-dq-deque-safe","03-dq-deque-3",3]
+        # ["03-dq-opt-deque-safe","03-dq-deque-3",3]
+        ["01-tl-btlock-unsafe","01-tl-btlock-6",6]
        ]
+
+# folder = "examples/kbound/omkar/bench"
+# exs = [ ["burns-safe-fenced","burns"]
+#        ]
 
 
 my_env = os.environ.copy()
 my_env["TIMEFORMAT"] = "%R"
 
-p = re.compile(r'([A-Z]*SAFE)   ([0-9\.]*)user')
+p = re.compile(r'([A-Z]*SAFE) *([0-9\.]*)user')
 
 def find_time( result ):
    out = re.findall( p, result)
+   if len(out) == 0:
+      print(result)
+      exit()
    return out[0]
 
 

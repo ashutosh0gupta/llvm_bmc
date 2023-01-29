@@ -532,16 +532,15 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
   dump_Active( cr );
   dump_Assume_geq( cr, "iw"+gaccess );
   dump_Assume_geq( cr, caddr );
+  dump_Assume_geq( cr, "cdy[" + tid + "]" );
+  dump_Assume_geq( cr, "cisb["+ tid + "]" );
+  dump_Assume_geq( cr, "cdl[" + tid + "]" );
+  dump_Assume_geq( cr, "cl["  + tid + "]" );
+  if( isExclusive ) dump_Assume_geq( cr, "old_cr" );
+  if( isAcquire   ) dump_Assume_geq( cr, "cx"+gaccess ); // extra in lda
+  if( isAcquire   ) dump_geq_globals( cr, "cs"); // extra in lda
   if( is_sc_semantics ) {
     dump_sc_semantics(tid, cr);
-  }else{
-    dump_Assume_geq( cr, "cdy[" + tid + "]" );
-    dump_Assume_geq( cr, "cisb["+ tid + "]" );
-    dump_Assume_geq( cr, "cdl[" + tid + "]" );
-    dump_Assume_geq( cr, "cl["  + tid + "]" );
-    if( isExclusive ) dump_Assume_geq( cr, "old_cr" );
-    if( isAcquire   ) dump_Assume_geq( cr, "cx"+gaccess ); // extra in lda
-    if( isAcquire   ) dump_geq_globals( cr, "cs"); // extra in lda
   }
 
   dump_Comment("Update");
@@ -592,19 +591,19 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
   dump_Assume_geq( cw, iw );
   dump_Assume_geq( cw, "old_cw" );
   dump_Assume_geq( cw, "cr"    + gaccess   );
+  dump_Assume_geq( cw,    "cl[" + tid + "]" );
+  dump_Assume_geq( cw,  "cisb[" + tid + "]" );
+  dump_Assume_geq( cw,   "cdy[" + tid + "]" );
+  dump_Assume_geq( cw,   "cdl[" + tid + "]" );
+  dump_Assume_geq( cw,   "cds[" + tid + "]" );
+  dump_Assume_geq( cw,  "ctrl[" + tid + "]" );
+  dump_Assume_geq( cw, "caddr[" + tid + "]" );
+  if( isRelease ) dump_geq_globals( cw, "cr");
+  if( isRelease ) dump_geq_globals( cw, "cw");
+  if( isExclusive ) dump_Assume( "delta" + gctx_access + " == "+ tid );
+
   if( is_sc_semantics ) {
     dump_sc_semantics(tid, cw);
-  }else{
-    dump_Assume_geq( cw,    "cl[" + tid + "]" );
-    dump_Assume_geq( cw,  "cisb[" + tid + "]" );
-    dump_Assume_geq( cw,   "cdy[" + tid + "]" );
-    dump_Assume_geq( cw,   "cdl[" + tid + "]" );
-    dump_Assume_geq( cw,   "cds[" + tid + "]" );
-    dump_Assume_geq( cw,  "ctrl[" + tid + "]" );
-    dump_Assume_geq( cw, "caddr[" + tid + "]" );
-    if( isRelease ) dump_geq_globals( cw, "cr");
-    if( isRelease ) dump_geq_globals( cw, "cw");
-    if( isExclusive ) dump_Assume( "delta" + gctx_access + " == "+ tid );
   }
 
   dump_Comment("Update");
