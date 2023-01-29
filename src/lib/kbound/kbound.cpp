@@ -35,6 +35,32 @@ unsigned kbound::get_word_size(const llvm::Value* v ) {
   }
 }
 
+svec kbound::get_init_array(const llvm::Value* v, unsigned size ) {
+  svec init;
+  if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(v) ) {
+    if( gv->hasInitializer() ) {
+      const llvm::Constant* ival = gv->getInitializer();
+      // init.push_back( read_const_str( o, ival) );
+      // if( auto iar = llvm::dyn_cast<const llvm::GlobalValue>(ival) ) {
+      if( auto ca = llvm::dyn_cast<const llvm::ConstantDataArray>(ival) ) {
+        for (unsigned i = 0, e = ca->getNumElements(); i != e; ++i) {
+          auto c = ca->getElementAsConstant(i);
+          init.push_back( read_const_str( o, c) );
+        }
+        // unsigned num = iar->getNumOperands();
+        // for( unsigned i = 0; i < num; i++ ) {
+        //   auto c = iar->getOperand(i);
+        // }
+      }
+      if( llvm::isa<const llvm::ConstantInt>(ival) ) {
+        init.push_back( read_const_str( o, ival) );
+      }
+
+    }
+  }
+  return init;
+}
+
 kbound::kbound( options& o_, std::unique_ptr<llvm::Module>& m_,
                 bmc& bmc_ )
   : bmc_pass( o_, o_.solver_ctx, bmc_ )
@@ -50,8 +76,7 @@ kbound::kbound( options& o_, std::unique_ptr<llvm::Module>& m_,
     auto size = get_word_size(v);
     global_size[v] = size;
     global_name[v] = v->getName().str();
-    // if( v->hasInitializer ()  ) {
-    // }
+    global_init[v] = get_init_array(v, size);
     i += size;
   }
   num_globals = i;

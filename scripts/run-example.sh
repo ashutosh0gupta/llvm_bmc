@@ -10,7 +10,7 @@ if [ "$#" -ne 4 ]; then
     exit 0
 fi
 
-rm /tmp/cbmc_out.cpp
+rm /tmp/cbmc_out.cpp || true
 
 echo "./llvmbmc --unwind $1 --context-bound $2 -k $3 -s $4"
 ./llvmbmc --unwind $1 --context-bound $2 -k $3 -s $4 > /dev/null 2>&1

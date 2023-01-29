@@ -1736,13 +1736,6 @@ expr read_const( options& o, const llvm::Value* op ) {
     // return ctx.int_val(0);// todo: match types in z3
   }else if( llvm::isa<llvm::Instruction>(op) ) {
 
-  }else if( llvm::isa<llvm::Constant>(op) ) {
-    // expr e(ctx);
-    // return e; // contains no expression;
-    llvm_bmc_error("llvm_utils", "non int constants are not implemented!!" );
-    std::cerr << "un recognized constant!";
-    //     // int i = readInt(c);
-    //     // return eHandler->mkIntVal( i );
   }else if( llvm::isa<llvm::ConstantExpr>(op) ) {
     llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
   }else if( llvm::isa<llvm::ConstantArray>(op) ) {
@@ -1756,6 +1749,13 @@ expr read_const( options& o, const llvm::Value* op ) {
   }else if( llvm::isa<llvm::ConstantVector>(op) ) {
     // const llvm::VectorType* n = c->getType();
     llvm_bmc_error("llvm_utils", "vector constant not implemented!!" );
+  }else if( llvm::isa<llvm::Constant>(op) ) {
+    // expr e(ctx);
+    // return e; // contains no expression;
+    llvm_bmc_error("llvm_utils", "non int constants are not implemented!!" );
+    std::cerr << "un recognized constant!";
+    //     // int i = readInt(c);
+    //     // return eHandler->mkIntVal( i );
   }
   expr e(ctx);
   return e; // contains no expression;

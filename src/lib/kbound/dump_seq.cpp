@@ -440,6 +440,22 @@ void kbound::prefix_seq() {
   }
 
   // records values
+  //dump initializers
+  dump_Comment( "Dumping initializations" );
+  for( auto& v : global_position ) {
+    auto g = v.first;
+    auto pos = std::to_string(v.second);
+    auto size = global_size.at(g);
+    auto& init = global_init.at(g);
+    if(init.size() > 0 ) {
+      assert( size == init.size() );
+      for( unsigned i=0; i < size; i++ ) {
+        auto in = std::to_string(i);
+        dump_Assign( "mu("+ pos + "+" + in + ",0)", init[i] );
+      }
+    }
+  }
+  dump_Comment( "Dumping next context matching equality" );
   for( unsigned x = 0; x < num_globals; x++ ) {
     auto xn = std::to_string(x);
     // for( auto ary: val_list ) dump_String( ary + "("+xn+",0) = 0;" );

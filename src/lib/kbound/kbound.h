@@ -39,6 +39,7 @@ private:
   std::map<const void*, unsigned> global_position;
   std::map<const void*, unsigned> global_size;
   std::map<const void*, std::string> global_name;
+  std::map<const void*, svec> global_init;
 
   unsigned num_local_globals = 0; // Number of variables that are locally used
   std::map<const void*, unsigned   > local_global_position;
@@ -124,6 +125,7 @@ private:
   void dump_st( std::string, std::string, std::string, std::string,bool,bool);
 
   unsigned get_word_size(const llvm::Value* v );
+  svec get_init_array(const llvm::Value* v, unsigned size );
 
   //---------------------------------------------------------------------
 
