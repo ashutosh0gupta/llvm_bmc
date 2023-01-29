@@ -447,21 +447,20 @@ void kbound::prefix_seq() {
     auto pos = std::to_string(v.second);
     auto size = global_size.at(g);
     auto& init = global_init.at(g);
-    if(init.size() > 0 ) {
-      assert( size == init.size() );
-      for( unsigned i=0; i < size; i++ ) {
-        auto in = std::to_string(i);
-        dump_Assign( "mu("+ pos + "+" + in + ",0)", init[i] );
-      }
+    assert( init.size() == 0 || size == init.size() );
+    for( unsigned i=0; i < size; i++ ) {
+      auto in = std::to_string(i);
+      auto ival = init.size() > 0 ? init[i] : "0";
+      // dump_Assign( "mu("+ pos + "+" + in + ",0)", ival );
     }
   }
-  dump_Comment( "Dumping next context matching equality" );
+  dump_Comment( "Dumping context matching equalities" );
   for( unsigned x = 0; x < num_globals; x++ ) {
     auto xn = std::to_string(x);
-    // for( auto ary: val_list ) dump_String( ary + "("+xn+",0) = 0;" );
+    for( auto ary: val_list ) dump_String( ary + "("+xn+",0) = 0;" );
     // dump_String( ary + "mu("+xn+",0) = 0;" );
-    dump_String( "nu("+xn+",0) = 0;" );
-    dump_String( "delta("+xn+",0) = -1;" );
+    // dump_String( "nw("+xn+",0) = 0;" );
+    // dump_String( "delta("+xn+",0) = -1;" );
     for( unsigned k = 1; k < ncontext; k++ ) {
       auto kn = std::to_string(k);
       auto xkn = "("+xn+","+kn+")";
