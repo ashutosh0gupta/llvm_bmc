@@ -1,9 +1,9 @@
-int latch[2] = {1,0};
-int flag[2] = {1,0};
-int wrong = 0;
+long int latch[2];
+long int flag[2];
+long int wrong;
 
 void thread0(){
-      for (int i = 0; i < 4; i++)
+      for (long int i = 0; i < 4; i++)
       {
             while(latch[0] != 1);
             //assert(!latch[0] || flag[0]);
@@ -21,7 +21,7 @@ void thread0(){
 }
 
 void thread1(){
-      for (int i = 0; i < 4; i++)
+      for (long int i = 0; i < 4; i++)
       {
             while(latch[1] != 1);
             if(!(latch[1]==0 || flag[1] == 1)){
