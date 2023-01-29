@@ -1,16 +1,18 @@
 #include<atomic>
 void dmbsy();
+
+
 std::atomic<int> flag0 , flag1 ;
 //int var = 0;
 std::atomic<int> var;
 void thread0 (){
       //lock
-      dmbsy();/////
+      /////
       flag0 = 1;
       dmbsy();
-      while ( flag1 == 1 );
+      while ( flag1 == 1 ) {dmbsy();}
       //CS
-      dmbsy();
+      
       var = var + 1;
       //unlock
       dmbsy();
@@ -18,9 +20,8 @@ void thread0 (){
 }
 
 void thread1 (){
-      //lock
       while(1) {
-            dmbsy();///
+            ///
             flag1 = 0;
             dmbsy();
             if( flag0 == 1) continue;
@@ -31,10 +32,10 @@ void thread1 (){
             else break;
       }
       //CS
-      dmbsy();
+      
       var = var + 1;
       //unlock
       dmbsy();
       flag1 = 0;
-      //dmbsy();
+      //
 }
