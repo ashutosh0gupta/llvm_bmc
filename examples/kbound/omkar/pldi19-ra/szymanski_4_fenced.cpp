@@ -68,19 +68,23 @@ void thread2()
 for(int l=0;l<LOOP;l++)
         {
 atomic_store_explicit(&flag2, 1, std::memory_order_release);
+atomic_fetch_add_explicit(&__fence_var, 0, std::memory_order_acq_rel);
 if(!((((atomic_load_explicit(&flag0, std::memory_order_acquire) < 3) && (atomic_load_explicit(&flag1, std::memory_order_acquire) < 3)) && (atomic_load_explicit(&flag3, std::memory_order_acquire) < 3)) && 1))return;
 ;
 atomic_store_explicit(&flag2, 3, std::memory_order_release);
+atomic_fetch_add_explicit(&__fence_var, 0, std::memory_order_acq_rel);
 if ((atomic_load_explicit(&flag0, std::memory_order_acquire) == 1) || (atomic_load_explicit(&flag1, std::memory_order_acquire) == 1) || atomic_load_explicit(&flag3, std::memory_order_acquire) == 1)
                 {
 atomic_store_explicit(&flag2, 2, std::memory_order_release);
+atomic_fetch_add_explicit(&__fence_var, 0, std::memory_order_acq_rel);
 if(!(((atomic_load_explicit(&flag0, std::memory_order_acquire) == 4) || (atomic_load_explicit(&flag1, std::memory_order_acquire) == 4)) || (atomic_load_explicit(&flag3, std::memory_order_acquire) == 4)))return;
 ;
                 }
 atomic_store_explicit(&flag2, 4, std::memory_order_release);
+atomic_fetch_add_explicit(&__fence_var, 0, std::memory_order_acq_rel);
 if(!((atomic_load_explicit(&flag0, std::memory_order_acquire) < 2) && (atomic_load_explicit(&flag1, std::memory_order_acquire) < 2)))return;
 ;
-atomic_store_explicit(&_cc_x, 2, std::memory_order_release);
+atomic_store_explicit(&_cc_x, 1, std::memory_order_release);
 assert(atomic_load_explicit(&_cc_x, std::memory_order_acquire) == 2);
 if(!((atomic_load_explicit(&flag3, std::memory_order_acquire) != 3) && (atomic_load_explicit(&flag3, std::memory_order_acquire) != 2)))return;
 ;
@@ -113,5 +117,4 @@ assert(atomic_load_explicit(&_cc_x, std::memory_order_acquire) == 3);
 atomic_store_explicit(&flag3, 0, std::memory_order_release);
         }
 }
-
 

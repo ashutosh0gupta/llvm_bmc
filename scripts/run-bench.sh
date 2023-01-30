@@ -3,16 +3,16 @@
 rm /tmp/cbmc_out.cpp
 
 run=./scripts/run-example.sh
-pldi19=examples/kbound/omkar/pldi19-ra
-k=10
+pldi19=examples/kbound/omkar/pldi19-ra/ver2
+k=6
 l=1
 n=2
 # ex=02-slc-spinlock
 # ex=01-tl-btlock
 # ex=03-dq-deque
-ex=01-peterson-10
+ex=peterson_6_fenced
 #spec=01-tl-btlock
-spec=01-peterson-10
+spec=p5
 # ns=(2 3 4 5 6)
 # kinds=("unsafe" "safe")
 
