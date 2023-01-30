@@ -10,7 +10,7 @@ import time
 subprocess.run(["rm",  "/tmp/cbmc_out.cpp" ])
 
 run   = "./scripts/run-example.sh"
-k = 2
+k = 10
 l = 1
 
 # choose a folder to execute
@@ -49,8 +49,9 @@ for ex in exs:
   f = folder + "/"+ ex[0]+".cpp"
   s = folder + "/"+ ex[1]+".spec"
   n = ex[2]
-  print(ex[0]+"\t\t" + str(n) + " " + str(k) + " " +str(l) + " ", end="")
-  result = subprocess.check_output(["time", run, str(l), str(k), f, s ],stderr=subprocess.STDOUT)
+  lk = n+2 
+  print(ex[0]+"\t\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
+  result = subprocess.check_output(["time", run, str(l), str(lk), f, s ],stderr=subprocess.STDOUT)
   result=result.decode("utf-8")
   time = find_time(result)
   print(time[0]+"\t"+time[1])

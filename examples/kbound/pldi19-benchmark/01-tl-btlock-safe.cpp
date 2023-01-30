@@ -51,14 +51,13 @@ unlock_unsafe() {
 // BTLock l;
 
 int64_t data = 0;
-int64_t ticket;
+//int64_t ticket;
 int64_t observed;
 #define X 3
 
 void thread0(//int64_t X
              //, int64_t& data, int64_t& ticket, int64_t& observed
              ) {
-  ticket = 1;
   if (//ticket = //l.
       lock(X)) {
     data += 42;

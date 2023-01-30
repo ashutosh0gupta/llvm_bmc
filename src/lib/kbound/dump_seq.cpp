@@ -348,7 +348,7 @@ void kbound::dump_Arrays( std::string type,
                           std::string dim1, std::string dim2 ) {
   for( std::string ary: arys ) {
     dump_Decl_array( type, ary+"_", dim1+"*"+dim2 );
-    dump_Define( ary + "(x,k)", ary + "_[x*"+dim2+"+k]" );
+    dump_Define( ary + "(x,k)", ary + "_[(x)*"+dim2+"+k]" );
   }
   dump_Newline();
 }
@@ -451,16 +451,16 @@ void kbound::prefix_seq() {
     for( unsigned i=0; i < size; i++ ) {
       auto in = std::to_string(i);
       auto ival = init.size() > 0 ? init[i] : "0";
-      // dump_Assign( "mu("+ pos + "+" + in + ",0)", ival );
+      dump_Assign( "mu("+ pos + "+" + in + ",0)", ival );
     }
   }
   dump_Comment( "Dumping context matching equalities" );
   for( unsigned x = 0; x < num_globals; x++ ) {
     auto xn = std::to_string(x);
-    for( auto ary: val_list ) dump_String( ary + "("+xn+",0) = 0;" );
-    // dump_String( ary + "mu("+xn+",0) = 0;" );
-    // dump_String( "nw("+xn+",0) = 0;" );
-    // dump_String( "delta("+xn+",0) = -1;" );
+    // for( auto ary: val_list ) dump_String( ary + "("+xn+",0) = 0;" );
+    // dump_String( "mu("+xn+",0) = 0;" );
+    dump_String( "nw("+xn+",0) = 0;" );
+    dump_String( "delta("+xn+",0) = -1;" );
     for( unsigned k = 1; k < ncontext; k++ ) {
       auto kn = std::to_string(k);
       auto xkn = "("+xn+","+kn+")";
