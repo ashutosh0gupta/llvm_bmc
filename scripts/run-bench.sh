@@ -3,17 +3,16 @@
 rm /tmp/cbmc_out.cpp
 
 run=./scripts/run-example.sh
-pldi19=examples/kbound/omkar/bench
-k=20
+pldi19=examples/kbound/omkar/pldi19-ra
+k=10
 l=1
 n=2
 # ex=02-slc-spinlock
 # ex=01-tl-btlock
 # ex=03-dq-deque
-ex=pgsql_bound-unsafe-
-
+ex=01-peterson-10
 #spec=01-tl-btlock
-spec=pgsql_bound
+spec=01-peterson-10
 # ns=(2 3 4 5 6)
 # kinds=("unsafe" "safe")
 

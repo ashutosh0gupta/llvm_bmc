@@ -1,8 +1,8 @@
 void dmbsy();
 
-int wants_to_enter[2] = {0,0};
-int turn = 0;
-int var=0;
+long int wants_to_enter[2] = {0,0};
+long int turn = 0;
+long int var=0;
 
 void thread0(){
       //lock

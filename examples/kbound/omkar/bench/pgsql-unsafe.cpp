@@ -1,7 +1,7 @@
-int latch[2];
-int flag[2];
-int wrong;
-int stop;
+long int latch[2];
+long int flag[2];
+long int wrong;
+long int stop;
 
 void thread0(){
       while(1)
