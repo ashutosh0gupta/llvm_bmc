@@ -15,7 +15,9 @@ l = 1
 
 # choose a folder to execute
 
-folder = "examples/kbound/pldi19-benchmark"
+folder = "examples/kbound/omkar/bench"
+
+# folder = "examples/kbound/pldi19-benchmark"
 
 # exs = [ # ["03-dq-deque-safe","03-dq-deque-3",3]
 #         # ["03-dq-opt-deque-safe","03-dq-deque-3",3]
@@ -49,7 +51,7 @@ for ex in exs:
   f = folder + "/"+ ex[0]+".cpp"
   s = folder + "/"+ ex[1]+".spec"
   n = ex[2]
-  lk = n+2 
+  lk =  n + 2 
   print(ex[0]+"\t\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
   result = subprocess.check_output(["time", run, str(l), str(lk), f, s ],stderr=subprocess.STDOUT)
   result=result.decode("utf-8")

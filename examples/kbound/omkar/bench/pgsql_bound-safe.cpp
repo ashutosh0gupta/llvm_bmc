@@ -1,9 +1,9 @@
 void dmbsy();
 void assert(bool);
 
-int latch[2] = {1,0};
-int flag[2] = {1,0};
-int wrong=0;
+long int latch[2] = {1,0};
+long int flag[2] = {1,0};
+long int wrong=0;
 
 void thread0(){
   wrong = 1;

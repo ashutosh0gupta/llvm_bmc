@@ -1,19 +1,18 @@
-
 #!/usr/bin/python3
 
-import re
-import os
-import shutil
-import sys
-import subprocess
-import time
+# import re
+# import os
+# import shutil
+# import sys
+# import subprocess
+# import time
 
-subprocess.run(["rm",  "/tmp/cbmc_out.cpp" ])
+# subprocess.run(["rm",  "/tmp/cbmc_out.cpp" ])
 
-run   = "./scripts/run-example.sh"
-k = 10
-l = 1
-# n = 2
+# run   = "./scripts/run-example.sh"
+# k = 10
+# l = 1
+# # n = 2
 
 #folder = "examples/kbound/pldi19-benchmark"
 exs = [ 
@@ -32,8 +31,8 @@ exs = [
         ['dijkstra-unsafe1','dijkstra' , 2], 
         ['dijkstra-unsafe2','dijkstra' , 2], 
         ['dijkstra-unsafe3','dijkstra' , 2], 
-        ['fibbench-safe','fibbencg' , 2], 
-        ['fibbench-unsafe','fibbencg' , 2], 
+        ['fibbench-safe','fibbench' , 2], 
+        # ['fibbench-unsafe','fibbench' , 2], 
         ['nolocking-unsafe','nolocking',2], 
         ['peterson-safe1','peterson',2], 
         ['peterson-unsafe1','peterson',2],
@@ -47,32 +46,32 @@ exs = [
         ['szymanski-unsafe1','szymanski',2]
        ]
 
-# folder = "examples/kbound/omkar/bench"
-# exs = [ ["burns-safe-fenced","burns"]
-#        ]
+# # folder = "examples/kbound/omkar/bench"
+# # exs = [ ["burns-safe-fenced","burns"]
+# #        ]
 
 
-my_env = os.environ.copy()
-my_env["TIMEFORMAT"] = "%R"
+# my_env = os.environ.copy()
+# my_env["TIMEFORMAT"] = "%R"
 
-p = re.compile(r'([A-Z]*SAFE) *([0-9\.]*)user')
+# p = re.compile(r'([A-Z]*SAFE) *([0-9\.]*)user')
 
-def find_time( result ):
-   out = re.findall( p, result)
-   if len(out) == 0:
-      print(result)
-      exit()
-   return out[0]
+# def find_time( result ):
+#    out = re.findall( p, result)
+#    if len(out) == 0:
+#       print(result)
+#       exit()
+#    return out[0]
 
 
-print( "Name\t\t\tKind\tN K  L Result\tTime" )
-for ex in exs:
-#   f = folder + "/"+ ex[0]+".cpp"
-#   s = folder + "/"+ ex[1]+".spec"
-  f = ex[0]+".cpp"
-  s = ex[1]+".spec"
-  print(ex[0]+"\t\t" + str(n) + " " + str(k) + " " +str(l) + " ", end="")
-  result = subprocess.check_output(["time", run, str(l), str(k), f, s ],env=my_env,stderr=subprocess.STDOUT)
-  result=result.decode("utf-8")
-  time = find_time(result)
-  print(time[0]+"\t"+time[1])
+# print( "Name\t\t\tKind\tN K  L Result\tTime" )
+# for ex in exs:
+# #   f = folder + "/"+ ex[0]+".cpp"
+# #   s = folder + "/"+ ex[1]+".spec"
+#   f = ex[0]+".cpp"
+#   s = ex[1]+".spec"
+#   print(ex[0]+"\t\t" + str(n) + " " + str(k) + " " +str(l) + " ", end="")
+#   result = subprocess.check_output(["time", run, str(l), str(k), f, s ],env=my_env,stderr=subprocess.STDOUT)
+#   result=result.decode("utf-8")
+#   time = find_time(result)
+#   print(time[0]+"\t"+time[1])
