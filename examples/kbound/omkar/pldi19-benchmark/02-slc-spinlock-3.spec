@@ -14,6 +14,6 @@
 (invoke-parameters three repeated 1 priority 1)
 (end-thread three)
 
-(post-condition all (assert (not (= data 0))))
+(post-condition all (assert ( (= data 126))))
 
 

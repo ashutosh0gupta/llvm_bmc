@@ -1,5 +1,5 @@
-long int latch[2];
-long int flag[2];
+long int latch[2] = {1,0};
+long int flag[2] = {1,0};
 long int wrong;
 long int stop;
 

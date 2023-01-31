@@ -17,33 +17,32 @@
 #folder = "examples/kbound/pldi19-benchmark"
 exs = [ 
         #["01-tl-btlock-unsafe","01-tl-btlock-6",6]
-        ['burns-safe' , 'burns' , 2], 
         ['burns-unsafe1','burns' , 2], 
         ['burns-unsafe2','burns' , 2], 
         ['burns-unsafe3','burns' , 2], 
         ['burns-unsafe4','burns' , 2], 
         ['burns-unsafe5','burns' , 2], 
-        ['dekker-safe', 'dekker' , 2], 
         ['dekker-unsafe1','dekker' , 2], 
         ['dekker-unsafe2','dekker' , 2], 
         ['dekker-unsafe3','dekker' , 2], 
-        ['dijkstra-safe','dijkstra' , 2], 
         ['dijkstra-unsafe1','dijkstra' , 2], 
         ['dijkstra-unsafe2','dijkstra' , 2], 
         ['dijkstra-unsafe3','dijkstra' , 2], 
-        ['fibbench-safe','fibbench' , 2], 
-        # ['fibbench-unsafe','fibbench' , 2], 
         ['nolocking-unsafe','nolocking',2], 
-        ['peterson-safe1','peterson',2], 
         ['peterson-unsafe1','peterson',2],
         ['peterson-unsafe2','peterson',2], 
-        ['pgsql_bound-safe','pgsql_bound',2], 
-        ['pgsql_bound-unsafe-','pgsql_bound',2], 
+        ['pgsql-unsafe','pgsql',2], 
+        ['sigma-unsafe','sigma',4], 
+        ['szymanski-unsafe1','szymanski',2],
+        ['burns-safe' , 'burns' , 2],
+        ['dekker-safe', 'dekker' , 2], 
+        ['dijkstra-safe','dijkstra' , 2], 
+        ['peterson-safe1','peterson',2], 
         ['pgsql-safe','pgsql',2], 
-        ['pgsql-unsafe','pgsql',2], ['sigma-unsafe','sigma',4], 
-        ['singleton-safe','singleton',2], 
         ['szymanski-safe','szymanski',2], 
-        ['szymanski-unsafe1','szymanski',2]
+        ['singleton-safe','singleton',2], 
+
+
        ]
 
 # # folder = "examples/kbound/omkar/bench"

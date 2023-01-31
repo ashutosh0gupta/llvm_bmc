@@ -1,5 +1,5 @@
 void dmbsy();
-long int flag[2] = {1,0};
+long int flag[2];
 long int var;
 
 void thread0(){
