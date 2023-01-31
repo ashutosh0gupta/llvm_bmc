@@ -15,9 +15,9 @@ l = 1
 
 # choose a folder to execute
 
-folder = "examples/kbound/omkar/bench"
+# folder = "examples/kbound/omkar/bench"
 
-# folder = "examples/kbound/pldi19-benchmark"
+folder = "examples/kbound/pldi19-benchmark"
 
 # exs = [ # ["03-dq-deque-safe","03-dq-deque-3",3]
 #         # ["03-dq-opt-deque-safe","03-dq-deque-3",3]

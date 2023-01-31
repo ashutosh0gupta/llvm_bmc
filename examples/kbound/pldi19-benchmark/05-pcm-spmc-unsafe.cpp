@@ -17,28 +17,28 @@ public:
 
 inline int64_t Queue::try_prod(int64_t N, int64_t data) {
   int64_t w = this->wi.load(std::memory_order_relaxed);
-  int64_t r = this->ri.load(std::memory_order_acquire);
+  int64_t r = this->ri.load(std::memory_order_relaxed);
 
   if (w >= r + N) {
     return -1; // full
   }
 
   this->buffer[w % N] = data;
-  this->wi.store(w + 1, std::memory_order_release);
+  this->wi.store(w + 1, std::memory_order_relaxed);
 
   return 0;
 }
 
 inline int64_t Queue::try_cons(int64_t N, int64_t& data) {
-  int64_t w = this->wi.load(std::memory_order_acquire);
-  int64_t r = this->ri.load(std::memory_order_acquire);
+  int64_t w = this->wi.load(std::memory_order_relaxed);
+  int64_t r = this->ri.load(std::memory_order_relaxed);
 
   if (r >= w) {
     return -1; // empty
   }
 
   data = this->buffer[r % N];
-  bool is_successful = this->ri.compare_exchange_strong(r, r + 1, std::memory_order_release);
+  bool is_successful = this->ri.compare_exchange_strong(r, r + 1, std::memory_order_relaxed);
 
   if (is_successful) {
     return 0; // successful
@@ -80,6 +80,41 @@ void thread1() {
 }
 
 void thread2() {
+  int64_t data;
+  int64_t res = 0;
+  for (int64_t i = 0; i < X3; ++i) {
+    if (que.try_cons(N, data) >= 0) {
+      res += data;
+    }
+  }
+  result3 = res;
+}
+
+
+void thread3() {
+  int64_t count(1);
+  int64_t res = 0;
+  for (int64_t i = 0; i < X1; ++i) {
+    if (que.try_prod(N, count) >= 0) {
+      res += count;
+      count *= 2;
+    }
+  }
+  result1 = res;
+}
+
+void thread4() {
+  int64_t data;
+  int64_t res = 0;
+  for (int64_t i = 0; i < X2; ++i) {
+    if (que.try_cons(N, data) >= 0) {
+      res += data;
+    }
+  }
+  result2 = res;
+}
+
+void thread5() {
   int64_t data;
   int64_t res = 0;
   for (int64_t i = 0; i < X3; ++i) {

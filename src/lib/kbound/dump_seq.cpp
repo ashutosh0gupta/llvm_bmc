@@ -531,7 +531,7 @@ void kbound::dump_locals() {
 }
 
 void kbound::dump_sc_semantics( std::string tid, std::string c ) {
-  dump_Assign("cdy[" + tid + "]", c );
+  dump_Assign( "cdy[" + tid + "]", c );
 }
 
 void kbound::
@@ -552,39 +552,43 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
   dump_Active( cr );
   dump_Assume_geq( cr, "iw"+gaccess );
   dump_Assume_geq( cr, caddr );
-  dump_Assume_geq( cr, "cdy[" + tid + "]" );
-  dump_Assume_geq( cr, "cisb["+ tid + "]" );
-  dump_Assume_geq( cr, "cdl[" + tid + "]" );
-  dump_Assume_geq( cr, "cl["  + tid + "]" );
-  if( isExclusive ) dump_Assume_geq( cr, "old_cr" );
-  if( isAcquire   ) dump_Assume_geq( cr, "cx"+gaccess ); // extra in lda
-  if( isAcquire   ) dump_geq_globals( cr, "cs"); // extra in lda
-  if( is_sc_semantics ) {
-    dump_sc_semantics(tid, cr);
-  }
 
-  dump_Comment("Update");
-  dump_Assign( cval, cr );
-  dump_Assign_max( "caddr["+tid+"]", caddr);
-  dump_If( cr + " < " + "cw"+gaccess );
-  {
-    dump_Assign( r, "nu"+gaccess );
-  }
-  dump_Else();
-  {
-    dump_If( "pw" +gaccess + " != " + "nw" + gctx_access );
+  if( is_sc_semantics ) {
+    dump_Assume_geq( cr, "cdy[" + tid + "]" );
+    dump_sc_semantics(tid, cr);
+  }else{
+    dump_Assume_geq( cr, "cdy[" + tid + "]" );
+    dump_Assume_geq( cr, "cisb["+ tid + "]" );
+    dump_Assume_geq( cr, "cdl[" + tid + "]" );
+    dump_Assume_geq( cr, "cl["  + tid + "]" );
+    if( isExclusive ) dump_Assume_geq( cr, "old_cr" );
+    if( isAcquire   ) dump_Assume_geq( cr, "cx"+gaccess ); // extra in lda
+    if( isAcquire   ) dump_geq_globals( cr, "cs"); // extra in lda
+
+    dump_Comment("Update");
+    dump_Assign( cval, cr );
+    dump_Assign_max( "caddr["+tid+"]", caddr);
+    dump_If( cr + " < " + "cw"+gaccess );
     {
-      dump_Assume_geq( cr, "old_cr" );
+      dump_Assign( r, "nu"+gaccess );
+    }
+    dump_Else();
+    {
+      dump_If( "pw" +gaccess + " != " + "nw" + gctx_access );
+      {
+        dump_Assume_geq( cr, "old_cr" );
+      }
+      dump_Close_scope();
+      dump_Assign( "pw"+gaccess, "nw"+ gctx_access );
+      dump_Assign( r, "mu"+ gctx_access );
     }
     dump_Close_scope();
-    dump_Assign( "pw"+gaccess, "nw"+ gctx_access );
-    dump_Assign( r, "mu"+ gctx_access );
-  }
-  dump_Close_scope();
 
-  if( isAcquire   ) dump_Assign_max( "cl[" + tid + "]", cr   );
-  if( isExclusive ) dump_Assign( "delta"+gctx_access, tid );
-  if( isExclusive ) active_lax = active_lax + 1;
+    if( isAcquire   ) dump_Assign_max( "cl[" + tid + "]", cr   );
+    if( isExclusive ) dump_Assign( "delta"+gctx_access, tid );
+    if( isExclusive ) active_lax = active_lax + 1;
+  }
+
 }
 
 void kbound::
