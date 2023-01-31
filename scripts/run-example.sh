@@ -2,7 +2,7 @@
 
 # examples/kbound/pldi19-benchmark/01-tl-btlock-safe.cpp
 
-timeout=300s
+timeout=1200s
 
 if [ "$#" -ne 4 ]; then
     echo "Illegal number of parameters"
