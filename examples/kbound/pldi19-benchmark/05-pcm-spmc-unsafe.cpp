@@ -49,6 +49,7 @@ inline int64_t Queue::try_cons(int64_t N, int64_t& data) {
 
 Queue que;
 int64_t result1, result2, result3;
+int64_t result4, result5, result6;
 
 #define N 2
 #define X1 2
@@ -100,7 +101,7 @@ void thread3() {
       count *= 2;
     }
   }
-  result1 = res;
+  result4 = res;
 }
 
 void thread4() {
@@ -111,7 +112,7 @@ void thread4() {
       res += data;
     }
   }
-  result2 = res;
+  result5 = res;
 }
 
 void thread5() {
@@ -122,5 +123,5 @@ void thread5() {
       res += data;
     }
   }
-  result3 = res;
+  result6 = res;
 }

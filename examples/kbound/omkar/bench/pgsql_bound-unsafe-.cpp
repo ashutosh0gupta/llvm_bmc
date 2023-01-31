@@ -1,8 +1,6 @@
-long int latch[2] = {1,0};
-long int flag[2] = {1,0};
-long int wrong = 0;
-
-void assume(bool);
+long int latch[2];
+long int flag[2];
+long int wrong;
 
 void thread0(){
   for (int i = 0; i < 4; i++)

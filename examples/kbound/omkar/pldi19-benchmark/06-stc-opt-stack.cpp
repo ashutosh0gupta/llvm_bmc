@@ -19,7 +19,7 @@ public:
 };
 
 struct Node {
-  std::atomic<int64_t> data;
+  std::atomic<long int> data;
   std::atomic<Node*> next;
 };
 
@@ -31,13 +31,13 @@ public:
   }
 
   template<size_t n>
-  int64_t try_push(Allocator<Node, n> &allocator, int64_t data); // -2 if lost, -3 if oom
-  int64_t try_pop(int64_t& data); // -1 if empty, -2 if lost
+  long int try_push(Allocator<Node, n> &allocator, long int data); // -2 if lost, -3 if oom
+  long int try_pop(long int& data); // -1 if empty, -2 if lost
 };
 
 template<size_t n>
 __attribute__((always_inline)) inline
-int64_t Stack::try_push(Allocator<Node, n> &allocator, int64_t data) {
+long int Stack::try_push(Allocator<Node, n> &allocator, long int data) {
   Node *node = allocator.alloc();
 
   if (node == nullptr) {
@@ -51,7 +51,7 @@ int64_t Stack::try_push(Allocator<Node, n> &allocator, int64_t data) {
   return (is_successful ? 0 : -2); // CAVEAT: memory leak if unsuccessful
 }
 
-__attribute__((always_inline)) inline int64_t Stack::try_pop(int64_t& data) {
+__attribute__((always_inline)) inline long int Stack::try_pop(long int& data) {
   auto head = this->head.load(std::memory_order_relaxed);
 
   if (head == nullptr) {
@@ -66,9 +66,9 @@ __attribute__((always_inline)) inline int64_t Stack::try_pop(int64_t& data) {
 
 Stack s;
 Allocator<Node, 10> allocator;
-int64_t result1, result2, result3;
-int64_t result4, result5, result6;
-int64_t result7, result8, result9;
+long int result1, result2, result3;
+long int result4, result5, result6;
+long int result7, result8, result9;
 
 #define X1 2
 #define X2 2
@@ -83,12 +83,12 @@ int64_t result7, result8, result9;
 #define X9 3
 
 void thread0() {
-  int64_t count(1);
-  int64_t data;
-  int64_t res;
+  long int count(1);
+  long int data;
+  long int res;
 
   res = 0;
-  for (int64_t i = 0; i < X1; i++) {
+  for (long int i = 0; i < X1; i++) {
     if (s.try_push(allocator, count) >= 0) {
       res += count;
       count *= 2;
@@ -97,7 +97,7 @@ void thread0() {
   result1 = res;
 
   res = 0;
-  for (int64_t i = 0; i < X2; i++) {
+  for (long int i = 0; i < X2; i++) {
     if (s.try_pop(data) >= 0) {
       res += data;
     }
@@ -105,7 +105,7 @@ void thread0() {
   result2 = res;
 
   res = 0;
-  for (int64_t i = 0; i < X3; i++) {
+  for (long int i = 0; i < X3; i++) {
     if (s.try_push(allocator, count) >= 0) {
       res += count;
       count *= 2;
@@ -115,12 +115,12 @@ void thread0() {
 }
 
 void thread1() {
-  int64_t count(1);
-  int64_t data;
-  int64_t res;
+  long int count(1);
+  long int data;
+  long int res;
 
   res = 0;
-  for (int64_t i = 0; i < X1; i++) {
+  for (long int i = 0; i < X1; i++) {
     if (s.try_push(allocator, count) >= 0) {
       res += count;
       count *= 2;
@@ -129,7 +129,7 @@ void thread1() {
   result4 = res;
 
   res = 0;
-  for (int64_t i = 0; i < X2; i++) {
+  for (long int i = 0; i < X2; i++) {
     if (s.try_pop(data) >= 0) {
       res += data;
     }
@@ -137,7 +137,7 @@ void thread1() {
   result5 = res;
 
   res = 0;
-  for (int64_t i = 0; i < X3; i++) {
+  for (long int i = 0; i < X3; i++) {
     if (s.try_push(allocator, count) >= 0) {
       res += count;
       count *= 2;
@@ -147,12 +147,12 @@ void thread1() {
 }
 
 void thread2() {
-  int64_t count(1);
-  int64_t data;
-  int64_t res;
+  long int count(1);
+  long int data;
+  long int res;
 
   res = 0;
-  for (int64_t i = 0; i < X1; i++) {
+  for (long int i = 0; i < X1; i++) {
     if (s.try_push(allocator, count) >= 0) {
       res += count;
       count *= 2;
@@ -161,7 +161,7 @@ void thread2() {
   result7 = res;
 
   res = 0;
-  for (int64_t i = 0; i < X2; i++) {
+  for (long int i = 0; i < X2; i++) {
     if (s.try_pop(data) >= 0) {
       res += data;
     }
@@ -169,7 +169,7 @@ void thread2() {
   result8 = res;
 
   res = 0;
-  for (int64_t i = 0; i < X3; i++) {
+  for (long int i = 0; i < X3; i++) {
     if (s.try_push(allocator, count) >= 0) {
       res += count;
       count *= 2;
@@ -178,14 +178,14 @@ void thread2() {
   result9 = res;
 }
 
-// void thread0(Stack& s, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2,
-//     int64_t X3, int64_t& result1, int64_t& result2, int64_t& result3) {
-//   int64_t count(1);
-//   int64_t data;
-//   int64_t res;
+// void thread0(Stack& s, Allocator<Node, 10>& allocator, long int X1, long int X2,
+//     long int X3, long int& result1, long int& result2, long int& result3) {
+//   long int count(1);
+//   long int data;
+//   long int res;
 
 //   res = 0;
-//   for (int64_t i = 0; i < X1; i++) {
+//   for (long int i = 0; i < X1; i++) {
 //     if (s.try_push(allocator, count) >= 0) {
 //       res += count;
 //       count *= 2;
@@ -194,7 +194,7 @@ void thread2() {
 //   result1 = res;
 
 //   res = 0;
-//   for (int64_t i = 0; i < X2; i++) {
+//   for (long int i = 0; i < X2; i++) {
 //     if (s.try_pop(data) >= 0) {
 //       res += data;
 //     }
@@ -202,7 +202,7 @@ void thread2() {
 //   result2 = res;
 
 //   res = 0;
-//   for (int64_t i = 0; i < X3; i++) {
+//   for (long int i = 0; i < X3; i++) {
 //     if (s.try_push(allocator, count) >= 0) {
 //       res += count;
 //       count *= 2;
@@ -211,14 +211,14 @@ void thread2() {
 //   result3 = res;
 // }
 
-// void thread1(Stack& s, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2,
-//     int64_t X3, int64_t& result1, int64_t& result2, int64_t& result3) {
-//   int64_t count(1);
-//   int64_t data;
-//   int64_t res;
+// void thread1(Stack& s, Allocator<Node, 10>& allocator, long int X1, long int X2,
+//     long int X3, long int& result1, long int& result2, long int& result3) {
+//   long int count(1);
+//   long int data;
+//   long int res;
 
 //   res = 0;
-//   for (int64_t i = 0; i < X1; i++) {
+//   for (long int i = 0; i < X1; i++) {
 //     if (s.try_push(allocator, count) >= 0) {
 //       res += count;
 //       count *= 2;
@@ -227,7 +227,7 @@ void thread2() {
 //   result1 = res;
 
 //   res = 0;
-//   for (int64_t i = 0; i < X2; i++) {
+//   for (long int i = 0; i < X2; i++) {
 //     if (s.try_pop(data) >= 0) {
 //       res += data;
 //     }
@@ -235,7 +235,7 @@ void thread2() {
 //   result2 = res;
 
 //   res = 0;
-//   for (int64_t i = 0; i < X3; i++) {
+//   for (long int i = 0; i < X3; i++) {
 //     if (s.try_push(allocator, count) >= 0) {
 //       res += count;
 //       count *= 2;
@@ -244,14 +244,14 @@ void thread2() {
 //   result3 = res;
 // }
 
-// void thread2(Stack& s, Allocator<Node, 10>& allocator, int64_t X1, int64_t X2,
-//     int64_t X3, int64_t& result1, int64_t& result2, int64_t& result3) {
-//   int64_t count(1);
-//   int64_t data;
-//   int64_t res;
+// void thread2(Stack& s, Allocator<Node, 10>& allocator, long int X1, long int X2,
+//     long int X3, long int& result1, long int& result2, long int& result3) {
+//   long int count(1);
+//   long int data;
+//   long int res;
 
 //   res = 0;
-//   for (int64_t i = 0; i < X1; i++) {
+//   for (long int i = 0; i < X1; i++) {
 //     if (s.try_push(allocator, count) >= 0) {
 //       res += count;
 //       count *= 2;
@@ -260,7 +260,7 @@ void thread2() {
 //   result1 = res;
 
 //   res = 0;
-//   for (int64_t i = 0; i < X2; i++) {
+//   for (long int i = 0; i < X2; i++) {
 //     if (s.try_pop(data) >= 0) {
 //       res += data;
 //     }
@@ -268,7 +268,7 @@ void thread2() {
 //   result2 = res;
 
 //   res = 0;
-//   for (int64_t i = 0; i < X3; i++) {
+//   for (long int i = 0; i < X3; i++) {
 //     if (s.try_push(allocator, count) >= 0) {
 //       res += count;
 //       count *= 2;

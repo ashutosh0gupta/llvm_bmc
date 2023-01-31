@@ -1,7 +1,6 @@
 ; This is a comment
  
 
-
 (declare-thread one thread0)
 (invoke-parameters one repeated 1 priority 1)
 (end-thread one)
@@ -14,5 +13,16 @@
 (declare-thread four thread3)
 (invoke-parameters four repeated 1 priority 1)
 (end-thread four)
+(declare-thread five thread4)
+(invoke-parameters five repeated 1 priority 1)
+(end-thread five)
+(declare-thread six thread5)
+(invoke-parameters six repeated 1 priority 1)
+(end-thread six)
+(declare-thread seven thread6)
+(invoke-parameters seven repeated 1 priority 1)
+(end-thread seven)
+
+
 
 ;

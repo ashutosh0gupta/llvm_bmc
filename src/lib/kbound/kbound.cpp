@@ -357,6 +357,11 @@ void kbound::dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop) {
   case llvm::Instruction::Mul : dump_Assign( ro, r1 +" * "+ r2); break;
   case llvm::Instruction::URem: dump_Assign( ro, r1 +" % "+ r2); break;
   case llvm::Instruction::SRem: dump_Assign( ro, r1 +" % "+ r2); break;
+  case llvm::Instruction::And:  dump_Assign( ro, r1 +" & "+ r2); break;
+  case llvm::Instruction::Or:   dump_Assign( ro, r1 +" | "+ r2); break;
+  case llvm::Instruction::Shl:  dump_Assign( ro, r1 +" << "+ r2); break;
+  case llvm::Instruction::AShr:  dump_Assign( ro, r1 +" >> "+ r2); break;
+  case llvm::Instruction::Xor:   dump_Assign( ro, r1 +" ^ "+ r2); break;
   default: {
     const char* opName = bop->getOpcodeName();
     llvm_bmc_error("kbound", "unsupported instruction \"" << opName << "\" occurred!!");

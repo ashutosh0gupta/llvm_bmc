@@ -1,8 +1,8 @@
 void dmbsy();
 
-int flag[2];
-int turn;
-int var;
+long int flag[2];
+long int turn;
+long int var;
 
 void thread0(){
       //lock

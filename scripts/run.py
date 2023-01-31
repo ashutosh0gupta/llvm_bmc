@@ -51,7 +51,7 @@ for ex in exs:
   f = folder + "/"+ ex[0]+".cpp"
   s = folder + "/"+ ex[1]+".spec"
   n = ex[2]
-  lk =  n + 2 
+  lk =  n + 3
   print(ex[0]+"\t\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
   result = subprocess.check_output(["time", run, str(l), str(lk), f, s ],stderr=subprocess.STDOUT)
   result=result.decode("utf-8")

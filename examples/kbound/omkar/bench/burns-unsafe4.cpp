@@ -2,9 +2,9 @@
 void dmbsy();
 
 
-std::atomic<int> flag0 , flag1 ;
-//int var = 0;
-std::atomic<int> var;
+std::atomic<long int> flag0 , flag1 ;
+//long int var = 0;
+std::atomic<long int> var;
 void thread0 (){
       //lock
       /////

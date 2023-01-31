@@ -1,4 +1,4 @@
-int var;
+long int var;
 void thread0(){
       var = var + 1;
       

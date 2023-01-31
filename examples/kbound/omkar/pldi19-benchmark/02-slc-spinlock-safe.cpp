@@ -3,7 +3,7 @@
 void assume(bool);
 
 // class SpinLock {
-  std::atomic<int64_t> locked;
+  std::atomic<long int> locked;
 
 // public:
 //   SpinLock(): locked(0) {
@@ -16,7 +16,7 @@ void assume(bool);
 __attribute__((always_inline)) inline bool
 // SpinLock::
 lock() {
-  int64_t v = 0;
+  long int v = 0;
   return locked.compare_exchange_strong(v, 1, std::memory_order_acquire, std::memory_order_relaxed);
 }
 
@@ -27,11 +27,11 @@ unlock() {
 }
 
 #define X 3
-int64_t data;
+long int data;
 
-void thread0(//SpinLock &l, int64_t X, int64_t &data
+void thread0(//SpinLock &l, long int X, long int &data
              ) {
-  int64_t i = 0;
+  long int i = 0;
   for (; i < X; ++i) {
     if (//l.
         lock()) {
@@ -43,9 +43,9 @@ void thread0(//SpinLock &l, int64_t X, int64_t &data
   }
 }
 
-void thread1(//SpinLock &l, int64_t X, int64_t &data
+void thread1(//SpinLock &l, long int X, long int &data
              ) {
-  for (int64_t i = 0; i < X; ++i) {
+  for (long int i = 0; i < X; ++i) {
     if (//l.
         lock()) {
       data += 42;
@@ -56,9 +56,9 @@ void thread1(//SpinLock &l, int64_t X, int64_t &data
   }
 }
 
-void thread2(//SpinLock &l, int64_t X, int64_t &data
+void thread2(//SpinLock &l, long int X, long int &data
              ) {
-  for (int64_t i = 0; i < X; ++i) {
+  for (long int i = 0; i < X; ++i) {
     if (//l.
         lock()) {
       data += 42;
@@ -69,9 +69,9 @@ void thread2(//SpinLock &l, int64_t X, int64_t &data
   }
 }
 
-// void thread3(//SpinLock &l, int64_t X, int64_t &data
+// void thread3(//SpinLock &l, long int X, long int &data
 //              ) {
-//   for (int64_t i = 0; i < X; ++i) {
+//   for (long int i = 0; i < X; ++i) {
 //     if (//l.
 //         lock()) {
 //       data += 42;
@@ -82,9 +82,9 @@ void thread2(//SpinLock &l, int64_t X, int64_t &data
 //   }
 // }
 
-// void thread4(//SpinLock &l, int64_t X, int64_t &data
+// void thread4(//SpinLock &l, long int X, long int &data
 //              ) {
-//   for (int64_t i = 0; i < X; ++i) {
+//   for (long int i = 0; i < X; ++i) {
 //     if (//l.
 //         lock()) {
 //       data += 42;
@@ -95,9 +95,9 @@ void thread2(//SpinLock &l, int64_t X, int64_t &data
 //   }
 // }
 
-// void thread5(//SpinLock &l, int64_t X, int64_t &data
+// void thread5(//SpinLock &l, long int X, long int &data
 //              ) {
-//   for (int64_t i = 0; i < X; ++i) {
+//   for (long int i = 0; i < X; ++i) {
 //     if (//l.
 //         lock()) {
 //       data += 42;
