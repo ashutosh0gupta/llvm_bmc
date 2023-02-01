@@ -46,8 +46,8 @@ Queue que;
 int64_t result1, result2;
 
 #define N 2
-#define X1 3
-#define X2 3
+#define X1 2
+#define X2 2
 // #define X3 2
 
 void thread0() {

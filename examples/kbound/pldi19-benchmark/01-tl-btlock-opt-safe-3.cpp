@@ -22,13 +22,13 @@ lock(int64_t X) {
   int64_t t = tc.fetch_add(1, std::memory_order_relaxed);
   int64_t n;
 
-  // for (int64_t i = 0; i < X; i++) {
+  for (int64_t i = 0; i < X; i++) {
     n = ns.load(std::memory_order_acquire);
     if (n == t)
       return t + 1;
-    else
-      assume(false);
-  // }
+    // else
+    //   assume(false);
+  }
 
   return 0; // lock failed
 }

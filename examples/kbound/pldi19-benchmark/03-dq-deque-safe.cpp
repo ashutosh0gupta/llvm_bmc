@@ -88,11 +88,11 @@ __attribute__((always_inline)) inline int64_t Deque::try_steal(int64_t N, int64_
 
 Deque que;
 #define N  5 // Size of the queue
-#define X1 2
-#define X2 1
-#define X3 1
-#define X4 2
-#define X5 1
+#define X1 1
+#define X2 0
+#define X3 0
+#define X4 1
+#define X5 0
 
 int64_t result1, result2, result3;
 int64_t result4, result5, result6;
