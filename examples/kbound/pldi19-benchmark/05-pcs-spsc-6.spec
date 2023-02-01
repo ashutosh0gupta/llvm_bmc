@@ -2,6 +2,10 @@
 
 (declare-var result1 int); 
 (declare-var result2 int); 
+(declare-var result3 int); 
+(declare-var result4 int); 
+(declare-var result5 int); 
+(declare-var result6 int); 
 
 (declare-thread one thread0)
 (invoke-parameters one repeated 1 priority 1)
@@ -31,5 +35,5 @@
 ;(weak-memory-model six SC)
 (end-thread six)
 
-(post-condition all (assert (not (and (= result1 0) (= result2 0) ) )))
+(post-condition all (assert (not (and (= result1 0) (= result2 0) (= result3 0) (= result4 0) (= result5 0) (= result6 0) ) )))
 ;
