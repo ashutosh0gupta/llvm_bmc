@@ -1,22 +1,22 @@
 exs = [
-        ["01-tl-btlock-opt-safe-1"  , "01-tl-btlock-3",3,4,1],
-        ["01-tl-btlock-opt-safe-2"  , "01-tl-btlock-3",3,5,2],
-        ["01-tl-btlock-opt-safe-3"  , "01-tl-btlock-3",3,5,2],
+        ["01-tl-btlock-opt-unsafe-1"  , "01-tl-btlock-3",3,4,1],
+        ["01-tl-btlock-opt-unsafe-2"  , "01-tl-btlock-3",3,5,2],
+        ["01-tl-btlock-opt-unsafe-3"  , "01-tl-btlock-3",3,5,3],
         
-        ["02-slc-spinlock110"  , "02-slc-spinlock-3",3,3,1],
-        ["02-slc-spinlock111"  , "02-slc-spinlock-3",3,4,1],
-        ["02-slc-spinlock220"  , "02-slc-spinlock-3",3,3,1],
-        ["02-slc-spinlock222"  , "02-slc-spinlock-3",3,4,1],
-        ["02-slc-spinlock330"  , "02-slc-spinlock-3",3,3,1],
-        ["02-slc-spinlock333"  , "02-slc-spinlock-3",3,4,1],
+        ["02-slc-spinlock-unsafe-110"  , "02-slc-spinlock-3",3,3,1],
+        ["02-slc-spinlock-unsafe-111"  , "02-slc-spinlock-3",3,4,1],
+        ["02-slc-spinlock-unsafe-220"  , "02-slc-spinlock-3",3,3,1],
+        ["02-slc-spinlock-unsafe-222"  , "02-slc-spinlock-3",3,4,1],
+        ["02-slc-spinlock-unsafe-330"  , "02-slc-spinlock-3",3,3,1],
+        ["02-slc-spinlock-unsafe-333"  , "02-slc-spinlock-3",3,4,1],
         
-        ["05-pcm-spmc-111", "05-pcm-spmc-3",3,3,1],
-        ["05-pcm-spmc-222", "05-pcm-spmc-3",3,3,1],
-        ["05-pcm-spmc-333", "05-pcm-spmc-3",3,3,1],
+        ["05-pcm-spmc-unsafe-111", "05-pcm-spmc-3",3,3,1],
+        ["05-pcm-spmc-unsafe-222", "05-pcm-spmc-3",3,3,1],
+        ["05-pcm-spmc-unsafe-333", "05-pcm-spmc-3",3,3,1],
 
-        ["05-pcs-spsc-111", "05-pcs-spsc-2",2,2,1],
-        ["05-pcs-spsc-222", "05-pcs-spsc-2",2,2,1],
-        ["05-pcs-spsc-333", "05-pcs-spsc-2",2,2,1]
+        ["05-pcs-spsc-unsafe-111", "05-pcs-spsc-2",2,2,1],
+        ["05-pcs-spsc-unsafe-222", "05-pcs-spsc-2",2,2,1],
+        ["05-pcs-spsc-unsafe-333", "05-pcs-spsc-2",2,2,1]
         
         # ["01-tl-btlock-unsafe", "01-tl-btlock-2",2],
         # ["01-tl-btlock-unsafe", "01-tl-btlock-3",3],
