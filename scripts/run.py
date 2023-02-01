@@ -46,15 +46,28 @@ def find_time( result ):
    return out[0]
 
 
-print( "Name\t\t\tKind\tN K  L Result\tTime" )
+print( "Name\t\t\tKind\tN K L Result\tTime" )
 for ex in exs:
-  f = folder + "/"+ ex[0]+".cpp"
-  s = folder + "/"+ ex[1]+".spec"
-  n = ex[2]
-  lk =  ex[3]
-  l = ex[4]
-  print(ex[0]+"\t\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
-  result = subprocess.check_output(["time", run, str(l), str(lk), f, s ],stderr=subprocess.STDOUT)
-  result=result.decode("utf-8")
-  time = find_time(result)
-  print(time[0]+"\t"+time[1])
+   f = folder + "/"+ ex[0]+".cpp"
+   s = folder + "/"+ ex[1]+".spec"
+   n = ex[2]
+   if( len(ex) > 3):
+      lk =  ex[3]
+   else:
+      lk = 10
+   if( len(ex) > 4):
+      l = ex[4]
+   else:
+      l = 1
+   if( len(ex) > 5):
+      kind = ex[5]
+   else:
+      kind = "unk"
+      
+   print(ex[0]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
+   result = subprocess.check_output(["time", run, str(l), str(lk), f, s ],stderr=subprocess.STDOUT)
+   result=result.decode("utf-8")
+   # print(result)
+   # exit()
+   time = find_time(result)
+   print(time[0]+"\t"+time[1])
