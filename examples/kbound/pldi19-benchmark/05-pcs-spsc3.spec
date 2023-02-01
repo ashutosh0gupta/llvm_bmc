@@ -15,8 +15,10 @@
 (invoke-parameters two repeated 1 priority 1)
 (end-thread two)
 
+(declare-thread three thread2)
+(invoke-parameters three repeated 1 priority 1)
+(end-thread three)
 
 
-(post-condition all (assert (= result2 1) ))
-;(post-condition all (assert (not (and (= result1 0) (= result2 0) (= result3 0) ) )))
+(post-condition all (assert (not (and (= result1 0) (= result2 0) ) )))
 ;

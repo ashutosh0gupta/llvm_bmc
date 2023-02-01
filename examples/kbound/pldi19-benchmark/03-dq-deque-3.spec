@@ -22,7 +22,7 @@
 ;(weak-memory-model three SC)
 (end-thread three)
 
-(post-condition all (assert (not (and (= result1 0) (= result2 0) (= result3 0) (= result4 0) (= result5 0) ) )))
+(post-condition all (assert (and (= result1 0) (= result2 0) (= result3 0) (= result4 0) (= result5 0) ) )))
 ;(= result6 0)
 ;(post-condition all (assert (not (and (= result1 0) (= result4 0) ) )))
 ;(post-condition all (assert (not (and (= result1 0) ) )))
