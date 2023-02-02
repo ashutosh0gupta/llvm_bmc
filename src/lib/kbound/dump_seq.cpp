@@ -548,15 +548,19 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
   dump_Assign( "old_cr",  cr);
   dump_Assign_rand_ctx( cr );
 
-  dump_Comment("Check");
-  dump_Active( cr );
-  dump_Assume_geq( cr, "iw"+gaccess );
-  dump_Assume_geq( cr, caddr );
 
   if( is_sc_semantics ) {
+    dump_Comment("Check");
+    dump_Active( cr );
     dump_Assume_geq( cr, "cdy[" + tid + "]" );
-    dump_sc_semantics(tid, cr);
+    dump_Assign( "cdy[" + tid + "]", cr );
+    dump_Comment("Update");
+    dump_Assign( r, "mu"+ gctx_access );
   }else{
+    dump_Comment("Check");
+    dump_Active( cr );
+    dump_Assume_geq( cr, "iw"+gaccess );
+    dump_Assume_geq( cr, caddr );
     dump_Assume_geq( cr, "cdy[" + tid + "]" );
     dump_Assume_geq( cr, "cisb["+ tid + "]" );
     dump_Assume_geq( cr, "cdl[" + tid + "]" );
@@ -585,10 +589,9 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
     dump_Close_scope();
 
     if( isAcquire   ) dump_Assign_max( "cl[" + tid + "]", cr   );
-    if( isExclusive ) dump_Assign( "delta"+gctx_access, tid );
-    if( isExclusive ) active_lax = active_lax + 1;
   }
-
+  if( isExclusive ) dump_Assign( "delta"+gctx_access, tid );
+  if( isExclusive ) active_lax = active_lax + 1;
 }
 
 void kbound::
@@ -607,41 +610,53 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
   dump_Assign( "old_cw",  cw);
   dump_Assign_rand_ctx( cw );
 
-  dump_Comment("Check");
-  dump_Active( iw );
-  dump_Active( cw );
-  dump_Assume_geq( iw, cval  );
-  dump_Assume_geq( iw, caddr );
-  dump_Assume_geq( cw, iw );
-  dump_Assume_geq( cw, "old_cw" );
-  dump_Assume_geq( cw, "cr"    + gaccess   );
-  dump_Assume_geq( cw,    "cl[" + tid + "]" );
-  dump_Assume_geq( cw,  "cisb[" + tid + "]" );
-  dump_Assume_geq( cw,   "cdy[" + tid + "]" );
-  dump_Assume_geq( cw,   "cdl[" + tid + "]" );
-  dump_Assume_geq( cw,   "cds[" + tid + "]" );
-  dump_Assume_geq( cw,  "ctrl[" + tid + "]" );
-  dump_Assume_geq( cw, "caddr[" + tid + "]" );
-  if( isRelease ) dump_geq_globals( cw, "cr");
-  if( isRelease ) dump_geq_globals( cw, "cw");
-  if( isExclusive ) dump_Assume( "delta" + gctx_access + " == "+ tid );
-
   if( is_sc_semantics ) {
-    dump_sc_semantics(tid, cw);
+    dump_Comment("Check");
+    dump_Active( cw );
+    dump_Assume_geq( cw, "cdy[" + tid + "]" );
+    if( isExclusive ) dump_Assume( "delta" + gctx_access + " == "+ tid );
+
+    dump_Comment("Update");
+    dump_Assign( "cdy[" + tid + "]", cw );
+    dump_Assign( "mu"   + gctx_access, v);
+    dump_String( "nw"   + gctx_access + "+=1;");
+    dump_Assign( "delta"+ gctx_access, "-1");
+    if( isExclusive || active_lax > 0 ) dump_Assign(  "cx" + gaccess, cw);
+    if( isExclusive ) active_lax = active_lax - 1;
+  }else{
+    dump_Comment("Check");
+    dump_Active( iw );
+    dump_Active( cw );
+    dump_Assume_geq( iw, cval  );
+    dump_Assume_geq( iw, caddr );
+    dump_Assume_geq( cw, iw );
+    dump_Assume_geq( cw, "old_cw" );
+    dump_Assume_geq( cw, "cr"    + gaccess   );
+    dump_Assume_geq( cw,    "cl[" + tid + "]" );
+    dump_Assume_geq( cw,  "cisb[" + tid + "]" );
+    dump_Assume_geq( cw,   "cdy[" + tid + "]" );
+    dump_Assume_geq( cw,   "cdl[" + tid + "]" );
+    dump_Assume_geq( cw,   "cds[" + tid + "]" );
+    dump_Assume_geq( cw,  "ctrl[" + tid + "]" );
+    dump_Assume_geq( cw, "caddr[" + tid + "]" );
+    if( isRelease ) dump_geq_globals( cw, "cr");
+    if( isRelease ) dump_geq_globals( cw, "cw");
+    if( isExclusive ) dump_Assume( "delta" + gctx_access + " == "+ tid );
+
+    dump_Comment("Update");
+    dump_Assign_max( "caddr[" + tid + "]", cval );
+    dump_Assign( "nu"   + gaccess    , v);
+    dump_Assign( "mu"   + gctx_access, v);
+    if( isExclusive ) dump_Assign( "cx"   + gaccess, cw);
+    dump_String( "nw"   + gctx_access + "+=1;");
+    dump_Assign( "delta"+ gctx_access, "-1");
+
+    if( isRelease ) dump_Assign( "is"+gaccess, iw);
+    if( isRelease ) dump_Assign( "cs"+gaccess, cw);
+    if( active_lax > 0 ) dump_Assign( "cx"+gaccess, cw);
+    if( isExclusive ) active_lax = active_lax - 1;
   }
 
-  dump_Comment("Update");
-  dump_Assign_max( "caddr[" + tid + "]", cval );
-  dump_Assign( "nu"   + gaccess    , v);
-  dump_Assign( "mu"   + gctx_access, v);
-  if( isExclusive ) dump_Assign( "cx"   + gaccess, cw);
-  dump_String( "nw"   + gctx_access + "+=1;");
-  dump_Assign( "delta"+ gctx_access, "-1");
-
-  if( isRelease ) dump_Assign( "is"+gaccess, iw);
-  if( isRelease ) dump_Assign( "cs"+gaccess, cw);
-  if( active_lax > 0 ) dump_Assign( "cx"+gaccess, cw);
-  if( isExclusive ) active_lax = active_lax - 1;
 }
 
 
