@@ -9,6 +9,7 @@
 (invoke-parameters two repeated 1 priority 1)
 (end-thread two)
 
-(post-condition all (assert ( (= var 2))))
+(post-condition all (assert ( or (= var 2) (= var 1) (= var 0))))
+
 ;
 

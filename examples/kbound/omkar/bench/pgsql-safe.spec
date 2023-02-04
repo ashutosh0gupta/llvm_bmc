@@ -1,5 +1,7 @@
 ; This is a comment
- 
+
+(declare-var wrong int); 
+
 
 (declare-thread one thread0)
 (invoke-parameters one repeated 1 priority 1)
@@ -11,5 +13,6 @@
 (invoke-parameters three repeated 1 priority 1)
 (end-thread three)
 
-
+(post-condition all (assert  (= wrong 0)))
 ;
+
