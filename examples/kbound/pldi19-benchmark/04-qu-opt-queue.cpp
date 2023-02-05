@@ -116,15 +116,15 @@ __attribute__((always_inline)) inline int64_t Queue::try_deq(int64_t& data) {
   return -2;
 }
 
-#define X1 1
+#define X1 2
 #define X2 0
 #define X3 0
 
-#define X4 1
-#define X5 0
+#define X4 0
+#define X5 2
 #define X6 0
 
-#define X7 1
+#define X7 0
 #define X8 0
 #define X9 0
 

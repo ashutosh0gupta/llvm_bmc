@@ -16,21 +16,21 @@
 
 #folder = "examples/kbound/pldi19-benchmark"
 exs = [ 
-        # ['01-peterson-4','p4',4],
-        # ['01-peterson-6','p6',6],
-        # ['01-peterson-8','p8',8],
-        # ['01-szymanski-4','p4',4],
-        # ['01-szymanski-6','p6',6],
+        ['01-peterson-4','p4',4],
+        ['01-peterson-6','p6',6],
+        ['01-peterson-8','p8',8],
+        ['01-szymanski-4','p4',4],
+        ['01-szymanski-6','p6',6],
         ['01-szymanski-8','p8',8],
-        # ['peterson_3_fenced','p3',3],
-        # ['peterson_4_fenced','p4',4],
-        # ['peterson_5_fenced','p5',5],
-        # ['peterson_6_fenced','p6',6],
-        # ['peterson_7_fenced','p7',7],
-        # ['szymanski_3_fenced','p3',3],
-        # ['szymanski_4_fenced','p4',4],
-        # ['szymanski_5_fenced','p5',5],
-        # ['szymanski_6_fenced','p6',6]
+        ['peterson_3_fenced','p3',3],
+        ['peterson_4_fenced','p4',4],
+        ['peterson_5_fenced','p5',5],
+        ['peterson_6_fenced','p6',6],
+        ['peterson_7_fenced','p7',7],
+        ['szymanski_3_fenced','p3',3],
+        ['szymanski_4_fenced','p4',4],
+        ['szymanski_5_fenced','p5',5],
+        ['szymanski_6_fenced','p6',6]
         #['szymanksi_7_fenced','p7',7]
        ]
 

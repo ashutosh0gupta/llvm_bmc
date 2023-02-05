@@ -22,9 +22,42 @@ exs2 = [
         ["05-pcm-spmc-unsafe-222", "05-pcm-spmc-3",3,3,1],
         ["05-pcm-spmc-unsafe-333", "05-pcm-spmc-3",3,3,1],
 
-        ["05-pcs-spsc-unsafe-111", "05-pcs-spsc-2",2,2,1],
-        ["05-pcs-spsc-unsafe-222", "05-pcs-spsc-2",2,2,1],
-        ["05-pcs-spsc-unsafe-333", "05-pcs-spsc-2",2,2,1]
+        # ["01-tl-btlock-opt-1"  , "01-tl-btlock-3",3,4,1,"unsafe"],
+        # ["01-tl-btlock-opt-2"  , "01-tl-btlock-3",3,5,2,"unsafe"],
+        # ["01-tl-btlock-opt-3"  , "01-tl-btlock-3",3,5,3,"unsafe"],
+
+        # ["02-slc-spinlock-110"  , "02-slc-spinlock-3",3,3,1,"unsafe"],
+        # ["02-slc-spinlock-111"  , "02-slc-spinlock-3",3,4,1,"unsafe"],
+        # ["02-slc-spinlock-220"  , "02-slc-spinlock-3",3,3,1,"unsafe"],
+        # ["02-slc-spinlock-222"  , "02-slc-spinlock-3",3,4,1,"unsafe"],
+        # ["02-slc-spinlock-330"  , "02-slc-spinlock-3",3,3,1,"unsafe"],
+        # ["02-slc-spinlock-333"  , "02-slc-spinlock-3",3,4,1,"unsafe"],
+        
+        ["03-dq-opt-deque-10010","03-dq-deque-3",3,3,1,"unsafe"],
+        ["03-dq-opt-deque-11010","03-dq-deque-3",3,3,1,"unsafe"],
+        ["03-dq-opt-deque-11011","03-dq-deque-3",3,3,1,"unsafe"],
+        ["03-dq-opt-deque-11111","03-dq-deque-3",3,3,1,"unsafe"],
+        ["03-dq-opt-deque-21111","03-dq-deque-3",3,3,1,"unsafe"],
+        ["03-dq-opt-deque-21121","03-dq-deque-3",3,3,1,"unsafe"],
+
+        ["05-pcm-spmc-111", "05-pcm-spmc-3",3,3,1,"unsafe"],
+        ["05-pcm-spmc-222", "05-pcm-spmc-3",3,3,1,"unsafe"],
+        ["05-pcm-spmc-333", "05-pcm-spmc-3",3,3,1,"unsafe"],
+
+        ["05-pcs-spsc-111", "05-pcs-spsc-2",2,2,1,"unsafe"],
+        ["05-pcs-spsc-222", "05-pcs-spsc-2",2,2,1,"unsafe"],
+        ["05-pcs-spsc-333", "05-pcs-spsc-2",2,2,1,"unsafe"],
+         
+        ["07-sla-1","07-sla",2,2,1,"unsafe"],
+        ["07-sla-2","07-sla",2,3,1,"unsafe"],
+        ["07-sla-3","07-sla",2,3,1,"unsafe"],
+        ["07-sla-4","07-sla",2,4,1,"unsafe"],
+        ["07-sla-5","07-sla",2,5,1,"unsafe"],
+        ["07-sla-6","07-sla",2,6,1,"unsafe"],
+        ["07-sla-7","07-sla",2,7,1,"unsafe"],
+        ["07-sla-8","07-sla",2,8,1,"unsafe"],
+        ["07-sla-9","07-sla",2,9,1,"unsafe"],
+        ["07-sla-10","07-sla",2,10,1,"unsafe"]
         
         # ["01-tl-btlock-unsafe", "01-tl-btlock-2",2],
         # ["01-tl-btlock-unsafe", "01-tl-btlock-3",3],

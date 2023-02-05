@@ -17,7 +17,6 @@ void thread0(){
             flag[0] = 0;
             flag[1] = 1;
             latch[1] = 1;
-           if(flag[0] != 0) continue;
       }
 }
 
@@ -35,7 +34,6 @@ void thread1(){
             flag[1] = 0;
             flag[0] = 1;
             latch[0] = 1;
-           if(flag[1] != 0) continue;
       }
 }
 

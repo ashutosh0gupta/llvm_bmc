@@ -19,18 +19,4 @@
 (declare-thread six thread5)
 (invoke-parameters six repeated 1 priority 1)
 (end-thread six)
-(declare-thread seven thread6)
-(invoke-parameters seven repeated 1 priority 1)
-(end-thread seven)
-(declare-thread seven thread7)
-(invoke-parameters seven repeated 1 priority 1)
-(end-thread seven)
-(declare-thread eight thread8)
-(invoke-parameters eight repeated 1 priority 1)
-(end-thread eight)
-(declare-thread eight thread9)
-(invoke-parameters eight repeated 1 priority 1)
-(end-thread eight)
-
-
 ;

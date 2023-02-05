@@ -11,7 +11,7 @@ void thread0(){
       dmbsy();
       turn = 1;
       dmbsy();
-      while(flag[1] == 1 && turn == 1){dmbsy();}
+      if(flag[1] == 1 && turn == 1) return;
       //CS
       dmbsy();
       var = var + 1;
@@ -27,7 +27,7 @@ void thread1(){
       dmbsy();
       turn = 0;
       dmbsy();
-      while(flag[0] == 1 && turn == 0){dmbsy();}
+      if(flag[0] == 1 && turn == 0) return;
       //CS
       dmbsy();
       var = var + 1;
