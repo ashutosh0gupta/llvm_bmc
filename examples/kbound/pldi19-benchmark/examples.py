@@ -1,9 +1,12 @@
 exs1 = [
-        ["05-pcm-spmc-unsafe", "05-pcs-spsc-2",2,2,1,"unsafe"],
+        ["02-slc-spinlock-unsafe"  , "01-tl-btlock-sc-4",6,5,1,"un-sc"],
+        ["02-slc-spinlock-unsafe"  , "01-tl-btlock-4"   ,6,5,1,"unsafe"],
+        # ["05-pcm-spmc-unsafe", "05-pcs-spsc-4",4,10,1,"safe"]
+        # ["05-pcm-spmc-unsafe", "05-pcs-spsc-2",2,2,1,"unsafe"],
         # ["01-tl-btlock-unsafe", "01-tl-btlock-6",6,10,1],
       ]
 
-exs = [
+exs2 = [
         ["01-tl-btlock-opt-unsafe-1"  , "01-tl-btlock-3",3,4,1],
         ["01-tl-btlock-opt-unsafe-2"  , "01-tl-btlock-3",3,5,2],
         ["01-tl-btlock-opt-unsafe-3"  , "01-tl-btlock-3",3,5,3],
@@ -80,7 +83,7 @@ exs = [
     
        ]
 
-exs = exs2
+exs = exs1
 
 # exs = [ ["01-tl-btlock-unsafe"  , "01-tl-btlock-2",2],
 #        ]
