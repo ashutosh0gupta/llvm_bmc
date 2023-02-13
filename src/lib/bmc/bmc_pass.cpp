@@ -533,6 +533,8 @@ void bmc_pass::translateCallInst( unsigned bidx,
       llvm_bmc_error("bmc",
           "Only __VERIFIER_[assert,error,nondet_TY] functions are handled!");
     }
+  } else if( fp != NULL && fp->getName().startswith("__cxa_allocate_exception") ) {
+    // do nothing as already collected in collect globals pass.
   } else {
     //call->print( llvm::outs() );
     llvm_bmc_error("bmc", "function call is not recognized !!");

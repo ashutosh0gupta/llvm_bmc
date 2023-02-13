@@ -1957,9 +1957,17 @@ identify_array( const llvm::Value* op) {
     return identify_array(cistr);
     // cistr->dump();
     // llvm_bmc_error("bmc", "non GEP constant expression!");
-  }else{
+  }else if( auto call = llvm::dyn_cast<const llvm::CallInst>(op) ) {
+    llvm::Function* fp = call->getCalledFunction();
+    if (fp != NULL && fp->getName().startswith("__cxa_allocate")) {
+      // call->print(llvm::outs());std::cout << "RECOGNIZED PATTERN\n";
+      return call;
+    }
+  }
+  else{
     // llvm_bmc_error("bmc", "non array global write/read not supported!");
   }
+  llvm_bmc_warning("bmc","failed to recognize heap access");
   op->dump();
   return NULL;
 }
