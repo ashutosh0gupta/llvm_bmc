@@ -18,16 +18,6 @@
 
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/LinkAllPasses.h"
-#include "lib/utils/collect_PointsToData.cpp"
-
-void PointsToAnalysis( options& o,
-                     std::unique_ptr<llvm::Module>& module
-)
-{
-  llvm::legacy::PassManager passMan;
-  passMan.add( new collectPointsToData(o) ); // Collecting Points-to data from llvm::setTracker
-  passMan.run( *module.get() );
-}
 
 void forced_unroll_pass( options& o,
                      std::unique_ptr<llvm::Module>& module
@@ -100,7 +90,7 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
   forced_inliner_pass( module );
 
   //Analyse IR
-  PointsToAnalysis(o, module);
+  points_to_analysis(o, module);
 
   // initialize bmc data structure
   b.init();
@@ -158,3 +148,6 @@ int main(int argc, char** argv) {
   //}
  
 }
+
+
+

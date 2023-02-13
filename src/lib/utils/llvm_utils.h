@@ -220,4 +220,7 @@ void forced_inliner_pass(std::unique_ptr<llvm::Module>& module);
 const llvm::Value* identify_array( const llvm::Value* op);
 const llvm::Value* identify_global_in_addr( const llvm::Value* op);
 
+
+void points_to_analysis( options& o, std::unique_ptr<llvm::Module>& module);
+
 #endif
