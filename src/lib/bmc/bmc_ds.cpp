@@ -348,12 +348,18 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
       auto I = &(*it);
       if( auto load = llvm::dyn_cast<const llvm::LoadInst>(I) ) {
         auto ary  = identify_array( load->getPointerOperand() );
-        if( ary && exists( ary_to_int, ary ) )
+        if( ary && exists( ary_to_int, ary ) ) {
           ary_access_to_index[load] = ary_to_int.at( ary );
+        }else{
+          // llvm_bmc_error("bmc", "Cound not identify array");
+        }
       }else if( auto store = llvm::dyn_cast<const llvm::StoreInst>(I) ) {
         auto ary  = identify_array( store->getPointerOperand() );
-        if( ary && exists( ary_to_int, ary ) )
+        if( ary && exists( ary_to_int, ary ) ){
           ary_access_to_index[store] = ary_to_int.at( ary );
+        }else{
+          // llvm_bmc_error("bmc", "Cound not identify array");
+        }
       }
     }
   }

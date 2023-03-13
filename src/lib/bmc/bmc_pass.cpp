@@ -1549,7 +1549,9 @@ void bmc_pass::print_bb_vecs() {
   std::cout << "----------------------------------------------\n";
 }
 
+//
 //todo: move this function to somewhere more general!!
+//
 void bmc_pass::populate_array_name_map(llvm::Function* f) {
   assert(f);
   int arrCntr = 0;

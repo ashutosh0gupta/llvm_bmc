@@ -22,6 +22,11 @@
 #include "llvm/Analysis/CFGPrinter.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/IR/Metadata.h"
+#include "llvm/MC/TargetRegistry.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Support/CodeGen.h"
+#include "llvm/Support/Host.h"
+#include "llvm/Support/TargetSelect.h"
 //clang related code
 #include <clang/CodeGen/CodeGenAction.h>
 #include <clang/Frontend/CompilerInstance.h>
@@ -468,6 +473,7 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   }
   std::unique_ptr<llvm::Module> module = Act->takeModule();
 
+  generateAssemblyARM( module );
   // return std::move(module);
   return module;
   return nullptr;
@@ -492,6 +498,53 @@ std::unique_ptr<llvm::Module> c2ir( options& o ) {
   return move( c2ir( o, comments_found ) );
 }
 
+
+
+void generateAssemblyARM( std::unique_ptr<llvm::Module>& module ) {
+
+  llvm::InitializeAllTargets();
+  llvm::InitializeAllTargetMCs();
+  llvm::InitializeAllAsmParsers();
+  llvm::InitializeAllAsmPrinters();
+
+  // Get the target machine for the ARM64 architecture.
+  llvm::Triple triple("aarch64");
+  std::string error;
+  const llvm::Target* target = llvm::TargetRegistry::lookupTarget(triple.str(), error);
+  if( !target ) {
+      llvm::outs() << "Error looking up target: " << error << "\n";
+      return;
+  }
+
+  // Set target-specific options.
+  llvm::TargetOptions options;
+  llvm::Reloc::Model relocModel = llvm::Reloc::Model::PIC_;
+  llvm::CodeModel::Model codeModel = llvm::CodeModel::Small;
+  llvm::CodeGenOpt::Level optLevel = llvm::CodeGenOpt::Aggressive;
+
+  // Create a target machine.
+  llvm::TargetMachine* targetMachine =
+    target->createTargetMachine( triple.str(), "", "", options, relocModel,
+                                 codeModel, optLevel );
+
+  // Set up the output stream.
+  std::string assembly;
+  llvm::raw_string_ostream output(assembly);
+
+  // Generate assembly code.
+  llvm::legacy::PassManager passManager;
+  targetMachine->addPassesToEmitFile( passManager, llvm::outs(),
+                                      nullptr, llvm::CGFT_AssemblyFile );
+  passManager.run( *module.get() );
+  output.flush();
+
+  // Store the assembly language in the module.
+ //  module.setDataLayout(targetMachine->createDataLayout());
+ //  module.setTargetTriple(triple.str());
+ //  module.setSourceFileName("input.cpp");
+ //  module.setModuleInlineAsm(assembly);
+ // llvm::outs() << assembly;
+}
 
 
 void setLLVMConfigViaCommandLineOptions( std::string strs ) {

@@ -90,19 +90,24 @@ endif(LLVM_VERSION EQUAL "7.0.0svn")
 # unexplained guard 
 if( LLVM_DEBUG )
   llvm_map_components_to_libnames(llvm_libs
-    aarch64asmparser aarch64codegen
-    armasmparser armcodegen
+    webassemblyasmparser webassemblycodegen
+    veasmparser          vecodegen
+    riscvasmparser       riscvcodegen
+    avrasmparser         avrcodegen
+    aarch64asmparser     aarch64codegen
+    armasmparser         armcodegen
+    mipsasmparser        mipscodegen
+    msp430asmparser      msp430codegen
+    powerpcasmparser     powerpccodegen
+    x86asmparser         x86codegen
+    sparcasmparser       sparccodegen
+    systemzasmparser     systemzcodegen
+    amdgpuasmparser      amdgpucodegen
+    bpfasmparser         bpfcodegen
+    asmprinter
     hexagoncodegen
-    mipsasmparser mipscodegen
-    msp430codegen
     nvptxcodegen
-    powerpcasmparser powerpccodegen
-    sparcasmparser sparccodegen
-    systemzasmparser systemzcodegen
-    x86asmparser x86codegen
     xcorecodegen
-    amdgpuasmparser amdgpucodegen
-    bpfasmparser bpfcodegen
     lanaicodegen
     objcarcopts
     )

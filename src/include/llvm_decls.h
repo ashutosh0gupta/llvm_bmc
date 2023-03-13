@@ -57,6 +57,8 @@ std::unique_ptr<llvm::Module> asm2ir( options&,  comments& );
 
 void c2bc( const std::string&, const std::string& );
 
+void generateAssemblyARM( std::unique_ptr<llvm::Module>& module );
+
 std::unique_ptr<llvm::Module> c2ir( std::string, llvm::LLVMContext& );
 
 void dump_dot_module( boost::filesystem::path& dump_path,
