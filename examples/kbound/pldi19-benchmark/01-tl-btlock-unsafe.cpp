@@ -4,8 +4,8 @@
 void assume(bool);
 
 // class BTLock {
-  std::atomic<int64_t> ns;
-  std::atomic<int64_t> tc;
+std::atomic<int64_t> ns(0);
+std::atomic<int64_t> tc(0);
 
 // public:
 //   BTLock(): ns(0), tc(0) {
@@ -41,8 +41,7 @@ unlock() {
   ns.store(n + 1, std::memory_order_release);
 }
 
-__attribute__((always_inline))
- inline void
+__attribute__((always_inline)) inline void
 //BTLock::
 unlock_unsafe() {
   int64_t n = ns.load(std::memory_order_relaxed);
@@ -51,7 +50,7 @@ unlock_unsafe() {
 
 // BTLock l;
 
-int64_t data;
+int64_t data = 0;
 //int64_t ticket;
 int64_t observed;
 #define X 3

@@ -28,6 +28,7 @@ private:
   unsigned ncontext = 10;
   unsigned active_lax = 0;
   std::string thread_name, EntryFn;
+  bool is_sc_semantics = false;
 
   svec reg_vals,reg_list;
   svec val_init_list, val_list;
@@ -38,6 +39,7 @@ private:
   std::map<const void*, unsigned> global_position;
   std::map<const void*, unsigned> global_size;
   std::map<const void*, std::string> global_name;
+  std::map<const void*, svec> global_init;
 
   unsigned num_local_globals = 0; // Number of variables that are locally used
   std::map<const void*, unsigned   > local_global_position;
@@ -50,10 +52,12 @@ private:
   std::map<const void*, svec> ctrl_dep_ord;
   // std::map<const llvm::Value*, std::string> ssa_name;
   // std::map<const llvm::Value*, svec> ctrl_dep_ord;
-  std::vector<std::string> unmapped_names;
+  svec unmapped_names;
+  svec uninit_names;
   // std::map<const llvm::BasicBlock*, std::string> path_name;
   svec in_code_spec;
 
+  
   std::string time_name( std::string name );
   std::string fresh_name();
   void        add_reg_map   ( const void*, std::string );
@@ -72,9 +76,9 @@ private:
   std::string read_const  ( const llvm::Value* );
   std::string add_reg_map ( const llvm::Value* );
   std::string get_reg     ( const llvm::Value* );
-  std::string get_reg     ( const llvm::Value* , svec idxs );
+  std::string get_reg     ( const llvm::Value* , svec& idxs );
   std::string get_reg_time( const llvm::Value* );
-  std::string get_reg_time( const llvm::Value* , svec idxs );
+  std::string get_reg_time( const llvm::Value* , svec& idxs );
 
   std::string block_name(unsigned bidx);
   void dump_Params(llvm::Function &f);
@@ -86,6 +90,7 @@ private:
   void dump_Goto(std::string s);
   void dump_Comment(std::string s);
   void dump_Assume (std::string s);
+  void dump_Assert (std::string s);
   void dump_Assume_eq ( std::string s1, std::string s2 );
   void dump_Assume_geq( std::string s1, std::string s2 );
   void dump_Assume_geq_max(std::string s1,std::string s2,std::string s3);
@@ -104,9 +109,11 @@ private:
   void dump_For        (std::string, std::string, std::string);
   void dump_For(std::string, std::string, std::string, std::string);
   void dump_If(std::string);
+  void dump_ElseIf(std::string);
   void dump_Else();
   void dump_Close_scope();
   void dump_locals();
+  void dump_sc_semantics(std::string tid, std::string ctime);
 
   void dump_Macors(std::string name, std::string val);
 
@@ -116,6 +123,9 @@ private:
 
   void dump_ld( std::string, std::string, std::string, std::string,bool,bool);
   void dump_st( std::string, std::string, std::string, std::string,bool,bool);
+
+  unsigned get_word_size(const llvm::Value* v );
+  svec get_init_array(const llvm::Value* v, unsigned size );
 
   //---------------------------------------------------------------------
 
@@ -127,7 +137,8 @@ private:
   void dump_AllocaInst( const llvm::AllocaInst* alloc );
   void dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop);
   void dump_CmpInst    ( unsigned bidx, const llvm::CmpInst* cmp);
-
+  void dump_SelectInst( const llvm::SelectInst *sel );
+  
   void dump_CallInst( unsigned bidx, const llvm::CallInst* call);
 
   void dump_Active( std::string ctx);
@@ -167,6 +178,8 @@ private:
   void dump_PhiNode( unsigned bidx, const llvm::PHINode* phi );
   void dump_RetInst(const llvm::ReturnInst *ret );
   void dump_Branch( unsigned bidx, const llvm::BranchInst* br );
+  void dump_SwitchInst( unsigned bidx, const llvm::SwitchInst* br );
+  void dump_UnreachableInst( unsigned, const llvm::UnreachableInst *I);
 
   void dump_Thread();
   void dump_Block( unsigned bidx, const bb* b );

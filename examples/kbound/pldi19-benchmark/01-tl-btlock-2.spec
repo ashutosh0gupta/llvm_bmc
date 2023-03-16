@@ -10,5 +10,5 @@
 (end-thread two)
 
 (post-condition all (assert(= data 84)))
-
+;(post-condition all (assert(= data 42)))
 

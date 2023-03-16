@@ -47,7 +47,7 @@ typedef std::vector<const inst*> inst_vec_t;
 
 void dump( const llvm::Value* );
 void dump( const llvm::Type* );
-
+std::string toString( const llvm::Value* v );
 
 llvm::Instruction*
 estimate_comment_location( std::unique_ptr<llvm::Module>&, src_loc, src_loc);
@@ -219,5 +219,8 @@ void forced_inliner_pass(std::unique_ptr<llvm::Module>& module);
 
 const llvm::Value* identify_array( const llvm::Value* op);
 const llvm::Value* identify_global_in_addr( const llvm::Value* op);
+
+
+void points_to_analysis( options& o, std::unique_ptr<llvm::Module>& module);
 
 #endif

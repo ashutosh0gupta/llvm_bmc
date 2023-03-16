@@ -4,3 +4,4 @@
 /.cproject
 /.project
 /.z3-trace
+**/__pycache__/

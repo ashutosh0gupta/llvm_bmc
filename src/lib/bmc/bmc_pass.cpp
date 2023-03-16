@@ -533,6 +533,8 @@ void bmc_pass::translateCallInst( unsigned bidx,
       llvm_bmc_error("bmc",
           "Only __VERIFIER_[assert,error,nondet_TY] functions are handled!");
     }
+  } else if( fp != NULL && fp->getName().startswith("__cxa_allocate_exception") ) {
+    // do nothing as already collected in collect globals pass.
   } else {
     //call->print( llvm::outs() );
     llvm_bmc_error("bmc", "function call is not recognized !!");
@@ -957,7 +959,7 @@ void bmc_pass::translateLoadInst( unsigned bidx,
   } else if(auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
     //auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
     //bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
-    if ( exists( bmc_obj.concurrent_vars, gv ) ) {
+    if ( exists( bmc_obj.concurrent_vars, (const llvm::Value*)gv ) ) {
       auto r_evt = create_read_event( bidx, load, addr );
       auto glb_rd = bmc_ds_ptr->m_model.read_con( bidx, load, (expr) (r_evt->v));
       bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
@@ -1030,6 +1032,18 @@ void bmc_pass::storeToArrayHelper( unsigned bidx,
   bmc_ds_ptr->m.insert_term_map( store, bidx, arr_wrt.new_name );
 }
 
+//todo: move to llvm_utils
+bool isLocallyAllocatedAddress( llvm::Value* addr ) {
+  if( auto call = llvm::dyn_cast<const llvm::CallInst>(addr) ) {
+    llvm::Function* fp = call->getCalledFunction();
+    if (fp != NULL && fp->getName().startswith("__cxa_allocate")) {
+      return true;
+    }
+  }
+  return llvm::isa<const llvm::AllocaInst>(addr) ||
+    llvm::isa<const llvm::Argument>(addr);
+
+}
 
 void bmc_pass::translateStoreInst( unsigned bidx,
                                    const llvm::StoreInst* store ) {
@@ -1049,11 +1063,11 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     exprs idxs;
     translateGEP( gop, idxs);
     storeToArrayHelper(bidx, store, val, idxs);
-  } else if(auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
+  } else if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr) ) {
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     //auto val_expr = bmc_ds_ptr->m.get_term( val );
     //auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
-    if ( exists( bmc_obj.concurrent_vars, gv ) ) {
+    if ( exists( bmc_obj.concurrent_vars,(const llvm::Value*)gv ) ) {
         // find(bmc_obj.concurrent_vars.begin(), bmc_obj.concurrent_vars.end(), addr) != bmc_obj.concurrent_vars.end() ) { //todo: add check if the grobal variable is truly global
       auto w_evt = create_write_event( bidx, store, addr );
       auto val_expr = bmc_ds_ptr->m.get_term( val );
@@ -1064,15 +1078,16 @@ void bmc_pass::translateStoreInst( unsigned bidx,
       // However, read case is tricky.
       //store->print( llvm::outs() ); std::cout << "\n";
       //addr->print( llvm::outs() );  std::cout << "\n";
+    } else {
+      auto val_expr = bmc_ds_ptr->m.get_term( val );
+      auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
+      bmc_ds_ptr->bmc_vec.push_back( glb_wrt.first );
+      bmc_ds_ptr->m.insert_term_map( store, bidx, glb_wrt.second );
     }
-   else {
-    auto val_expr = bmc_ds_ptr->m.get_term( val );
-    auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
-    bmc_ds_ptr->bmc_vec.push_back( glb_wrt.first );
-    bmc_ds_ptr->m.insert_term_map( store, bidx, glb_wrt.second );
-   }
-  } else if( llvm::isa<const llvm::AllocaInst>(addr) ||
-             llvm::isa<const llvm::Argument>(addr) ) {
+  } else if( isLocallyAllocatedAddress(addr) ) {
+  // } else if( llvm::isa<const llvm::AllocaInst>(addr) ||
+  //            llvm::isa<const llvm::Argument>(addr)
+  //            ) {
     exprs idxs;
     if( o.bit_precise)
       idxs.push_back( get_expr_bv_const( solver_ctx, 0, 64 ) );
@@ -1534,7 +1549,9 @@ void bmc_pass::print_bb_vecs() {
   std::cout << "----------------------------------------------\n";
 }
 
+//
 //todo: move this function to somewhere more general!!
+//
 void bmc_pass::populate_array_name_map(llvm::Function* f) {
   assert(f);
   int arrCntr = 0;
@@ -1560,6 +1577,7 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
       if( llvm::isa<const llvm::AllocaInst>(I) ) {
         ary_to_int[I] = arrCntr++;
       } else {} // no errors needed!!
+      //todo: identify that an array is allocated
     }
   }
 

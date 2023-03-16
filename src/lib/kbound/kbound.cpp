@@ -1,5 +1,6 @@
 #include "lib/kbound/kbound.h"
 #include "include/bmc.h"
+#include "llvm/IR/DataLayout.h"
 
 #define KBOUND_UNSUPPORTED_INSTRUCTIONS( InstTYPE, Inst )               \
   if(llvm::isa<llvm::InstTYPE>(Inst) ) {                                \
@@ -13,18 +14,51 @@ typedef std::vector<std::string> svec;
 
 char kbound::ID = 0;
 
-unsigned get_word_size(const llvm::Value* v ) {
+unsigned kbound::get_word_size(const llvm::Value* v ) {
+  auto dl = new llvm::DataLayout(module.get());
   auto typ = v->getType();
+  if( typ->isPointerTy() ) {
+    typ = typ->getPointerElementType();
+  }
   if( typ->isSized() ) {
-    auto bitSize = typ->getScalarSizeInBits();
+    auto size = dl->getTypeAllocSizeInBits(typ);
+    auto bitSize = size.getFixedSize();
+    // auto bitSize = typ->getScalarSizeInBits();
     unsigned wsize = bitSize/64;
     if( bitSize % 64 != 0 ) {
       wsize += 1;
     }
+    // std::cout << wsize << "\n";
     return wsize;// Divide by 64
   }else{
     llvm_bmc_error("kbound", "size of global variable is unkown!");
   }
+}
+
+svec kbound::get_init_array(const llvm::Value* v, unsigned size ) {
+  svec init;
+  if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(v) ) {
+    if( gv->hasInitializer() ) {
+      const llvm::Constant* ival = gv->getInitializer();
+      // init.push_back( read_const_str( o, ival) );
+      // if( auto iar = llvm::dyn_cast<const llvm::GlobalValue>(ival) ) {
+      if( auto ca = llvm::dyn_cast<const llvm::ConstantDataArray>(ival) ) {
+        for (unsigned i = 0, e = ca->getNumElements(); i != e; ++i) {
+          auto c = ca->getElementAsConstant(i);
+          init.push_back( read_const_str( o, c) );
+        }
+        // unsigned num = iar->getNumOperands();
+        // for( unsigned i = 0; i < num; i++ ) {
+        //   auto c = iar->getOperand(i);
+        // }
+      }
+      if( llvm::isa<const llvm::ConstantInt>(ival) ) {
+        init.push_back( read_const_str( o, ival) );
+      }
+
+    }
+  }
+  return init;
 }
 
 kbound::kbound( options& o_, std::unique_ptr<llvm::Module>& m_,
@@ -42,6 +76,7 @@ kbound::kbound( options& o_, std::unique_ptr<llvm::Module>& m_,
     auto size = get_word_size(v);
     global_size[v] = size;
     global_name[v] = v->getName().str();
+    global_init[v] = get_init_array(v, size);
     i += size;
   }
   num_globals = i;
@@ -86,7 +121,9 @@ bool kbound::runOnFunction( llvm::Function &f ) {
   thread_id = j;
   tid = std::to_string(thread_id);
   thread_name = bmc_obj.sys_spec.threads.at(j).name;
-
+  if(bmc_obj.sys_spec.threads.at(j).wmm == weak_memory_model::SC ) {
+    is_sc_semantics = true;
+  }
   populate_array_name_map(&f);
   auto bmc_fun_ptr = new bmc_fun(o, ary_to_int, bmc_obj.m_model);
   bmc_ds_ptr = bmc_fun_ptr; // set the pointer in base cla
@@ -112,6 +149,14 @@ std::string kbound::read_const( const llvm::Value* v ) {
   if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(v) ) {
     return get_global_idx(gv);
   }
+  if( auto cexpr = llvm::dyn_cast<const llvm::ConstantExpr>(v) ) {
+    if( cexpr->getType()->isPointerTy() ) {
+      std::string gid, cgid;
+      bool isLocalUse;
+      addr_name( cexpr, gid, cgid, isLocalUse );
+      return gid;
+    }
+  }
   return read_const_str( o, v );
 }
 
@@ -124,16 +169,19 @@ std::string kbound::get_reg( const llvm::Value* v) {
   // return get_reg( (const void* )v);
 }
 
-std::string kbound::get_reg( const llvm::Value* v, svec idxs ) {
+std::string kbound::get_reg( const llvm::Value* v, svec& idxs ) {
   auto s = read_const(v);
   if( s != "" ) {
+    if( llvm::isa<llvm::UndefValue>(v) ) {
+      uninit_names.push_back(s);
+    }
     assert( idxs.size() == 0 );
     return s;
   }
   return get_reg( (const void* )v, idxs );
 }
 
-std::string kbound::get_reg_time( const llvm::Value* v, svec idxs) {
+std::string kbound::get_reg_time( const llvm::Value* v, svec& idxs) {
   auto s = read_const(v);
   if( s != "" ) {
     assert( idxs.size() == 0 );
@@ -308,6 +356,12 @@ void kbound::dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop) {
   case llvm::Instruction::Sub : dump_Assign( ro, r1 +" - "+ r2); break;
   case llvm::Instruction::Mul : dump_Assign( ro, r1 +" * "+ r2); break;
   case llvm::Instruction::URem: dump_Assign( ro, r1 +" % "+ r2); break;
+  case llvm::Instruction::SRem: dump_Assign( ro, r1 +" % "+ r2); break;
+  case llvm::Instruction::And:  dump_Assign( ro, r1 +" & "+ r2); break;
+  case llvm::Instruction::Or:   dump_Assign( ro, r1 +" | "+ r2); break;
+  case llvm::Instruction::Shl:  dump_Assign( ro, r1 +" << "+ r2); break;
+  case llvm::Instruction::AShr:  dump_Assign( ro, r1 +" >> "+ r2); break;
+  case llvm::Instruction::Xor:   dump_Assign( ro, r1 +" ^ "+ r2); break;
   default: {
     const char* opName = bop->getOpcodeName();
     llvm_bmc_error("kbound", "unsupported instruction \"" << opName << "\" occurred!!");
@@ -321,8 +375,13 @@ void kbound::dump_ExtractValue( const llvm::ExtractValueInst* eval) {
   auto ro = add_reg_map( eval );
   auto cro = get_reg_time( eval );
   auto val = eval->getAggregateOperand();
-  unsigned idx = eval->getAggregateOperandIndex();
-  svec idxs{std::to_string(idx)};
+  svec idxs;
+  auto indcies = eval->getIndices();
+  for( auto idx : indcies ) {
+    idxs.push_back(std::to_string(idx));
+  }
+  // unsigned idx = eval->getAggregateOperandIndex();
+  // svec idxs{std::to_string(idx)};
   auto rv = get_reg(val, idxs);
   assert( rv != "" );
   auto cv = get_reg_time(val, idxs);
@@ -375,7 +434,6 @@ void kbound::dump_IntrinsicInst( unsigned bidx,
 
 std::string kbound::get_GEPOperator(const llvm::GEPOperator* gep) {
   assert( gep );
-  gep->dump();
   std::string index;
   std::string scale = "1";
   // assert( gep->getNumIndices() <= 3); //Confirm if correct
@@ -430,14 +488,22 @@ void kbound::addr_name( const llvm::Value* addr,
                         std::string& gid, std::string& caddr) {
   bool isLocalUse;
   addr_name( addr, gid, caddr, isLocalUse );
+  assert( gid != "" );
 }
 
 void kbound::addr_name( const llvm::Value* addr,
                         std::string& gid, std::string& caddr,
                         bool& isLocalUse ) {
   assert(addr);
-  // addr->dump();
-  
+  if( auto cexpr = llvm::dyn_cast<llvm::ConstantExpr>(addr) ) {
+    if( cexpr->getOpcode() == llvm::Instruction::BitCast ) {
+      addr = cexpr->getOperand(0);
+      addr_name( addr, gid, caddr, isLocalUse );
+      return;
+    }
+    // auto cistr = cexpr->getAsInstruction();
+    // return addr_name( cistr, gid, caddr, isLocalUse );
+  }
   // We detect local use
   // jump over casting
   while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
@@ -449,6 +515,7 @@ void kbound::addr_name( const llvm::Value* addr,
     return;
   } else if( auto gop = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
     gid = get_reg( gop );
+    assert( gid != "");
     caddr = get_reg_time( gop );
     return;
   } else if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
@@ -458,9 +525,11 @@ void kbound::addr_name( const llvm::Value* addr,
   } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
     gid = get_global_idx(alloc);
     caddr = "0"; //get_reg_time(gv);
+    return;
   } else if( llvm::isa<const llvm::Argument>(addr) ) {
     assert(false);
   } else if( llvm::isa<llvm::Constant>(addr) ) {
+    addr->dump();
     llvm_bmc_error("kbound", "constant access to the memory!");
   }
 
@@ -746,6 +815,7 @@ void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
   if( gid != "" ) { // Read variable is global, but used locally.
     dump_ld( r, creg, caddr, gid, is_acquire( ord ), false);
   }else{
+    load->dump();
     llvm_bmc_error("kbound", "we need to support local global optimization!!");
     // addr_local_name( addr, gid, caddr );
     // dump_Assign(    r, gid    );
@@ -899,23 +969,99 @@ void kbound::dump_PhiNodes( const bb* b, const bb* prev_b ) {
   }
 }
 
+void kbound::dump_SelectInst( const llvm::SelectInst *sel ) {
+  assert( sel );
+  auto cond = sel->getCondition();
+  auto tval = sel->getTrueValue();
+  auto fval = sel->getFalseValue();
+
+  auto ro = add_reg_map( sel );
+  auto rc = get_reg( cond );
+  auto rt = get_reg( tval );
+  auto rf = get_reg( fval );
+
+  auto cro = get_reg_time( sel  );
+  auto crc = get_reg_time( cond );
+  auto crt = get_reg_time( tval );
+  auto crf = get_reg_time( fval );
+
+  dump_If( rc );
+  dump_Assign( ro, rt);
+  dump_Assign_max( cro, crc, crt );
+  dump_Else();
+  dump_Assign( ro, rf);
+  dump_Assign_max( cro, crc, crf );
+  dump_Close_scope();
+
+}
+
+void kbound::dump_SwitchInst( unsigned bidx,
+                              const llvm::SwitchInst *swch ) {
+  assert( swch );
+
+  auto cond = swch->getCondition();
+  dump_Comment( "Switch statement");
+  //dumping control ordring
+  auto ctrl = "ctrl["+tid+"]";
+  dump_Assign("old_ctrl", ctrl);
+  dump_Assign_rand_ctx( ctrl );
+  dump_Assume_geq( ctrl, "old_ctrl" );
+  if( exists( ctrl_dep_ord, (const void *)cond ) ) {
+    for( auto& dep : ctrl_dep_ord.at(cond) ) {
+      dump_Assume_geq( "ctrl["+tid+"]", dep);
+    }
+  }else{
+    auto cr = get_reg_time( cond );
+    dump_Assume_geq( "ctrl["+tid+"]", cr );
+  }
+
+
+  // dumping jump
+  auto r = get_reg( cond );
+  for( unsigned i = 1; i < swch->getNumSuccessors(); i++ ) {
+    auto val = get_reg( swch->getOperand(2*i) );
+    if (i == 1) {
+      dump_If( r + " == " + val );
+    }else{
+      dump_ElseIf( r + " == " + val );
+    }
+    auto succ = swch->getSuccessor(i);
+    auto succ_bidx =bmc_ds_ptr->find_block_idx( succ );
+    dump_PhiNodes( succ, bmc_ds_ptr->bb_vec[bidx] );
+    dump_Goto( block_name(succ_bidx) );
+  }
+  dump_Else();
+  auto succ = swch->getSuccessor(0);
+  auto succ_bidx = bmc_ds_ptr->find_block_idx( succ );
+  dump_PhiNodes( succ, bmc_ds_ptr->bb_vec[bidx] );
+  dump_Goto( block_name(succ_bidx) );
+  dump_Close_scope();
+
+}
+
+
 void kbound::dump_Branch( unsigned bidx, const llvm::BranchInst* br ) {
   assert( br );
 
   if( !br->isUnconditional() ) {
+    auto cond = br->getCondition();
+
+    //dumping control ordring
     auto ctrl = "ctrl["+tid+"]";
     dump_Assign("old_ctrl", ctrl);
     dump_Assign_rand_ctx( ctrl );
     dump_Assume_geq( ctrl, "old_ctrl" );
-    auto r = get_reg( br->getCondition() );
-    if( exists( ctrl_dep_ord, (const void *)br->getCondition() ) ) {
-      for( auto& dep : ctrl_dep_ord.at(br->getCondition()) ) {
+    if( exists( ctrl_dep_ord, (const void *)cond ) ) {
+      for( auto& dep : ctrl_dep_ord.at(cond) ) {
         dump_Assume_geq( "ctrl["+tid+"]", dep);
       }
     }else{
-      auto cr = get_reg_time( br->getCondition() );
+      auto cr = get_reg_time( cond );
       dump_Assume_geq( "ctrl["+tid+"]", cr );
     }
+
+    // dumping jump
+    auto r = get_reg( br->getCondition() );
     dump_If( r );
     auto succ_bidx = bmc_ds_ptr->find_block_idx( br->getSuccessor(0) );
     dump_PhiNodes( br->getSuccessor(0), bmc_ds_ptr->bb_vec[bidx] );
@@ -934,6 +1080,12 @@ void kbound::dump_Branch( unsigned bidx, const llvm::BranchInst* br ) {
   }
 }
 
+void kbound::dump_UnreachableInst( unsigned bidx,
+                                   const llvm::UnreachableInst *I) {
+  auto r = add_reg_map( I );
+  dump_Assign( r, "1" );
+  in_code_spec.push_back( r + "== 0" );
+}
 
 
 
@@ -945,6 +1097,7 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
 
   for( const llvm::Instruction& Iobj : b->getInstList() ) {
     const llvm::Instruction* I = &(Iobj);
+    dump_Comment( toString( I ) );
     if(auto bop = llvm::dyn_cast<llvm::BinaryOperator>(I) ) {
       dump_BinOp( bidx, bop );
     }else if( auto phi = llvm::dyn_cast<llvm::PHINode>(I) ) {
@@ -970,12 +1123,12 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
       dump_Branch( bidx, br );
     } else if( auto ret = llvm::dyn_cast<llvm::ReturnInst>(I) ) {
       dump_RetInst( ret );
-    // } else if( auto swch = llvm::dyn_cast<llvm::SwitchInst>(I) ) {
-    //   dump_SwitchInst(bidx, swch);
-    // } else if( auto sel = llvm::dyn_cast<llvm::SelectInst>(I) ) {
-    //   dump_SelectInst(bidx, sel);
-    // } else if( auto unreach = llvm::dyn_cast<llvm::UnreachableInst>(I) ) {
-    //   dump_UnreachableInst(bidx, unreach);
+    } else if( auto swch = llvm::dyn_cast<llvm::SwitchInst>(I) ) {
+      dump_SwitchInst(bidx, swch);
+    } else if( auto sel = llvm::dyn_cast<llvm::SelectInst>(I) ) {
+      dump_SelectInst(sel);
+    } else if( auto unreach = llvm::dyn_cast<llvm::UnreachableInst>(I) ) {
+      dump_UnreachableInst(bidx, unreach);
     // } else if( auto lpad = llvm::dyn_cast<llvm::LandingPadInst>(I) ) {
     //   dump_LandingPadInst(bidx, lpad);
     // } else if( auto invoke = llvm::dyn_cast<llvm::InvokeInst>(I) ) {
@@ -1014,6 +1167,7 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
 
 void kbound::dump_Thread() {
   dump_Comment( "Dumping thread "+ tid );
+  if(is_sc_semantics) dump_Comment( "Thread semanics = SC");
   // for( unsigned i = 0; i < bmc_ds_ptr->bb_vec.size(); i++ ) {
   //   dump_Assign( "char "+ get_path(i), "0" );
   // }

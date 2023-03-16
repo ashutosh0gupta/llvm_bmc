@@ -22,6 +22,11 @@
 #include "llvm/Analysis/CFGPrinter.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/IR/Metadata.h"
+#include "llvm/MC/TargetRegistry.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Support/CodeGen.h"
+#include "llvm/Support/Host.h"
+#include "llvm/Support/TargetSelect.h"
 //clang related code
 #include <clang/CodeGen/CodeGenAction.h>
 #include <clang/Frontend/CompilerInstance.h>
@@ -31,7 +36,7 @@
 #pragma GCC diagnostic pop
 
 
-#define CLANG_VERSION "12.0"
+#define CLANG_VERSION "14.0"
 
 void dump( const llvm::Value* v) {
   if(v)
@@ -45,6 +50,17 @@ void dump( const llvm::Type* v) {
     v->print(llvm::outs());
   else
     llvm::outs() << "NULL\n";
+}
+
+std::string toString( const llvm::Value* v ) {
+  std::string buf;
+  llvm::raw_string_ostream os(buf);
+  if(v)
+    v->print(os);
+  else
+    os << "NULL\n";
+  os.flush();
+  return buf;
 }
 
 // void dump( const llvm::Module* module) {
@@ -481,6 +497,53 @@ std::unique_ptr<llvm::Module> c2ir( options& o ) {
   return move( c2ir( o, comments_found ) );
 }
 
+
+
+void generateAssemblyARM( std::unique_ptr<llvm::Module>& module ) {
+
+  llvm::InitializeAllTargets();
+  llvm::InitializeAllTargetMCs();
+  llvm::InitializeAllAsmParsers();
+  llvm::InitializeAllAsmPrinters();
+
+  // Get the target machine for the ARM64 architecture.
+  llvm::Triple triple("aarch64");
+  std::string error;
+  const llvm::Target* target = llvm::TargetRegistry::lookupTarget(triple.str(), error);
+  if( !target ) {
+      llvm::outs() << "Error looking up target: " << error << "\n";
+      return;
+  }
+
+  // Set target-specific options.
+  llvm::TargetOptions options;
+  llvm::Reloc::Model relocModel = llvm::Reloc::Model::PIC_;
+  llvm::CodeModel::Model codeModel = llvm::CodeModel::Small;
+  llvm::CodeGenOpt::Level optLevel = llvm::CodeGenOpt::Aggressive;
+
+  // Create a target machine.
+  llvm::TargetMachine* targetMachine =
+    target->createTargetMachine( triple.str(), "", "", options, relocModel,
+                                 codeModel, optLevel );
+
+  // Set up the output stream.
+  std::string assembly;
+  llvm::raw_string_ostream output(assembly);
+
+  // Generate assembly code.
+  llvm::legacy::PassManager passManager;
+  targetMachine->addPassesToEmitFile( passManager, llvm::outs(),
+                                      nullptr, llvm::CGFT_AssemblyFile );
+  passManager.run( *module.get() );
+  output.flush();
+
+  // Store the assembly language in the module.
+ //  module.setDataLayout(targetMachine->createDataLayout());
+ //  module.setTargetTriple(triple.str());
+ //  module.setSourceFileName("input.cpp");
+ //  module.setModuleInlineAsm(assembly);
+ // llvm::outs() << assembly;
+}
 
 
 void setLLVMConfigViaCommandLineOptions( std::string strs ) {
@@ -1634,7 +1697,7 @@ sort llvm_to_sort( options& o, const llvm::Type* t) {
 
 std::string read_const_str( options& o, const llvm::Value* op ) {
   expr e = read_const( o, op );
-  if(e) {
+  if( e ) {
     std::stringstream str_strm;
     str_strm << e;
     return str_strm.str();
@@ -1666,9 +1729,9 @@ expr read_const( options& o, const llvm::Value* op ) {
       }
     }
   }else if( llvm::isa<llvm::ConstantPointerNull>(op) ) {
-    llvm_bmc_error("llvm_utils", "Constant pointer are not implemented!!" );
+    // llvm_bmc_error("llvm_utils", "Constant pointer are not implemented!!" );
     // }else if( LLCAST( llvm::ConstantPointerNull, c, op) ) {
-    return ctx.int_val(0);
+    return ctx.int_val(-1);
   }else if( llvm::isa<llvm::UndefValue>(op) ) {
     llvm::Type* ty = op->getType();
     if( auto i_ty = llvm::dyn_cast<llvm::IntegerType>(ty) ) {
@@ -1725,11 +1788,6 @@ expr read_const( options& o, const llvm::Value* op ) {
     // return ctx.int_val(0);// todo: match types in z3
   }else if( llvm::isa<llvm::Instruction>(op) ) {
 
-  }else if( llvm::isa<llvm::Constant>(op) ) {
-    llvm_bmc_error("llvm_utils", "non int constants are not implemented!!" );
-    std::cerr << "un recognized constant!";
-    //     // int i = readInt(c);
-    //     // return eHandler->mkIntVal( i );
   }else if( llvm::isa<llvm::ConstantExpr>(op) ) {
     llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
   }else if( llvm::isa<llvm::ConstantArray>(op) ) {
@@ -1743,6 +1801,13 @@ expr read_const( options& o, const llvm::Value* op ) {
   }else if( llvm::isa<llvm::ConstantVector>(op) ) {
     // const llvm::VectorType* n = c->getType();
     llvm_bmc_error("llvm_utils", "vector constant not implemented!!" );
+  }else if( llvm::isa<llvm::Constant>(op) ) {
+    // expr e(ctx);
+    // return e; // contains no expression;
+    llvm_bmc_error("llvm_utils", "non int constants are not implemented!!" );
+    std::cerr << "un recognized constant!";
+    //     // int i = readInt(c);
+    //     // return eHandler->mkIntVal( i );
   }
   expr e(ctx);
   return e; // contains no expression;
@@ -1860,7 +1925,7 @@ void prepare_module(std::unique_ptr<llvm::Module>& module ) {
 const llvm::Value*
 identify_array_in_gep(const llvm::GEPOperator* gep ) {
   auto op_gep_ptr = gep->getPointerOperand();
-//  op_gep_ptr->print( llvm::outs() ); std::cout <<"\n";
+  //  op_gep_ptr->print( llvm::outs() ); std::cout <<"\n";
   if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
     op_gep_ptr = cast->getOperand(0);
   }
@@ -1880,26 +1945,33 @@ identify_array_in_gep(const llvm::GEPOperator* gep ) {
     return glb;
   }
  // if(auto sub_gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_gep_ptr)) {
-    // auto sub_op_gep_ptr = sub_gep->getPointerOperand();
-    // todo: add conditions that all the positions are 0
-    // gep( gep( glb , 0), 3 ) === *(glb+3) << Good <<<
-    //
-    // gep( gep( glb , 1), 3 ) === *(glb+4) << Bad <<<
-    //
-    //assert(false); // remove this assert only if the above condition is added;
-    //if( false ) {
-  if( auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr) ) {
+ //   return identify_array_in_gep(sub_gep);
+ //   // auto sub_op_gep_ptr = sub_gep->getPointerOperand();
+ //    // todo: add conditions that all the positions are 0
+ //    // gep( gep( glb , 0), 3 ) === *(glb+3) << Good <<<
+ //    //
+ //    // gep( gep( glb , 1), 3 ) === *(glb+4) << Bad <<<
+ //    //
+ //    //assert(false); // remove this assert only if the above condition is added;
+ //    //if( false ) {
+ // }
+ if( auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr) ) {
      // if (sub_gep->hasAllZeroIndices()) {
       return identify_array_in_gep(sub_gep);
     // }
   }
+  gep->dump();
   llvm_bmc_error("bmc", "unseen GEP pattern detected!");
 }
 
 const llvm::Value*
 identify_array( const llvm::Value* op) {
-  if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
+  while( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
     op = cast->getOperand(0);
+  }
+  if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(op) ) {
+    auto op_gep_ptr = gep->getPointerOperand();
+    return identify_array( op_gep_ptr );
   }
   if(auto gep = llvm::dyn_cast<const llvm::GEPOperator>(op)) {
     return identify_array_in_gep( gep );
@@ -1913,12 +1985,11 @@ identify_array( const llvm::Value* op) {
     // if(auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
     //   return addr;
     // }
-    // if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr)) {
-    //   return glb;
-    // }
     // gep->print( llvm::outs() );
     // llvm_bmc_error("bmc", "unseen GEP pattern detected!");
     // op_gep_ptr->print( llvm::outs() );
+  }else if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op)) {
+    return glb;
   }else if( llvm::dyn_cast<const llvm::AllocaInst>(op) ) {
     // auto alloc =
     // To handle a[0] when a is dynamic sized array
@@ -1934,11 +2005,22 @@ identify_array( const llvm::Value* op) {
       auto const_ptr = gep->getPointerOperand();
       return const_ptr;
     }
-    llvm_bmc_error("bmc", "non GEP constant expression!");
-  }else{
+    auto cistr = cnst->getAsInstruction();
+    return identify_array(cistr);
+    // cistr->dump();
+    // llvm_bmc_error("bmc", "non GEP constant expression!");
+  }else if( auto call = llvm::dyn_cast<const llvm::CallInst>(op) ) {
+    llvm::Function* fp = call->getCalledFunction();
+    if (fp != NULL && fp->getName().startswith("__cxa_allocate")) {
+      // call->print(llvm::outs());std::cout << "RECOGNIZED PATTERN\n";
+      return call;
+    }
+  }
+  else{
     // llvm_bmc_error("bmc", "non array global write/read not supported!");
   }
-  // op->print( llvm::outs() );
+  llvm_bmc_warning("bmc","failed to recognize heap access");
+  op->dump();
   return NULL;
 }
 

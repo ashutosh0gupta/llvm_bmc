@@ -1,5 +1,7 @@
 #include <atomic>
 
+void assume(bool);
+
 // class SpinLock {
   std::atomic<int64_t> locked;
 
@@ -29,14 +31,15 @@ int64_t data;
 
 void thread0(//SpinLock &l, int64_t X, int64_t &data
              ) {
-  for (int64_t i = 0; i < X; ++i) {
+  int64_t i = 0;
+  for (; i < X; ++i) {
     if (//l.
         lock()) {
       data += 42;
       //l.
         unlock();
       break;
-    }
+    }//else{ assume( i < X-1 ); }
   }
 }
 
@@ -49,7 +52,7 @@ void thread1(//SpinLock &l, int64_t X, int64_t &data
       //l.
         unlock();
       break;
-    }
+    }//else{ assume( i < X-1 ); }
   }
 }
 
@@ -62,6 +65,45 @@ void thread2(//SpinLock &l, int64_t X, int64_t &data
       //l.
         unlock();
       break;
-    }
+    }//else{ assume( i < X-1 ); }
+  }
+}
+
+void thread3(//SpinLock &l, int64_t X, int64_t &data
+             ) {
+  for (int64_t i = 0; i < X; ++i) {
+    if (//l.
+        lock()) {
+      data += 42;
+      //l.
+        unlock();
+      break;
+    }else{ assume( i < X-1 ); }
+  }
+}
+
+void thread4(//SpinLock &l, int64_t X, int64_t &data
+             ) {
+  for (int64_t i = 0; i < X; ++i) {
+    if (//l.
+        lock()) {
+      data += 42;
+      //l.
+        unlock();
+      break;
+    }else{ assume( i < X-1 ); }
+  }
+}
+
+void thread5(//SpinLock &l, int64_t X, int64_t &data
+             ) {
+  for (int64_t i = 0; i < X; ++i) {
+    if (//l.
+        lock()) {
+      data += 42;
+      //l.
+        unlock();
+      break;
+    }else{ assume( i < X-1 ); }
   }
 }

@@ -42,6 +42,8 @@ ELSE(LLVM_DEBUG)
   # find_package(Clang REQUIRED clangTooling libClang)
 ENDIF(LLVM_DEBUG)
 
+# set_target_properties(${LLVMBMC} PROPERTIES TYPE "STATIC_LIBRARY")
+
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 message(STATUS "Using ClangConfig.cmake in: ${Clang_DIR}")
@@ -88,19 +90,24 @@ endif(LLVM_VERSION EQUAL "7.0.0svn")
 # unexplained guard 
 if( LLVM_DEBUG )
   llvm_map_components_to_libnames(llvm_libs
-    aarch64asmparser aarch64codegen
-    armasmparser armcodegen
+    webassemblyasmparser webassemblycodegen
+    veasmparser          vecodegen
+    riscvasmparser       riscvcodegen
+    avrasmparser         avrcodegen
+    aarch64asmparser     aarch64codegen
+    armasmparser         armcodegen
+    mipsasmparser        mipscodegen
+    msp430asmparser      msp430codegen
+    powerpcasmparser     powerpccodegen
+    x86asmparser         x86codegen
+    sparcasmparser       sparccodegen
+    systemzasmparser     systemzcodegen
+    amdgpuasmparser      amdgpucodegen
+    bpfasmparser         bpfcodegen
+    asmprinter
     hexagoncodegen
-    mipsasmparser mipscodegen
-    msp430codegen
     nvptxcodegen
-    powerpcasmparser powerpccodegen
-    sparcasmparser sparccodegen
-    systemzasmparser systemzcodegen
-    x86asmparser x86codegen
     xcorecodegen
-    amdgpuasmparser amdgpucodegen
-    bpfasmparser bpfcodegen
     lanaicodegen
     objcarcopts
     )
@@ -113,7 +120,7 @@ SET(clang_libs clangDaemon clangFrontendTool)
 LINK_DIRECTORIES(${LLVM_LIBRARY_DIRS})
 
 # lib/bmc/bmc_loop_pass.cpp
-SET(SOURCES lib/utils/llvm_utils.cpp lib/utils/solver_utils.cpp lib/utils/options.cpp lib/utils/build_name_map.cpp lib/utils/loopdata.cpp lib/utils/collect_loopdata.cpp lib/bmc/collect_globals.cpp lib/parsers/spec_parser.cpp lib/bmc/memory_event.cpp lib/bmc/value_expr_map.cpp lib/bmc/array_model.cpp lib/bmc/memory_model.cpp lib/bmc/ses.cpp lib/bmc/translate_specs.cpp lib/bmc/bmc_pass.cpp lib/bmc/bmc_fun_pass.cpp lib/bmc/bmc_concurrency.cpp lib/bmc/insert_monitor_pass.cpp lib/bmc/bmc_loop_pass.cpp lib/bmc/witness.cpp lib/bmc/bmc_ds.cpp lib/bmc/bmc.cpp lib/bmc/bmc_utils.cpp lib/kbound/kbound.cpp lib/kbound/dump_seq.cpp lib/wp/wp.cpp main.cpp)  
+SET(SOURCES lib/utils/llvm_utils.cpp lib/utils/collect_points_to.cpp lib/utils/solver_utils.cpp lib/utils/options.cpp lib/utils/build_name_map.cpp lib/utils/loopdata.cpp lib/utils/collect_loopdata.cpp lib/bmc/collect_globals.cpp lib/parsers/spec_parser.cpp lib/bmc/memory_event.cpp lib/bmc/value_expr_map.cpp lib/bmc/array_model.cpp lib/bmc/memory_model.cpp lib/bmc/ses.cpp lib/bmc/translate_specs.cpp lib/bmc/bmc_pass.cpp lib/bmc/bmc_fun_pass.cpp lib/bmc/bmc_concurrency.cpp lib/bmc/insert_monitor_pass.cpp lib/bmc/bmc_loop_pass.cpp lib/bmc/witness.cpp lib/bmc/bmc_ds.cpp lib/bmc/bmc.cpp lib/bmc/bmc_utils.cpp lib/kbound/kbound.cpp lib/kbound/dump_seq.cpp lib/wp/wp.cpp main.cpp)  
 
 add_executable(${LLVMBMC} ${SOURCES})
 

@@ -19,8 +19,6 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/LinkAllPasses.h"
 
-
-
 void forced_unroll_pass( options& o,
                      std::unique_ptr<llvm::Module>& module
                      // comments& cmts,
@@ -91,6 +89,9 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
   estimate_comment_location( module, cmts, bb_cmt_map );
   forced_inliner_pass( module );
 
+  //Analyse IR
+  points_to_analysis(o, module);
+
   // initialize bmc data structure
   b.init();
 
@@ -147,3 +148,6 @@ int main(int argc, char** argv) {
   //}
  
 }
+
+
+
