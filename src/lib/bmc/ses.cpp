@@ -453,14 +453,21 @@ void ses::min_maj() {
 	      unsigned t_pr2 = b_obj.sys_spec.threads.at(l).priority; 
 	      if (t_pr2 < t_pr1) { //thr2 has higher priority than thr1
 	       for (auto i = thr2.active_intervals.begin(); i != thr2.active_intervals.end(); i++) {
-        	auto act_pair = i->second;
+		auto iter_num = i->first;
+		auto act_pair = i->second;
 	        auto start = act_pair.first;
         	auto end = act_pair.second;
+		if (iter_num == 1) {
+		expr ord2 = mem_enc.mk_hbs( end, e    );
+	        po = po && z3::implies( e->guard && end->guard, ord2 );	
+		}
+		else {
 	        expr ord1 = mem_enc.mk_hbs( e , start );
         	expr ord2 = mem_enc.mk_hbs( end, e    );
 	        po = po && ( z3::implies( start->guard && e->guard, ord1 ) ||
                 z3::implies( e->guard && end->guard, ord2 ) );
-         	}
+		}
+              }
 	    }
 	 }
       }
