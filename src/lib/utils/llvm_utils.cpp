@@ -473,7 +473,6 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   }
   std::unique_ptr<llvm::Module> module = Act->takeModule();
 
-  generateAssemblyARM( module );
   // return std::move(module);
   return module;
   return nullptr;
