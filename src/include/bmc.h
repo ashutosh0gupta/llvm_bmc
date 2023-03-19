@@ -44,7 +44,8 @@ public:
 
   //std::vector< spec_thread > threads;
   spec_system sys_spec;
-  std::vector<const llvm::Value*> concurrent_vars;
+  //std::vector<const llvm::Value*> concurrent_vars;
+  std::vector<const llvm::GlobalVariable*> concurrent_vars;
   std::vector<const llvm::Value*> local_globals;
   //std::map< me_ptr, unsigned > all_events;
   events_data edata;
