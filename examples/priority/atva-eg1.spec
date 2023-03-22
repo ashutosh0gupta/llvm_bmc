@@ -4,8 +4,6 @@
 ;; Declare variable
 ;; list all the variables that are read
 (declare-var @main__errorflag flag); output
-(declare-var @thr1__var21c i16); input
-(declare-var @thr1__var21 i16); input
 (declare-var @thr2__var12c i16)
 (declare-var @thr2__var12 i16)
 

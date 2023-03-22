@@ -959,8 +959,8 @@ void bmc_pass::translateLoadInst( unsigned bidx,
   } else if(auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
     //auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
     //bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
-    //if ( exists( bmc_obj.concurrent_vars, (const llvm::Value*)gv ) ) {
-    if ( exists( bmc_obj.concurrent_vars, gv ) ) {
+    if ( exists( bmc_obj.concurrent_vars, (const llvm::Value*)gv ) ) {
+    //if ( exists( bmc_obj.concurrent_vars, gv ) ) {
       auto r_evt = create_read_event( bidx, load, addr );
       auto glb_rd = bmc_ds_ptr->m_model.read_con( bidx, load, (expr) (r_evt->v));
       bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
@@ -1068,8 +1068,8 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
     //auto val_expr = bmc_ds_ptr->m.get_term( val );
     //auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
-    //if ( exists( bmc_obj.concurrent_vars,(const llvm::Value*)gv ) ) {
-    if ( exists( bmc_obj.concurrent_vars,gv ) ) {
+    if ( exists( bmc_obj.concurrent_vars,(const llvm::Value*)gv ) ) {
+    //if ( exists( bmc_obj.concurrent_vars,gv ) ) {
         // find(bmc_obj.concurrent_vars.begin(), bmc_obj.concurrent_vars.end(), addr) != bmc_obj.concurrent_vars.end() ) { //todo: add check if the grobal variable is truly global
       auto w_evt = create_write_event( bidx, store, addr );
       auto val_expr = bmc_ds_ptr->m.get_term( val );

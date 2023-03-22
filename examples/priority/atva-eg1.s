@@ -29,7 +29,7 @@ entry:
 }
 
 ; Function Attrs: uwtable
-define zeroext i16 @obclib__bit_or(i16 zeroext %value1, i16 zeroext %value2) #0 align 2 {
+define zeroext i16 @obclib__bit_or(i16 zeroext %value1, i16 zeroext %value2) unnamed_addr #0 align 2 {
 entry:
   %0 = or i16 %value1, %value2
   ret i16 %0
@@ -77,16 +77,6 @@ entry:
 }
 
 ; Function Attrs: uwtable
-define float @obclib__sqrt_sf(float %arg) unnamed_addr #0 align 2 {
-entry:
-  %0 = call float @ada__numerics__elementary_functions__sqrt(float %arg) #1
-  ret float %0
-}
-
-; Function Attrs: readnone
-declare float @ada__numerics__elementary_functions__sqrt(float) #1
-
-; Function Attrs: uwtable
 define void @main__thr1_driver() unnamed_addr #0 align 2 {
 entry:
   call void @thr1__thr1proc()
@@ -118,10 +108,7 @@ entry:
   br i1 %3, label %"3", label %return
 
 "3":                                              ; preds = %entry
-  %4 = load i16, i16* @main__errorflag, align 2
-  %5 = zext i16 %4 to i32
-  %6 = call zeroext i16 @obclib__bit_or(i16 zeroext %4, i16 zeroext 32)
-  store i16 %6, i16* @main__errorflag, align 2
+  store i16 1, i16* @main__errorflag, align 2
   br label %return
 
 return:                                           ; preds = %"3", %entry
@@ -129,7 +116,6 @@ return:                                           ; preds = %"3", %entry
 }
 
 attributes #0 = { uwtable "no-frame-pointer-elim-non-leaf"="true" }
-attributes #1 = { readnone }
 
 !llvm.module.flags = !{!0}
 

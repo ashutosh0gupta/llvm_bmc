@@ -73,10 +73,10 @@ collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
       for( auto g : glist1 ) {
         if( !exists( fpair2.second, g ) ) continue;
         //if( !exists( written, g) ) continue;
-        if( auto g1 = llvm::dyn_cast<llvm::GlobalVariable>(g) )
+        //if( auto g1 = llvm::dyn_cast<llvm::GlobalVariable>(g) )
           {
-          if( !exists(b.concurrent_vars, g1) ) {
-            b.concurrent_vars.push_back(g1);
+          if( !exists(b.concurrent_vars, g) ) {
+            b.concurrent_vars.push_back(g);
           }
         }
       }
