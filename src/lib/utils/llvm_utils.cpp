@@ -440,6 +440,7 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   args.push_back( "-O1" );
   args.push_back( "-disable-O0-optnone" );
   args.push_back( "-fcxx-exceptions" );
+  args.push_back( "-fexceptions");
   args.push_back( "-fgnuc-version=4.2.1" ); // to ensure inclusion of some predefines
   for( std::string& i_dir : include_dirs ) {
     i_dir = "-I" + i_dir;

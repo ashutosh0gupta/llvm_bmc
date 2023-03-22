@@ -346,15 +346,43 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
     if( bidx++ < processed_bidx ) continue;
     for( auto it = bb->begin(), e = bb->end(); it != e; ++it) {
       auto I = &(*it);
+      // std::cout << "CURRENT INSTRUCTION IS -";
+      // I->print(llvm::outs());
+      // std::cout <<"\n";
       if( auto load = llvm::dyn_cast<const llvm::LoadInst>(I) ) {
+        // std::cout << "identifying array for load inst\n";
         auto ary  = identify_array( load->getPointerOperand() );
+        // if (ary) {
+        //   std::cout << "Identified array -";
+        // } else {
+        //   std::cout << "Unidentified array -";
+        // }
+        // I->print(llvm::outs());
+        // std::cout << "\n";
         if( ary && exists( ary_to_int, ary ) )
           ary_access_to_index[load] = ary_to_int.at( ary );
       }else if( auto store = llvm::dyn_cast<const llvm::StoreInst>(I) ) {
+        // std::cout << "identifying array for store inst \n";
+        // I->print(llvm::outs());
         auto ary  = identify_array( store->getPointerOperand() );
-        if( ary && exists( ary_to_int, ary ) )
+        if (ary) {
+          // std::cout << "Identified array -";
+        } else {
+          // std::cout << "Unidentified array -";
+        }
+        // std::cout << "\n";
+        if( ary && exists( ary_to_int, ary ) ) {
           ary_access_to_index[store] = ary_to_int.at( ary );
+          std::cout << "\nPROCESSED STORE INST\n";
+          I->print(llvm::outs());
+        } else {
+          // std::cout << "UNCAUGHT\n";
+        }
       }
+      // } else if( auto call = llvm::dyn_cast<const llvm::CallInst>(I) ) {
+      //   I->print(llvm::outs());
+      //   std::cout << "\nCALL INSTRUCTION\n";
+      // }
     }
   }
 

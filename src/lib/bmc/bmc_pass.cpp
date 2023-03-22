@@ -535,8 +535,18 @@ void bmc_pass::translateCallInst( unsigned bidx,
     }
   } else if( fp != NULL && fp->getName().startswith("__cxa_allocate_exception") ) {
     // do nothing as already collected in collect globals pass.
+    int size = 2;
+    std::vector<expr> ls;
+    if( o.bit_precise )
+      ls.push_back( get_expr_bv_const(solver_ctx,size,64));
+    else
+      ls.push_back( get_expr_const(solver_ctx,size));
+    bmc_ds_ptr->set_array_length( call, ls );
+  } else if( fp != NULL && fp->getName().startswith("__cxa_throw") ) {
+    
   } else {
-    //call->print( llvm::outs() );
+    call->print( llvm::outs() );
+    std::cout << "\n";
     llvm_bmc_error("bmc", "function call is not recognized !!");
   }
 }
@@ -1001,7 +1011,6 @@ void bmc_pass::translateLoadInst( unsigned bidx,
 void bmc_pass::translateUnaryInst( unsigned bidx,
                                    const llvm::UnaryInstruction* I ) {
   assert( I );
-
   if( auto cast = llvm::dyn_cast<llvm::CastInst>(I) ) {
     translateCastInst( bidx, cast );
   } else if( auto alloca = llvm::dyn_cast<llvm::AllocaInst>(I) ) {
@@ -1009,6 +1018,7 @@ void bmc_pass::translateUnaryInst( unsigned bidx,
   } else if( auto load = llvm::dyn_cast<llvm::LoadInst>(I) ) {
     translateLoadInst(bidx, load);
   } else {
+    I->print(llvm::outs());
     BMC_UNSUPPORTED_INSTRUCTIONS( VAArgInst,        I );
     BMC_UNSUPPORTED_INSTRUCTIONS( ExtractValueInst, I );
     LLVM_DUMP(I);
@@ -1195,11 +1205,11 @@ void bmc_pass::translateInvokeInst( unsigned bidx,
   llvm::Function* fp = invoke->getCalledFunction();
   auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
   assert( exit_bits.size() == 2 );
-  // auto normal = invoke->getNormalDest();
-  // auto landing = invoke->getUnwindDest();
-
-//std::string name = fp->getName().str();
-//std::cout << "Invoked fn is " << name << "\n";
+  auto normal = invoke->getNormalDest();
+  auto landing = invoke->getUnwindDest();
+  landing->print(llvm::outs());
+std::string name = fp->getName().str();
+std::cout << "Invoked fn is " << name << "\n";
 
   if( (fp != NULL) &&
       ((fp->getName() == "__gnat_rcheck_CE_Index_Check") ||
@@ -1212,9 +1222,33 @@ void bmc_pass::translateInvokeInst( unsigned bidx,
     auto arg = fp->getArg(0);
     expr NumArg = bmc_ds_ptr->m.get_term( arg );
     bmc_ds_ptr->m.insert_term_map( invoke, bidx, NumArg );
+  } else if( fp != NULL && fp->getName().startswith("__cxa_throw")) {
+    std::cout << "\nExit bit for invoke is : " << exit_bits[1] <<"\n";
+    bmc_ds_ptr->bmc_vec.push_back( exit_bits[1] );
   } else {
     llvm_bmc_error("bmc", "invoke is not recognized !!");
   }
+/*
+  auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
+  if( !br->isUnconditional() ) {
+    expr cond = bmc_ds_ptr->m.get_term( br->getCondition() );
+    auto cond_sort = cond.get_sort();
+    auto exit_sort = exit_bits[0].get_sort();
+    std::cout << "\nCondition :"; cond->print(llvm::outs());
+    std::cout << "\ncond_sort :"; cond->print(llvm::outs());
+    std::cout << "\nexit_sort :"; cond->print(llvm::outs());
+    std::cout << "\n";
+    if (cond_sort.is_bv() && exit_sort.is_bool()) {    	
+	expr exitbits_bv = solver_ctx.bv_val(exit_bits[0],1);
+    	bmc_ds_ptr->bmc_vec.push_back( cond == exitbits_bv );
+    }
+    else  
+	bmc_ds_ptr->bmc_vec.push_back( cond == exit_bits[0] );
+  }else{
+    // for unconditional branch, there is no need of constraints
+    // bmc_ds_ptr->bmc_vec.push_back( exit_bit );
+  }
+  */
 }
 
 
@@ -1574,6 +1608,13 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
       auto I = &(*it);
       if( llvm::isa<const llvm::AllocaInst>(I) ) {
         ary_to_int[I] = arrCntr++;
+      } else if (auto call = llvm::dyn_cast<const llvm::CallInst>(I)) {
+        llvm::Function* fp = call->getCalledFunction();
+        if (fp != NULL && fp->getName().startswith("__cxa_allocate")) {
+            ary_to_int[I] = arrCntr++;
+            I->print(llvm::outs());
+            std::cout << "\nCOLLECTED EXCEPTION PTR AS ARRAY\n\n";
+        }
       } else {} // no errors needed!!
       //todo: identify that an array is allocated
     }

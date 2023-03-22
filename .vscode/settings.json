@@ -74,6 +74,12 @@
         "charconv": "cpp",
         "cuchar": "cpp",
         "future": "cpp",
-        "scoped_allocator": "cpp"
-    }
+        "scoped_allocator": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp"
+    },
+    "cmake.sourceDirectory": "${workspaceFolder}/build/z3"
 }
