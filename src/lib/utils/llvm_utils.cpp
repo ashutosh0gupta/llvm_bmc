@@ -497,7 +497,9 @@ std::unique_ptr<llvm::Module> c2ir( options& o ) {
   return move( c2ir( o, comments_found ) );
 }
 
-
+void ir2mf( std::unique_ptr<llvm::Module>& module ) {
+  // ???
+}
 
 void generateAssemblyARM( std::unique_ptr<llvm::Module>& module ) {
 

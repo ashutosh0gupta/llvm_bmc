@@ -289,6 +289,7 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
     model m(o.solver_ctx);
     if( o.use_solver == "z3" ) {
       m = s.get_model();
+      // os << m;
     }else if( o.use_solver == "cvc5" ) {
       m = z3compObj.get_cvc5_model();
       os << "\nPrinting cvc5 model with witness\n";

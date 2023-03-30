@@ -127,6 +127,10 @@ private:
   unsigned get_word_size(const llvm::Value* v );
   svec get_init_array(const llvm::Value* v, unsigned size );
 
+  //-------------------------------------------------------------------
+  void prefix_seq();
+  void postfix_seq();
+
   //---------------------------------------------------------------------
 
   bool is_acquire( llvm::AtomicOrdering ord );
@@ -183,9 +187,64 @@ private:
 
   void dump_Thread();
   void dump_Block( unsigned bidx, const bb* b );
+  //---------------------------------------------------------------------
 
-  void prefix_seq();
-  void postfix_seq();
+  bool is_mf_acquire( llvm::AtomicOrdering ord );
+  bool is_mf_release( llvm::AtomicOrdering ord );
+
+  std::string get_mf_GEPOperator(const llvm::GEPOperator* gep);
+
+  void dump_mf_AllocaInst( const llvm::AllocaInst* alloc );
+  void dump_mf_BinOp( unsigned bidx, const llvm::BinaryOperator* bop);
+  void dump_mf_CmpInst    ( unsigned bidx, const llvm::CmpInst* cmp);
+  void dump_mf_SelectInst( const llvm::SelectInst *sel );
+  
+  void dump_mf_CallInst( unsigned bidx, const llvm::CallInst* call);
+
+  void dump_mf_Active( std::string ctx);
+  void dump_mf_CallAssume ( unsigned bidx, const llvm::CallInst* cmp);
+  void dump_mf_CallAssert ( unsigned bidx, const llvm::CallInst* cmp);
+  void dump_mf_CallNondet ( unsigned bidx, const llvm::CallInst* cmp);
+  void dump_mf_IntrinsicInst( unsigned bidx, const llvm::IntrinsicInst* I);
+
+  void dump_mf_UnaryInst( unsigned bidx, const llvm::UnaryInstruction* I );
+  void dump_mf_CastInst ( unsigned bidx, const llvm::CastInst* I );
+  void dump_mf_LoadInst ( unsigned bidx, const llvm::LoadInst* load );
+  void dump_mf_StoreInst( unsigned bidx, const llvm::StoreInst* store );
+  void dump_mf_GetElementPtrInst(const llvm::GetElementPtrInst* gep, bool&);
+  void dump_mf_GetElementPtrInst(const llvm::GetElementPtrInst* gep);
+  void dump_mf_AtomicRMWInst( const llvm::AtomicRMWInst* rmw );
+  void dump_mf_AtomicCmpXchgInst( const llvm::AtomicCmpXchgInst* xng );
+  void dump_mf_FenceInst( const llvm::FenceInst* fence );
+  void dump_mf_ExtractValue( const llvm::ExtractValueInst* eval);
+  void dump_mf_geq_globals( std::string c, std::string prop );
+  void dump_mf_dmbsy();
+  void dump_mf_dmbld();
+  void dump_mf_dmbst();
+  void dump_mf_isb();
+
+  void mf_addr_name( const llvm::Value* addr, std::string& , std::string&,
+                  bool& isLocalUse );
+
+  void mf_addr_name( const llvm::Value* addr, std::string& , std::string&);
+
+  void mf_addr_local_name( const llvm::Value* addr,
+                           std::string& gid, std::string& caddr);
+
+  void dump_mf_ST_(unsigned bidx, const llvm::CallInst* cmp,bool,bool);
+  void dump_mf_LD_(unsigned bidx, const llvm::CallInst* cmp,bool,bool);
+
+  void dump_mf_PhiNodes( const bb* b, const bb* prev_b );
+  void dump_mf_PhiNode( unsigned bidx, const llvm::PHINode* phi );
+  void dump_mf_RetInst(const llvm::ReturnInst *ret );
+  void dump_mf_Branch( unsigned bidx, const llvm::BranchInst* br );
+  void dump_mf_SwitchInst( unsigned bidx, const llvm::SwitchInst* br );
+  void dump_mf_UnreachableInst( unsigned, const llvm::UnreachableInst *I);
+
+  void dump_mf_Thread();
+  void dump_mf_Block( unsigned bidx, const bb* b );
+
+  //---------------------------------------------------------------------
 public:
   kbound(options& o_,
          std::unique_ptr<llvm::Module>& m_,
