@@ -1465,20 +1465,6 @@ void bmc_pass::do_bmc() {
   if ( bmc_obj.sys_spec.threads.size() > 1 ) {
     for(auto PI = llvm::pred_begin(src),E = llvm::pred_end(src);PI != E;++PI) {
       const llvm::BasicBlock *prev = *PI;
-std::cout << "New block1\n";
-for( const llvm::Instruction& Iobj : prev->getInstList() ) {
-    const llvm::Instruction* I = &(Iobj);
-    I->print( llvm::outs() ); std::cout << "\n";
-}
-for( auto a : bmc_ds_ptr->block_to_trailing_events ) {
-std::cout << "New block2\n";
-		auto th_ev = a.second; auto llvm_bb = a.first;
-		for( const llvm::Instruction& Iobj1 : llvm_bb->getInstList() ) {
-    const llvm::Instruction* I1 = &(Iobj1);
-    I1->print( llvm::outs() );  std::cout << "\n";
- }
-}
-
       //collect incoming branch conditions
       me_set& prev_trail = bmc_ds_ptr->block_to_trailing_events.at( prev );
       prev_events.insert( prev_trail.begin(), prev_trail.end() );
