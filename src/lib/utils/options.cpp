@@ -87,7 +87,7 @@ void options::interpret_options(po::variables_map& vm) {
     cf.replace_extension("spec");
     // cf += ();
     if (boost::filesystem::exists( cf )) {
-      std::cout << "Auto detected spec file " << cf;
+      std::cout << "Auto detected spec file " << cf <<"\n";
       specFilePath = cf.string();
       specFileName = cf.filename().string();
       check_spec = true;

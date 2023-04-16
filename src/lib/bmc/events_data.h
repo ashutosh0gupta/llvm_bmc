@@ -11,6 +11,8 @@ struct thread_events {
   me_vec events;
   me_ptr start_event, final_event;
   std::map< unsigned, std::pair< const me_ptr, const me_ptr >> active_intervals;
+  std::map< unsigned, me_vec > iter_events;
+  me_vec st_events, fi_events;
 };
 
 class events_data {

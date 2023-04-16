@@ -55,12 +55,16 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
   if ( bmc_obj.sys_spec.threads.at(j).thread_num == 0 )
 	translatePrecond(bmc_obj, bmc_ds_ptr, o.solver_ctx, bmc_obj.sys_spec.pres);
 
-  //translatePrecond(bmc_obj, bmc_ds_ptr, o.solver_ctx, bmc_obj.sys_spec.threads.at(j).pres);
+  translatePrecond(bmc_obj, bmc_ds_ptr, o.solver_ctx, bmc_obj.sys_spec.threads.at(j).pres);
   
-  for (unsigned l = 0; l < bmc_obj.sys_spec.threads.at(j).period; l++) {
+  //for (unsigned l = 0; l < bmc_obj.sys_spec.threads.at(j).period; l++) {
     do_bmc();
+
+    //std::cout << "Constraints for function : " << fname << "\n";
+//for ( auto e : bmc_ds_ptr->bmc_vec) std::cout << to_string(e) << "\n";
+
       
-   translatePrecond(bmc_obj, bmc_ds_ptr, o.solver_ctx, bmc_obj.sys_spec.threads.at(j).pres);
+   //translatePrecond(bmc_obj, bmc_ds_ptr, o.solver_ctx, bmc_obj.sys_spec.threads.at(j).pres);
 
      unsigned bidx = 0;
      for( const bb* src : bmc_ds_ptr->bb_vec ) {
@@ -74,7 +78,7 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
      }
      bidx++;
     }
-  }
+  //}
 
   return false;
 }
