@@ -1463,8 +1463,17 @@ void bmc_pass::do_bmc() {
     }
 
   if ( bmc_obj.sys_spec.threads.size() > 1 ) {
+//std::cout << "Next block\n";
+    std::set<const bb*> ignore_edges;
+    if( exists( bmc_ds_ptr->loop_ignore_edges, src) ) {
+      ignore_edges = bmc_ds_ptr->loop_ignore_edges.at(src);
+    }
     for(auto PI = llvm::pred_begin(src),E = llvm::pred_end(src);PI != E;++PI) {
       const llvm::BasicBlock *prev = *PI;
+//prev->print(llvm::outs());
+      if( exists( ignore_edges, prev ) ) {
+        continue; // ignoring loop back edges
+      }
       //collect incoming branch conditions
       me_set& prev_trail = bmc_ds_ptr->block_to_trailing_events.at( prev );
       prev_events.insert( prev_trail.begin(), prev_trail.end() );
@@ -1494,10 +1503,19 @@ void bmc_pass::do_bmc() {
       print_bb_exprs(src);
     if( o.verbosity > 3 )
       print_bb_vecs();
-
+//std::cout << "Src \n "; src->print(llvm::outs());
     if ( bmc_obj.sys_spec.threads.size() > 1 ) {
       bmc_ds_ptr->block_to_trailing_events[src] = prev_events;
       prev_events.clear();
+//std::cout << "Map begins \n";
+//      for( auto p7 : bmc_ds_ptr->block_to_trailing_events ) {
+//		auto pre_ev = p7.second; auto src1 = p7.first;
+//		src1->print( llvm::outs() );
+//		for (auto h : pre_ev) {
+//			std::cout << "Event is " << *h << "\n";
+//		}
+//      }
+
     }
   }
   bmc_ds_ptr->processed_bidx = bmc_ds_ptr->bb_vec.size();
