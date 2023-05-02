@@ -301,8 +301,15 @@ void ses::distinct_events() {
     auto& thread = b_obj.edata.get_thread(t);
     for(auto& e : thread.events )
       es.push_back( e->get_solver_symbol() );
+
+    if ( thread.st_events.size() > 1) {
+     for (auto& f : thread.st_events) es.push_back( f->get_solver_symbol() );
+     for (auto& g : thread.fi_events) es.push_back( g->get_solver_symbol() );
+  }
+  else {
     es.push_back( thread.start_event->get_solver_symbol() );
     es.push_back( thread.final_event->get_solver_symbol() );
+   }
   }
   dist = distinct(es);
 
@@ -321,8 +328,15 @@ void ses::ppo_sc( const thread_events& thread ) {
   for( auto& e : thread.events ) {
     po = po && mem_enc.mk_ghbs( e->prev_events, e );
   }
-  auto& e = thread.final_event;
-  po = po && mem_enc.mk_ghbs( e->prev_events, e );
+  
+  if ( thread.fi_events.size() > 1) {
+    for (auto& e : thread.fi_events) 
+      po = po && mem_enc.mk_ghbs( e->prev_events, e );
+  }
+  else {
+    auto& e = thread.final_event;
+    po = po && mem_enc.mk_ghbs( e->prev_events, e );
+  }
 }
 
 bool ses::is_non_mem_ordered( const me_ptr& e1,
@@ -419,7 +433,7 @@ void ses::ppo() {
     // May be not needed
     auto& cr_e = b_obj.edata.create_map[thr.name];
     expr cr_ord = mem_enc.mk_hbs( cr_e ,thr.start_event );
-    po = po && z3::implies( cr_e->guard, thr.start_event->guard && cr_ord );
+    po = po && implies( cr_e->guard, thr.start_event->guard && cr_ord );
 
     ppo_sc ( thr );
 
@@ -429,7 +443,7 @@ void ses::ppo() {
       const auto join_point = jp_pair.first;
       expr join_guard = jp_pair.second;
       expr join_order = mem_enc.mk_hbs( thr.final_event, join_point);
-      po = po && z3::implies( thr.final_event->guard, join_guard && join_order);
+      po = po && implies( thr.final_event->guard, join_guard && join_order);
     }
   }
   min_maj();
@@ -441,10 +455,40 @@ void ses::min_maj() {
     //auto& thr1 = b_obj.edata.get_thread(0);
     //auto& thr2 = b_obj.edata.get_thread(1); //todo: read from config; never hard code
     //if ((thr1.name == "major") && (thr2.name == "minor")) {
+//    for (auto i = thr.iter_events.begin(); i != thr.iter_events.end(); i++) {
+//		auto iter_num = i->first;
+//		auto it_events = i->second;
+//		//for( auto e : it_events ) std::cout << "Iter " << iter_num << " Event " << e->name() << "\n";
+//		for( auto e : it_events )
+//}
     unsigned j = 0;
     for (;j < b_obj.sys_spec.threads.size(); j++) {
       unsigned t_id1 = b_obj.sys_spec.threads.at(j).thread_num;
       auto& thr1 = b_obj.edata.get_thread(t_id1);
+
+      unsigned per1 = b_obj.sys_spec.threads.at(j).period;
+      if ( per1 > 1) {
+       for (auto m = thr1.active_intervals.begin(); m != thr1.active_intervals.end(); m++) {	  
+	  auto act_it_num = m->first;
+	  //auto it_events1 = thr1.iter_events[m];
+	  //auto it_events2 = thr1.iter_events[m+1];
+	  auto act_int1 = m->second;
+	  auto it_act_int2 = thr1.active_intervals.find(act_it_num+1);
+	if (it_act_int2 != thr1.active_intervals.end()) {
+	  auto start1 = act_int1.first;
+      	  auto end1 = act_int1.second;
+	  auto act_int2 = it_act_int2->second;
+	  auto start2 = act_int2.first;
+      	  auto end2 = act_int2.second;
+
+	  expr ord3 = mem_enc.mk_hbs( end1, start2 );
+          //expr ord4 = mem_enc.mk_hbs( end, e    );
+	  po = po && ( implies( start2->guard && end1->guard, ord3 ) );  
+       	 }
+       }
+      }
+
+
       unsigned t_pr1 = b_obj.sys_spec.threads.at(j).priority;
       for( auto e : thr1.events ) { //e - events of lower priority thread
 	for (unsigned l=0; l < b_obj.sys_spec.threads.size(); l++) {
@@ -457,15 +501,16 @@ void ses::min_maj() {
 		auto act_pair = i->second;
 	        auto start = act_pair.first;
         	auto end = act_pair.second;
+
 		if (iter_num == 1) {
 		expr ord2 = mem_enc.mk_hbs( end, e    );
-	        po = po && z3::implies( e->guard && end->guard, ord2 );	
+	        po = po && implies( e->guard && end->guard, ord2 );	
 		}
 		else {
 	        expr ord1 = mem_enc.mk_hbs( e , start );
         	expr ord2 = mem_enc.mk_hbs( end, e    );
-	        po = po && ( z3::implies( start->guard && e->guard, ord1 ) ||
-                z3::implies( e->guard && end->guard, ord2 ) );
+	        po = po && ( implies( start->guard && e->guard, ord1 ) ||
+                implies( e->guard && end->guard, ord2 ) );
 		}
               }
 	    }

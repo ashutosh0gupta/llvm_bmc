@@ -882,7 +882,8 @@ me_ptr bmc_pass::create_read_event( unsigned bidx,
     auto evt = mk_me_ptr(o.mem_enc, tid, prev_events, path_cond, history, gv, loc, event_t::r, translate_ordering_tags( load->getOrdering()) ); //NULL, true, NULL, val_expr, loc.
   //bmc_ds_ptr->all_events.insert( std::make_pair( evt, tid ) );
     //bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
-    bmc_obj.edata.all_events.insert( evt );
+    //bmc_obj.edata.all_events.insert( evt );
+    //it_events.push_back( evt );  
     prev_events = {evt};
     bmc_obj.edata.ev_threads[tid].events.push_back( evt );
     bmc_obj.edata.rd_events[gv].push_back( evt );
@@ -912,7 +913,8 @@ me_ptr bmc_pass::create_write_event( unsigned bidx,
   // cgp_obj.add_event(tid, evt);
   //bmc_ds_ptr->all_events.insert( std::make_pair( evt, tid ) );
   //bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
-    bmc_obj.edata.all_events.insert( evt );
+   // bmc_obj.edata.all_events.insert( evt );
+    //it_events.push_back( evt );  
     bmc_obj.edata.ev_threads[tid].events.push_back( evt );
     bmc_obj.edata.wr_events[gv].insert( evt );
     return evt;
@@ -1445,21 +1447,33 @@ void bmc_pass::do_bmc() {
     for( unsigned t = 0; t < bmc_obj.sys_spec.threads.size(); t++ )
       //bmc_obj.edata.create_map[ bmc_obj.sys_spec.threads[t].name ] = start;
       bmc_obj.edata.create_map[ bmc_obj.sys_spec.threads[t].name ] = bmc_obj.edata.init_loc;
+    bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].st_events.push_back(start);
   }
 
   // init_array_model( bmc_ds_ptr->bb_vec, bmc_ds_ptr->eb );
   init_path_exit_bit( bmc_ds_ptr->bb_vec );
   unsigned bidx = 0;
   for( const bb* src : bmc_ds_ptr->bb_vec ) {
+
     // support for stacked call. blocks before start_bidx have been processed
-    if( bidx < bmc_ds_ptr->processed_bidx) { bidx++; continue; }
+    if( bidx < bmc_ds_ptr->processed_bidx) { bidx++; continue; } 
+
     if( llvm::isa<llvm::ResumeInst>( src->getTerminator() ) ) {
       continue; // todo: hack! We are ignoring returned exceptions.
     }
 
   if ( bmc_obj.sys_spec.threads.size() > 1 ) {
+//std::cout << "Next block\n";
+    std::set<const bb*> ignore_edges;
+    if( exists( bmc_ds_ptr->loop_ignore_edges, src) ) {
+      ignore_edges = bmc_ds_ptr->loop_ignore_edges.at(src);
+    }
     for(auto PI = llvm::pred_begin(src),E = llvm::pred_end(src);PI != E;++PI) {
       const llvm::BasicBlock *prev = *PI;
+//prev->print(llvm::outs());
+      if( exists( ignore_edges, prev ) ) {
+        continue; // ignoring loop back edges
+      }
       //collect incoming branch conditions
       me_set& prev_trail = bmc_ds_ptr->block_to_trailing_events.at( prev );
       prev_events.insert( prev_trail.begin(), prev_trail.end() );
@@ -1489,16 +1503,22 @@ void bmc_pass::do_bmc() {
       print_bb_exprs(src);
     if( o.verbosity > 3 )
       print_bb_vecs();
-
+//std::cout << "Src \n "; src->print(llvm::outs());
     if ( bmc_obj.sys_spec.threads.size() > 1 ) {
       bmc_ds_ptr->block_to_trailing_events[src] = prev_events;
       prev_events.clear();
+//std::cout << "Map begins \n";
+//      for( auto p7 : bmc_ds_ptr->block_to_trailing_events ) {
+//		auto pre_ev = p7.second; auto src1 = p7.first;
+//		src1->print( llvm::outs() );
+//		for (auto h : pre_ev) {
+//			std::cout << "Event is " << *h << "\n";
+//		}
+//      }
+
     }
   }
   bmc_ds_ptr->processed_bidx = bmc_ds_ptr->bb_vec.size();
-
-  // Insert global variable definitions
-  bmc_ds_ptr->add_bmc_formulas(  bmc_obj.glb_bmc_vec );
 
 //  if( o.verbosity > 2 )
 //    bmc_ds_ptr->print_formulas();
@@ -1512,17 +1532,121 @@ void bmc_pass::do_bmc() {
     auto final = mk_me_ptr( o.mem_enc, thr_id, final_prev_events, exit_cond,
                             history_exprs, floc, event_t::barr );
     set_final_event( thr_id, final, exit_cond );
-    
-    static unsigned iter = 0;
-    iter++;
+    bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].fi_events.push_back(final);
+
+    unsigned iter = 1;
     auto pr1 = std::make_pair(bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].start_event,bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].final_event);
     auto pr2 = std::make_pair(iter, pr1);
     bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].active_intervals.insert(pr2);
+    
+    auto pr3 = std::make_pair(iter,bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].events);
+    bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].iter_events.insert(pr3);
+
+    //Make copies of constraints
+   if ( bmc_obj.sys_spec.threads[bmc_ds_ptr->thread_id].period > 1) {
+	std::vector<std::pair <me_ptr, me_ptr >> pr4_vec;
+	std::vector< expr > con_copy = bmc_ds_ptr->bmc_vec;
+	for (unsigned l = 1; l < bmc_obj.sys_spec.threads[bmc_ds_ptr->thread_id].period; l++) {
+	iter++;
+	std::string st_ev_newname; me_ptr start_copy;
+	st_ev_newname = bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].start_event->name() + "_copy" + nth_letter(iter-1);
+	start_copy = mk_me_ptr(o.mem_enc, bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].start_event, pr4_vec, st_ev_newname);
+	//std::cout << "Orig start event " << *bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].start_event  << " Copied start event " << *start_copy << "\n";
+
+	//Rename events and insert in map
+	auto pr4 = std::make_pair(bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].start_event,start_copy);
+	pr4_vec.push_back(pr4);
+	bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].st_events.push_back(start_copy);
+
+	me_ptr orig_event, new_event; me_vec it_events; std::string ev_newname;
+	for (unsigned i = 0; i < bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].events.size(); i++) {
+		orig_event = bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].events[i];
+		ev_newname = orig_event->name() + "_copy" + nth_letter(iter-1);
+		new_event = mk_me_ptr(o.mem_enc, orig_event, pr4_vec, ev_newname);		
+		it_events.push_back(new_event);
+		//std::cout << "Orig event " << *orig_event << " Copied event " << *new_event << "\n";
+		pr4 = std::make_pair(orig_event,new_event);
+	    	pr4_vec.push_back(pr4);	
+   	}
+
+	std::string fi_ev_newname; me_ptr final_copy;
+	fi_ev_newname = bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].final_event->name() + "_copy" + nth_letter(iter-1);
+	final_copy = mk_me_ptr(o.mem_enc, bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].final_event, pr4_vec, fi_ev_newname);
+        //std::cout << "Orig final event " << *bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].final_event  << " Copied final event " << *final_copy << "\n";
+	pr4 = std::make_pair(bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].final_event,final_copy);
+    	pr4_vec.push_back(pr4);
+	bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].fi_events.push_back(final_copy);
+
+	auto pr5 = std::make_pair(iter, pr4_vec);
+        bmc_obj.rename_map.insert(pr5);
+
+        pr1 = std::make_pair(start_copy,final_copy);
+        pr2 = std::make_pair(iter, pr1);
+        bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].active_intervals.insert(pr2);
+        pr3 = std::make_pair(iter,it_events);
+        bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].iter_events.insert(pr3);
+        it_events.clear();
+	pr4_vec.clear();
+	st_ev_newname = " ";
+	fi_ev_newname = " ";
+	ev_newname = " ";
+	
+	expr_set var_set;
+        get_variables(con_copy, var_set);
+	exprs var_vec, new_var_vec, con_copy_new;
+	expr_set_to_exprs(var_set, var_vec);
+	for ( auto e2 : var_vec) {
+	  std::string new_name = to_string(e2) + "_copy" + nth_letter(iter-1);
+	  sort s = e2.get_sort();
+	  expr new_var = solver_ctx.constant(new_name.c_str(), s);
+	  //std::cout << "New name " << to_string(new_var) << s <<"\n";
+          new_var_vec.push_back(new_var);	
+	  new_name = " ";
+	}
+        
+	for ( auto e3 : con_copy ) {
+	   auto e4 = substitute(e3, var_vec, new_var_vec);
+	   con_copy_new.push_back(e4);
+	   //std::cout << "Original constraint " << to_string(e3) <<"\n";
+	   //std::cout << "Modified constraint " << to_string(e4) <<"\n";
+	}
+	bmc_ds_ptr->add_bmc_formulas(  con_copy_new );
+	var_vec.clear();
+	new_var_vec.clear();
+	var_set.clear();
+	//con_copy.clear();
+	con_copy_new.clear();
+
+    
     if (iter == bmc_obj.sys_spec.threads.at(bmc_ds_ptr->thread_id).period)
-	iter = 1;
+	iter = 1;    
+
+     }
+	for( auto p1 : bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].iter_events ) {
+		auto th_ev = p1.second; auto num = p1.first;
+		for (auto h : th_ev) {
+			bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].events.push_back(h);
+//			auto gv = h->prog_v;
+//			if (h->is_rd()) bmc_obj.edata.rd_events[gv].push_back( h );
+//			else
+//			 if (h->is_wr()) bmc_obj.edata.wr_events[gv].insert( h );
+		}
+	}
+    } 
+
  }
 
+  // Insert global variable definitions
+  bmc_ds_ptr->add_bmc_formulas(  bmc_obj.glb_bmc_vec ); 
+
 }
+
+
+char bmc_pass::nth_letter(int n) {
+    assert(n >= 1 && n <= 26);
+    return "abcdefghijklmnopqrstuvwxyz"[n-1];
+}
+
 
 void bmc_pass::print_bb_exprs(const bb* src) {
   assert(src);
