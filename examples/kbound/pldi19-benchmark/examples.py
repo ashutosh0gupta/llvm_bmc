@@ -1,9 +1,9 @@
 exs1 = [
-        ["02-slc-spinlock-unsafe"  , "01-tl-btlock-sc-4",6,5,1,"un-sc"],
-        ["02-slc-spinlock-unsafe"  , "01-tl-btlock-4"   ,6,5,1,"unsafe"],
-        # ["05-pcm-spmc-unsafe", "05-pcs-spsc-4",4,10,1,"safe"]
-        # ["05-pcm-spmc-unsafe", "05-pcs-spsc-2",2,2,1,"unsafe"],
-        # ["01-tl-btlock-unsafe", "01-tl-btlock-6",6,10,1],
+        # ["02-slc-spinlock-unsafe"  , "01-tl-btlock-sc-4",6,5,1,"un-sc"],
+        # ["02-slc-spinlock-unsafe"  , "01-tl-btlock-4"   ,6,5,1,"unsafe"],
+        ["05-pcm-spmc-unsafe", "05-pcs-spsc-4",4,10,1,"safe"],
+        ["05-pcm-spmc-unsafe", "05-pcs-spsc-2",2,2,1,"unsafe"],
+        ["01-tl-btlock-unsafe", "01-tl-btlock-6",6,10,1,"unsafe"],
       ]
 
 exs2 = [
@@ -102,7 +102,7 @@ exs2 = [
     
        ]
 
-exs = exs2
+exs = exs1
 
 # exs = [ ["01-tl-btlock-unsafe"  , "01-tl-btlock-2",2],
 #        ]
