@@ -1966,56 +1966,65 @@ identify_array_in_gep(const llvm::GEPOperator* gep ) {
   llvm_bmc_error("bmc", "unseen GEP pattern detected!");
 }
 
-const llvm::Value*
-identify_array( const llvm::Value* op) {
+const std::pair<const llvm::Value*, uint64_t> get_array_info( const llvm::Value* op) {
+
   while( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
     op = cast->getOperand(0);
   }
   if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(op) ) {
     auto op_gep_ptr = gep->getPointerOperand();
-    return identify_array( op_gep_ptr );
+    return get_array_info( op_gep_ptr );
   }
   if(auto gep = llvm::dyn_cast<const llvm::GEPOperator>(op)) {
-    return identify_array_in_gep( gep );
-    // auto op_gep_ptr = gep->getPointerOperand();
-    // if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
-    //   op_gep_ptr = cast->getOperand(0);
-    // }
-    // if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_gep_ptr)) {
-    //   return addr;
-    // }
-    // if(auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
-    //   return addr;
-    // }
-    // gep->print( llvm::outs() );
-    // llvm_bmc_error("bmc", "unseen GEP pattern detected!");
-    // op_gep_ptr->print( llvm::outs() );
+    return get_array_info(identify_array_in_gep( gep ));
   }else if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op)) {
-    return glb;
+    // std::string name = glb->getName();
+    uint64_t size = 1; // default size for non-array types
+
+    llvm::Type* type = glb->getValueType();
+    if (llvm::ArrayType* arrayType = llvm::dyn_cast<llvm::ArrayType>(type)) {
+      // llvm::Type* elementType = arrayType->getElementType();
+      size = arrayType->getNumElements();
+    }
+    return std::make_pair(glb, size);
   }else if( llvm::dyn_cast<const llvm::AllocaInst>(op) ) {
     // auto alloc =
     // To handle a[0] when a is dynamic sized array
+    auto alloca = llvm::dyn_cast<const llvm::AllocaInst>(op);
+    uint64_t size = 0;
+    if (auto arrayTy = llvm::dyn_cast<llvm::ArrayType>(alloca->getAllocatedType())) {
+      size = arrayTy->getNumElements();
+    }
+
+    // llvm::errs() << "Alloca var Name = " << alloca->getName() << " Size = " << size << "\n";
     if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op)) {
       // actual allocation in the code
-      return addr;
+      return std::make_pair(addr, size);
     }
+    
+    return std::make_pair(op, size);
+
   }else if( auto addr = llvm::dyn_cast<const llvm::Argument>(op) ) {
     // passed as an argument
-    return addr;
+    uint64_t size = 0;
+    if (auto arrayTy = llvm::dyn_cast<llvm::ArrayType>(op->getType())) {
+      size = arrayTy->getNumElements();
+    }
+    return std::make_pair(addr, size);
   }else if( auto cnst = llvm::dyn_cast<const llvm::ConstantExpr>(op) ) {
     if( auto gep = llvm::dyn_cast<llvm::GEPOperator>(cnst) ) {
       auto const_ptr = gep->getPointerOperand();
-      return const_ptr;
+      return get_array_info(const_ptr);
     }
     auto cistr = cnst->getAsInstruction();
-    return identify_array(cistr);
+    return get_array_info(cistr);
     // cistr->dump();
     // llvm_bmc_error("bmc", "non GEP constant expression!");
   }else if( auto call = llvm::dyn_cast<const llvm::CallInst>(op) ) {
     llvm::Function* fp = call->getCalledFunction();
     if (fp != NULL && fp->getName().startswith("__cxa_allocate")) {
       // call->print(llvm::outs());std::cout << "RECOGNIZED PATTERN\n";
-      return call;
+      return std::make_pair(call, 0);
     }
   }
   else{
@@ -2023,20 +2032,18 @@ identify_array( const llvm::Value* op) {
   }
   llvm_bmc_warning("bmc","failed to recognize heap access");
   op->dump();
-  return NULL;
+  return std::make_pair(nullptr, 0);
 }
-
 // TODO: the following and the above functions make
 //       pointless distinction between array and global
-const llvm::Value*
-identify_global_in_addr( const llvm::Value* op) {
+const llvm::Value* identify_global_in_addr( const llvm::Value* op) {
   if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
     op = cast->getOperand(0);
   }
   if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op)) {
     return glb;
   }
-  return identify_array( op );
+  return get_array_info( op ).first;
 }
 
 

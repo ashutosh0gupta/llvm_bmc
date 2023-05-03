@@ -86,6 +86,7 @@ public:
 
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
   std::map< const llvm::Value*, unsigned >& ary_to_int;
+  std::map< unsigned, unsigned > ary_to_base;
 
   void set_array_length( const llvm::Value*, std::vector<expr>& );
   arr_write_expr array_write( unsigned, const llvm::StoreInst*,exprs&, expr& );

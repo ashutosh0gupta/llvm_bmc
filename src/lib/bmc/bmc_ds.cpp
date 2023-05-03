@@ -336,34 +336,41 @@ expr bmc_ds::join_state( std::vector<expr>& cs,
 //----------------------------------------------------------------------------
 // manage array model
 
-
-
 void bmc_ds::init_array_model( array_model_t ar_model_local,
                                array_state& s ) {
   unsigned bidx = 0;
+  unsigned int cnt = 0;
   for( const bb* bb : bb_vec ) {
     if( bb == NULL ) continue;
     if( bidx++ < processed_bidx ) continue;
     for( auto it = bb->begin(), e = bb->end(); it != e; ++it) {
       auto I = &(*it);
       if( auto load = llvm::dyn_cast<const llvm::LoadInst>(I) ) {
-        auto ary  = identify_array( load->getPointerOperand() );
-        if( ary && exists( ary_to_int, ary ) ) {
-          ary_access_to_index[load] = ary_to_int.at( ary );
+        auto ary_info  = get_array_info( load->getPointerOperand() );
+        if( ary_info.first && exists( ary_to_int, ary_info.first )) {
+          ary_access_to_index[load] = ary_to_int.at( ary_info.first );
+
+          if( ary_info.first && !exists( ary_to_base, ary_access_to_index[load] ) ) {
+            ary_to_base[ary_to_int.at( ary_info.first )] = cnt;
+            cnt += ary_info.second;
+          } 
         }else{
           // llvm_bmc_error("bmc", "Cound not identify array");
         }
       }else if( auto store = llvm::dyn_cast<const llvm::StoreInst>(I) ) {
-        auto ary  = identify_array( store->getPointerOperand() );
-        if( ary && exists( ary_to_int, ary ) ){
-          ary_access_to_index[store] = ary_to_int.at( ary );
+        auto ary_info  = get_array_info( store->getPointerOperand() );
+        if( ary_info.first && exists( ary_to_int, ary_info.first ) ){
+          ary_access_to_index[store] = ary_to_int.at( ary_info.first );
+          if( ary_info.first && !exists( ary_to_base, ary_access_to_index[store] ) ) {
+            ary_to_base[ary_to_int.at( ary_info.first )] = cnt;
+            cnt += ary_info.second;
+          } 
         }else{
           // llvm_bmc_error("bmc", "Cound not identify array");
         }
       }
     }
   }
-
   std::map< const llvm::Instruction*, unsigned >& map = ary_access_to_index;
   if(ar_model_local == FULL) {
     // full model using store and select
@@ -386,7 +393,7 @@ init_full_array_model(std::map< const llvm::Instruction*, unsigned >& map) {
   ar_model_init = FULL;
 
   //todo : move to array model code
-  ar_model_full.set_array_info( ary_to_int );
+  ar_model_full.set_array_info( ary_to_int, ary_to_base );
   ar_model_full.set_access_map( map );
 }
 
