@@ -318,6 +318,62 @@ array_model_full::array_read( unsigned bidx, const llvm::LoadInst* I,
   return arr_read_expr( select( ar_name, idxs), bound_guard );
 }
 
+arr_read_expr
+array_model_full::array_read( unsigned bidx, const llvm::ExtractValueInst* I,
+                              exprs& idxs ) {
+  auto s1 = idxs.size();
+  llvm::errs() << "\n\n idxs.size is " << s1;
+  llvm::errs() << "\n The array_read_ev inst is " << *I;
+  array_state& ar_st = get_state( bidx );
+  auto i = get_accessed_array(I); //ary_access_to_index.at(I);
+  auto& vec = ar_st.get_name_vec();
+  expr ar_name = vec.at(i);
+  auto& ls = lengths.at(i);
+  llvm::errs() << "\n\nInside arrayModelFull " << i << "\n\n";
+  auto bound_guard = access_bound_cons(idxs, ls);
+
+  // expr lower_bound_arr(idx >= 0);
+  // //todo: a trick to avoid bv/arith issue;; may need a fix in future
+  // //int idx_num = solver_ctx.int_val(idx);  //To convert idx from bv to int
+  // expr upper_bound_arr(idx <= lengths.at(i)-1);
+  // std::vector<expr> temp_vec;
+  // temp_vec.push_back(lower_bound_arr);
+  // temp_vec.push_back(upper_bound_arr);
+  // expr bound_guard = _and(temp_vec);
+  // expr bound_guard(idx >= 0);//to be commented
+
+  auto retVal = arr_read_expr( select( ar_name, idxs), bound_guard );
+  // llvm::errs() << "\n\nInside arrayModelFull " << i << "\n\n";
+  return retVal;
+}
+
+arr_read_expr
+array_model_full::array_read( unsigned bidx, const llvm::CallInst* I,
+                              exprs& idxs ) {
+  auto s1 = idxs.size();
+  llvm::errs() << "\n\n idxs.size is " << s1;
+  llvm::errs() << "\n The array_read_call inst is " << *I;
+  array_state& ar_st = get_state( bidx );
+  auto i = get_accessed_array(I); //ary_access_to_index.at(I);
+  auto& vec = ar_st.get_name_vec();
+  expr ar_name = vec.at(i);
+  auto& ls = lengths.at(i);
+  llvm::errs() << "\n\nInside arrayModelFull " << i << "\n\n";
+  auto bound_guard = access_bound_cons(idxs, ls);
+
+  // expr lower_bound_arr(idx >= 0);
+  // //todo: a trick to avoid bv/arith issue;; may need a fix in future
+  // //int idx_num = solver_ctx.int_val(idx);  //To convert idx from bv to int
+  // expr upper_bound_arr(idx <= lengths.at(i)-1);
+  // std::vector<expr> temp_vec;
+  // temp_vec.push_back(lower_bound_arr);
+  // temp_vec.push_back(upper_bound_arr);
+  // expr bound_guard = _and(temp_vec);
+  // expr bound_guard(idx >= 0);//to be commented
+
+  return arr_read_expr( select( ar_name, idxs), bound_guard );
+}
+
 void array_model_full::
 update_names( unsigned eb,
               std::vector<const llvm::Instruction*>& arrays_updated ) {

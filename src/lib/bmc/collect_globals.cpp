@@ -61,6 +61,15 @@ collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
             if( glb && !exists( list_gvars, glb ) )
               list_gvars.push_back(glb);
             if(glb) written.insert( glb );
+          }else if (auto eval = llvm::dyn_cast<llvm::ExtractValueInst>(I)) {
+            addr = eval->getAggregateOperand();
+            auto glb = identify_global_in_addr(addr);
+            if (glb && !exists(list_gvars, glb)) {
+              std::cout << "\nadded eval gvar in collectGlobalspass\n";
+              list_gvars.push_back(glb);
+            } else {
+              std::cout << "\ndid not add eval gvar in collectGlobalspass\n";
+            }
           }else {continue;}
         }
       }

@@ -69,6 +69,17 @@ expr memory_model::read( unsigned bidx, const llvm::LoadInst* I ) {
   }
 }
 
+expr memory_model::read( unsigned bidx, const llvm::ExtractValueInst* I ) {
+  memory_state& mem_st = store_state_map[bidx];
+  if(auto g_var = llvm::dyn_cast<llvm::GlobalVariable>(I->getAggregateOperand())) {
+    auto i = ind_in_mem_state.at(g_var);
+    expr name = mem_st.mem_state_vec[i].e;
+    return name;
+  } else {
+    llvm_bmc_error("bmc","Unable to determine the global variable!");
+  }
+}
+
 
 expr memory_model::read_con( unsigned bidx, const llvm::LoadInst* I, expr evt_name ) {
   memory_state& mem_st = store_state_map[bidx];

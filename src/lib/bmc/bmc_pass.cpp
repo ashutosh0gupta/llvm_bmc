@@ -72,7 +72,7 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   expr a = bmc_ds_ptr->m.get_term( op0 );
   expr b = bmc_ds_ptr->m.get_term( op1 );
 
- // bop->print( llvm::outs() ); std::cout << "\n";
+ bop->print( llvm::outs() ); std::cout << "\n";
 
 // a and b may have different types, due to llvm does not record clearly
   // if something is int. Our translation may incorrectly identify
@@ -459,7 +459,7 @@ void bmc_pass::translateDebugInfo( unsigned bidx,
   } // not possible
 }
 
-void bmc_pass::translateIntrinsicInst( unsigned bidx,
+int bmc_pass::translateIntrinsicInst( unsigned bidx,
                                        const llvm::IntrinsicInst* I ) {
   assert( I );
 
@@ -475,6 +475,32 @@ void bmc_pass::translateIntrinsicInst( unsigned bidx,
     // do nothing
   }else if( I->getIntrinsicID() == llvm::Intrinsic::memcpy ) {
     // do nothing - to be confirmed
+  }else if (I->getIntrinsicID() == llvm::Intrinsic::eh_typeid_for) {
+    llvm::errs() << "\n\nMATCHED INTRINSIC ID " << *I << "\n\n";
+    auto predecessor = I->getParent()->getSinglePredecessor()->getSinglePredecessor();
+    if (predecessor) {} // because what if the first block directly throws exception without any conditon (unconditional).
+    else {
+      predecessor = I->getParent()->getSinglePredecessor();
+    }
+    auto terminator = predecessor->getTerminator();
+    llvm::errs() << "\n\nINTRINSIC TERMINATOR " << *terminator << "\n\n";
+    llvm::errs() << "\nINTRINSIC OPERAND " << *(I->getOperand(0));
+    auto actualOperand = I->getOperand(0);
+    if (auto invoke = llvm::dyn_cast<const llvm::InvokeInst>(terminator)) {
+      llvm::errs() << "\n\nIN IF";
+      llvm::Function* fp = invoke->getCalledFunction();
+      llvm::errs() << "\n called function is " << *fp;
+      if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
+        llvm::Value* arg = invoke->getArgOperand(1);
+        llvm::errs() << "ARG NAME IS " << *arg << "======";
+        if (arg == actualOperand) {
+          // The cause of exceptions match
+          // We need to branch to the catch block
+          llvm::errs() << "\nRETURN TRUE FOR BRANCHING TO CATCH BLOCK\n";
+          return 1;
+        }
+      }
+    }
   }
   else{
     BMC_UNSUPPORTED_INSTRUCTIONS( ConstrainedFPIntrinsic, I);
@@ -498,16 +524,55 @@ void bmc_pass::translateIntrinsicInst( unsigned bidx,
     //I->print( llvm::outs() );
     llvm_bmc_error("bmc", "Unsupported intrinsics!");
   }
+  return 0;
 }
 
-void bmc_pass::translateCallInst( unsigned bidx,
+
+// llvm::Value bmc_pass::getCatchArg(unsigned bidx, const llvm::CallInst* call) {
+//   llvm::errs() << "\n\nCATCH OPERANDS : " << *call->getOperand(0) << "\n\n";
+//   auto lpi = llvm::dyn_cast<const llvm::LandingPadInst>(evi->getAggregateOperand());
+//   auto predecessor = lpi->getParent()->getSinglePredecessor();
+//   auto terminator = predecessor->getTerminator();
+//   // llvm::errs() << "\n\nGOT PREDECESSOR " << *predecessor << "===========";
+//   llvm::errs() << "\n\nGOT TERMINATOR " << *terminator << "\n===========";
+//   if (auto invoke = llvm::dyn_cast<const llvm::InvokeInst>(terminator)) {
+//     // llvm::errs() << "\n\nIN IF";
+//     llvm::Function* fp = invoke->getCalledFunction();
+//     // llvm::errs() << "\n called function is " << *fp;
+//     if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
+//       llvm::Value* idx;
+//       for (int i = 0; i < 1; i++) {
+//         idx = invoke->getArgOperand(i);
+//         llvm::errs() << "\n Operand " << i << " is " << *idx;
+//         auto idx_expr = bmc_ds_ptr->m.get_term( idx );
+//         if( o.bit_precise ) {
+//           sort si = idx_expr.get_sort();
+//           if ( si.is_bv() && si.bv_size() != 64 ) {
+//             idx_expr = idx_expr.ctx().bv_val(idx_expr,64);
+//           }
+//         }
+//         idxs.push_back(idx_expr);
+//       }
+      
+//       // llvm::errs() << "\nDUmping value ";
+//       // arg->dump();
+//       // llvm::errs() << "\n";
+//     }
+//   } else {
+//     llvm::errs() << "\n\nIN ELSE";
+//   }
+//   return nullptr;
+// }
+
+
+int bmc_pass::translateCallInst( unsigned bidx,
                                   const llvm::CallInst* call ) {
   assert(call);
 
   llvm::Function* fp = call->getCalledFunction();
   
   if( auto dbg_val = llvm::dyn_cast<llvm::IntrinsicInst>(call) ) {
-    translateIntrinsicInst( bidx, dbg_val );
+    return translateIntrinsicInst( bidx, dbg_val );
   } else if( is_assert(call) ) {
     assert_to_spec(bidx, call);
   } else if( is_assume(call) ) {
@@ -543,12 +608,52 @@ void bmc_pass::translateCallInst( unsigned bidx,
       ls.push_back( get_expr_const(solver_ctx,size));
     bmc_ds_ptr->set_array_length( call, ls );
   } else if( fp != NULL && fp->getName().startswith("__cxa_throw") ) {
+    llvm::errs() << "\n\n\n\n\n THROWWWWWW \n\n\n";
+  } else if( fp != NULL && fp->getName().startswith("__cxa_begin_catch") ) {
+    llvm::errs() << "\n\n\n\n\n CATCH BEGINNNNNNN \n\n\n";
+    llvm::errs() << "The arg of catch is " << *(call->getOperand(0)) << "\n";
     
+
+    // expr var = bmc_ds_ptr->m.get_term(getCatchArg(bidx, call->getOperand(0)));
+    // // bmc_ds_ptr->m.insert_term_map(call, bidx, var);
+    // exprs idxs;
+    // // auto idx = var;
+    // // llvm::errs() << "\n Operand " << i << " is " << *idx;
+    // auto idx_expr = var;
+    // if( o.bit_precise ) {
+    //   sort si = idx_expr.get_sort();
+    //   if ( si.is_bv() && si.bv_size() != 64 ) {
+    //     idx_expr = idx_expr.ctx().bv_val(idx_expr,64);
+    //   }
+    // }
+    // idxs.push_back(idx_expr);
+    // auto arr_rd = bmc_ds_ptr->array_read( bidx, call, idxs);
+    // if( o.include_out_of_bound_specs ) {
+    //   expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+    //   bmc_ds_ptr->add_spec( !path_bit || arr_rd.size_bound_guard, spec_reason_t::OUT_OF_BOUND );
+    // }
+    // bmc_ds_ptr->m.insert_term_map(call, bidx, arr_rd.return_val );
+
+
+
+    llvm::errs() << "\n1\n";
+    auto val = call->getOperand(0);
+    llvm::errs() << "\n2\n";
+    expr valExpr = bmc_ds_ptr->m.get_term( val );
+    llvm::errs() << "\n3\n";
+    bmc_ds_ptr->m.insert_term_map( call, bidx, valExpr );
+    llvm::errs() << "\n4\n";
+
+
+
+  } else if( fp != NULL && fp->getName().startswith("__cxa_end_catch") ) {
+    llvm::errs() << "\n\n\n\n\n CATCH ENDDDDDDD \n\n\n";
   } else {
     call->print( llvm::outs() );
     std::cout << "\n";
     llvm_bmc_error("bmc", "function call is not recognized !!");
   }
+  return 0;
 }
 
 //--------------------------------------
@@ -747,12 +852,14 @@ void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
   // length calculation of dynamically allocated array needs to be delayed
   // until we have symbols for the array length
   //
+  // llvm::errs() << "\n=============== IN ALLOCA ===========\n";
   auto typ = alloca->getAllocatedType();
   if( llvm::isa<const llvm::IntegerType>(typ) ) {
     auto val = alloca->getArraySize();
     if( auto constInt = llvm::dyn_cast<const llvm::ConstantInt>(val) ) {
         int constIntValue = (int)constInt->getSExtValue();
         std::vector<expr> ls;
+        // llvm::errs() << "\n\n Alloca inst size " << constIntValue << " instruction " << *alloca;
         if( o.bit_precise )
           ls.push_back( get_expr_bv_const(solver_ctx,constIntValue,64)); //todo: why 64
         else
@@ -761,6 +868,7 @@ void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
         // array_lengths.push_back(const_expr);
     } else {
       auto val = alloca->getOperand(0);
+      // llvm::errs() << "\n\n Alloca inst size " << val << " instruction " << *alloca;
       auto val_expr = bmc_ds_ptr->m.get_term( val );
       std::vector<expr> ls; ls.push_back( val_expr);
       bmc_ds_ptr->set_array_length( alloca, ls );
@@ -769,6 +877,7 @@ void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
   }
   else if( llvm::isa<const llvm::ArrayType>(typ) ) {
     int siz = (int)typ->getArrayNumElements();
+    // llvm::errs() << "\n\n Alloca inst size " << siz << " instruction " << *alloca;
     std::vector<expr> ls;
     if( o.bit_precise )
       ls.push_back( get_expr_bv_const(solver_ctx,siz,64)); //todo: why 64
@@ -935,14 +1044,15 @@ me_ptr bmc_pass::create_write_event( unsigned bidx,
 void bmc_pass::translateLoadInst( unsigned bidx,
                                   const llvm::LoadInst* load ) {
   assert( load );
-//load->print( llvm::outs() );
-  //std::cout << "\n";
+  llvm::errs() << " Load inst is " << *load << "\n";
   auto addr = load->getOperand(0);
+  llvm::errs() << " Addr" << *addr << "\n";
   // jump over casting
   while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
     addr = bcast->getOperand(0);
   }
   if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
+  llvm::errs() << "\n1\n";
     // assert( gop->getNumIndices() <= 2);
     // llvm::Value * idx = NULL;
     // if(gop->getNumOperands() == 2) idx = gop->getOperand(1);
@@ -968,6 +1078,7 @@ void bmc_pass::translateLoadInst( unsigned bidx,
   //   loadFromArrayHelper(bidx, load, idxs);
   } else if(auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
     //auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
+  llvm::errs() << "\n2\n";
     //bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
     if ( exists( bmc_obj.concurrent_vars, (const llvm::Value*)gv ) ) {
       auto r_evt = create_read_event( bidx, load, addr );
@@ -977,11 +1088,12 @@ void bmc_pass::translateLoadInst( unsigned bidx,
       //addr->print( llvm::outs() );  std::cout << "\n";
     }
     else {
-	auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
+	      auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
         bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
     }
   // } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
   } else if( llvm::isa<const llvm::AllocaInst>(addr) ) {
+  llvm::errs() << "\n3\n";
     // To handle a[0] when a is dynamic sized array
     // expr idx_expr = get_expr_const(solver_ctx,0);
     exprs idxs;
@@ -991,7 +1103,27 @@ void bmc_pass::translateLoadInst( unsigned bidx,
       idxs.push_back( get_expr_const( solver_ctx, 0 ) );
 
     loadFromArrayHelper(bidx, load, idxs );
+  } else if( auto call = llvm::dyn_cast<const llvm::CallInst>(addr) ) {
+    llvm::errs() << "\n33\n";
+    llvm::Function* fp = call->getCalledFunction();
+    llvm::errs() << (fp->getName()) << "\n";
+    if (fp != NULL && fp->getName().startswith("__cxa_begin_catch")) {
+      // auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_exprs);
+      // if( o.include_out_of_bound_specs ) {
+      //   expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+      //   bmc_ds_ptr->add_spec( !path_bit || arr_rd.size_bound_guard, spec_reason_t::OUT_OF_BOUND );
+      // }
+      // bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd.return_val );
+      llvm::errs() << "catch arg is " << *(call->getOperand(0)) << "\n";
+      auto op = call->getOperand(0);
+      if (auto evi = llvm::dyn_cast<const llvm::ExtractValueInst>(op)) {
+        exprs idxs;
+        addEVIExprs(evi, idxs);
+        extractValFromArrayHelper(bidx, evi, idxs);
+      }
+    }
   } else if (auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
+  llvm::errs() << "\n4\n";
     //todo: rethink about this
     assert(false);
     // To handle the case of a pointer with a bitcast instruction as parameter
@@ -1003,10 +1135,110 @@ void bmc_pass::translateLoadInst( unsigned bidx,
       loadFromArrayHelper(bidx, load, idxs);
     }  
   } else {
+    llvm::errs() << "\n5\n";
     LLVM_DUMP( load );
     llvm_bmc_error("bmc", "Only array and global write/read supported!");
   }
 }
+
+void bmc_pass::extractValFromArrayHelper( unsigned bidx,
+                                    const llvm::ExtractValueInst* extractVal,
+                                    exprs& idx_exprs ) {
+  auto arr_rd = bmc_ds_ptr->array_read( bidx, extractVal, idx_exprs);
+  if( o.include_out_of_bound_specs ) {
+    expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+    bmc_ds_ptr->add_spec( !path_bit || arr_rd.size_bound_guard, spec_reason_t::OUT_OF_BOUND );
+  }
+  bmc_ds_ptr->m.insert_term_map(extractVal, bidx, arr_rd.return_val );
+}
+
+
+
+void bmc_pass::addEVIExprs( const llvm::ExtractValueInst* evi, exprs& idxs ) {
+  
+  llvm::errs() << "\n\n EVI OPERANDS : " << *evi->getAggregateOperand() << "\n\n";
+  auto lpi = llvm::dyn_cast<const llvm::LandingPadInst>(evi->getAggregateOperand());
+  auto predecessor = lpi->getParent()->getSinglePredecessor();
+  auto terminator = predecessor->getTerminator();
+  // llvm::errs() << "\n\nGOT PREDECESSOR " << *predecessor << "===========";
+  llvm::errs() << "\n\nGOT TERMINATOR " << *terminator << "\n===========";
+  if (auto invoke = llvm::dyn_cast<const llvm::InvokeInst>(terminator)) {
+    llvm::errs() << "\n\nIN IF";
+    llvm::Function* fp = invoke->getCalledFunction();
+    llvm::errs() << "\n called function is " << *fp;
+    if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
+      llvm::Value* idx;
+      for (int i = 0; i < 1; i++) {
+        idx = invoke->getArgOperand(i);
+        llvm::errs() << "\n Operand " << i << " is " << *idx;
+        auto idx_expr = bmc_ds_ptr->m.get_term( idx );
+        if( o.bit_precise ) {
+          sort si = idx_expr.get_sort();
+          if ( si.is_bv() && si.bv_size() != 64 ) {
+            idx_expr = idx_expr.ctx().bv_val(idx_expr,64);
+          }
+        }
+        idxs.push_back(idx_expr);
+      }
+      
+      // llvm::errs() << "\nDUmping value ";
+      // arg->dump();
+      // llvm::errs() << "\n";
+    }
+  } else {
+    llvm::errs() << "\n\nIN ELSE";
+  }
+
+}
+
+
+
+// todo : implement concurrency support
+
+void bmc_pass::translateExtractValueInst( unsigned bidx, const llvm::ExtractValueInst* eval) {
+  assert(eval);
+  auto val = eval->getAggregateOperand();
+  // auto indices = eval->getIndices();
+  exprs indices;
+  // llvm::errs() << "\n Aggregated Operand is ----- " << *val << "\n";
+  // std::cout << "\nEXtract value instruction found\n";
+  // llvm::errs() << *eval << "\n";
+  // llvm::errs() << "Type of EVAL is " << *(eval->getType()) << "\n";
+  auto evi_op = eval->getAggregateOperand();
+  if( auto pty = llvm::dyn_cast<llvm::PointerType>(eval->getType()) ) {
+    // llvm::errs() << "POINTER TYPE";
+    addEVIExprs(eval, indices);
+    extractValFromArrayHelper(bidx, eval, indices);
+    // return identify_lpad_struct(evi_op, 0);
+  } else {
+    // return identify_lpad_struct(evi_op, 1);
+    llvm::errs() << "\n\n\nEXTRACTVALUE_CONSTANT_EXPR\n\n\n";
+    // return evi_op;
+  }
+  // extract_exception_info(bidx, eval);
+}
+
+// std::string extract_value_from_extract_value_inst(const llvm::ExtractValueInst* extract_value_inst) {
+//     const llvm::Value* aggregate_operand = extract_value_inst->getAggregateOperand();
+//     std::vector<unsigned int> indices = extract_value_inst->getIndices();
+    
+//     llvm::Value* current_value = aggregate_operand;
+//     for (unsigned int i : indices) {
+//         if (auto struct_type = llvm::dyn_cast<llvm::StructType>(current_value->getType())) {
+//             current_value = llvm::ExtractValueInst::Create(current_value, i, "", extract_value_inst);
+//         } else if (auto array_type = llvm::dyn_cast<llvm::ArrayType>(current_value->getType())) {
+//             current_value = llvm::ExtractValueInst::Create(current_value, {llvm::ConstantInt::get(llvm::Type::getInt32Ty(extract_value_inst->getContext()), i)}, "", extract_value_inst);
+//         } else {
+//             // Error: cannot extract value from unsupported type
+//             return "";
+//         }
+//     }
+    
+//     // Return the name of the register holding the extracted value
+//     return current_value->getName().str();
+// }
+
+
 
 void bmc_pass::translateUnaryInst( unsigned bidx,
                                    const llvm::UnaryInstruction* I ) {
@@ -1017,8 +1249,10 @@ void bmc_pass::translateUnaryInst( unsigned bidx,
     translateAllocaInst(alloca);
   } else if( auto load = llvm::dyn_cast<llvm::LoadInst>(I) ) {
     translateLoadInst(bidx, load);
+  } else if (auto extractVal = llvm::dyn_cast<llvm::ExtractValueInst>(I)) {
+    // I->print(llvm::outs());
+    translateExtractValueInst(bidx, extractVal);
   } else {
-    I->print(llvm::outs());
     BMC_UNSUPPORTED_INSTRUCTIONS( VAArgInst,        I );
     BMC_UNSUPPORTED_INSTRUCTIONS( ExtractValueInst, I );
     LLVM_DUMP(I);
@@ -1121,6 +1355,37 @@ void bmc_pass::translateGetElementPtrInst(const llvm::GetElementPtrInst* gep) {
 
 //--------------------------------------
 // Terminator instructions
+
+void bmc_pass::translateCatchBr( unsigned bidx,
+                                const llvm::BranchInst* br, unsigned brCatch ) {
+/*  assert( br );
+
+  auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
+  if( !br->isUnconditional() ) {
+    expr cond = bmc_ds_ptr->m.get_term( br->getCondition() );
+    bmc_ds_ptr->bmc_vec.push_back( cond == exit_bits[0] );
+  }else{
+    // for unconditional branch, there is no need of constraints
+    // bmc_ds_ptr->bmc_vec.push_back( exit_bit );
+  } */
+  assert( br );
+  auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
+  if( !br->isUnconditional() ) {
+    // expr cond = bmc_ds_ptr->m.get_term( br->getCondition() );
+    // auto cond_sort = cond.get_sort();
+    // auto exit_sort = exit_bits[0].get_sort();
+    // if (cond_sort.is_bv() && exit_sort.is_bool()) {    	
+	  //   expr exitbits_bv = solver_ctx.bv_val(exit_bits[0],1);
+    // 	bmc_ds_ptr->bmc_vec.push_back( cond == exitbits_bv );
+    // }
+    // else  
+    bmc_ds_ptr->bmc_vec.push_back( exit_bits[brCatch] );
+  }else{
+    // for unconditional branch, there is no need of constraints
+    // bmc_ds_ptr->bmc_vec.push_back( exit_bit );
+  }
+}
+
 
 void bmc_pass::translateBranch( unsigned bidx,
                                 const llvm::BranchInst* br ) {
@@ -1338,7 +1603,10 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
 
 void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
   assert( b );
-  for( const llvm::Instruction& Iobj : b->getInstList() ) {
+  int brCatch = 0, flag = 0;
+  // for( const llvm::Instruction& Iobj : b->getInstList() ) {
+  for (auto iter = b->getInstList().begin(); iter != b->getInstList().end(); ++iter) {
+    const llvm::Instruction& Iobj = *iter;
     const llvm::Instruction* I = &(Iobj);
     if(auto bop = llvm::dyn_cast<llvm::BinaryOperator>(I) ) {
       translateBinOp( bidx, bop );
@@ -1347,7 +1615,14 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
     } else if( auto cmp = llvm::dyn_cast<llvm::CmpInst>(I) ) {
       translateCmpInst( bidx, cmp );
     } else if( auto call = llvm::dyn_cast<llvm::CallInst>(I) ) {
-      translateCallInst(bidx, call);
+      flag = translateCallInst(bidx, call);
+      if (flag) {
+        brCatch = 1;
+        llvm::errs() << "\nRET 1 NOW CONTINUE\n";
+        // skip the next match inst
+        ++iter;
+        continue;
+      }
     } else if( auto unary = llvm::dyn_cast<llvm::UnaryInstruction>(I) ) {
       translateUnaryInst( bidx, unary );
     } else if( auto store = llvm::dyn_cast<llvm::StoreInst>(I) ) {
@@ -1356,7 +1631,15 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
       translateGetElementPtrInst( gep );
       // Terminator instructions
     } else if( auto br = llvm::dyn_cast<llvm::BranchInst>(I) ) {
-      translateBranch( bidx, br );
+      if (flag) {
+        llvm::errs() << " Flag is set and take branch is " << 1 - brCatch;
+        llvm::errs() << "\n" << *br << "\n";
+        translateCatchBr(bidx, br, 1 - brCatch);
+      } else {
+        llvm::errs() << " Flag is unset and take branch is " << 1 - brCatch;
+        llvm::errs() << "\n" << *br << "\n";
+        translateBranch( bidx, br );
+      }
     } else if( auto ret = llvm::dyn_cast<llvm::ReturnInst>(I) ) {
       translateRetInst( ret );
     } else if( auto swch = llvm::dyn_cast<llvm::SwitchInst>(I) ) {
@@ -1396,6 +1679,7 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
       LLVM_DUMP( I );
       llvm_bmc_error("bmc", "unsupported instruction");
     }
+    brCatch = flag = 0;
   }
   translateCommentProperty( bidx, b);
 }

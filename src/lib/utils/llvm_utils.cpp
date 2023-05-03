@@ -1913,6 +1913,38 @@ identify_array_in_gep(const llvm::GEPOperator* gep ) {
   llvm_bmc_error("bmc", "unseen GEP pattern detected!");
 }
 
+const llvm::Value* 
+identify_lpad_struct(const llvm::Value* op, int index) {
+  auto lpi = llvm::dyn_cast<const llvm::LandingPadInst>(op);
+  auto predecessor = lpi->getParent()->getSinglePredecessor();
+  auto terminator = predecessor->getTerminator();
+  // llvm::errs() << "\n\nGOT PREDECESSOR " << *predecessor << "===========";
+  llvm::errs() << "\n\nGOT TERMINATOR " << *terminator << "\n===========";
+  if (auto invoke = llvm::dyn_cast<const llvm::InvokeInst>(terminator)) {
+    // llvm::errs() << "\n\nIN IF";
+    llvm::Function* fp = invoke->getCalledFunction();
+    llvm::errs() << "\n called function is " << *fp;
+    if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
+      llvm::Value* arg;
+      if (index == 0) {
+        arg = invoke->getArgOperand(index);
+      } else {
+        arg = invoke->getArgOperand(index);
+        //TODO : add code to convert it into int for future purpose
+      }
+      llvm::errs() << "\nDUmping value ";
+      arg->dump();
+      llvm::errs() << "\n";
+      return arg;
+    }
+  } else {
+    llvm::errs() << "\n\nIN ELSE";
+  }
+  llvm_bmc_warning("bmc","failed to recognize lpad structure");
+  op->dump();
+  return NULL;
+}
+
 const llvm::Value*
 identify_array( const llvm::Value* op) {
   while( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
@@ -1948,6 +1980,7 @@ identify_array( const llvm::Value* op) {
     }
   }else if( auto addr = llvm::dyn_cast<const llvm::Argument>(op) ) {
     // passed as an argument
+    llvm::errs() << "\n\nArgument passed " << *addr;
     return addr;
   }else if( auto cnst = llvm::dyn_cast<const llvm::ConstantExpr>(op) ) {
     if( auto gep = llvm::dyn_cast<llvm::GEPOperator>(cnst) ) {
@@ -1959,11 +1992,50 @@ identify_array( const llvm::Value* op) {
     // cistr->dump();
     // llvm_bmc_error("bmc", "non GEP constant expression!");
   }else if( auto call = llvm::dyn_cast<const llvm::CallInst>(op) ) {
+    // llvm::errs() << "\n CALL INSTRUCTION \n";
     llvm::Function* fp = call->getCalledFunction();
     if (fp != NULL && fp->getName().startswith("__cxa_allocate")) {
       // call->print(llvm::outs());std::cout << "RECOGNIZED PATTERN\n";
       return call;
+    } else if (fp != NULL && fp->getName().startswith("__cxa_begin_catch")) {
+      return call;
     }
+  } else if (auto ev = llvm::dyn_cast<const llvm::ExtractValueInst>(op)) {
+    std::cout << "\nEXtract value instruction found\n";
+    llvm::errs() << *ev << "\n";
+    llvm::errs() << "Type of EVAL is " << *(ev->getType()) << "\n";
+    auto evi_op = ev->getAggregateOperand();
+    if( auto pty = llvm::dyn_cast<llvm::PointerType>(ev->getType()) ) {
+      // llvm::errs() << "POINTER TYPE";
+      return identify_lpad_struct(evi_op, 0);
+    } else {
+      return identify_lpad_struct(evi_op, 1);
+      // llvm::errs() << "NOT POINTER TYPE";
+      // return evi_op;
+    }
+    // return ev;
+    // return ev->getAggregateOperand();
+  // } else if (auto lpi = llvm::dyn_cast<const llvm::LandingPadInst>(op)) {
+  //   auto predecessor = lpi->getParent()->getSinglePredecessor();
+  //   auto terminator = predecessor->getTerminator();
+  //   // llvm::errs() << "\n\nGOT PREDECESSOR " << *predecessor << "===========";
+  //   llvm::errs() << "\n\nGOT TERMINATOR " << *terminator << "\n===========";
+  //   if (auto invoke = llvm::dyn_cast<const llvm::InvokeInst>(terminator)) {
+  //     // llvm::errs() << "\n\nIN IF";
+  //     llvm::Function* fp = invoke->getCalledFunction();
+  //     llvm::errs() << "\n called function is " << *fp;
+  //     if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
+  //       llvm::Value* arg0;
+        
+  //       arg0 = invoke->getArgOperand(0);
+  //       llvm::errs() << "\nDUmping value ";
+  //       arg0->dump();
+  //       llvm::errs() << "\n";
+  //       return arg0;
+  //     }
+  //   } else {
+  //     llvm::errs() << "\n\nIN ELSE";
+  //   }
   }
   else{
     // llvm_bmc_error("bmc", "non array global write/read not supported!");

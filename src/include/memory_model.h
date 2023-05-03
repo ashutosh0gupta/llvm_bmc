@@ -38,6 +38,7 @@ public:
   std::pair<expr,expr> write(unsigned, const llvm::StoreInst*, expr& );
   std::pair<expr,expr> write_con(unsigned, const llvm::StoreInst*, expr&, expr );
   expr read( unsigned, const llvm::LoadInst*);
+  expr read( unsigned, const llvm::ExtractValueInst*);
   expr read_con( unsigned, const llvm::LoadInst*, expr );
   expr join_state( std::vector<expr>&, std::vector<unsigned>&, unsigned );
 

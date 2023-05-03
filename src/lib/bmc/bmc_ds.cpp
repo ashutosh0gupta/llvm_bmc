@@ -327,6 +327,10 @@ expr bmc_ds::read( unsigned bidx, const llvm::LoadInst* I ) {
   return m_model.read( bidx, I );
 }
 
+expr bmc_ds::read( unsigned bidx, const llvm::ExtractValueInst* I ) {
+  return m_model.read( bidx, I );
+}
+
 expr bmc_ds::join_state( std::vector<expr>& cs,
                                  std::vector<unsigned>& prevs,
                                   unsigned src ) {
@@ -352,31 +356,52 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
       if( auto load = llvm::dyn_cast<const llvm::LoadInst>(I) ) {
         // std::cout << "identifying array for load inst\n";
         auto ary  = identify_array( load->getPointerOperand() );
+        // I->print(llvm::outs());
         // if (ary) {
         //   std::cout << "Identified array -";
         // } else {
         //   std::cout << "Unidentified array -";
         // }
-        // I->print(llvm::outs());
         // std::cout << "\n";
         if( ary && exists( ary_to_int, ary ) )
           ary_access_to_index[load] = ary_to_int.at( ary );
       }else if( auto store = llvm::dyn_cast<const llvm::StoreInst>(I) ) {
         // std::cout << "identifying array for store inst \n";
-        // I->print(llvm::outs());
         auto ary  = identify_array( store->getPointerOperand() );
-        if (ary) {
-          // std::cout << "Identified array -";
-        } else {
-          // std::cout << "Unidentified array -";
-        }
+        // I->print(llvm::outs());
+        // if (ary) {
+        //   std::cout << "Identified array -";
+        // } else {
+        //   std::cout << "Unidentified array -";
+        // }
         // std::cout << "\n";
         if( ary && exists( ary_to_int, ary ) ) {
           ary_access_to_index[store] = ary_to_int.at( ary );
           std::cout << "\nPROCESSED STORE INST\n";
+          llvm::errs() << "store type is " << *(ary->getType()) << "\n";
           I->print(llvm::outs());
         } else {
           // std::cout << "UNCAUGHT\n";
+        }
+      } else if (auto eval = llvm::dyn_cast<const llvm::ExtractValueInst>(I)) {
+        std::cout << "\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
+        I->print(llvm::outs());
+        std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
+        auto ary = identify_array( eval);
+        if (ary) {
+          std::cout << "array exists\n";
+        } else {
+          std::cout << "array doesn't exist\n";
+        }
+        if (exists(ary_to_int, ary)) {
+          llvm::errs() << "array added to memory model\n\n";
+        } else {
+          llvm::errs() << "couldn't add array to memory model\n\n";
+        }
+        if (ary && exists(ary_to_int, ary)) {
+          ary_access_to_index[eval] = ary_to_int.at(ary);
+        } else {
+          // DO NOTHING
         }
       }
       // } else if( auto call = llvm::dyn_cast<const llvm::CallInst>(I) ) {
@@ -441,6 +466,26 @@ bmc_ds::array_write( unsigned bidx, const llvm::StoreInst* I,
 }
 
 arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::LoadInst* I,
+                               exprs& idxs ) {
+  assert( I );
+  switch( ar_model_init ) {
+  case FULL     : return ar_model_full.array_read( bidx, I, idxs ); break;
+  // case FIXED_LEN: return ar_model_full.array_read( bidx, I, idx ); break;
+  default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
+  }
+}
+
+arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::ExtractValueInst* I,
+                               exprs& idxs ) {
+  assert( I );
+  switch( ar_model_init ) {
+  case FULL     : return ar_model_full.array_read( bidx, I, idxs ); break;
+  // case FIXED_LEN: return ar_model_full.array_read( bidx, I, idx ); break;
+  default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
+  }
+}
+
+arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::CallInst* I,
                                exprs& idxs ) {
   assert( I );
   switch( ar_model_init ) {

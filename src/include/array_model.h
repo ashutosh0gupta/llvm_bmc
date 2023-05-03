@@ -114,6 +114,8 @@ std::vector< std::string > ar_names;
   array_write( unsigned bidx, const llvm::StoreInst* I,
                exprs& idx, expr& val );
   arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
+  arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& );
+  arr_read_expr array_read( unsigned bidx, const llvm::CallInst* I, exprs& );
 
   void update_names( unsigned, std::vector<const llvm::Instruction*>&);
   void update_name( unsigned, unsigned );
