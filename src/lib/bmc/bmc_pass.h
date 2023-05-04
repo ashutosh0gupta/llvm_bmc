@@ -25,6 +25,9 @@ public:
 
   me_ptr start_event, final_event;
   me_set prev_events, final_prev_events;
+  //me_vec it_events;
+ 
+
   expr start_cond = solver_ctx.bool_val(true);
   expr final_cond = solver_ctx.bool_val(true);
 
@@ -113,6 +116,7 @@ public:
   void set_final_event( unsigned i, me_ptr e, expr cond );
 
   o_tag_t translate_ordering_tags( llvm::AtomicOrdering ord );
+  char nth_letter(int n);
 
 };
 

@@ -272,7 +272,19 @@ private:
     memory_event(   solver_context& sol_ctx, unsigned _tid,
                     me_set& _prev_events, expr& path_cond,
                     std::vector<expr>& _history,
-                    src_loc& _loc, event_t _et, o_tag_t _o_tag );
+                    src_loc& _loc, event_t _et, o_tag_t _o_tag );  
+
+    memory_event( solver_context& sol_ctx, unsigned _tid,
+                    me_set& _prev_events, //const tara::variable& _prog_v,
+		    const variable& _prog_v,
+                    expr& path_cond, std::vector<expr>& history_,
+                    src_loc& _loc, event_t _et, o_tag_t ord_tag, std::string new_name );
+
+    memory_event( solver_context& sol_ctx, unsigned _tid,
+                    me_set& _prev_events,
+                    expr& path_cond, std::vector<expr>& _history,
+                    src_loc& _loc, event_t _et, o_tag_t _o_tag, std::string new_name );  
+
   public:
     unsigned tid;
     //tara::variable v;
@@ -523,6 +535,57 @@ private:
                           loc, et, branch_conds, ord_tag );
     e->loc = loc;
     return e;
+  }
+
+  //To make copies of events
+  inline me_ptr
+  mk_me_ptr( memory_cons& mem_enc, const me_ptr& ref_ev, std::vector<std::pair <me_ptr, me_ptr >> rename_map, std::string copy_name ) {
+
+    unsigned tid = ref_ev -> tid; 
+    expr& path_cond = ref_ev -> guard;
+    std::vector<expr>& history_ = ref_ev -> history;
+    const variable& prog_v = ref_ev -> prog_v;
+    src_loc& loc = ref_ev -> loc;
+    event_t _et = ref_ev -> et;
+    o_tag_t ord_tag = ref_ev -> o_tag;
+
+    me_set prev_es;
+    for (auto c : ref_ev->prev_events) {
+	    //std::cout << *c << " " << "\n";
+	  for (auto pair2 : rename_map) {
+              	auto orig_ev = pair2.first ;
+		auto new_ev = pair2.second ;
+               	if (c->name() == orig_ev->name()) {
+			prev_es.insert(new_ev);
+		}
+          }
+    }
+
+    if ( _et != event_t::barr ) {
+    	me_ptr e = std::make_shared<memory_event>( mem_enc.solver_ctx, tid, prev_es,prog_v,
+                                               path_cond, history_, loc, _et,
+                                               ord_tag, copy_name );
+
+    	std::map<const me_ptr, expr > bconds;
+    	for( auto& ep : prev_es ) {
+      		bconds.insert( std::make_pair( ep, mem_enc.solver_ctx.bool_val(true) ) );
+    	}
+    	full_initialize_se( mem_enc, e, prev_es, bconds );
+
+    	return e; 
+   }
+   else {
+	std::map<const me_ptr, expr > branch_conds;
+	for( auto& ep : prev_es ) {
+      		branch_conds.insert( std::make_pair( ep, mem_enc.solver_ctx.bool_val(true) ) );
+    	}	
+    	me_ptr e = std::make_shared<memory_event>( mem_enc.solver_ctx, tid, prev_es,
+                                                 path_cond, history_, loc, _et,
+                                                 ord_tag, copy_name );
+    	full_initialize_se( mem_enc, e, prev_es, branch_conds );
+    	e->loc = loc;
+    	return e;
+   }
   }
 
   //--------------------------------------------------------------------------

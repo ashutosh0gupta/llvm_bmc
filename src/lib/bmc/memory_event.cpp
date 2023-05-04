@@ -240,7 +240,6 @@ void memory_event::update_topological_order() {
 //   o_tag = o_tag_t::na;
 // }
 
-
 // new constructor
 memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
                                 me_set& _prev_events,
@@ -313,6 +312,88 @@ memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
   position_name = e_t_name + "@" + loc.position_name();
 
   std::string e_name = e_t_name + "@" + loc_name;
+  e_v = create_internal_event    (sol_ctx,            e_name,tid,0,true);
+  thin_v = create_internal_event (sol_ctx, "__thin__"+e_name,tid,0,true);
+  c11_hb_v =create_internal_event(sol_ctx, "__hb__"  +e_name,tid,0,true);
+
+  update_topological_order();
+}
+
+
+memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
+                                me_set& _prev_events,
+                                const variable& _prog_v,
+                                expr& path_cond,
+                                std::vector<expr>& _history,
+                                src_loc& _loc, event_t _et,
+                                o_tag_t _o_tag,
+				std::string new_name )
+  : tid(_tid)
+  , v(sol_ctx)      // temp init
+  , v_copy(sol_ctx) // temp init
+  , prog_v( _prog_v )
+  , loc(_loc)
+  , et( _et )
+  , o_tag( _o_tag )
+  , prev_events( _prev_events )
+  , guard(path_cond)
+  , history( _history )
+{
+
+  if( et != event_t::r &&  et != event_t::w &&  et != event_t::u ) {
+    llvm_bmc_error("mem_event", "symboic event with wrong parameters!");
+  }
+
+  //loc_name = loc.gen_name();
+  //std::string e_t_name = event_t_name( et );
+
+  //position_name = e_t_name + "@" + prog_v.name + "@" + loc.position_name();
+
+  //v = v + (std::string)(prog_v->getName()) + "#" + (std::string)(loc_name);
+  //v = prog_v + "@" + loc_name;
+
+  //v_copy = (et != event_t::u) ? v : v + "@update_wr";
+
+  //std::string e_name = e_t_name + "@" + v.name + new_name;
+  std::string e_name = new_name;
+  e_v    = create_internal_event( sol_ctx,            e_name,tid, 0, false);
+  thin_v = create_internal_event(sol_ctx,"__thin__" +e_name,tid, 0, false);
+  c11_hb_v=create_internal_event(sol_ctx,"__hb__"   +e_name,tid, 0, false);
+  update_topological_order();
+}
+
+
+memory_event::memory_event( solver_context& sol_ctx, unsigned _tid,
+                                me_set& _prev_events,
+                                expr& path_cond,
+                                std::vector<expr>& _history,
+                                src_loc& _loc, event_t _et,
+                                o_tag_t _o_tag,
+				std::string new_name )
+  : tid(_tid)
+  , v("dummy",sol_ctx)
+  , v_copy("dummy",sol_ctx)
+  , prog_v("dummy",sol_ctx)
+  , loc(_loc)
+  , et( _et )
+  , o_tag( _o_tag )
+  , prev_events( _prev_events )
+  , guard(path_cond)
+  , history( _history )
+{
+  /*std::string e_t_name = event_t_name( et );
+
+  if( et == event_t::block ) {
+    src_loc loc_d;
+    loc_name = "block__" + std::to_string(tid) + "__"+ loc_d.gen_name();
+  }else{
+    loc_name = loc.gen_name();
+  }
+
+  position_name = e_t_name + "@" + loc.position_name();
+
+  std::string e_name = e_t_name + "@" + loc_name + new_name; */
+  std::string e_name = new_name; 
   e_v = create_internal_event    (sol_ctx,            e_name,tid,0,true);
   thin_v = create_internal_event (sol_ctx, "__thin__"+e_name,tid,0,true);
   c11_hb_v =create_internal_event(sol_ctx, "__hb__"  +e_name,tid,0,true);

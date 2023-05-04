@@ -11,6 +11,8 @@ struct thread_events {
   me_vec events;
   me_ptr start_event, final_event;
   std::map< unsigned, std::pair< const me_ptr, const me_ptr >> active_intervals;
+  std::map< unsigned, me_vec > iter_events;
+  me_vec st_events, fi_events;
 };
 
 class events_data {
@@ -62,19 +64,19 @@ public:
     }
 
   void add_global( std::string g, sort sort ) {
-      globals.insert( variable(g, sort) );
-    }
+    globals.insert( variable(g, sort) );
+  }
 
-    // todo: only return const reference??
-    variable get_global( std::string gname ) {
-      for( auto& g : globals ) {
-        if( gname == g.name )
-          return g;
-      }
-      llvm_bmc_error( "bmc","global variable " << gname << " not found!" );
-      variable g(o.solver_ctx); // dummy code to suppress warning
-      return g;
+  // todo: only return const reference??
+  variable get_global( std::string gname ) {
+    for( auto& g : globals ) {
+      if( gname == g.name )
+        return g;
     }
+    llvm_bmc_error( "bmc","global variable " << gname << " not found!" );
+    variable g(o.solver_ctx); // dummy code to suppress warning
+    return g;
+  }
 
    inline const me_ptr get_create_event(unsigned t) const {
       assert( t < ev_threads.size() );

@@ -90,7 +90,7 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
   forced_inliner_pass( module );
 
   //Analyse IR
-  points_to_analysis(o, module);
+  // points_to_analysis(o, module);
 
   // initialize bmc data structure
   b.init();

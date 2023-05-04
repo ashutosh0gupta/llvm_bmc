@@ -356,15 +356,11 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
       if( auto load = llvm::dyn_cast<const llvm::LoadInst>(I) ) {
         // std::cout << "identifying array for load inst\n";
         auto ary  = identify_array( load->getPointerOperand() );
-        // I->print(llvm::outs());
-        // if (ary) {
-        //   std::cout << "Identified array -";
-        // } else {
-        //   std::cout << "Unidentified array -";
-        // }
-        // std::cout << "\n";
-        if( ary && exists( ary_to_int, ary ) )
+        if( ary && exists( ary_to_int, ary ) ) {
           ary_access_to_index[load] = ary_to_int.at( ary );
+        }else{
+          // llvm_bmc_error("bmc", "Cound not identify array");
+        }
       }else if( auto store = llvm::dyn_cast<const llvm::StoreInst>(I) ) {
         // std::cout << "identifying array for store inst \n";
         auto ary  = identify_array( store->getPointerOperand() );
@@ -375,29 +371,13 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
         //   std::cout << "Unidentified array -";
         // }
         // std::cout << "\n";
-        if( ary && exists( ary_to_int, ary ) ) {
+        if( ary && exists( ary_to_int, ary ) ){ 
           ary_access_to_index[store] = ary_to_int.at( ary );
-          std::cout << "\nPROCESSED STORE INST\n";
-          llvm::errs() << "store type is " << *(ary->getType()) << "\n";
-          I->print(llvm::outs());
         } else {
           // std::cout << "UNCAUGHT\n";
         }
       } else if (auto eval = llvm::dyn_cast<const llvm::ExtractValueInst>(I)) {
-        std::cout << "\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
-        I->print(llvm::outs());
-        std::cout << "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n";
         auto ary = identify_array( eval);
-        if (ary) {
-          std::cout << "array exists\n";
-        } else {
-          std::cout << "array doesn't exist\n";
-        }
-        if (exists(ary_to_int, ary)) {
-          llvm::errs() << "array added to memory model\n\n";
-        } else {
-          llvm::errs() << "couldn't add array to memory model\n\n";
-        }
         if (ary && exists(ary_to_int, ary)) {
           ary_access_to_index[eval] = ary_to_int.at(ary);
         } else {

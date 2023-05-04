@@ -72,7 +72,7 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   expr a = bmc_ds_ptr->m.get_term( op0 );
   expr b = bmc_ds_ptr->m.get_term( op1 );
 
- bop->print( llvm::outs() ); std::cout << "\n";
+//  bop->print( llvm::outs() ); std::cout << "\n";
 
 // a and b may have different types, due to llvm does not record clearly
   // if something is int. Our translation may incorrectly identify
@@ -476,27 +476,27 @@ int bmc_pass::translateIntrinsicInst( unsigned bidx,
   }else if( I->getIntrinsicID() == llvm::Intrinsic::memcpy ) {
     // do nothing - to be confirmed
   }else if (I->getIntrinsicID() == llvm::Intrinsic::eh_typeid_for) {
-    llvm::errs() << "\n\nMATCHED INTRINSIC ID " << *I << "\n\n";
+    // llvm::errs() << "\n\nMATCHED INTRINSIC ID " << *I << "\n\n";
     auto predecessor = I->getParent()->getSinglePredecessor()->getSinglePredecessor();
     if (predecessor) {} // because what if the first block directly throws exception without any conditon (unconditional).
     else {
       predecessor = I->getParent()->getSinglePredecessor();
     }
     auto terminator = predecessor->getTerminator();
-    llvm::errs() << "\n\nINTRINSIC TERMINATOR " << *terminator << "\n\n";
-    llvm::errs() << "\nINTRINSIC OPERAND " << *(I->getOperand(0));
+    // llvm::errs() << "\n\nINTRINSIC TERMINATOR " << *terminator << "\n\n";
+    // llvm::errs() << "\nINTRINSIC OPERAND " << *(I->getOperand(0));
     auto actualOperand = I->getOperand(0);
     if (auto invoke = llvm::dyn_cast<const llvm::InvokeInst>(terminator)) {
-      llvm::errs() << "\n\nIN IF";
+      // llvm::errs() << "\n\nIN IF";
       llvm::Function* fp = invoke->getCalledFunction();
-      llvm::errs() << "\n called function is " << *fp;
+      // llvm::errs() << "\n called function is " << *fp;
       if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
         llvm::Value* arg = invoke->getArgOperand(1);
-        llvm::errs() << "ARG NAME IS " << *arg << "======";
+        // llvm::errs() << "ARG NAME IS " << *arg << "======";
         if (arg == actualOperand) {
           // The cause of exceptions match
           // We need to branch to the catch block
-          llvm::errs() << "\nRETURN TRUE FOR BRANCHING TO CATCH BLOCK\n";
+          // llvm::errs() << "\nRETURN TRUE FOR BRANCHING TO CATCH BLOCK\n";
           return 1;
         }
       }
@@ -608,10 +608,10 @@ int bmc_pass::translateCallInst( unsigned bidx,
       ls.push_back( get_expr_const(solver_ctx,size));
     bmc_ds_ptr->set_array_length( call, ls );
   } else if( fp != NULL && fp->getName().startswith("__cxa_throw") ) {
-    llvm::errs() << "\n\n\n\n\n THROWWWWWW \n\n\n";
+    // llvm::errs() << "\n\n\n\n\n THROWWWWWW \n\n\n";
   } else if( fp != NULL && fp->getName().startswith("__cxa_begin_catch") ) {
-    llvm::errs() << "\n\n\n\n\n CATCH BEGINNNNNNN \n\n\n";
-    llvm::errs() << "The arg of catch is " << *(call->getOperand(0)) << "\n";
+    // llvm::errs() << "\n\n\n\n\n CATCH BEGINNNNNNN \n\n\n";
+    // llvm::errs() << "The arg of catch is " << *(call->getOperand(0)) << "\n";
     
 
     // expr var = bmc_ds_ptr->m.get_term(getCatchArg(bidx, call->getOperand(0)));
@@ -636,18 +636,18 @@ int bmc_pass::translateCallInst( unsigned bidx,
 
 
 
-    llvm::errs() << "\n1\n";
+    // llvm::errs() << "\n1\n";
     auto val = call->getOperand(0);
-    llvm::errs() << "\n2\n";
+    // llvm::errs() << "\n2\n";
     expr valExpr = bmc_ds_ptr->m.get_term( val );
-    llvm::errs() << "\n3\n";
+    // llvm::errs() << "\n3\n";
     bmc_ds_ptr->m.insert_term_map( call, bidx, valExpr );
-    llvm::errs() << "\n4\n";
+    // llvm::errs() << "\n4\n";
 
 
 
   } else if( fp != NULL && fp->getName().startswith("__cxa_end_catch") ) {
-    llvm::errs() << "\n\n\n\n\n CATCH ENDDDDDDD \n\n\n";
+    // llvm::errs() << "\n\n\n\n\n CATCH ENDDDDDDD \n\n\n";
   } else {
     call->print( llvm::outs() );
     std::cout << "\n";
@@ -1001,7 +1001,8 @@ me_ptr bmc_pass::create_read_event( unsigned bidx,
     auto evt = mk_me_ptr(o.mem_enc, tid, prev_events, path_cond, history, gv, loc, event_t::r, translate_ordering_tags( load->getOrdering()) ); //NULL, true, NULL, val_expr, loc.
   //bmc_ds_ptr->all_events.insert( std::make_pair( evt, tid ) );
     //bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
-    bmc_obj.edata.all_events.insert( evt );
+    //bmc_obj.edata.all_events.insert( evt );
+    //it_events.push_back( evt );  
     prev_events = {evt};
     bmc_obj.edata.ev_threads[tid].events.push_back( evt );
     bmc_obj.edata.rd_events[gv].push_back( evt );
@@ -1031,7 +1032,8 @@ me_ptr bmc_pass::create_write_event( unsigned bidx,
   // cgp_obj.add_event(tid, evt);
   //bmc_ds_ptr->all_events.insert( std::make_pair( evt, tid ) );
   //bmc_obj.all_events.insert( std::make_pair( evt, tid ) );
-    bmc_obj.edata.all_events.insert( evt );
+   // bmc_obj.edata.all_events.insert( evt );
+    //it_events.push_back( evt );  
     bmc_obj.edata.ev_threads[tid].events.push_back( evt );
     bmc_obj.edata.wr_events[gv].insert( evt );
     return evt;
@@ -1044,15 +1046,15 @@ me_ptr bmc_pass::create_write_event( unsigned bidx,
 void bmc_pass::translateLoadInst( unsigned bidx,
                                   const llvm::LoadInst* load ) {
   assert( load );
-  llvm::errs() << " Load inst is " << *load << "\n";
+  // llvm::errs() << " Load inst is " << *load << "\n";
   auto addr = load->getOperand(0);
-  llvm::errs() << " Addr" << *addr << "\n";
+  // llvm::errs() << " Addr" << *addr << "\n";
   // jump over casting
   while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
     addr = bcast->getOperand(0);
   }
   if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
-  llvm::errs() << "\n1\n";
+  // llvm::errs() << "\n1\n";
     // assert( gop->getNumIndices() <= 2);
     // llvm::Value * idx = NULL;
     // if(gop->getNumOperands() == 2) idx = gop->getOperand(1);
@@ -1078,9 +1080,10 @@ void bmc_pass::translateLoadInst( unsigned bidx,
   //   loadFromArrayHelper(bidx, load, idxs);
   } else if(auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
     //auto glb_rd = bmc_ds_ptr->m_model.read( bidx, load);
-  llvm::errs() << "\n2\n";
+  // llvm::errs() << "\n2\n";
     //bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
     if ( exists( bmc_obj.concurrent_vars, (const llvm::Value*)gv ) ) {
+    //if ( exists( bmc_obj.concurrent_vars, gv ) ) {
       auto r_evt = create_read_event( bidx, load, addr );
       auto glb_rd = bmc_ds_ptr->m_model.read_con( bidx, load, (expr) (r_evt->v));
       bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
@@ -1093,7 +1096,7 @@ void bmc_pass::translateLoadInst( unsigned bidx,
     }
   // } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
   } else if( llvm::isa<const llvm::AllocaInst>(addr) ) {
-  llvm::errs() << "\n3\n";
+  // llvm::errs() << "\n3\n";
     // To handle a[0] when a is dynamic sized array
     // expr idx_expr = get_expr_const(solver_ctx,0);
     exprs idxs;
@@ -1104,9 +1107,9 @@ void bmc_pass::translateLoadInst( unsigned bidx,
 
     loadFromArrayHelper(bidx, load, idxs );
   } else if( auto call = llvm::dyn_cast<const llvm::CallInst>(addr) ) {
-    llvm::errs() << "\n33\n";
+    // llvm::errs() << "\n33\n";
     llvm::Function* fp = call->getCalledFunction();
-    llvm::errs() << (fp->getName()) << "\n";
+    // llvm::errs() << (fp->getName()) << "\n";
     if (fp != NULL && fp->getName().startswith("__cxa_begin_catch")) {
       // auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_exprs);
       // if( o.include_out_of_bound_specs ) {
@@ -1114,7 +1117,7 @@ void bmc_pass::translateLoadInst( unsigned bidx,
       //   bmc_ds_ptr->add_spec( !path_bit || arr_rd.size_bound_guard, spec_reason_t::OUT_OF_BOUND );
       // }
       // bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd.return_val );
-      llvm::errs() << "catch arg is " << *(call->getOperand(0)) << "\n";
+      // llvm::errs() << "catch arg is " << *(call->getOperand(0)) << "\n";
       auto op = call->getOperand(0);
       if (auto evi = llvm::dyn_cast<const llvm::ExtractValueInst>(op)) {
         exprs idxs;
@@ -1123,7 +1126,7 @@ void bmc_pass::translateLoadInst( unsigned bidx,
       }
     }
   } else if (auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
-  llvm::errs() << "\n4\n";
+  // llvm::errs() << "\n4\n";
     //todo: rethink about this
     assert(false);
     // To handle the case of a pointer with a bitcast instruction as parameter
@@ -1135,7 +1138,7 @@ void bmc_pass::translateLoadInst( unsigned bidx,
       loadFromArrayHelper(bidx, load, idxs);
     }  
   } else {
-    llvm::errs() << "\n5\n";
+    // llvm::errs() << "\n5\n";
     LLVM_DUMP( load );
     llvm_bmc_error("bmc", "Only array and global write/read supported!");
   }
@@ -1156,21 +1159,21 @@ void bmc_pass::extractValFromArrayHelper( unsigned bidx,
 
 void bmc_pass::addEVIExprs( const llvm::ExtractValueInst* evi, exprs& idxs ) {
   
-  llvm::errs() << "\n\n EVI OPERANDS : " << *evi->getAggregateOperand() << "\n\n";
+  // llvm::errs() << "\n\n EVI OPERANDS : " << *evi->getAggregateOperand() << "\n\n";
   auto lpi = llvm::dyn_cast<const llvm::LandingPadInst>(evi->getAggregateOperand());
   auto predecessor = lpi->getParent()->getSinglePredecessor();
   auto terminator = predecessor->getTerminator();
   // llvm::errs() << "\n\nGOT PREDECESSOR " << *predecessor << "===========";
-  llvm::errs() << "\n\nGOT TERMINATOR " << *terminator << "\n===========";
+  // llvm::errs() << "\n\nGOT TERMINATOR " << *terminator << "\n===========";
   if (auto invoke = llvm::dyn_cast<const llvm::InvokeInst>(terminator)) {
-    llvm::errs() << "\n\nIN IF";
+    // llvm::errs() << "\n\nIN IF";
     llvm::Function* fp = invoke->getCalledFunction();
-    llvm::errs() << "\n called function is " << *fp;
+    // llvm::errs() << "\n called function is " << *fp;
     if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
       llvm::Value* idx;
       for (int i = 0; i < 1; i++) {
         idx = invoke->getArgOperand(i);
-        llvm::errs() << "\n Operand " << i << " is " << *idx;
+        // llvm::errs() << "\n Operand " << i << " is " << *idx;
         auto idx_expr = bmc_ds_ptr->m.get_term( idx );
         if( o.bit_precise ) {
           sort si = idx_expr.get_sort();
@@ -1186,7 +1189,7 @@ void bmc_pass::addEVIExprs( const llvm::ExtractValueInst* evi, exprs& idxs ) {
       // llvm::errs() << "\n";
     }
   } else {
-    llvm::errs() << "\n\nIN ELSE";
+    // llvm::errs() << "\n\nIN ELSE";
   }
 
 }
@@ -1197,14 +1200,14 @@ void bmc_pass::addEVIExprs( const llvm::ExtractValueInst* evi, exprs& idxs ) {
 
 void bmc_pass::translateExtractValueInst( unsigned bidx, const llvm::ExtractValueInst* eval) {
   assert(eval);
-  auto val = eval->getAggregateOperand();
+  // auto val = eval->getAggregateOperand();
   // auto indices = eval->getIndices();
   exprs indices;
   // llvm::errs() << "\n Aggregated Operand is ----- " << *val << "\n";
   // std::cout << "\nEXtract value instruction found\n";
   // llvm::errs() << *eval << "\n";
   // llvm::errs() << "Type of EVAL is " << *(eval->getType()) << "\n";
-  auto evi_op = eval->getAggregateOperand();
+  // auto evi_op = eval->getAggregateOperand();
   if( auto pty = llvm::dyn_cast<llvm::PointerType>(eval->getType()) ) {
     // llvm::errs() << "POINTER TYPE";
     addEVIExprs(eval, indices);
@@ -1212,7 +1215,7 @@ void bmc_pass::translateExtractValueInst( unsigned bidx, const llvm::ExtractValu
     // return identify_lpad_struct(evi_op, 0);
   } else {
     // return identify_lpad_struct(evi_op, 1);
-    llvm::errs() << "\n\n\nEXTRACTVALUE_CONSTANT_EXPR\n\n\n";
+    // llvm::errs() << "\n\n\nEXTRACTVALUE_CONSTANT_EXPR\n\n\n";
     // return evi_op;
   }
   // extract_exception_info(bidx, eval);
@@ -1312,6 +1315,7 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     //auto val_expr = bmc_ds_ptr->m.get_term( val );
     //auto glb_wrt = bmc_ds_ptr->m_model.write(bidx, store, val_expr);
     if ( exists( bmc_obj.concurrent_vars,(const llvm::Value*)gv ) ) {
+    //if ( exists( bmc_obj.concurrent_vars,gv ) ) {
         // find(bmc_obj.concurrent_vars.begin(), bmc_obj.concurrent_vars.end(), addr) != bmc_obj.concurrent_vars.end() ) { //todo: add check if the grobal variable is truly global
       auto w_evt = create_write_event( bidx, store, addr );
       auto val_expr = bmc_ds_ptr->m.get_term( val );
@@ -1470,11 +1474,8 @@ void bmc_pass::translateInvokeInst( unsigned bidx,
   llvm::Function* fp = invoke->getCalledFunction();
   auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
   assert( exit_bits.size() == 2 );
-  auto normal = invoke->getNormalDest();
-  auto landing = invoke->getUnwindDest();
-  landing->print(llvm::outs());
 std::string name = fp->getName().str();
-std::cout << "Invoked fn is " << name << "\n";
+// std::cout << "Invoked fn is " << name << "\n";
 
   if( (fp != NULL) &&
       ((fp->getName() == "__gnat_rcheck_CE_Index_Check") ||
@@ -1488,7 +1489,7 @@ std::cout << "Invoked fn is " << name << "\n";
     expr NumArg = bmc_ds_ptr->m.get_term( arg );
     bmc_ds_ptr->m.insert_term_map( invoke, bidx, NumArg );
   } else if( fp != NULL && fp->getName().startswith("__cxa_throw")) {
-    std::cout << "\nExit bit for invoke is : " << exit_bits[1] <<"\n";
+    // std::cout << "\nExit bit for invoke is : " << exit_bits[1] <<"\n";
     bmc_ds_ptr->bmc_vec.push_back( exit_bits[1] );
   } else {
     llvm_bmc_error("bmc", "invoke is not recognized !!");
@@ -1521,7 +1522,7 @@ void bmc_pass::translateLandingPadInst( unsigned bidx,
                                          const llvm::LandingPadInst *lpad) {
 	assert( lpad );
 	if (lpad->isCleanup()) {
-		std::cout << "Landingpad cleanup\n";
+		// std::cout << "Landingpad cleanup\n";
 	}
 }
 
@@ -1618,7 +1619,7 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
       flag = translateCallInst(bidx, call);
       if (flag) {
         brCatch = 1;
-        llvm::errs() << "\nRET 1 NOW CONTINUE\n";
+        // llvm::errs() << "\nRET 1 NOW CONTINUE\n";
         // skip the next match inst
         ++iter;
         continue;
@@ -1632,12 +1633,12 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
       // Terminator instructions
     } else if( auto br = llvm::dyn_cast<llvm::BranchInst>(I) ) {
       if (flag) {
-        llvm::errs() << " Flag is set and take branch is " << 1 - brCatch;
-        llvm::errs() << "\n" << *br << "\n";
+        // llvm::errs() << " Flag is set and take branch is " << 1 - brCatch;
+        // llvm::errs() << "\n" << *br << "\n";
         translateCatchBr(bidx, br, 1 - brCatch);
       } else {
-        llvm::errs() << " Flag is unset and take branch is " << 1 - brCatch;
-        llvm::errs() << "\n" << *br << "\n";
+        // llvm::errs() << " Flag is unset and take branch is " << 1 - brCatch;
+        // llvm::errs() << "\n" << *br << "\n";
         translateBranch( bidx, br );
       }
     } else if( auto ret = llvm::dyn_cast<llvm::ReturnInst>(I) ) {
@@ -1761,21 +1762,33 @@ void bmc_pass::do_bmc() {
     for( unsigned t = 0; t < bmc_obj.sys_spec.threads.size(); t++ )
       //bmc_obj.edata.create_map[ bmc_obj.sys_spec.threads[t].name ] = start;
       bmc_obj.edata.create_map[ bmc_obj.sys_spec.threads[t].name ] = bmc_obj.edata.init_loc;
+    bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].st_events.push_back(start);
   }
 
   // init_array_model( bmc_ds_ptr->bb_vec, bmc_ds_ptr->eb );
   init_path_exit_bit( bmc_ds_ptr->bb_vec );
   unsigned bidx = 0;
   for( const bb* src : bmc_ds_ptr->bb_vec ) {
+
     // support for stacked call. blocks before start_bidx have been processed
-    if( bidx < bmc_ds_ptr->processed_bidx) { bidx++; continue; }
+    if( bidx < bmc_ds_ptr->processed_bidx) { bidx++; continue; } 
+
     if( llvm::isa<llvm::ResumeInst>( src->getTerminator() ) ) {
       continue; // todo: hack! We are ignoring returned exceptions.
     }
 
   if ( bmc_obj.sys_spec.threads.size() > 1 ) {
+//std::cout << "Next block\n";
+    std::set<const bb*> ignore_edges;
+    if( exists( bmc_ds_ptr->loop_ignore_edges, src) ) {
+      ignore_edges = bmc_ds_ptr->loop_ignore_edges.at(src);
+    }
     for(auto PI = llvm::pred_begin(src),E = llvm::pred_end(src);PI != E;++PI) {
       const llvm::BasicBlock *prev = *PI;
+//prev->print(llvm::outs());
+      if( exists( ignore_edges, prev ) ) {
+        continue; // ignoring loop back edges
+      }
       //collect incoming branch conditions
       me_set& prev_trail = bmc_ds_ptr->block_to_trailing_events.at( prev );
       prev_events.insert( prev_trail.begin(), prev_trail.end() );
@@ -1805,16 +1818,22 @@ void bmc_pass::do_bmc() {
       print_bb_exprs(src);
     if( o.verbosity > 3 )
       print_bb_vecs();
-
+//std::cout << "Src \n "; src->print(llvm::outs());
     if ( bmc_obj.sys_spec.threads.size() > 1 ) {
       bmc_ds_ptr->block_to_trailing_events[src] = prev_events;
       prev_events.clear();
+//std::cout << "Map begins \n";
+//      for( auto p7 : bmc_ds_ptr->block_to_trailing_events ) {
+//		auto pre_ev = p7.second; auto src1 = p7.first;
+//		src1->print( llvm::outs() );
+//		for (auto h : pre_ev) {
+//			std::cout << "Event is " << *h << "\n";
+//		}
+//      }
+
     }
   }
   bmc_ds_ptr->processed_bidx = bmc_ds_ptr->bb_vec.size();
-
-  // Insert global variable definitions
-  bmc_ds_ptr->add_bmc_formulas(  bmc_obj.glb_bmc_vec );
 
 //  if( o.verbosity > 2 )
 //    bmc_ds_ptr->print_formulas();
@@ -1828,17 +1847,121 @@ void bmc_pass::do_bmc() {
     auto final = mk_me_ptr( o.mem_enc, thr_id, final_prev_events, exit_cond,
                             history_exprs, floc, event_t::barr );
     set_final_event( thr_id, final, exit_cond );
-    
-    static unsigned iter = 0;
-    iter++;
+    bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].fi_events.push_back(final);
+
+    unsigned iter = 1;
     auto pr1 = std::make_pair(bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].start_event,bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].final_event);
     auto pr2 = std::make_pair(iter, pr1);
     bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].active_intervals.insert(pr2);
+    
+    auto pr3 = std::make_pair(iter,bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].events);
+    bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].iter_events.insert(pr3);
+
+    //Make copies of constraints
+   if ( bmc_obj.sys_spec.threads[bmc_ds_ptr->thread_id].period > 1) {
+	std::vector<std::pair <me_ptr, me_ptr >> pr4_vec;
+	std::vector< expr > con_copy = bmc_ds_ptr->bmc_vec;
+	for (unsigned l = 1; l < bmc_obj.sys_spec.threads[bmc_ds_ptr->thread_id].period; l++) {
+	iter++;
+	std::string st_ev_newname; me_ptr start_copy;
+	st_ev_newname = bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].start_event->name() + "_copy" + nth_letter(iter-1);
+	start_copy = mk_me_ptr(o.mem_enc, bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].start_event, pr4_vec, st_ev_newname);
+	//std::cout << "Orig start event " << *bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].start_event  << " Copied start event " << *start_copy << "\n";
+
+	//Rename events and insert in map
+	auto pr4 = std::make_pair(bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].start_event,start_copy);
+	pr4_vec.push_back(pr4);
+	bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].st_events.push_back(start_copy);
+
+	me_ptr orig_event, new_event; me_vec it_events; std::string ev_newname;
+	for (unsigned i = 0; i < bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].events.size(); i++) {
+		orig_event = bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].events[i];
+		ev_newname = orig_event->name() + "_copy" + nth_letter(iter-1);
+		new_event = mk_me_ptr(o.mem_enc, orig_event, pr4_vec, ev_newname);		
+		it_events.push_back(new_event);
+		//std::cout << "Orig event " << *orig_event << " Copied event " << *new_event << "\n";
+		pr4 = std::make_pair(orig_event,new_event);
+	    	pr4_vec.push_back(pr4);	
+   	}
+
+	std::string fi_ev_newname; me_ptr final_copy;
+	fi_ev_newname = bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].final_event->name() + "_copy" + nth_letter(iter-1);
+	final_copy = mk_me_ptr(o.mem_enc, bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].final_event, pr4_vec, fi_ev_newname);
+        //std::cout << "Orig final event " << *bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].final_event  << " Copied final event " << *final_copy << "\n";
+	pr4 = std::make_pair(bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].final_event,final_copy);
+    	pr4_vec.push_back(pr4);
+	bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].fi_events.push_back(final_copy);
+
+	auto pr5 = std::make_pair(iter, pr4_vec);
+        bmc_obj.rename_map.insert(pr5);
+
+        pr1 = std::make_pair(start_copy,final_copy);
+        pr2 = std::make_pair(iter, pr1);
+        bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].active_intervals.insert(pr2);
+        pr3 = std::make_pair(iter,it_events);
+        bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].iter_events.insert(pr3);
+        it_events.clear();
+	pr4_vec.clear();
+	st_ev_newname = " ";
+	fi_ev_newname = " ";
+	ev_newname = " ";
+	
+	expr_set var_set;
+        get_variables(con_copy, var_set);
+	exprs var_vec, new_var_vec, con_copy_new;
+	expr_set_to_exprs(var_set, var_vec);
+	for ( auto e2 : var_vec) {
+	  std::string new_name = to_string(e2) + "_copy" + nth_letter(iter-1);
+	  sort s = e2.get_sort();
+	  expr new_var = solver_ctx.constant(new_name.c_str(), s);
+	  //std::cout << "New name " << to_string(new_var) << s <<"\n";
+          new_var_vec.push_back(new_var);	
+	  new_name = " ";
+	}
+        
+	for ( auto e3 : con_copy ) {
+	   auto e4 = substitute(e3, var_vec, new_var_vec);
+	   con_copy_new.push_back(e4);
+	   //std::cout << "Original constraint " << to_string(e3) <<"\n";
+	   //std::cout << "Modified constraint " << to_string(e4) <<"\n";
+	}
+	bmc_ds_ptr->add_bmc_formulas(  con_copy_new );
+	var_vec.clear();
+	new_var_vec.clear();
+	var_set.clear();
+	//con_copy.clear();
+	con_copy_new.clear();
+
+    
     if (iter == bmc_obj.sys_spec.threads.at(bmc_ds_ptr->thread_id).period)
-	iter = 1;
+	iter = 1;    
+
+     }
+	for( auto p1 : bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].iter_events ) {
+		auto th_ev = p1.second; auto num = p1.first;
+		for (auto h : th_ev) {
+			bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].events.push_back(h);
+//			auto gv = h->prog_v;
+//			if (h->is_rd()) bmc_obj.edata.rd_events[gv].push_back( h );
+//			else
+//			 if (h->is_wr()) bmc_obj.edata.wr_events[gv].insert( h );
+		}
+	}
+    } 
+
  }
 
+  // Insert global variable definitions
+  bmc_ds_ptr->add_bmc_formulas(  bmc_obj.glb_bmc_vec ); 
+
 }
+
+
+char bmc_pass::nth_letter(int n) {
+    assert(n >= 1 && n <= 26);
+    return "abcdefghijklmnopqrstuvwxyz"[n-1];
+}
+
 
 void bmc_pass::print_bb_exprs(const bb* src) {
   assert(src);
@@ -1867,7 +1990,9 @@ void bmc_pass::print_bb_vecs() {
   std::cout << "----------------------------------------------\n";
 }
 
+//
 //todo: move this function to somewhere more general!!
+//
 void bmc_pass::populate_array_name_map(llvm::Function* f) {
   assert(f);
   int arrCntr = 0;
@@ -1896,8 +2021,8 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
         llvm::Function* fp = call->getCalledFunction();
         if (fp != NULL && fp->getName().startswith("__cxa_allocate")) {
             ary_to_int[I] = arrCntr++;
-            I->print(llvm::outs());
-            std::cout << "\nCOLLECTED EXCEPTION PTR AS ARRAY\n\n";
+            // I->print(llvm::outs());
+            // std::cout << "\nCOLLECTED EXCEPTION PTR AS ARRAY\n\n";
         }
       } else {} // no errors needed!!
       //todo: identify that an array is allocated

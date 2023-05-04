@@ -321,15 +321,12 @@ array_model_full::array_read( unsigned bidx, const llvm::LoadInst* I,
 arr_read_expr
 array_model_full::array_read( unsigned bidx, const llvm::ExtractValueInst* I,
                               exprs& idxs ) {
-  auto s1 = idxs.size();
-  llvm::errs() << "\n\n idxs.size is " << s1;
-  llvm::errs() << "\n The array_read_ev inst is " << *I;
   array_state& ar_st = get_state( bidx );
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
   expr ar_name = vec.at(i);
   auto& ls = lengths.at(i);
-  llvm::errs() << "\n\nInside arrayModelFull " << i << "\n\n";
+  // llvm::errs() << "\n\nInside arrayModelFull " << i << "\n\n";
   auto bound_guard = access_bound_cons(idxs, ls);
 
   // expr lower_bound_arr(idx >= 0);
@@ -350,15 +347,12 @@ array_model_full::array_read( unsigned bidx, const llvm::ExtractValueInst* I,
 arr_read_expr
 array_model_full::array_read( unsigned bidx, const llvm::CallInst* I,
                               exprs& idxs ) {
-  auto s1 = idxs.size();
-  llvm::errs() << "\n\n idxs.size is " << s1;
-  llvm::errs() << "\n The array_read_call inst is " << *I;
   array_state& ar_st = get_state( bidx );
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
   expr ar_name = vec.at(i);
   auto& ls = lengths.at(i);
-  llvm::errs() << "\n\nInside arrayModelFull " << i << "\n\n";
+  // llvm::errs() << "\n\nInside arrayModelFull " << i << "\n\n";
   auto bound_guard = access_bound_cons(idxs, ls);
 
   // expr lower_bound_arr(idx >= 0);

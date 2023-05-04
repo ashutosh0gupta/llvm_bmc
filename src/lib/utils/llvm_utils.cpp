@@ -22,6 +22,11 @@
 #include "llvm/Analysis/CFGPrinter.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/IR/Metadata.h"
+#include "llvm/MC/TargetRegistry.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/Support/CodeGen.h"
+#include "llvm/Support/Host.h"
+#include "llvm/Support/TargetSelect.h"
 //clang related code
 #include <clang/CodeGen/CodeGenAction.h>
 #include <clang/Frontend/CompilerInstance.h>
@@ -493,6 +498,55 @@ std::unique_ptr<llvm::Module> c2ir( options& o ) {
   return move( c2ir( o, comments_found ) );
 }
 
+void ir2mf( std::unique_ptr<llvm::Module>& module ) {
+  // ???
+}
+
+void generateAssemblyARM( std::unique_ptr<llvm::Module>& module ) {
+
+  llvm::InitializeAllTargets();
+  llvm::InitializeAllTargetMCs();
+  llvm::InitializeAllAsmParsers();
+  llvm::InitializeAllAsmPrinters();
+
+  // Get the target machine for the ARM64 architecture.
+  llvm::Triple triple("aarch64");
+  std::string error;
+  const llvm::Target* target = llvm::TargetRegistry::lookupTarget(triple.str(), error);
+  if( !target ) {
+      llvm::outs() << "Error looking up target: " << error << "\n";
+      return;
+  }
+
+  // Set target-specific options.
+  llvm::TargetOptions options;
+  llvm::Reloc::Model relocModel = llvm::Reloc::Model::PIC_;
+  llvm::CodeModel::Model codeModel = llvm::CodeModel::Small;
+  llvm::CodeGenOpt::Level optLevel = llvm::CodeGenOpt::Aggressive;
+
+  // Create a target machine.
+  llvm::TargetMachine* targetMachine =
+    target->createTargetMachine( triple.str(), "", "", options, relocModel,
+                                 codeModel, optLevel );
+
+  // Set up the output stream.
+  std::string assembly;
+  llvm::raw_string_ostream output(assembly);
+
+  // Generate assembly code.
+  llvm::legacy::PassManager passManager;
+  targetMachine->addPassesToEmitFile( passManager, llvm::outs(),
+                                      nullptr, llvm::CGFT_AssemblyFile );
+  passManager.run( *module.get() );
+  output.flush();
+
+  // Store the assembly language in the module.
+ //  module.setDataLayout(targetMachine->createDataLayout());
+ //  module.setTargetTriple(triple.str());
+ //  module.setSourceFileName("input.cpp");
+ //  module.setModuleInlineAsm(assembly);
+ // llvm::outs() << assembly;
+}
 
 
 void setLLVMConfigViaCommandLineOptions( std::string strs ) {
@@ -1919,11 +1973,11 @@ identify_lpad_struct(const llvm::Value* op, int index) {
   auto predecessor = lpi->getParent()->getSinglePredecessor();
   auto terminator = predecessor->getTerminator();
   // llvm::errs() << "\n\nGOT PREDECESSOR " << *predecessor << "===========";
-  llvm::errs() << "\n\nGOT TERMINATOR " << *terminator << "\n===========";
+  // llvm::errs() << "\n\nGOT TERMINATOR " << *terminator << "\n===========";
   if (auto invoke = llvm::dyn_cast<const llvm::InvokeInst>(terminator)) {
     // llvm::errs() << "\n\nIN IF";
     llvm::Function* fp = invoke->getCalledFunction();
-    llvm::errs() << "\n called function is " << *fp;
+    // llvm::errs() << "\n called function is " << *fp;
     if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
       llvm::Value* arg;
       if (index == 0) {
@@ -1932,13 +1986,13 @@ identify_lpad_struct(const llvm::Value* op, int index) {
         arg = invoke->getArgOperand(index);
         //TODO : add code to convert it into int for future purpose
       }
-      llvm::errs() << "\nDUmping value ";
-      arg->dump();
-      llvm::errs() << "\n";
+      // llvm::errs() << "\nDUmping value ";
+      // arg->dump();
+      // llvm::errs() << "\n";
       return arg;
     }
   } else {
-    llvm::errs() << "\n\nIN ELSE";
+    // llvm::errs() << "\n\nIN ELSE";
   }
   llvm_bmc_warning("bmc","failed to recognize lpad structure");
   op->dump();
@@ -2001,9 +2055,9 @@ identify_array( const llvm::Value* op) {
       return call;
     }
   } else if (auto ev = llvm::dyn_cast<const llvm::ExtractValueInst>(op)) {
-    std::cout << "\nEXtract value instruction found\n";
-    llvm::errs() << *ev << "\n";
-    llvm::errs() << "Type of EVAL is " << *(ev->getType()) << "\n";
+    // std::cout << "\nEXtract value instruction found\n";
+    // llvm::errs() << *ev << "\n";
+    // llvm::errs() << "Type of EVAL is " << *(ev->getType()) << "\n";
     auto evi_op = ev->getAggregateOperand();
     if( auto pty = llvm::dyn_cast<llvm::PointerType>(ev->getType()) ) {
       // llvm::errs() << "POINTER TYPE";
