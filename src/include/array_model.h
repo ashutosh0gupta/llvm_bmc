@@ -34,14 +34,12 @@ public:
   // array_state( unsigned total_partitions ) {
   //   pm_state = new partition_model_state();
   // }
-  // array_state() {}
+  array_state() {}
 
   //anything else is needed???
   std::vector<expr>& get_name_vec() { return array_index_names; };
-  // expr &get_ssa_name() { return ssa_name; };
 private:
   std::vector<expr> array_index_names;
-  // expr ssa_name;
 };
 
 
@@ -62,7 +60,7 @@ std::map< unsigned, array_state > exit_ary_map;
   array_state& get_state( unsigned b );
   void set_array_state( unsigned b, array_state& s );
   expr get_array_state_var( unsigned b, unsigned ith_ary );
-  unsigned global_idx;
+
 private:
   options& o;
   solver_context& solver_ctx;
@@ -81,12 +79,9 @@ public:
   }
 std::vector< std::string > ar_names;
   std::vector< sort > ar_sorts;
-  std::vector< unsigned> ar_bases;
-  
   //void set_array_num( unsigned len );
   // void set_array_num(std::vector<const llvm::Type*>& arr_type);
-  void set_array_info(std::map< const llvm::Value*, unsigned >& ary_id, std::map< unsigned, unsigned >& ary_base);
-
+  void set_array_info(std::map< const llvm::Value*, unsigned >& ary_id);
 
   // inline void set_array_num( std::vector<sort>& sorts ) {
   //   ar_sorts = sorts;

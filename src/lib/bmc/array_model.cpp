@@ -128,47 +128,34 @@ void array_model_full::set_array_length( unsigned ar_num, std::vector<expr>& len
 }
 
 void array_model_full::
-    set_array_info(std::map<const llvm::Value *, unsigned> &ary_ids, std::map< unsigned, unsigned >& ary_base)
-{
-
-  global_idx = ary_ids.size()-1;
-
+set_array_info(std::map< const llvm::Value*, unsigned >& ary_ids) {
   num_arrays = ary_ids.size();
-  std::vector<const llvm::Type *> ar_types;
-  ar_types.resize(num_arrays);
-  ar_names.resize(num_arrays);
-  ar_bases.resize(num_arrays);
+  std::vector<const llvm::Type*> ar_types;
+  ar_types.resize( num_arrays );
+  ar_names.resize( num_arrays );
   lengths.clear();
 
   // inserting dummy lengths
   std::vector<expr> idxs;
-  for (unsigned i = 0; i < num_arrays; i++)
-  {
-    lengths.push_back(idxs);
+  for( unsigned i = 0; i < num_arrays; i++ ) {
+    lengths.push_back( idxs );
   }
 
   //
-  for (auto &ar_int_pair : ary_ids)
-  {
+  for( auto& ar_int_pair : ary_ids ) {
     auto ar = ar_int_pair.first;
     auto indx = ar_int_pair.second;
     ar_types[indx] = ar->getType();
     ar_names[indx] = ar->getName();
-    lengths[indx] = get_array_length(ar);
-    ar_bases[indx] = ary_base[indx];
+    lengths[indx] = get_array_length( ar );
   }
-
-  for (unsigned i = 0; i < num_arrays; i++)
-  {
-    if (auto pty = llvm::dyn_cast<llvm::PointerType>(ar_types[i]))
-    {
-      ar_sorts.push_back(get_solver_array_ty(pty));
-    }
-    else
-    {
-      // todo: why this path??
-      ar_sorts.push_back(solver_ctx.array_sort(get_address_sort(),
-                                               solver_ctx.int_sort()));
+  for( unsigned i = 0; i < num_arrays; i++) {
+    if( auto pty = llvm::dyn_cast<llvm::PointerType>(ar_types[i]) ) {
+      ar_sorts.push_back( get_solver_array_ty( pty ) );
+    } else {
+      //todo: why this path??
+      ar_sorts.push_back( solver_ctx.array_sort( get_address_sort(),
+                                                 solver_ctx.int_sort() ) );
     }
   }
 }
@@ -283,19 +270,27 @@ expr array_model_full::access_bound_cons( exprs& idxs, exprs& ls) {
 arr_write_expr
 array_model_full::array_write( unsigned bidx, const llvm::StoreInst* I,
                                exprs& idxs, expr& val ) {
-
   array_state& ar_st = get_state( bidx );
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
-  expr ar_name = vec.at(global_idx);
-  expr new_ar = get_fresh_ary_name(global_idx);
-  vec[global_idx] = new_ar;
+  expr ar_name = vec.at(i);
+  expr new_ar = get_fresh_ary_name(i);
+  vec[i] = new_ar;
 
   auto& ls = lengths.at(i);
-
   auto bound_guard = access_bound_cons(idxs, ls);
-  idxs[0] = (idxs[0] + ar_bases[i]).simplify();
 
+  // // bounds constraints
+  // std::vector<expr> temp_vec;
+  // expr lower_bound_arr(idx >= 0);
+  // temp_vec.push_back(lower_bound_arr);
+  // for( auto& l : ls ) {
+  //   expr upper_bound_arr(idx[pos] <= l - 1);
+  //   temp_vec.push_back(upper_bound_arr);
+  // }
+  // expr bound_guard = _and(temp_vec);
+  // expr bound_guard(idx >= 0);//to be commented
+  //
   return arr_write_expr( (new_ar == store( ar_name, idxs, val )),
                          bound_guard, new_ar );
 }
@@ -306,12 +301,19 @@ array_model_full::array_read( unsigned bidx, const llvm::LoadInst* I,
   array_state& ar_st = get_state( bidx );
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
-  expr ar_name = vec.at(global_idx);// Changed 
-
+  expr ar_name = vec.at(i);
   auto& ls = lengths.at(i);
   auto bound_guard = access_bound_cons(idxs, ls);
 
-  idxs[0] = (idxs[0] + ar_bases[i]).simplify();
+  // expr lower_bound_arr(idx >= 0);
+  // //todo: a trick to avoid bv/arith issue;; may need a fix in future
+  // //int idx_num = solver_ctx.int_val(idx);  //To convert idx from bv to int
+  // expr upper_bound_arr(idx <= lengths.at(i)-1);
+  // std::vector<expr> temp_vec;
+  // temp_vec.push_back(lower_bound_arr);
+  // temp_vec.push_back(upper_bound_arr);
+  // expr bound_guard = _and(temp_vec);
+  // expr bound_guard(idx >= 0);//to be commented
 
   return arr_read_expr( select( ar_name, idxs), bound_guard );
 }
@@ -389,4 +391,3 @@ void array_model_full::dump_ary_access_to_index() {
 
 //   return st;
 // }
-
