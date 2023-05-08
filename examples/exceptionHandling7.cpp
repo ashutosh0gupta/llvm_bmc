@@ -20,7 +20,7 @@ int main() {
         c = debit(a);
         balance += 10; // 10 reward points
     } catch (bool message) {
-        if (message)
+        if (message == true)
             message = false;
         else
             message = true;
