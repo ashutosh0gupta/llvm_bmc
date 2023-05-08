@@ -9,7 +9,8 @@ import time
 
 print("Running kbound implementation:")
 
-subprocess.run(["rm",  "/tmp/cbmc_out.cpp" ])
+# tmp_path = ""
+# subprocess.run(["rm",  tmp_path+"/cbmc_out.cpp" ])
 
 run   = "./scripts/run-example.sh"
 k = 10
