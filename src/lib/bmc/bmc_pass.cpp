@@ -1717,12 +1717,14 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
   }
 
   // // Allocate Global array to store local arrays
-  // auto int_type = llvm::Type::getInt32Ty(f->getContext());
-  // auto array_type = llvm::ArrayType::get(int_type, 1000);
-  // auto new_array = new llvm::GlobalVariable(*f->getParent(), array_type, false,
-  //                                            llvm::GlobalValue::ExternalLinkage,
-  //                                            nullptr, "Global_array");
-  // ary_to_int[new_array] = arrCntr++;
+  auto int_type = llvm::Type::getInt32Ty(f->getContext());
+  auto array_type = llvm::ArrayType::get(int_type, 1000);
+  auto new_array = new llvm::GlobalVariable(*f->getParent(), array_type, false,
+                                             llvm::GlobalValue::ExternalLinkage,
+                                             nullptr, "Global_array");
+  ary_to_int[new_array] = arrCntr++;
+  // llvm::errs()<<"Types"<<" "<<ar->getType()<<"\n";
+  // ar->getType()->print(llvm::outs());
 
 }
 

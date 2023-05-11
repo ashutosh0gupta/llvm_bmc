@@ -352,6 +352,7 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
 
           if( ary_info.first && !exists( ary_to_base, ary_access_to_index[load] ) ) {
             ary_to_base[ary_to_int.at( ary_info.first )] = cnt;
+            llvm::errs() << ary_info.first->getName() <<" "<<ary_info.second<<" "<<ary_to_int.at(ary_info.first)<<"\n";
             cnt += ary_info.second;
           } 
         }else{
@@ -363,6 +364,7 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
           ary_access_to_index[store] = ary_to_int.at( ary_info.first );
           if( ary_info.first && !exists( ary_to_base, ary_access_to_index[store] ) ) {
             ary_to_base[ary_to_int.at( ary_info.first )] = cnt;
+            llvm::errs() << ary_info.first->getName() <<" "<<ary_info.second<<" "<<ary_to_int.at(ary_info.first)<<"\n";
             cnt += ary_info.second;
           } 
         }else{
