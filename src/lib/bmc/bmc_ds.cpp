@@ -393,8 +393,11 @@ init_full_array_model(std::map< const llvm::Instruction*, unsigned >& map) {
   ar_model_init = FULL;
 
   //todo : move to array model code
-  ar_model_full.set_array_info( ary_to_int, ary_to_base );
+  ar_model_full.set_array_info( ary_to_int);
   ar_model_full.set_access_map( map );
+
+  //Required for global array setup
+  ar_model_full.set_global_array_info( ary_to_base );
 }
 
 

@@ -80,7 +80,8 @@ public:
   //interface to array model
 
   array_model_t ar_model_init = NONE;
-  array_model_full      ar_model_full;
+  // array_model_full      ar_model_full;
+  array_model_single      ar_model_full;
   // array_model_fixed_len ar_model_fixed;
   // array_model_partition ar_model_part;
 
