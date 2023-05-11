@@ -149,7 +149,7 @@ public:
 
   std::string M_array_name =  "M";
 
-  std::vector< unsigned> ar_bases;
+  std::map< unsigned, unsigned > ar_bases;
 
 };
 

@@ -163,14 +163,7 @@ set_array_info(std::map< const llvm::Value*, unsigned >& ary_ids) {
 //-----------------------------------------------------------------------
 
 void array_model_single::set_global_array_info( std::map< unsigned, unsigned >& ary_to_base ) {
-
-    ar_bases.resize( num_arrays );
-    for( auto& ar_int_pair : ary_to_base ) {
-    auto ar = ar_int_pair.first;
-    auto indx = ar_int_pair.second;
-    llvm::errs()<<ar<<" "<<indx<<"\n";
-    ar_bases[indx] = ary_to_base[indx];
-  }
+    ar_bases = ary_to_base;
 }
 
 expr basic_array_functionality::get_fresh_ary_name( unsigned i ) {
