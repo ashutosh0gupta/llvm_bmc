@@ -28,6 +28,11 @@ enum array_model_t{
   PARTITION    // vaphor like model
 };
 
+enum array_model_memory_arch {
+  NOT_DEFINED,
+  MULTIPLE,    // Multiple local arrays to represent the memory architecture ( Bad for handing pointers)
+  SINGLE       // Single global array 'M' to represnt the memory architectre ( Like in real computers)
+};
 class options
 {
 public:

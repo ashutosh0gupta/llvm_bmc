@@ -377,7 +377,7 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
   if(ar_model_local == FULL) {
     // full model using store and select
     init_full_array_model( map );
-    ar_model_full.init_state( 0, s );
+    ar_model_full->init_state( 0, s );
   } else {
     llvm_bmc_error("bmc", "array model initialization");
   }
@@ -395,11 +395,11 @@ init_full_array_model(std::map< const llvm::Instruction*, unsigned >& map) {
   ar_model_init = FULL;
 
   //todo : move to array model code
-  ar_model_full.set_array_info( ary_to_int);
-  ar_model_full.set_access_map( map );
+  ar_model_full->set_array_info( ary_to_int);
+  ar_model_full->set_access_map( map, ary_to_base );
 
   //Required for global array setup
-  ar_model_full.set_global_array_info( ary_to_base );
+  // ar_model_full->set_global_array_info( ary_to_base );
 }
 
 
@@ -407,14 +407,14 @@ init_full_array_model(std::map< const llvm::Instruction*, unsigned >& map) {
 void bmc_ds::refresh_array_state( unsigned bidx,
                                   const llvm::Instruction* I) {
   assert( ar_model_init == FULL );
-  ar_model_full.update_name( bidx, ary_to_int[I] );
+  ar_model_full->update_name( bidx, ary_to_int[I] );
 }
 
 void bmc_ds::set_array_length( const llvm::Value* arr, std::vector<expr>& len ) {
   assert(arr);
   unsigned ar_num = ary_to_int.at(arr);
   switch( ar_model_init ) {
-  case FULL : return ar_model_full.set_array_length( ar_num, len ); break;
+  case FULL : return ar_model_full->set_array_length( ar_num, len ); break;
   default: llvm_bmc_error( "bmc", "array model incomplete implementation!!");
   }
 
@@ -425,7 +425,7 @@ bmc_ds::array_write( unsigned bidx, const llvm::StoreInst* I,
                       exprs& idxs, expr& val ) {
   assert( I );
   switch( ar_model_init ) {
-  case FULL : return ar_model_full.array_write( bidx, I, idxs, val ); break;
+  case FULL : return ar_model_full->array_write( bidx, I, idxs, val ); break;
   default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
   }
 }
@@ -434,8 +434,8 @@ arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::LoadInst* I,
                                exprs& idxs ) {
   assert( I );
   switch( ar_model_init ) {
-  case FULL     : return ar_model_full.array_read( bidx, I, idxs ); break;
-  // case FIXED_LEN: return ar_model_full.array_read( bidx, I, idx ); break;
+  case FULL     : return ar_model_full->array_read( bidx, I, idxs ); break;
+  // case FIXED_LEN: return ar_model_full->array_read( bidx, I, idx ); break;
   default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
   }
 }
@@ -443,24 +443,24 @@ arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::LoadInst* I,
 expr bmc_ds::get_array_state_var( unsigned bidx,
                                       const llvm::AllocaInst* alloc ) {
   unsigned ith_ary = ary_to_int.at( alloc );
-  return ar_model_full.get_array_state_var( bidx, ith_ary );
+  return ar_model_full->get_array_state_var( bidx, ith_ary );
 }
 
 expr bmc_ds::get_array_state_var( unsigned bidx,
                                       const llvm::Instruction* alloc ) {
 
   unsigned ith_ary = ary_to_int.at( alloc );
-  return ar_model_full.get_array_state_var( bidx, ith_ary );
+  return ar_model_full->get_array_state_var( bidx, ith_ary );
 }
 
 void bmc_ds::set_array_state( unsigned bidx, array_state& s ) {
   assert( ar_model_init == FULL );
-  return ar_model_full.set_array_state( bidx , s );
+  return ar_model_full->set_array_state( bidx , s );
 }
 
 array_state& bmc_ds::get_array_state( const bb* b ) {
   unsigned bidx = find_block_idx(b);
-  return ar_model_full.get_state( bidx );
+  return ar_model_full->get_state( bidx );
 }
 
 expr bmc_ds::join_array_state(std::vector<expr>& cs,
@@ -469,7 +469,7 @@ expr bmc_ds::join_array_state(std::vector<expr>& cs,
   assert( src );
   assert( cs.size() == prevs.size() );
   switch(ar_model_init) {
-  case FULL:      return ar_model_full.join_array_state(cs, prevs, src ); break;
+  case FULL:      return ar_model_full->join_array_state(cs, prevs, src ); break;
   // case FIXED_LEN: return ar_model_fixed.join_array_state(cs,prevs, src ); break;
   // case PARTITION: return ar_model_part.join_array_state(cs, prevs, src);break;
   default:

@@ -154,14 +154,14 @@ void translate_specs::translatePostcond( bmc& b, bmc_ds* bmc_ds_ptr, solver_cont
         }
       }
 
-     for(unsigned m=0; m < bmc_ds_ptr->ar_model_full.ar_names.size(); m++) {
-        auto a_var = bmc_ds_ptr->ar_model_full.ar_names.at(m);
+     for(unsigned m=0; m < bmc_ds_ptr->ar_model_full->ar_names.size(); m++) {
+        auto a_var = bmc_ds_ptr->ar_model_full->ar_names.at(m);
         //std::cout << "Array name is " << a_var <<  " Var name is " << var_name <<"\n";
          if (a_var == var_name) {
           //std::cout << "Array_name is " << a_var << " Index is " << m << "\n";
-	  unsigned e_size = bmc_ds_ptr->ar_model_full.exit_ary_map.size(); 
+	  unsigned e_size = bmc_ds_ptr->ar_model_full->exit_ary_map.size(); 
 	  //std::cout << "Exit_ary_map size is " << e_size << "\n";
-	  auto& s_names = bmc_ds_ptr->ar_model_full.exit_ary_map[e_size-1].get_name_vec(); // get the last state
+	  auto& s_names = bmc_ds_ptr->ar_model_full->exit_ary_map[e_size-1].get_name_vec(); // get the last state
   	  unsigned ar_size = s_names.size();
 	  //std::cout << "Name vec size is " << ar_size << "\n";
 	  for( unsigned k=0; k < ar_size; k++ ) {
@@ -172,7 +172,7 @@ void translate_specs::translatePostcond( bmc& b, bmc_ds* bmc_ds_ptr, solver_cont
           //oldSize = var_name.length();
           init_name = to_string(s_names.at(m));
           //std::cout << "Init name is " << init_name << "\n";
-	  sort s = bmc_ds_ptr->ar_model_full.ar_sorts.at(m);
+	  sort s = bmc_ds_ptr->ar_model_full->ar_sorts.at(m);
 	  //std::cout << "Sort1 is " << s << "\n";
 	  if (find(postcond_var_names.begin(), postcond_var_names.end(), init_name) == postcond_var_names.end()) {
             postcond_var_names.push_back(init_name);

@@ -60,18 +60,18 @@ expr array_model::join_array_state( std::vector<expr>& conds,
 //---------------------------------------------------------------
 // collect info about the arrays
 
-sort basic_array_functionality::get_address_sort() {
+sort array_model_full::get_address_sort() {
   return solver_ctx.int_sort();
 }
 
-sort basic_array_functionality::get_solver_array_ty( const llvm::ArrayType* ty ) {
+sort array_model_full::get_solver_array_ty( const llvm::ArrayType* ty ) {
   return llvm_to_sort( o, ty);
   // auto elemTy = ty->getArrayElementType();
   // auto s  = llvm_to_sort( o, elemTy );
   // return solver_ctx.array_sort( get_address_sort(ty), s );
 }
 
-sort basic_array_functionality::get_solver_array_ty( const llvm::PointerType* ty ) {
+sort array_model_full::get_solver_array_ty( const llvm::PointerType* ty ) {
   auto T = ty->getPointerElementType();
   if( auto ar_ty = llvm::dyn_cast<llvm::ArrayType>(T)){
     return get_solver_array_ty( ar_ty );
@@ -91,7 +91,7 @@ sort basic_array_functionality::get_solver_array_ty( const llvm::PointerType* ty
 }
 
 void
-basic_array_functionality::
+array_model_full::
 get_array_length( const llvm::ArrayType* a1, std::vector<expr>& lengths) {
   int n1 = a1->getNumElements();
   if(o.bit_precise ) {
@@ -106,7 +106,7 @@ get_array_length( const llvm::ArrayType* a1, std::vector<expr>& lengths) {
 }
 
 std::vector<expr>
-basic_array_functionality::get_array_length( const llvm::Value* arr ) {
+array_model_full::get_array_length( const llvm::Value* arr ) {
   std::vector<expr> idxs;
   if( llvm::isa< const llvm::AllocaInst >(arr) ) {
     // since we can know symbol for the length of the array
@@ -134,11 +134,11 @@ basic_array_functionality::get_array_length( const llvm::Value* arr ) {
   return idxs;
 }
 
-void basic_array_functionality::set_array_length( unsigned ar_num, std::vector<expr>& len ) {
+void array_model_full::set_array_length( unsigned ar_num, std::vector<expr>& len ) {
   lengths[ar_num] = len;
 }
 
-void basic_array_functionality::
+void array_model_full::
 set_array_info(std::map< const llvm::Value*, unsigned >& ary_ids) {
   num_arrays = ary_ids.size();
   std::vector<const llvm::Type*> ar_types;
@@ -152,13 +152,10 @@ set_array_info(std::map< const llvm::Value*, unsigned >& ary_ids) {
     lengths.push_back( idxs );
   }
 
-  //
   for( auto& ar_int_pair : ary_ids ) {
     auto ar = ar_int_pair.first;
     auto indx = ar_int_pair.second;
     ar_types[indx] = ar->getType();
-    // llvm::errs()<<"Types"<<" "<<ar->getType()<<"\n";
-    // ar->getType()->print(llvm::outs());
     ar_names[indx] = ar->getName();
     lengths[indx] = get_array_length( ar );
   }
@@ -173,13 +170,8 @@ set_array_info(std::map< const llvm::Value*, unsigned >& ary_ids) {
   }
 }
 
-//-----------------------------------------------------------------------
 
-void array_model_single::set_global_array_info( std::map< unsigned, unsigned >& ary_to_base ) {
-    ar_bases = ary_to_base;
-}
-
-expr basic_array_functionality::get_fresh_ary_name( unsigned i ) {
+expr array_model_full::get_fresh_ary_name( unsigned i ) {
   sort ar_sort = ar_sorts.at(i);
   if( !ar_sort.is_array() ) {
     llvm_bmc_error( "bmc", "bad sort is passed!!" );
@@ -188,7 +180,7 @@ expr basic_array_functionality::get_fresh_ary_name( unsigned i ) {
   return ar;
 }
 
-void basic_array_functionality::init_state( unsigned eb ) {
+void multiple_array_model::init_state( unsigned eb ) {
   array_state& s = exit_ary_map[eb];
   auto& vec = s.get_name_vec();
   vec.clear();
@@ -197,36 +189,14 @@ void basic_array_functionality::init_state( unsigned eb ) {
   }
 }
 
-void basic_array_functionality::init_state( unsigned eb, array_state& s ) {
+void multiple_array_model::init_state( unsigned eb, array_state& s ) {
   if( s.get_name_vec().size() == 0 )
     init_state(eb);
   else
     exit_ary_map[eb] = s;
 }
 
-void array_model_single::init_state( unsigned eb ) {
-  basic_array_functionality::init_state(eb);
-  // llvm::errs() << "yo\n";
-  array_state& s = exit_ary_map[eb];
-  auto& vec = s.get_M_name();
-  vec.clear();
-      sort index_sort = solver_ctx.int_sort();
-    // sort element_sort = solver_ctx.real_sort();
-    sort array_sort = solver_ctx.array_sort( get_address_sort(),
-                                                 solver_ctx.int_sort() );
-  auto ar = get_fresh_const(solver_ctx, array_sort, "Global_" + M_array_name);
-  vec.push_back( ar );
-  llvm::errs() << vec[0].to_string()<<"\n";
-}
-
-void array_model_single::init_state( unsigned eb, array_state& s ) {
-  if( s.get_name_vec().size() == 0 )
-    init_state(eb);
-  else
-    exit_ary_map[eb] = s;
-}
-
-void basic_array_functionality::copy_to_init_state( array_state& in ) {
+void multiple_array_model::copy_to_init_state( array_state& in ) {
   array_state& s = exit_ary_map.at(0);
   auto& vec = s.get_name_vec();
 
@@ -236,8 +206,30 @@ void basic_array_functionality::copy_to_init_state( array_state& in ) {
   }
 }
 
+void single_array_model::init_state( unsigned eb ) {
+  array_state& s = exit_ary_map[eb];
+  auto& vec = s.get_M_name();
+  vec.clear();
+  sort array_sort = solver_ctx.array_sort( get_address_sort(), solver_ctx.int_sort() );
+  auto ar = get_fresh_const(solver_ctx, array_sort, "Global_M");
+  vec.push_back( ar );
+}
 
-unsigned basic_array_functionality::get_accessed_array( const llvm::Instruction* I ) {
+void single_array_model::init_state( unsigned eb, array_state& s ) {
+  if( s.get_M_name().size() == 0 )
+    init_state(eb);
+  else
+    exit_ary_map[eb] = s;
+}
+
+void single_array_model::copy_to_init_state( array_state& in ) {
+  array_state& s = exit_ary_map.at(0);
+  auto& vec = s.get_M_name();
+  auto& in_vec = in.get_M_name();
+  vec = in_vec;
+}
+
+unsigned array_model_full::get_accessed_array( const llvm::Instruction* I ) {
   try{
     return ary_access_to_index.at(I);
   }catch(...){
@@ -247,7 +239,7 @@ unsigned basic_array_functionality::get_accessed_array( const llvm::Instruction*
 }
 
 
-expr basic_array_functionality::access_bound_cons( exprs& idxs, exprs& ls) {
+expr array_model_full::access_bound_cons( exprs& idxs, exprs& ls) {
   // auto s1 = idxs.size(); auto s2 = ls.size();
   // std::cout << "idxs.size is " << s1 << " ls.size is " << s2 << "\n";
   // assert( idxs.size() >= ls.size() );
@@ -306,7 +298,7 @@ expr basic_array_functionality::access_bound_cons( exprs& idxs, exprs& ls) {
 }
 
 arr_write_expr
-basic_array_functionality::array_write( unsigned bidx, const llvm::StoreInst* I,
+multiple_array_model::array_write( unsigned bidx, const llvm::StoreInst* I,
                                exprs& idxs, expr& val ) {
   array_state& ar_st = get_state( bidx );
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
@@ -334,7 +326,7 @@ basic_array_functionality::array_write( unsigned bidx, const llvm::StoreInst* I,
 }
 
 arr_read_expr
-basic_array_functionality::array_read( unsigned bidx, const llvm::LoadInst* I,
+multiple_array_model::array_read( unsigned bidx, const llvm::LoadInst* I,
                               exprs& idxs ) {
   array_state& ar_st = get_state( bidx );
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
@@ -357,7 +349,7 @@ basic_array_functionality::array_read( unsigned bidx, const llvm::LoadInst* I,
 }
 
 arr_write_expr
-array_model_single::array_write( unsigned bidx, const llvm::StoreInst* I,
+single_array_model::array_write( unsigned bidx, const llvm::StoreInst* I,
                                exprs& idxs, expr& val ) {
 
   array_state& ar_st = get_state( bidx );
@@ -381,7 +373,7 @@ array_model_single::array_write( unsigned bidx, const llvm::StoreInst* I,
 }
 
 arr_read_expr
-array_model_single::array_read( unsigned bidx, const llvm::LoadInst* I,
+single_array_model::array_read( unsigned bidx, const llvm::LoadInst* I,
                               exprs& idxs ) {
   array_state& ar_st = get_state( bidx );
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
@@ -397,7 +389,7 @@ array_model_single::array_read( unsigned bidx, const llvm::LoadInst* I,
 }
 
 
-void basic_array_functionality::
+void array_model_full::
 update_names( unsigned eb,
               std::vector<const llvm::Instruction*>& arrays_updated ) {
   array_state& s = exit_ary_map.at(eb);
@@ -410,7 +402,7 @@ update_names( unsigned eb,
   }
 }
 
-void basic_array_functionality::update_name( unsigned eb, unsigned i) {
+void array_model_full::update_name( unsigned eb, unsigned i) {
   array_state& s = exit_ary_map.at(eb);
   auto& vec = s.get_name_vec();
   expr new_ar = get_fresh_ary_name(i);
@@ -419,7 +411,7 @@ void basic_array_functionality::update_name( unsigned eb, unsigned i) {
 
 // Debugging code
 
-void basic_array_functionality::dump_ary_access_to_index() {
+void array_model_full::dump_ary_access_to_index() {
   for( auto pr : ary_access_to_index) {
     auto I = pr.first;
     I->print(llvm::outs());

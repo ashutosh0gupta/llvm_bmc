@@ -45,10 +45,10 @@ private:
 };
 
 class array_model_full;
-class array_model_fixed_len;
-class array_model_partition;
-class array_model_single;
-class basic_array_functionality;
+class single_array_model;
+class multiple_array_model;
+// class array_model_fixed_len; 
+// class array_model_partition; 
 
 class array_model{
 public:
@@ -59,8 +59,6 @@ std::map< unsigned, array_state > exit_ary_map;
                          std::vector<unsigned>& prevs,
                          unsigned src );
   virtual expr get_fresh_ary_name( unsigned ) = 0;
-  virtual arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* , exprs& , expr& ) = 0;
-  virtual arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* , exprs& ) = 0;
 
   array_state& get_state( unsigned b );
   void set_array_state( unsigned b, array_state& s );
@@ -70,22 +68,29 @@ private:
   options& o;
   solver_context& solver_ctx;
   array_model_t model = NONE;
+  array_model_memory_arch memory_arch = NOT_DEFINED;
   //std::map< unsigned, array_state > exit_ary_map;
 
-  friend array_model_single;
-  friend basic_array_functionality;
+  friend single_array_model;
+  friend multiple_array_model;
   friend array_model_full;
 };
 
-class basic_array_functionality: public array_model {
+class array_model_full : public array_model {
 
 public:
-  basic_array_functionality( options& o ) : array_model(o) {}
-  inline void
-  set_access_map( std::map< const llvm::Instruction*, unsigned >& map ) {
-    ary_access_to_index = map;
+  array_model_full( options& o ) : array_model(o) {
+    model = FULL;
   }
   
+  //Virtuals
+  virtual void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access, std::map< unsigned, unsigned >& array_start_add ) = 0;
+  virtual arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val ) = 0;
+  virtual arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& ) = 0;
+  virtual void init_state( unsigned ) = 0;
+  virtual void init_state( unsigned eb, array_state& s ) = 0;
+  virtual void copy_to_init_state( array_state& ) = 0;
+
   //Setter
   void set_array_info(std::map< const llvm::Value*, unsigned >& ary_id);
   void set_array_length( unsigned, std::vector<expr>& len );
@@ -110,16 +115,8 @@ public:
   void dump_ary_access_to_index();
 
   //Misc
-  void init_state( unsigned );
-  void init_state( unsigned eb, array_state& s );
-  void copy_to_init_state( array_state& );
   expr access_bound_cons( exprs& , exprs& );
-
-  //Virtuals
-  virtual expr get_fresh_ary_name( unsigned );
-  virtual arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
-  virtual arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
-
+  expr get_fresh_ary_name( unsigned );
 
   // Data members
   unsigned num_arrays;
@@ -130,22 +127,28 @@ public:
 
 };
 
-class array_model_single : public basic_array_functionality {
+class single_array_model : public array_model_full {
 public:
-  array_model_single( options& o ) : basic_array_functionality(o) {
-    model = FULL;
+  single_array_model( options& o ) : array_model_full(o) {
+    memory_arch = SINGLE; 
   }
 
-  //setter
-  void set_global_array_info( std::map< unsigned, unsigned >& map );
 
-  //Virtual
-  virtual arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
-  virtual arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
+  inline
+  void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access,
+   std::map< unsigned, unsigned >& array_start_add ) {
+    ary_access_to_index = array_access;
+    ar_bases = array_start_add;
+  };
+
+  //Virtual defined
+  arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
+  arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
 
   //Overridden functions
   void init_state( unsigned );
   void init_state( unsigned eb, array_state& s );
+  void copy_to_init_state( array_state& );
 
   std::string M_array_name =  "M";
 
@@ -153,12 +156,26 @@ public:
 
 };
 
-class array_model_full : public basic_array_functionality {
+class multiple_array_model : public array_model_full {
 public:
-  array_model_full( options& o ) : basic_array_functionality(o) {
-    model = FULL;
+  multiple_array_model( options& o ) : array_model_full(o) {
+    memory_arch = MULTIPLE;
   }
 
+  inline
+  void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access,
+   std::map< unsigned, unsigned >& array_start_add ) {
+    ary_access_to_index = array_access;
+  };
+
+  //Virtual defined
+  arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
+  arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
+
+  //Misc
+  void init_state( unsigned );
+  void init_state( unsigned eb, array_state& s );
+  void copy_to_init_state( array_state& );
 };
 
 
