@@ -55,9 +55,9 @@ public:
   array_model( options& o_ ) :
     o(o_), solver_ctx(o.solver_ctx) {}
 std::map< unsigned, array_state > exit_ary_map;
-  expr join_array_state( std::vector<expr>&,
+  virtual expr join_array_state( std::vector<expr>&,
                          std::vector<unsigned>& prevs,
-                         unsigned src );
+                         unsigned src ) = 0;
   virtual expr get_fresh_ary_name( unsigned ) = 0;
 
   array_state& get_state( unsigned b );
@@ -133,7 +133,6 @@ public:
     memory_arch = SINGLE; 
   }
 
-
   inline
   void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access,
    std::map< unsigned, unsigned >& array_start_add ) {
@@ -144,6 +143,7 @@ public:
   //Virtual defined
   arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
   arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
+  expr join_array_state( std::vector<expr>&,std::vector<unsigned>& prevs,unsigned src );
 
   //Overridden functions
   void init_state( unsigned );
@@ -151,7 +151,6 @@ public:
   void copy_to_init_state( array_state& );
 
   std::string M_array_name =  "M";
-
   std::map< unsigned, unsigned > ar_bases;
 
 };
@@ -171,6 +170,7 @@ public:
   //Virtual defined
   arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
   arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
+  expr join_array_state( std::vector<expr>&,std::vector<unsigned>& prevs,unsigned src );
 
   //Misc
   void init_state( unsigned );

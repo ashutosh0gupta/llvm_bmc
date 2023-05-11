@@ -14,13 +14,12 @@ expr array_model::get_array_state_var( unsigned b, unsigned ith_ary ) {
   return exit_ary_map.at(b).get_name_vec()[ith_ary];
 }
 
-expr array_model::join_array_state( std::vector<expr>& conds,
+expr multiple_array_model::join_array_state( std::vector<expr>& conds,
                                         std::vector<unsigned>& prevs,
                                         unsigned src
                                         ) {
   assert( conds.size() > 0  &&  prevs.size() == conds.size() );
   auto& s_names = exit_ary_map[src].get_name_vec(); // fresh state created
-  auto& m_name = exit_ary_map[src].get_M_name(); // fresh state created
   unsigned ar_size = exit_ary_map.at(prevs.at(0)).get_name_vec().size();
   std::vector<expr> vec;
   for( unsigned j=0; j < ar_size; j++ ) {
@@ -46,6 +45,18 @@ expr array_model::join_array_state( std::vector<expr>& conds,
       s_names.push_back( new_name );
     }
   }
+
+  return _and( vec, solver_ctx );
+}
+
+expr single_array_model::join_array_state( std::vector<expr>& conds,
+                                        std::vector<unsigned>& prevs,
+                                        unsigned src
+                                        ) {
+  assert( conds.size() > 0  &&  prevs.size() == conds.size() );
+
+  std::vector<expr> vec;
+  auto& m_name = exit_ary_map[src].get_M_name(); // fresh state created
   sort array_sort = solver_ctx.array_sort( solver_ctx.int_sort(), solver_ctx.int_sort() );
   auto new_name = get_fresh_const(solver_ctx, array_sort, "Global_M");
   for( unsigned i=0; i < conds.size(); i++ ) {
@@ -356,18 +367,14 @@ single_array_model::array_write( unsigned bidx, const llvm::StoreInst* I,
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
   auto& M_vec = ar_st.get_M_name();
   expr ar_name = M_vec.back();
-  llvm::errs()<<"accessed array" << i <<"\n";
-  sort index_sort = solver_ctx.int_sort();
   sort array_sort = solver_ctx.array_sort( get_address_sort(), solver_ctx.int_sort() );
   auto new_ar = get_fresh_const(solver_ctx, array_sort, "Global_" + M_array_name);
   M_vec.clear();
   M_vec.push_back(new_ar);
 
   auto& ls = lengths.at(i);
-
   auto bound_guard = access_bound_cons(idxs, ls);
   idxs[0] = (idxs[0] + ar_bases[i]).simplify();
-  llvm::errs() << new_ar.to_string() <<" "<<ar_name.to_string()<<"  "<<ar_bases[i]<<"\n";
   return arr_write_expr( (new_ar == store( ar_name, idxs, val )),
                          bound_guard, new_ar );
 }
