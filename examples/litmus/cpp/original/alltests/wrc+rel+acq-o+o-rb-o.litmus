@@ -1,0 +1,14 @@
+AArch64 WRC+rel+acq-o+o-rb-o
+Mapping=1:X0=r3,2:X2=r2,2:X0=r1
+Hash=5d3f76dfbeb0f2debf82facd0e7021b6
+
+{0:X0=y; 1:X2=x; 1:X1=y; 2:X3=y; 2:X1=x; x=0; y=0;}
+
+ P0           | P1           | P2          ;
+ MOV W1,#1    | LDAR W0,[X1] | LDR W0,[X1] ;
+ STLR W1,[X0] | MOV W3,#1    | DMB LD      ;
+              | STR W3,[X2]  | LDR W2,[X3] ;
+
+
+
+exists (1:X0=1 /\ 2:X0=1 /\ 2:X2=0)

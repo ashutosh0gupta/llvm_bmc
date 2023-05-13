@@ -1,0 +1,16 @@
+AArch64 TC11
+Mapping=0:X3=r2,0:X0=r1,1:X2=r3,1:X0=r4
+Hash=4cd509d8c1e9961f4d32a7c5de61cfa0
+
+{0:X5=y; 0:X4=x; 0:X2=w; 0:X1=z; 1:X5=x; 1:X4=z; 1:X3=y; 1:X1=w; w=0; x=0; y=0; z=0;}
+
+ P0          | P1          ;
+ LDR W0,[X1] | LDR W0,[X1] ;
+ STR W0,[X2] | LDR W2,[X3] ;
+ LDR W3,[X4] | STR W2,[X4] ;
+ STR W3,[X5] | MOV W6,#1   ;
+             | STR W6,[X5] ;
+
+
+
+exists (0:X0=1 /\ 0:X3=1 /\ 1:X2=1 /\ 1:X0=1)

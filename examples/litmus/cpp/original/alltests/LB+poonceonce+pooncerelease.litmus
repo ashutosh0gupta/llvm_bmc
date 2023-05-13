@@ -1,0 +1,21 @@
+AArch64 LB+poonceonce+pooncerelease
+"PodRWOnceOnce RfeOnceOnce PodRWOnceRelease RfeReleaseOnce"
+Mapping=0:X0=r0,1:X0=r0
+Hash=3024ebbedbb103d486a1ac75bb08d1dc
+Cycle=RfeOnceOnce PodRWOnceRelease RfeReleaseOnce PodRWOnceOnce
+Relax=RfeReleaseOnce
+Safe=RfeOnceOnce PodRWOnceOnce PodRWOnceRelease
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=PodRWOnceOnce RfeOnceOnce PodRWOnceRelease RfeReleaseOnce
+
+{0:X2=y; 0:X1=x; 1:X2=x; 1:X1=y;}
+
+ P0          | P1           ;
+ LDR W0,[X1] | LDR W0,[X1]  ;
+ MOV W3,#1   | MOV W3,#1    ;
+ STR W3,[X2] | STLR W3,[X2] ;
+
+
+
+exists (0:X0=1 /\ 1:X0=1)

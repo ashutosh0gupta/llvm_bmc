@@ -1,0 +1,21 @@
+AArch64 TC6
+Mapping=0:X2=r4,0:X0=r1,1:X2=r4,1:X0=r2
+Hash=feb159a3eacc550d5315339976b9c507
+
+{0:X3=y; 0:X1=x; 1:X3=x; 1:X1=y; x=0; y=0;}
+
+ P0           | P1                 ;
+ LDR W0,[X1]  | LDR W0,[X1]        ;
+ CMP W0,#0    | CMP W0,#1          ;
+ B.NE label19 | B.NE label20       ;
+ MOV W4,#1    | MOV W4,#1          ;
+ STR W4,[X3]  | STR W4,[X3]        ;
+ label19:     | CMP W0,#1          ;
+              | B.EQ label21       ;
+              | label20: MOV W4,#1 ;
+              | STR W4,[X3]        ;
+              | label21:           ;
+
+
+
+exists (0:X0=1 /\ 1:X0=1)

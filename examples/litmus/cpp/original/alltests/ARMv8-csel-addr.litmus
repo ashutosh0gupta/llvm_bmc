@@ -1,0 +1,21 @@
+AArch64 ARMv8-csel-addr
+
+(* In ARMv8, an address dependency where the dataflow pathway involves
+   only the control of a predicated instruction
+   doesn't count as an address dependency at all.
+  The following test should be allowed.
+*)
+
+{
+0:X7=x; 0:X8=y; 0:X9=u;
+int *0:X2;
+1:X7=x; 1:X8=y;
+}
+  P0              |  P1         ;
+ LDR W1,[X7]      | MOV W0,#1   ;
+ CMP W1,#0        | STR W0,[X8] ;
+ CSEL X2,X8,X9,NE | DMB ST      ;
+ LDR W3,[X2]      | MOV W2,#1   ;
+                  | STR W2,[X7] ;
+locations [0:X2;]
+exists (0:X1=1 /\ 0:X3=0)

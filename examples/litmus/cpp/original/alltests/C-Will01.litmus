@@ -1,0 +1,23 @@
+AArch64 C-Will01
+(* Hand compilation of C-Will01 *)
+{ ok=1;
+0:X1=x; 0:X2=y; 0:X7=z; 0:X9=ok;
+1:X1=z; 1:X3=x;
+}
+ P0               | P1          ;
+ MOV W0,#1        | LDR W0,[X1] ;
+ STR W0,[X1]      | DMB LD      ;
+ MOV W3,#1        | LDR W2,[X3] ;
+ LDXR W4,[X2]     |             ;
+ ADD W3,W4,W3     |             ;
+ STLXR W5,W3,[X2] |             ;
+ CBNZ W5,Fail0    |             ;
+ DMB ISH          |             ;
+ MOV W6,#1        |             ;
+ STR W6,[X7]      |             ;
+ B Exit0          |             ;
+ Fail0:           |             ;
+ MOV W8,#0        |             ;
+ STR W8,[X9]      |             ;
+ Exit0:           |             ;
+~exists (ok=1 /\ y=1 /\ 1:X0=1 /\ 1:X2=0)

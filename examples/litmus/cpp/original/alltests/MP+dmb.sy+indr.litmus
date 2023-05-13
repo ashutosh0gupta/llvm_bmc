@@ -1,0 +1,16 @@
+AArch64 MP+dmb.sy+indr
+"based on: DMB.SYdWW Rfe DpCtrldR Fre"
+{
+0:X1=x; 0:X3=y;
+1:X1=y; 1:X3=x;
+}
+ P0          | P1           ;
+ MOV W0,#1   | LDR W0,[X1]  ;
+ STR W0,[X1] | EOR X4,X0,X0 ;
+ DMB SY      | ADR X5,LC00  ;
+ MOV W2,#1   | ADD X6,X5,X4 ;
+ STR W2,[X3] | br00: BR X6  ;
+             | LC00:        ;
+             | LDR W2,[X3]  ;
+exists
+(x=1 /\ y=1 /\ 1:X0=1 /\ 1:X2=0)

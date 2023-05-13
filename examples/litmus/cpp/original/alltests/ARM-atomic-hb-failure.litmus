@@ -1,0 +1,26 @@
+AArch64 ARM-atomic-hb-failure
+""
+(* ARM does not respect the atomic-hb term in cpord.
+
+          P0              P1              P2
+          Rx=*2           Wx=2            Ry=3
+        a:Wx=*3           Rx=3            data dep
+                          data dep      c:Wx=1
+                        b:Wy=3
+
+  At the end x=3, so the coherence order for x is: 0,1,2,3.
+  Thus we have a: ->hb b: ->hb c: ->co a:, where a: is a
+  write-exclusive.
+*)
+{
+0:X1=x;
+1:X1=x; 1:X3=y;
+2:X1=x; 2:X3=y;
+}
+ P0              | P1          | P2            ;
+ MOV W0,#3       | MOV W0,#2   | LDR W0,[X3]   ;
+ LDXR W2,[X1]    | STR W0,[X1] | AND W2,W0,#64 ;
+ STXR W4,W0,[X1] | LDR W2,[X1] | ADD W2,W2,#1  ;
+                 | STR W2,[X3] | STR W2,[X1]   ;
+exists (0:X2=2 /\ 1:X2=3 /\ 2:X0=3 /\ x=3)
+

@@ -1,0 +1,23 @@
+AArch64 2+2W+fencembonceonce+poreleaserelease
+"FenceMbdWWOnceOnce WseOnceRelease PodWWReleaseRelease WseReleaseOnce"
+Mapping=
+Hash=34f6739075912447b648d722fec888d9
+Cycle=FenceMbdWWOnceOnce WseOnceRelease PodWWReleaseRelease WseReleaseOnce
+Relax=WseOnceRelease WseReleaseOnce
+Safe=FenceMbdWWOnceOnce PodWWReleaseRelease
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Ws Ws
+Orig=FenceMbdWWOnceOnce WseOnceRelease PodWWReleaseRelease WseReleaseOnce
+
+{0:X1=y; 0:X0=x; 1:X1=x; 1:X0=y;}
+
+ P0          | P1           ;
+ MOV W2,#2   | MOV W2,#2    ;
+ STR W2,[X0] | STLR W2,[X0] ;
+ DMB SY      | MOV W2,#1    ;
+ MOV W2,#1   | STLR W2,[X1] ;
+ STR W2,[X1] |              ;
+
+
+
+exists (x=2 /\ y=2)

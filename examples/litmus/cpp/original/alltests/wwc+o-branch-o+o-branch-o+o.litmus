@@ -1,0 +1,17 @@
+AArch64 WWC+o-branch-o+o-branch-o
+Mapping=0:X2=r3,0:X0=r1,1:X2=r4,1:X0=r2,
+Hash=b09e6037e4d6a72b6498b5e52cf5249d
+
+{0:X3=y; 0:X1=x; 1:X3=x; 1:X1=y; 2:X0=x; x=0; y=0;}
+
+ P0           | P1           | P2          ;
+ LDR W0,[X1]  | LDR W0,[X1]  | MOV W1,#2   ;
+ CMP W0,#0    | CMP W0,#0    | STR W1,[X0] ;
+ B.EQ label13 | B.EQ label14 |             ;
+ MOV W4,#1    | MOV W4,#1    |             ;
+ STR W4,[X3]  | STR W4,[X3]  |             ;
+ label13:     | label14:     |             ;
+
+
+
+exists (0:X0=2 /\ 1:X0=1 /\ x=2)

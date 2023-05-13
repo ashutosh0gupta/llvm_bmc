@@ -1,0 +1,17 @@
+AArch64 LB+addr+addrpx-poxp+VAR
+"does STXR need to resolve its address before it can fail?
+based on: DpAddrdW Rfe DpAddrdWPX PodWWXP Rfe"
+{
+0:X1=x; 0:X4=y;
+1:X1=y; 1:X3=z; 1:X9=x;
+}
+ P0                  | P1                ;
+ LDR W0,[X1]         | LDR W0,[X1]       ;
+ EOR W2,W0,W0        | EOR W2,W0,W0      ;
+ MOV W3,#1           | MOV W5,#1         ;
+ STR W3,[X4,W2,SXTW] | ADD X4,X3,W2,SXTW ;
+                     | STXR W7,W5,[X4]   ;
+                     | MOV W8,#1         ;
+                     | STR W8,[X9]       ;
+exists
+(z=0 /\ 0:X0=1 /\ 1:X0=1 /\ 1:X7=1)

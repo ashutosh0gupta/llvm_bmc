@@ -1,0 +1,17 @@
+AArch64 TC20
+Mapping=0:X0=r1,1:X0=r2,2:X2=r9,2:X0=r3
+Hash=c8274c38548a236635b5b59a2ec678d9
+
+{0:X2=y; 0:X1=x; 1:X2=x; 1:X1=y; 2:X1=x; x=0; y=0;}
+
+ P0          | P1          | P2           ;
+ LDR W0,[X1] | LDR W0,[X1] | LDR W0,[X1]  ;
+ STR W0,[X2] | STR W0,[X2] | CMP W0,#0    ;
+             |             | B.NE label28 ;
+             |             | MOV W3,#42   ;
+             |             | STR W3,[X1]  ;
+             |             | label28:     ;
+
+
+
+exists (0:X0=1:X0 /\ not (1:X0=0) /\ not (1:X0=42))

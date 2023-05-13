@@ -1,0 +1,34 @@
+AArch64 LB+data+datapx2-2dataxp
+"based on: DpDatadW Rfe DpDatadWPX PodWRXX DpDatadWXP Rfe"
+{
+0:X1=x; 0:X3=y;
+1:X1=y; 1:X3=z; 1:X6=a; 1:X10=x;
+}
+ P0           | P1              ;
+ LDR W0,[X1]  | LDR W0,[X1]     ;
+ EOR W2,W0,W0 | EOR W2,W0,W0    ;
+ ADD W2,W2,#1 | ADD W2,W2,#1    ;
+ STR W2,[X3]  | LDXR W4,[X3]    ;
+              | STXR W5,W2,[X3] ;
+              | LDXR W7,[X6]    ;
+              | STXR W8,W2,[X6] ;
+              | ADD W9,W4,#1    ;
+              | ADD W9,W5,W9    ;
+              | ADD W9,W7,W9    ;
+              | ADD W9,W8,W9    ;
+              | STR W9,[X10]    ;
+exists
+(x=1 /\ y=1 /\ z=1 /\ a=1 /\ 0:X0=1 /\ 1:X8=0 /\ 1:X5=0 /\ 1:X0=1)
+
+(*
+P0       | P1
+a:R x=1  | c:R y=1
+<data>   | d:Rex z=0
+b:W y=1  | <data from 'c'>
+         | e:Wex z=1
+         | f:Rex a=0
+         | <data from 'c'>
+         | g:Wex a=1
+         | <data from 'd','e','f','g'>
+         | h:W x=1
+*)

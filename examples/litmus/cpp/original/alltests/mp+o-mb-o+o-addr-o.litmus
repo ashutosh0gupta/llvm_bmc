@@ -1,0 +1,15 @@
+AArch64 MP+o-mb-o+o-addr-o
+Mapping=0:X1=r0,1:X2=r2,1:X0=r1
+Hash=d3fe4b8b715122baf80b8936cd919eeb
+
+{0:X2=x; 0:X0=a; 1:X1=x; a=1; b=42; x=b; 0:X1=a;}
+
+ P0          | P1          ;
+ MOV W3,#3   | LDR W0,[X1] ;
+ STR W3,[X0] | LDR W2,[X0] ;
+ DMB SY      |             ;
+ STR W1,[X2] |             ;
+
+
+
+exists (1:X0=a /\ 1:X2=1)

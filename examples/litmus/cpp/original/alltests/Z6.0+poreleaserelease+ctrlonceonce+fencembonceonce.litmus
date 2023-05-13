@@ -1,0 +1,23 @@
+AArch64 Z6.0+poreleaserelease+ctrlonceonce+fencembonceonce
+"PodWWReleaseRelease RfeReleaseOnce DpCtrldWOnceOnce WseOnceOnce FenceMbdWROnceOnce FreOnceRelease"
+Mapping=1:X2=r1,1:X0=r0,2:X1=r0
+Hash=b373afa1421b11cbcc50e82bf35bdf14
+Cycle=WseOnceOnce FenceMbdWROnceOnce FreOnceRelease PodWWReleaseRelease RfeReleaseOnce DpCtrldWOnceOnce
+Relax=FreOnceRelease RfeReleaseOnce
+Safe=WseOnceOnce FenceMbdWROnceOnce DpCtrldWOnceOnce PodWWReleaseRelease
+Prefetch=0:x=F,0:y=W,1:y=F,1:z=W,2:z=F,2:x=T
+Com=Rf Ws Fr
+Orig=PodWWReleaseRelease RfeReleaseOnce DpCtrldWOnceOnce WseOnceOnce FenceMbdWROnceOnce FreOnceRelease
+
+{0:X1=y; 0:X0=x; 1:X3=z; 1:X1=y; 2:X2=x; 2:X0=z;}
+
+ P0           | P1                  | P2          ;
+ MOV W2,#1    | LDR W0,[X1]         | MOV W3,#2   ;
+ STLR W2,[X0] | CMP W0,#0           | STR W3,[X0] ;
+ MOV W2,#1    | B.EQ label133       | DMB SY      ;
+ STLR W2,[X1] | label133: MOV W4,#1 | LDR W1,[X2] ;
+              | STR W4,[X3]         |             ;
+
+
+
+exists (z=2 /\ 1:X0=1 /\ 2:X1=0)

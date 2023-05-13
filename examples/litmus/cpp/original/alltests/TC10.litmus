@@ -1,0 +1,17 @@
+AArch64 TC10
+Mapping=0:X2=r9,0:X0=r1,1:X2=r9,1:X0=r2,3:X2=r9,3:X0=r3
+Hash=4855b8e7a4ac81d5b4f7592f96905242
+
+{0:X3=y; 0:X1=x; 1:X3=x; 1:X1=y; 2:X0=z; 3:X3=x; 3:X1=z; x=0; y=0; z=0;}
+
+ P0           | P1           | P2          | P3           ;
+ LDR W0,[X1]  | LDR W0,[X1]  | MOV W1,#1   | LDR W0,[X1]  ;
+ CMP W0,#1    | CMP W0,#1    | STR W1,[X0] | CMP W0,#1    ;
+ B.NE label29 | B.NE label30 |             | B.NE label31 ;
+ MOV W4,#1    | MOV W4,#1    |             | MOV W4,#1    ;
+ STR W4,[X3]  | STR W4,[X3]  |             | STR W4,[X3]  ;
+ label29:     | label30:     |             | label31:     ;
+
+
+
+exists (0:X0=1 /\ 1:X0=1 /\ 3:X0=0)

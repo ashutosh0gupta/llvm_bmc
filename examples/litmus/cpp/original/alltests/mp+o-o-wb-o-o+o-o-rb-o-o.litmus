@@ -1,0 +1,20 @@
+AArch64 MP+o-o-wb-o-o+o-o-rb-o-once
+Mapping=1:X6=r4,1:X4=r3,1:X2=r2,1:X0=r1
+Hash=23a5e4661d964714fb42145d87a964e5
+
+{0:X3=d; 0:X2=c; 0:X1=x; 0:X0=a; 1:X7=x; 1:X5=a; 1:X3=d; 1:X1=c; a=0; x=0; c=0; d=0;}
+
+ P0          | P1          ;
+ MOV W4,#1   | LDR W0,[X1] ;
+ STR W4,[X0] | LDR W2,[X3] ;
+ MOV W4,#2   | DMB LD      ;
+ STR W4,[X1] | LDR W4,[X5] ;
+ DMB ST      | LDR W6,[X7] ;
+ MOV W4,#3   |             ;
+ STR W4,[X2] |             ;
+ MOV W4,#4   |             ;
+ STR W4,[X3] |             ;
+
+
+
+exists (1:X0=3 /\ 1:X4=0 \/ 1:X0=3 /\ 1:X6=0 \/ 1:X2=4 /\ 1:X4=0 \/ 1:X2=4 /\ 1:X6=0)

@@ -1,0 +1,21 @@
+AArch64 Luc10
+"PodWWOnceOnce RfeOnceOnce FencedRROnceOnce FreOnceOnce"
+Mapping=1:X2=r1,1:X0=r0
+Hash=62d4f8e8ca3beb94b9f95bbdb601e76d
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Rf Fr
+Orig=PodWWOnceOnce RfeOnceOnce FencedRROnceOnce FreOnceOnce
+
+{0:X2=y; 0:X1=z; 0:X0=x; 1:X3=x; 1:X1=y;}
+
+ P0           | P1          ;
+ MOV W3,#1    | LDR W0,[X1] ;
+ STR W3,[X0]  | DMB SY      ;
+ MOV W3,#1    | LDR W2,[X3] ;
+ STLR W3,[X1] |             ;
+ MOV W3,#1    |             ;
+ STR W3,[X2]  |             ;
+
+
+
+exists (1:X0=1 /\ 1:X2=0)

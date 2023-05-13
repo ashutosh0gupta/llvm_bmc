@@ -1,0 +1,18 @@
+AArch64 Luc05
+"RfeOnceOnce PodRWOnceRelease RfeReleaseAcquire PosRWAcquireRelease RfeReleaseAcquire PodRWAcquireOnce"
+Mapping=0:X0=r0,1:X0=r0,2:X0=r0
+Hash=c18d9461128c1efaecb19f7fdc6c6487
+Prefetch=0:x=F,0:y=W,2:y=F,2:x=W
+Com=Rf Rf Rf
+Orig=RfeOnceOnce PodRWOnceRelease RfeReleaseAcquire PosRWAcquireRelease RfeReleaseAcquire PodRWAcquireOnce
+
+{0:X2=y; 0:X1=x; 1:X1=y; 2:X2=x; 2:X1=y;}
+
+ P0           | P1           | P2           ;
+ LDR W0,[X1]  | LDAR W0,[X1] | LDAR W0,[X1] ;
+ MOV W3,#1    | MOV W2,#2    | MOV W3,#1    ;
+ STLR W3,[X2] | STLR W2,[X1] | STR W3,[X2]  ;
+
+
+
+exists (y=2 /\ 0:X0=1 /\ 1:X0=1 /\ 2:X0=2)

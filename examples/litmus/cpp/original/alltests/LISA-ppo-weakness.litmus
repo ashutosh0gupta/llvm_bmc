@@ -1,0 +1,16 @@
+AArch64 LISA-ppo-weakness
+Mapping=0:X3=r2,0:X2=r1,0:X0=r0,1:X1=r0,
+Hash=9da5ebb4718a616a4bdeebee55b9d7ab
+
+{0:X4=y; 0:X1=x; 1:X2=x; 1:X0=y; 2:X1=y; 2:X0=u; x=v; 1:X1=u;}
+
+ P0          | P1          | P2          ;
+ LDR X0,[X1] | MOV W3,#2   | MOV W2,#1   ;
+ LDR W2,[X0] | STR W3,[X0] | STR W2,[X0] ;
+ LDR W3,[X4] | DMB SY      | DMB ST      ;
+             | STR X1,[X2] | MOV W2,#1   ;
+             |             | STR W2,[X1] ;
+
+
+
+exists (0:X0=u /\ 0:X2=0 /\ 0:X3=1 /\ y=2)

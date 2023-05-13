@@ -1,0 +1,22 @@
+AArch64 2+2W+poreleaseonce+poreleaserelease
+"PodWWReleaseOnce WseOnceRelease PodWWReleaseRelease WseReleaseRelease"
+Mapping=
+Hash=c2abf3b1f220ede6c940bff82dd8a5b9
+Cycle=WseOnceRelease PodWWReleaseRelease WseReleaseRelease PodWWReleaseOnce
+Relax=WseOnceRelease WseReleaseRelease
+Safe=PodWWReleaseOnce PodWWReleaseRelease
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Ws Ws
+Orig=PodWWReleaseOnce WseOnceRelease PodWWReleaseRelease WseReleaseRelease
+
+{0:X1=y; 0:X0=x; 1:X1=x; 1:X0=y;}
+
+ P0           | P1           ;
+ MOV W2,#2    | MOV W2,#2    ;
+ STLR W2,[X0] | STLR W2,[X0] ;
+ MOV W2,#1    | MOV W2,#1    ;
+ STR W2,[X1]  | STLR W2,[X1] ;
+
+
+
+exists (x=2 /\ y=2)

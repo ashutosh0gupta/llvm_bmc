@@ -1,0 +1,23 @@
+AArch64 IRRWIW+poacquireacquire+ctrlonceonce+OnceOnce
+"RfeOnceAcquire PodRRAcquireAcquire FreAcquireOnce RfeOnceOnce DpCtrldWOnceOnce WseOnceOnce"
+Mapping=1:X2=r1,1:X0=r0,3:X2=r1,3:X0=r0
+Hash=9af363602eac228f0a9fd1f70e49e9a1
+Cycle=PodRRAcquireAcquire FreAcquireOnce RfeOnceOnce DpCtrldWOnceOnce WseOnceOnce RfeOnceAcquire
+Relax=FreAcquireOnce RfeOnceAcquire
+Safe=PodRRAcquireAcquire RfeOnceOnce WseOnceOnce DpCtrldWOnceOnce
+Prefetch=1:x=F,1:y=T,3:y=F,3:x=W
+Com=Rf Fr Rf Ws
+Orig=RfeOnceAcquire PodRRAcquireAcquire FreAcquireOnce RfeOnceOnce DpCtrldWOnceOnce WseOnceOnce
+
+{0:X0=x; 1:X3=y; 1:X1=x; 2:X0=y; 3:X3=x; 3:X1=y;}
+
+ P0          | P1           | P2          | P3                 ;
+ MOV W1,#2   | LDAR W0,[X1] | MOV W1,#1   | LDR W0,[X1]        ;
+ STR W1,[X0] | LDAR W2,[X3] | STR W1,[X0] | CMP W0,#0          ;
+             |              |             | B.EQ label32       ;
+             |              |             | label32: MOV W4,#1 ;
+             |              |             | STR W4,[X3]        ;
+
+
+
+exists (x=2 /\ 1:X0=2 /\ 1:X2=0 /\ 3:X0=1)

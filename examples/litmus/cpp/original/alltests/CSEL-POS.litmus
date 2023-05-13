@@ -1,0 +1,19 @@
+AArch64 CSEL-POS
+(*
+Dependency chain through the selected argument of CSEL
+*)
+{
+0:X1=x; 0:X3=y;
+1:X1=y; 1:X4=z; 1:X6=a; 1:X9=x; 1:X10=0; 1:X13=w;
+}
+ P0          | P1                  ;
+ MOV W0,#1   | LDR W0,[X1]         ;
+ STR W0,[X1] | AND W2,W0,#128      ;
+ DMB ST      | LDR W3,[X4,W2,SXTW] ;
+ MOV W2,#1   | LDR W12,[X13]       ; 
+ STR W2,[X3] | CMP W12,#0          ;
+             | CSEL W7,W10,W3,NE   ;
+             | LDR W8,[X9,W7,SXTW] ;
+
+exists
+(1:X0=1 /\ 1:X8=0)

@@ -1,0 +1,22 @@
+AArch64 LB+data-[ws-popl-rf]lp-addrs
+"DpDatadW WsLeave PodWWPL RfBackLP DpAddrdW Rfe DpDatadW WsLeave PodWWPL RfBackLP DpAddrdW Rfe"
+Prefetch=0:x=F,0:a=W,1:y=F,1:z=W,2:a=F,2:x=W,3:b=F,3:c=W
+Com=Rf Rf Rf Rf
+Orig=DpDatadW WsLeave PodWWPL RfBackLP DpAddrdW Rfe DpDatadW WsLeave PodWWPL RfBackLP DpAddrdW Rfe
+{
+0:X1=x; 0:X3=y; 0:X5=z; 0:X8=a;
+1:X1=y; 1:X3=z;
+2:X1=a; 2:X3=b; 2:X5=c; 2:X8=x;
+3:X1=b; 3:X3=c;
+}
+ P0                  | P1           | P2                  | P3           ;
+ LDR W0,[X1]         | MOV W0,#2    | LDR W0,[X1]         | MOV W0,#2    ;
+ EOR W2,W0,W0        | STR W0,[X1]  | EOR W2,W0,W0        | STR W0,[X1]  ;
+ ADD W2,W2,#1        | MOV W2,#1    | ADD W2,W2,#1        | MOV W2,#1    ;
+ STR W2,[X3]         | STLR W2,[X3] | STR W2,[X3]         | STLR W2,[X3] ;
+ LDR W4,[X5]         |              | LDR W4,[X5]         |              ;
+ EOR W6,W4,W4        |              | EOR W6,W4,W4        |              ;
+ MOV W7,#1           |              | MOV W7,#1           |              ;
+ STR W7,[X8,W6,SXTW] |              | STR W7,[X8,W6,SXTW] |              ;
+exists
+(b=2 /\ y=2 /\ 0:X0=1 /\ 0:X4=1 /\ 2:X0=1 /\ 2:X4=1)

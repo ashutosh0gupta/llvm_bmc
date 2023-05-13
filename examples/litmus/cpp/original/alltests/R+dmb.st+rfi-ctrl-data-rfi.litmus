@@ -1,0 +1,25 @@
+AArch64 R+dmb.st+rfi-ctrl-data-rfi
+"DMB.STdWW Wse Rfi DpCtrldR DpDatadW Rfi Fre"
+Cycle=Rfi Fre DMB.STdWW Wse Rfi DpCtrldR DpDatadW
+Relax=
+Safe=Rfi Fre Wse DMB.STdWW DpDatadW DpCtrldR
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Ws Fr
+Orig=DMB.STdWW Wse Rfi DpCtrldR DpDatadW Rfi Fre
+{
+0:X1=x; 0:X3=y;
+1:X1=y; 1:X4=z; 1:X6=x;
+}
+ P0          | P1           ;
+ MOV W0,#2   | MOV W0,#2    ;
+ STR W0,[X1] | STR W0,[X1]  ;
+ DMB ST      | LDR W2,[X1]  ;
+ MOV W2,#1   | CBNZ W2,LC00 ;
+ STR W2,[X3] | LC00:        ;
+             | LDR W3,[X4]  ;
+             | EOR W5,W3,W3 ;
+             | ADD W5,W5,#1 ;
+             | STR W5,[X6]  ;
+             | LDR W7,[X6]  ;
+exists
+(x=2 /\ y=2 /\ 1:X2=2 /\ 1:X7=1)

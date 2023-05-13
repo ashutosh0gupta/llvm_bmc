@@ -1,0 +1,24 @@
+AArch64 R+dmb.st+rfi-ctrl-[fr-rf]-pos
+"DMB.STdWW Wse Rfi DpCtrldR FrLeave RfBack PosRR Fre"
+Cycle=Rfi DpCtrldR FrLeave RfBack PosRR Fre DMB.STdWW Wse
+Relax=
+Safe=Rfi Fre Wse PosRR DMB.STdWW DpCtrldR [FrLeave,RfBack]
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Ws Fr Rf
+Orig=DMB.STdWW Wse Rfi DpCtrldR FrLeave RfBack PosRR Fre
+{
+0:X1=x; 0:X3=y;
+1:X1=y; 1:X4=x;
+2:X1=x;
+}
+ P0          | P1           | P2          ;
+ MOV W0,#2   | MOV W0,#2    | MOV W0,#1   ;
+ STR W0,[X1] | STR W0,[X1]  | STR W0,[X1] ;
+ DMB ST      | LDR W2,[X1]  |             ;
+ MOV W2,#1   | CBNZ W2,LC00 |             ;
+ STR W2,[X3] | LC00:        |             ;
+             | LDR W3,[X4]  |             ;
+             | LDR W5,[X4]  |             ;
+             | LDR W6,[X4]  |             ;
+exists
+(x=2 /\ y=2 /\ 1:X2=2 /\ 1:X3=0 /\ 1:X5=1 /\ 1:X6=1)

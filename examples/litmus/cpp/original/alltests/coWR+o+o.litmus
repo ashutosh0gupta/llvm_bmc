@@ -1,0 +1,14 @@
+AArch64 coWR+once+once
+Mapping=0:X1=r1,
+Hash=01be04f61ae04d52c02ffbb4ab8f8911
+
+{0:X0=x; 1:X0=x; x=0;}
+
+ P0          | P1          ;
+ MOV W2,#1   | MOV W1,#2   ;
+ STR W2,[X0] | STR W1,[X0] ;
+ LDR W1,[X0] |             ;
+
+
+
+exists (0:X1=2 /\ x=1)

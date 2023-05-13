@@ -1,0 +1,14 @@
+AArch64 SB+o-o+o-o
+Mapping=0:X1=r2,1:X1=r4
+Hash=33d7b2f877caab8ecb8f9a26bf3b2770
+
+{0:X2=y; 0:X0=x; 1:X2=x; 1:X0=y; x=0; y=0;}
+
+ P0          | P1          ;
+ MOV W3,#1   | MOV W3,#1   ;
+ STR W3,[X0] | STR W3,[X0] ;
+ LDR W1,[X2] | LDR W1,[X2] ;
+
+
+
+exists (0:X1=0 /\ 1:X1=0)

@@ -1,0 +1,20 @@
+AArch64 Alan00
+"FenceWmbdWWOnceOnce WseOnceOnce FenceWmbdWWOnceOnce WseOnceOnce"
+Mapping=
+Hash=7e5f3f1ac6cff33a10c5abb76e1b6166
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Ws Ws
+Orig=FenceWmbdWWOnceOnce WseOnceOnce FenceWmbdWWOnceOnce WseOnceOnce
+
+{0:X1=y; 0:X0=x; 1:X1=x; 1:X0=y;}
+
+ P0          | P1          ;
+ MOV W2,#2   | MOV W2,#2   ;
+ STR W2,[X0] | STR W2,[X0] ;
+ DMB ST      | DMB ST      ;
+ MOV W2,#1   | MOV W2,#1   ;
+ STR W2,[X1] | STR W2,[X1] ;
+
+
+
+exists (x=2 /\ y=2)

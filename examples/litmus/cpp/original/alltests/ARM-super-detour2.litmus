@@ -1,0 +1,16 @@
+AArch64 ARM-super-detour2
+
+{
+0:X1=v; 0:X3=x; 0:X5=y; 0:X7=u;
+1:X1=x; 1:X3=z;
+2:X0=1; 2:X1=z; 2:X3=y;
+3:X1=u; 3:X3=w;
+4:X0=1; 4:X1=w; 4:X3=v;
+}
+
+ P0          | P1           | P2          | P3           | P4          ;
+ LDR W0,[X1] | LDAR W0,[X1] | STR W0,[X1] | LDAR W0,[X1] | STR W0,[X1] ;
+ STR W0,[X3] | LDR W2,[X3]  | DMB ST      | LDR W2,[X3]  | DMB ST      ;
+ LDR W4,[X5] |              | STR W0,[X3] |              | STR W0,[X3] ;
+ STR W4,[X7] |              |             |              |             ;
+exists (0:X0=1 /\ 0:X4=1 /\ 1:X0=1 /\ 1:X2=0 /\ 3:X0=1 /\ 3:X2=0)

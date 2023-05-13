@@ -1,0 +1,12 @@
+AArch64 SIMPLE2+X
+"+"
+
+{0:X0=x; 1:X0=x;}
+
+ P0              | P1              ;
+ MOV W3,#1       | MOV W3,#2       ;
+ LDXR W1,[X0]    | LDXR W1,[X0]    ;
+ STXR W2,W3,[X0] | STXR W2,W3,[X0] ;
+
+locations [x; 0:X2; 1:X2;]
+

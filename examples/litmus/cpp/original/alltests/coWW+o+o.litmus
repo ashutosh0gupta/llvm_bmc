@@ -1,0 +1,15 @@
+AArch64 coWW+o+o
+Mapping=
+Hash=14416999c0509cff536a7e1373aaa6d2
+
+{0:X0=x; x=0;}
+
+ P0          ;
+ MOV W1,#1   ;
+ STR W1,[X0] ;
+ MOV W1,#2   ;
+ STR W1,[X0] ;
+
+
+
+exists (x=1)

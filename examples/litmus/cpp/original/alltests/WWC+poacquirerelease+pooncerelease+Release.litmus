@@ -1,0 +1,21 @@
+AArch64 WWC+poacquirerelease+pooncerelease+Release
+"RfeReleaseAcquire PodRWAcquireRelease RfeReleaseOnce PodRWOnceRelease WseReleaseRelease"
+Mapping=1:X0=r0,2:X0=r0
+Hash=fbad3e0ead13e168d97d40c44213e6d5
+Cycle=PodRWAcquireRelease RfeReleaseOnce PodRWOnceRelease WseReleaseRelease RfeReleaseAcquire
+Relax=RfeReleaseAcquire RfeReleaseOnce WseReleaseRelease
+Safe=PodRWAcquireRelease PodRWOnceRelease
+Prefetch=1:x=F,1:y=W,2:y=F,2:x=W
+Com=Rf Rf Ws
+Orig=RfeReleaseAcquire PodRWAcquireRelease RfeReleaseOnce PodRWOnceRelease WseReleaseRelease
+
+{0:X0=x; 1:X2=y; 1:X1=x; 2:X2=x; 2:X1=y;}
+
+ P0           | P1           | P2           ;
+ MOV W1,#2    | LDAR W0,[X1] | LDR W0,[X1]  ;
+ STLR W1,[X0] | MOV W3,#1    | MOV W3,#1    ;
+              | STLR W3,[X2] | STLR W3,[X2] ;
+
+
+
+exists (x=2 /\ 1:X0=2 /\ 2:X0=1)

@@ -1,0 +1,19 @@
+AArch64 TC1
+Mapping=0:X2=r3,0:X0=r1,1:X0=r2
+Hash=fb6ea056a3081da53b1ca37f92af8179
+
+{0:X3=y; 0:X1=x; 1:X2=x; 1:X1=y; x=0; y=0;}
+
+ P0                 | P1          ;
+ LDR W0,[X1]        | LDR W0,[X1] ;
+ CMP W0,#0          | STR W0,[X2] ;
+ B.EQ label15       |             ;
+ CMP W0,#1          |             ;
+ B.NE label16       |             ;
+ label15: MOV W4,#1 |             ;
+ STR W4,[X3]        |             ;
+ label16:           |             ;
+
+
+
+exists (0:X0=1 /\ 1:X0=1)

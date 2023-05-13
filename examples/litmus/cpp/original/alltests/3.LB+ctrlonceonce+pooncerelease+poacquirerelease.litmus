@@ -1,0 +1,23 @@
+AArch64 3.LB+ctrlonceonce+pooncerelease+poacquirerelease
+"DpCtrldWOnceOnce RfeOnceOnce PodRWOnceRelease RfeReleaseAcquire PodRWAcquireRelease RfeReleaseOnce"
+Mapping=0:X2=r1,0:X0=r0,1:X0=r0,2:X0=r0
+Hash=018d09d8ecc824a42bd4bcf82c53ab1e
+Cycle=PodRWAcquireRelease RfeReleaseOnce DpCtrldWOnceOnce RfeOnceOnce PodRWOnceRelease RfeReleaseAcquire
+Relax=RfeReleaseAcquire RfeReleaseOnce
+Safe=PodRWAcquireRelease RfeOnceOnce DpCtrldWOnceOnce PodRWOnceRelease
+Prefetch=0:x=F,0:y=W,1:y=F,1:z=W,2:z=F,2:x=W
+Com=Rf Rf Rf
+Orig=DpCtrldWOnceOnce RfeOnceOnce PodRWOnceRelease RfeReleaseAcquire PodRWAcquireRelease RfeReleaseOnce
+
+{0:X3=y; 0:X1=x; 1:X2=z; 1:X1=y; 2:X2=x; 2:X1=z;}
+
+ P0                  | P1           | P2           ;
+ LDR W0,[X1]         | LDR W0,[X1]  | LDAR W0,[X1] ;
+ CMP W0,#0           | MOV W3,#1    | MOV W3,#1    ;
+ B.EQ label215       | STLR W3,[X2] | STLR W3,[X2] ;
+ label215: MOV W4,#1 |              |              ;
+ STR W4,[X3]         |              |              ;
+
+
+
+exists (0:X0=1 /\ 1:X0=1 /\ 2:X0=1)

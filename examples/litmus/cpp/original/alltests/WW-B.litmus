@@ -1,0 +1,16 @@
+AArch64 auto/WW-B
+Mapping=
+Hash=730c52caa684ed1647c2e2832149b6f4
+
+{0:X0=x0;}
+
+ P0          ;
+ MOV W1,#2   ;
+ STR W1,[X0] ;
+ DMB SY      ;
+ MOV W1,#1   ;
+ STR W1,[X0] ;
+
+
+
+exists (x0=2)

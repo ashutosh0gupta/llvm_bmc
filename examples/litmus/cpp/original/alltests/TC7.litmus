@@ -1,0 +1,15 @@
+AArch64 TC7
+Mapping=0:X2=r2,0:X0=r1,1:X0=r3
+Hash=661afed2882ffd22f2893eb8b21e2e40
+
+{0:X4=y; 0:X3=x; 0:X1=z; 1:X3=x; 1:X2=z; 1:X1=y; x=0; y=0; z=0;}
+
+ P0          | P1          ;
+ LDR W0,[X1] | LDR W0,[X1] ;
+ LDR W2,[X3] | STR W0,[X2] ;
+ STR W2,[X4] | MOV W4,#1   ;
+             | STR W4,[X3] ;
+
+
+
+exists (0:X0=1 /\ 0:X2=1 /\ 1:X0=1)

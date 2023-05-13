@@ -1,0 +1,22 @@
+AArch64 Luc02
+"Z6.3+poonceonces with release/acquire protection"
+Mapping=0:X3=r6,0:X0=r5,1:X3=r7,1:X0=r6,2:X6=r1,2:X4=r5,2:X2=r0,2:X0=r7
+Hash=190ab7ee1a20e502b81cfcb77e7579c6
+
+{0:X5=y; 0:X4=ly; 0:X2=x; 0:X1=lx; 1:X5=z; 1:X4=lz; 1:X2=y; 1:X1=ly; 2:X7=x; 2:X5=lx; 2:X3=z; 2:X1=lz;}
+
+ P0           | P1           | P2           ;
+ LDAR W0,[X1] | LDAR W0,[X1] | LDAR W0,[X1] ;
+ MOV W6,#1    | MOV W6,#2    | LDR W2,[X3]  ;
+ STR W6,[X2]  | STR W6,[X2]  | MOV W8,#2    ;
+ MOV W6,#2    | MOV W6,#2    | STLR W8,[X1] ;
+ STLR W6,[X1] | STLR W6,[X1] | LDAR W4,[X5] ;
+ LDAR W3,[X4] | LDAR W3,[X4] | LDR W6,[X7]  ;
+ MOV W6,#1    | MOV W6,#1    | MOV W8,#1    ;
+ STR W6,[X5]  | STR W6,[X5]  | STLR W8,[X5] ;
+ MOV W6,#1    | MOV W6,#1    |              ;
+ STLR W6,[X4] | STLR W6,[X4] |              ;
+
+locations [0:X0; 0:X3; 1:X0; 1:X3; 2:X0; 2:X4; ]
+
+exists (y=2 /\ 2:X2=1 /\ 2:X6=0 /\ not (0:X0=2:X4 \/ 0:X3=1:X0 \/ 1:X3=2:X0))

@@ -1,0 +1,19 @@
+AArch64 SubProp
+"Subset-Propagation is strictly stronger than POP"
+{
+0:X1=x; 0:X2=y; 0:X3=z;
+0:X4=1; 0:X5=1; 0:X6=1;
+
+1:X1=y; 1:X2=z; 1:X3=a;
+1:X4=2;         1:X6=1;
+
+2:X1=y; 2:X2=a; 2:X3=x;
+}
+ P0           | P1                   | P2                   ;
+ STR  W4,[X1] | STLR W4,[X1]         | LDR  W4,[X1]         ;
+ STLR W5,[X2] | LDR  W5,[X2]         | EOR  W7,W4,W4        ;
+ STLR W6,[X3] | EOR  W7,W5,W5        | LDR  W5,[X2,W7,SXTW] ;
+              | STR  W6,[X3,W7,SXTW] | EOR  W8,W5,W5        ;
+              |                      | LDR  W6,[X3,W8,SXTW] ;
+exists
+ (y=2 /\ 1:X5=1 /\ 2:X4=2 /\ 2:X5=1 /\ 2:X6=0)

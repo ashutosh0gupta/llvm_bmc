@@ -1,0 +1,22 @@
+AArch64 Z6.3+poreleaserelease+poreleaseonce+poacquireacquire
+"PodWWReleaseRelease WseReleaseRelease PodWWReleaseOnce RfeOnceAcquire PodRRAcquireAcquire FreAcquireRelease"
+Mapping=2:X2=r1,2:X0=r0
+Hash=7200eb6b8e6b3e2a7de0d75d3c135985
+Cycle=PodRRAcquireAcquire FreAcquireRelease PodWWReleaseRelease WseReleaseRelease PodWWReleaseOnce RfeOnceAcquire
+Relax=FreAcquireRelease RfeOnceAcquire WseReleaseRelease
+Safe=PodRRAcquireAcquire PodWWReleaseOnce PodWWReleaseRelease
+Prefetch=0:x=F,0:y=W,1:y=F,1:z=W,2:z=F,2:x=T
+Com=Ws Rf Fr
+Orig=PodWWReleaseRelease WseReleaseRelease PodWWReleaseOnce RfeOnceAcquire PodRRAcquireAcquire FreAcquireRelease
+
+{0:X1=y; 0:X0=x; 1:X1=z; 1:X0=y; 2:X3=x; 2:X1=z;}
+
+ P0           | P1           | P2           ;
+ MOV W2,#1    | MOV W2,#2    | LDAR W0,[X1] ;
+ STLR W2,[X0] | STLR W2,[X0] | LDAR W2,[X3] ;
+ MOV W2,#1    | MOV W2,#1    |              ;
+ STLR W2,[X1] | STR W2,[X1]  |              ;
+
+
+
+exists (y=2 /\ 2:X0=1 /\ 2:X2=0)

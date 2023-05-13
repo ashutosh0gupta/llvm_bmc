@@ -1,0 +1,15 @@
+AArch64 ISA2+o-rel+acq-o+o-rb-o
+Mapping=1:X0=r1,2:X2=r2,2:X0=r3
+Hash=c73aa995304150581844921d5ba29300
+
+{0:X1=x; 0:X0=a; 1:X2=c; 1:X1=x; 2:X3=a; 2:X1=c; a=1; x=2;}
+
+ P0           | P1           | P2          ;
+ MOV W2,#3    | LDAR W0,[X1] | LDR W0,[X1] ;
+ STR W2,[X0]  | MOV W3,#1    | DMB LD      ;
+ MOV W2,#4    | STR W3,[X2]  | LDR W2,[X3] ;
+ STLR W2,[X1] |              |             ;
+
+
+
+exists (1:X0=4 /\ 2:X0=1 /\ 2:X2=1)

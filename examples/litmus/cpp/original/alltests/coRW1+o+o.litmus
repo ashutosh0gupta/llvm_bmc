@@ -1,0 +1,14 @@
+AArch64 coRW1+o+o
+Mapping=0:X0=r1
+Hash=587be125ca41d494c2b5631d505afdaf
+
+{0:X1=x; x=0;}
+
+ P0          ;
+ LDR W0,[X1] ;
+ MOV W2,#1   ;
+ STR W2,[X1] ;
+
+
+
+exists (0:X0=1)

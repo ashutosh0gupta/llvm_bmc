@@ -1,0 +1,18 @@
+AArch64 LISA-rfi-acq2
+Mapping=1:X5=r3,1:X4=r2,1:X0=r1
+Hash=23ce2b2e2c8d6544c7052a9ac29879f2
+
+{0:X1=y; 0:X0=x; 1:X6=x; 1:X3=u; 1:X2=z; 1:X1=y;}
+
+ P0          | P1           ;
+ MOV W2,#1   | LDR W0,[X1]  ;
+ STR W2,[X0] | STR W0,[X2]  ;
+ DMB ST      | DMB ST       ;
+ MOV W2,#1   | MOV W7,#1    ;
+ STR W2,[X1] | STR W7,[X3]  ;
+             | LDAR W4,[X3] ;
+             | LDR W5,[X6]  ;
+
+
+
+exists (1:X0=1 /\ 1:X5=0)

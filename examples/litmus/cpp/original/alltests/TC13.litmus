@@ -1,0 +1,17 @@
+AArch64 TC13
+Mapping=0:X2=r9,0:X0=r1,1:X2=r9,1:X0=r2
+Hash=c2856d369626f7b5d9e9d3a2d1d3568c
+
+{0:X3=y; 0:X1=x; 1:X3=x; 1:X1=y; x=0; y=0;}
+
+ P0           | P1           ;
+ LDR W0,[X1]  | LDR W0,[X1]  ;
+ CMP W0,#1    | CMP W0,#1    ;
+ B.NE label17 | B.NE label18 ;
+ MOV W4,#1    | MOV W4,#1    ;
+ STR W4,[X3]  | STR W4,[X3]  ;
+ label17:     | label18:     ;
+
+
+
+exists (0:X0=1 /\ 1:X0=1)

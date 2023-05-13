@@ -1,0 +1,15 @@
+AArch64 auto/RW-B+RW-B+RW-B
+Mapping=0:X0=r1,1:X0=r1,2:X0=r1
+Hash=b1b8048a7ba9242bb18093f224e4ec2e
+
+{0:X2=x1; 0:X1=x0; 1:X2=x2; 1:X1=x1; 2:X2=x0; 2:X1=x2;}
+
+ P0          | P1          | P2          ;
+ LDR W0,[X1] | LDR W0,[X1] | LDR W0,[X1] ;
+ DMB SY      | DMB SY      | DMB SY      ;
+ MOV W3,#1   | MOV W3,#1   | MOV W3,#1   ;
+ STR W3,[X2] | STR W3,[X2] | STR W3,[X2] ;
+
+
+
+exists (0:X0=1 /\ 1:X0=1 /\ 2:X0=1)

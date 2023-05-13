@@ -1,0 +1,10 @@
+# LITMUS TESTS
+
+## Original Litmus Tests
+- original contains all litmus tests for ARM from http://diy.inria.fr/aarch64/
+- original/aarch64.cat is the cat model for herd7
+- original/../aarch64.herd.results.txt is output of herd7 for ARM litmus tests
+
+## Cpp Tests
+- cpp-litmus tests contains cpp files
+- Cpp files uses <pthread.h> for concurrency, <assert.h> for assertions, and <stdatomic.h> for atomic accesses.

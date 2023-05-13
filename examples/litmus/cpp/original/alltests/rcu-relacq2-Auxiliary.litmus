@@ -1,0 +1,21 @@
+AArch64 rcu-relacq2-Auxiliary
+Mapping=0:X7=r2,0:X5=r1,0:X3=r50101,0:X0=r0,1:X2=r60101,
+Hash=fc12821f6ef35e553766f9a8b5228b8f
+
+{0:X9=csend01; 0:X8=v; 0:X6=u; 0:X4=gpstart01; 0:X2=y; 0:X1=x; 1:X4=v; 1:X3=csend01; 1:X1=gpstart01; 1:X0=y; 2:X1=x; 2:X0=u;}
+
+ P0            | P1           | P2           ;
+ LDR W0,[X1]   | MOV W5,#2    | MOV W2,#1    ;
+ STR W0,[X2]   | STR W5,[X0]  | STR W2,[X0]  ;
+ LDAR W3,[X4]  | DMB SY       | MOV W2,#1    ;
+ LDR W5,[X6]   | MOV W5,#1    | STLR W2,[X1] ;
+ LDR W7,[X8]   | STLR W5,[X1] |              ;
+ MOV W10,#1    | DMB SY       |              ;
+ STLR W10,[X9] | LDAR W2,[X3] |              ;
+               | DMB SY       |              ;
+               | MOV W5,#1    |              ;
+               | STR W5,[X4]  |              ;
+
+
+
+exists (0:X0=1 /\ 0:X5=0 /\ 0:X7=1 /\ y=2 /\ (0:X3=1 \/ 1:X2=1))

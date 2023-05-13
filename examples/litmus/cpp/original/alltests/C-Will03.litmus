@@ -1,0 +1,26 @@
+AArch64 C-Will03
+(* Test a particular case of linux atomic_add_return, check failure
+   of SC (discarded in case of LL/SC loop.
+   Loop is unrolled once and value read in y by P0 is not discarded *)
+{
+0:X1=x; 0:X2=y;
+1:X2=y; 1:X1=x;
+}
+ P0               | P1           ;
+ MOV W0,#1        | MOV W0,#2    ;
+ STR W0,[X1]      | STR W0,[X2]  ;
+ MOV W3,#1        | DMB ISH      ;
+ LDXR W4,[X2]     | LDR W3,[X1]  ;
+ ADD W3,W4,W3     |              ;
+ STLXR W5,W3,[X2] |              ;
+ CBNZ W5,Fail0    |              ;
+ DMB ISH          |              ;
+ B Exit0          |              ;
+Fail0:            |              ;
+ MOV W3,#1        |              ;
+ LDXR W8,[X2]     |              ;
+ ADD W3,W8,W3     |              ;
+ STLXR W9,W3,[X2] |              ;
+ Exit0:           |              ;
+locations [y;0:X8;]
+exists (0:X4=0 /\ 1:X3=0/\ ~(0:X5=0) /\ 0:X9=0)
