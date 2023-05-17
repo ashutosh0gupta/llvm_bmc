@@ -219,7 +219,7 @@ void forced_inliner_pass(std::unique_ptr<llvm::Module>& module);
 
 const std::pair<const llvm::Value*, uint64_t>  get_array_info( const llvm::Value* op);
 const llvm::Value* identify_global_in_addr( const llvm::Value* op);
-const llvm::Value* identify_lpad_struct(const llvm::Value* , int);
+std::pair<const llvm::Value*, uint64_t> identify_lpad_struct(const llvm::Value* , int);
 
 
 void points_to_analysis( options& o, std::unique_ptr<llvm::Module>& module);

@@ -377,12 +377,16 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
         }
       }
       else if (auto eval = llvm::dyn_cast<const llvm::ExtractValueInst>(I)) {
-        auto ary = identify_array( eval);
-        if (ary && exists(ary_to_int, ary)) {
-          ary_access_to_index[eval] = ary_to_int.at(ary);
+        auto ary_info = get_array_info( eval);
+        if( ary_info.first && exists( ary_to_int, ary_info.first ) ) {
+          ary_access_to_index[eval] = ary_to_int.at( ary_info.first );
+          if( ary_info.first && !exists( ary_to_base, ary_access_to_index[eval] ) ) {
+            ary_to_base[ary_to_int.at( ary_info.first )] = cnt;
+            cnt += ary_info.second;
         } else {
           // DO NOTHING
         }
+      }
       }
     }
   }
@@ -454,41 +458,41 @@ arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::ExtractValueInst* I
                                exprs& idxs ) {
   assert( I );
   switch( ar_model_init ) {
-  case FULL     : return ar_model_full.array_read( bidx, I, idxs ); break;
-  // case FIXED_LEN: return ar_model_full.array_read( bidx, I, idx ); break;
-  default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
-  }
-}
-
-arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::CallInst* I,
-                               exprs& idxs ) {
-  assert( I );
-  switch( ar_model_init ) {
-  case FULL     : return ar_model_full->array_read( bidx, I, idxs ); break;
-  // case FIXED_LEN: return ar_model_full->array_read( bidx, I, idx ); break;
-  default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
-  }
-}
-
-arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::ExtractValueInst* I,
-                               exprs& idxs ) {
-  assert( I );
-  switch( ar_model_init ) {
   case FULL     : return ar_model_full->array_read( bidx, I, idxs ); break;
   // case FIXED_LEN: return ar_model_full.array_read( bidx, I, idx ); break;
   default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
   }
 }
 
-arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::CallInst* I,
-                               exprs& idxs ) {
-  assert( I );
-  switch( ar_model_init ) {
-  case FULL     : return ar_model_full->array_read( bidx, I, idxs ); break;
-  // case FIXED_LEN: return ar_model_full.array_read( bidx, I, idx ); break;
-  default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
-  }
-}
+// arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::CallInst* I,
+//                                exprs& idxs ) {
+//   assert( I );
+//   switch( ar_model_init ) {
+//   case FULL     : return ar_model_full->array_read( bidx, I, idxs ); break;
+//   // case FIXED_LEN: return ar_model_full->array_read( bidx, I, idx ); break;
+//   default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
+//   }
+// }
+
+// arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::ExtractValueInst* I,
+//                                exprs& idxs ) {
+//   assert( I );
+//   switch( ar_model_init ) {
+//   case FULL     : return ar_model_full->array_read( bidx, I, idxs ); break;
+//   // case FIXED_LEN: return ar_model_full.array_read( bidx, I, idx ); break;
+//   default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
+//   }
+// }
+
+// arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::CallInst* I,
+//                                exprs& idxs ) {
+//   assert( I );
+//   switch( ar_model_init ) {
+//   case FULL     : return ar_model_full->array_read( bidx, I, idxs ); break;
+//   // case FIXED_LEN: return ar_model_full.array_read( bidx, I, idx ); break;
+//   default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
+//   }
+// }
 
 expr bmc_ds::get_array_state_var( unsigned bidx,
                                       const llvm::AllocaInst* alloc ) {

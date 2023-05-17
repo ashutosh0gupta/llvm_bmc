@@ -1967,17 +1967,13 @@ identify_array_in_gep(const llvm::GEPOperator* gep ) {
   llvm_bmc_error("bmc", "unseen GEP pattern detected!");
 }
 
-const llvm::Value* 
-identify_lpad_struct(const llvm::Value* op, int index) {
+std::pair<const llvm::Value*, uint64_t> identify_lpad_struct(const llvm::Value* op, int index) {
   auto lpi = llvm::dyn_cast<const llvm::LandingPadInst>(op);
   auto predecessor = lpi->getParent()->getSinglePredecessor();
   auto terminator = predecessor->getTerminator();
-  // llvm::errs() << "\n\nGOT PREDECESSOR " << *predecessor << "===========";
-  // llvm::errs() << "\n\nGOT TERMINATOR " << *terminator << "\n===========";
+
   if (auto invoke = llvm::dyn_cast<const llvm::InvokeInst>(terminator)) {
-    // llvm::errs() << "\n\nIN IF";
     llvm::Function* fp = invoke->getCalledFunction();
-    // llvm::errs() << "\n called function is " << *fp;
     if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
       llvm::Value* arg;
       if (index == 0) {
@@ -1986,18 +1982,21 @@ identify_lpad_struct(const llvm::Value* op, int index) {
         arg = invoke->getArgOperand(index);
         //TODO : add code to convert it into int for future purpose
       }
-      // llvm::errs() << "\nDUmping value ";
-      // arg->dump();
-      // llvm::errs() << "\n";
-      return arg;
+      
+      uint64_t size = 0;
+      // Check if the argument is an array and determine its size
+    if (auto arrayTy = llvm::dyn_cast<llvm::ArrayType>(op->getType())) {
+      size = arrayTy->getNumElements();
+      }
+      return std::make_pair(arg, size);
     }
-  } else {
-    // llvm::errs() << "\n\nIN ELSE";
   }
+
   llvm_bmc_warning("bmc","failed to recognize lpad structure");
   op->dump();
-  return NULL;
+  return std::make_pair(nullptr, 0);
 }
+
 
 const std::pair<const llvm::Value*, uint64_t> get_array_info( const llvm::Value* op) {
 
@@ -2068,7 +2067,7 @@ const std::pair<const llvm::Value*, uint64_t> get_array_info( const llvm::Value*
     // llvm::errs() << "Type of EVAL is " << *(ev->getType()) << "\n";
     auto evi_op = ev->getAggregateOperand();
     if( auto pty = llvm::dyn_cast<llvm::PointerType>(ev->getType()) ) {
-      // llvm::errs() << "POINTER TYPE";
+
       return identify_lpad_struct(evi_op, 0);
     } else {
       return identify_lpad_struct(evi_op, 1);

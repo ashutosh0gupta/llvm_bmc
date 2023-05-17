@@ -87,6 +87,7 @@ public:
   virtual void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access, std::map< unsigned, unsigned >& array_start_add ) = 0;
   virtual arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val ) = 0;
   virtual arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& ) = 0;
+  virtual arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& ) = 0;
   virtual void init_state( unsigned ) = 0;
   virtual void init_state( unsigned eb, array_state& s ) = 0;
   virtual void copy_to_init_state( array_state& ) = 0;
@@ -94,13 +95,6 @@ public:
   //Setter
   void set_array_info(std::map< const llvm::Value*, unsigned >& ary_id);
   void set_array_length( unsigned, std::vector<expr>& len );
-  // arr_write_expr
-  // array_write( unsigned bidx, const llvm::StoreInst* I,
-  //              exprs& idx, expr& val );
-  // arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
-  // arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& );
-  // arr_read_expr array_read( unsigned bidx, const llvm::CallInst* I, exprs& );
-
   void update_names( unsigned, std::vector<const llvm::Instruction*>&);
   void update_name( unsigned, unsigned );
   void set_num_arrays(unsigned);
@@ -150,6 +144,7 @@ public:
   //Virtual defined
   arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
   arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
+  arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& );
   expr join_array_state( std::vector<expr>&,std::vector<unsigned>& prevs,unsigned src );
 
   //Overridden functions
@@ -177,6 +172,7 @@ public:
   //Virtual defined
   arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
   arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
+  arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& );
   expr join_array_state( std::vector<expr>&,std::vector<unsigned>& prevs,unsigned src );
 
   //Misc
