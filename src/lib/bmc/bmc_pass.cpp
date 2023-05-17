@@ -2004,9 +2004,9 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
       // if( ptr->getPointerElementType() ) {
       //   dump(ptr->getPointerElementType());
       // }
-      if( ptr->getPointerElementType()->isArrayTy() ) {
+      // if( ptr->getPointerElementType()->isArrayTy() ) {        // Need to disable it to store global variables
         ary_to_int[&glb] = arrCntr++;
-      }
+      // }
     }
   }
 
@@ -2037,6 +2037,16 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
       ary_to_int[a] = arrCntr++;
     }
   }
+
+  // // Allocate Global array to store local arrays
+  auto int_type = llvm::Type::getInt32Ty(f->getContext());
+  auto array_type = llvm::ArrayType::get(int_type, 1000);
+  auto new_array = new llvm::GlobalVariable(*f->getParent(), array_type, false,
+                                             llvm::GlobalValue::ExternalLinkage,
+                                             nullptr, "Global_array");
+  ary_to_int[new_array] = arrCntr++;
+  // llvm::errs()<<"Types"<<" "<<ar->getType()<<"\n";
+  // ar->getType()->print(llvm::outs());
 
 }
 

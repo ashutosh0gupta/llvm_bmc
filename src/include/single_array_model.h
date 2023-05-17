@@ -7,7 +7,6 @@
 
 class arr_write_expr {
 public:
-  arr_write_expr();
   arr_write_expr( expr updated_expr_, expr size_bound_guard_, expr new_name_ ) : 
   updated_expr(updated_expr_), size_bound_guard(size_bound_guard_), new_name(new_name_) {
 
@@ -38,69 +37,53 @@ public:
 
   //anything else is needed???
   std::vector<expr>& get_name_vec() { return array_index_names; };
-  std::vector<expr>& get_M_name() {return M_name; };
 private:
   std::vector<expr> array_index_names;
-  std::vector<expr> M_name;
 };
 
-class array_model_full;
-class single_array_model;
+
 class multiple_array_model;
-// class array_model_fixed_len; 
-// class array_model_partition; 
+class single_array_model;
+// class array_model_fixed_len;
+// class array_model_partition;
 
 class array_model{
 public:
   array_model( options& o_ ) :
     o(o_), solver_ctx(o.solver_ctx) {}
 std::map< unsigned, array_state > exit_ary_map;
-  virtual expr join_array_state( std::vector<expr>&,
+  expr join_array_state( std::vector<expr>&,
                          std::vector<unsigned>& prevs,
-                         unsigned src ) = 0;
-  virtual expr get_fresh_ary_name( unsigned ) = 0;
+                         unsigned src );
 
   array_state& get_state( unsigned b );
   void set_array_state( unsigned b, array_state& s );
-  expr get_array_state_var( unsigned b, unsigned ith_ary );
+  expr get_array_state_var( unsigned b, unsigned ith_ary ); // Might cause error in single_array_model
 
 private:
   options& o;
   solver_context& solver_ctx;
   array_model_t model = NONE;
-  array_model_memory_arch memory_arch = NOT_DEFINED;
   //std::map< unsigned, array_state > exit_ary_map;
 
-  friend single_array_model;
   friend multiple_array_model;
-  friend array_model_full;
+  friend single_array_model;
+  // friend array_model_fixed_len;
+  // friend array_model_partition;
+  // friend array_model_utils;
 };
 
-class array_model_full : public array_model {
-
+class basic_array_model {
 public:
-  array_model_full( options& o ) : array_model(o) {
-    model = FULL;
+
+  inline void
+  set_access_map( std::map< const llvm::Instruction*, unsigned >& map ) {
+    ary_access_to_index = map;
   }
   
-  //Virtuals
-  virtual void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access, std::map< unsigned, unsigned >& array_start_add ) = 0;
-  virtual arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val ) = 0;
-  virtual arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& ) = 0;
-  virtual void init_state( unsigned ) = 0;
-  virtual void init_state( unsigned eb, array_state& s ) = 0;
-  virtual void copy_to_init_state( array_state& ) = 0;
-
   //Setter
   void set_array_info(std::map< const llvm::Value*, unsigned >& ary_id);
   void set_array_length( unsigned, std::vector<expr>& len );
-  // arr_write_expr
-  // array_write( unsigned bidx, const llvm::StoreInst* I,
-  //              exprs& idx, expr& val );
-  // arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
-  // arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& );
-  // arr_read_expr array_read( unsigned bidx, const llvm::CallInst* I, exprs& );
-
   void update_names( unsigned, std::vector<const llvm::Instruction*>&);
   void update_name( unsigned, unsigned );
   void set_num_arrays(unsigned);
@@ -108,6 +91,7 @@ public:
   //Getter
   unsigned get_num_arrays();
   unsigned get_accessed_array( const llvm::Instruction* I );
+  expr get_fresh_ary_name( unsigned );
   sort get_address_sort();
   sort get_solver_array_ty( const llvm::ArrayType* ty );
   sort get_solver_array_ty( const llvm::PointerType* ty );
@@ -122,70 +106,48 @@ public:
   void dump_ary_access_to_index();
 
   //Misc
-  expr access_bound_cons( exprs& , exprs& );
-  expr get_fresh_ary_name( unsigned );
+  void init_state( unsigned );
+  void init_state( unsigned eb, array_state& s );
+  void copy_to_init_state( array_state& );
 
-  // Data members
+  //Virtual
+  virtual arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val ) = 0;
+  virtual arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& ) = 0;
+
+private:
   unsigned num_arrays;
   std::vector< std::vector<expr> > lengths;
   std::vector< std::string > ar_names;
   std::vector< sort > ar_sorts;
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
-
 };
 
-class single_array_model : public array_model_full {
+
+class multiple_array_model : public basic_array_model, public array_model {
 public:
-  single_array_model( options& o ) : array_model_full(o) {
-    memory_arch = SINGLE; 
+  multiple_array_model( options& o ) : array_model(o) {
+    model = FULL;
   }
 
-  inline
-  void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access,
-   std::map< unsigned, unsigned >& array_start_add ) {
-    ary_access_to_index = array_access;
-    ar_bases = array_start_add;
-  };
-
-  //Virtual defined
   arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
   arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
-  expr join_array_state( std::vector<expr>&,std::vector<unsigned>& prevs,unsigned src );
-
-  //Overridden functions
-  void init_state( unsigned );
-  void init_state( unsigned eb, array_state& s );
-  void copy_to_init_state( array_state& );
-
-  std::string M_array_name =  "M";
-  std::map< unsigned, unsigned > ar_bases;
 
 };
 
-class multiple_array_model : public array_model_full {
+class single_array_model : public basic_array_model, array_model {
 public:
-  multiple_array_model( options& o ) : array_model_full(o) {
-    memory_arch = MULTIPLE;
+  single_array_model( options& o ) : array_model(o) {
+    model = FULL;
   }
 
-  inline
-  void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access,
-   std::map< unsigned, unsigned >& array_start_add ) {
-    ary_access_to_index = array_access;
-  };
-
-  //Virtual defined
   arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
   arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
-  expr join_array_state( std::vector<expr>&,std::vector<unsigned>& prevs,unsigned src );
+  // std::string get_M_SSA_name() {return M_SSA_name; };
+  // void set_M_SSA_name(std::string name) : M_SSA_name(name) {};
 
-  //Misc
-  void init_state( unsigned );
-  void init_state( unsigned eb, array_state& s );
-  void copy_to_init_state( array_state& );
+private:
+  std::vector< unsigned> ar_bases;
+  std::string M_SSA_name;
 };
-
-
-
 
 #endif // TILER_GLB_MODEL_H

@@ -217,7 +217,7 @@ public:
 void prepare_module(std::unique_ptr<llvm::Module>& module );
 void forced_inliner_pass(std::unique_ptr<llvm::Module>& module);
 
-const llvm::Value* identify_array( const llvm::Value* op);
+const std::pair<const llvm::Value*, uint64_t>  get_array_info( const llvm::Value* op);
 const llvm::Value* identify_global_in_addr( const llvm::Value* op);
 const llvm::Value* identify_lpad_struct(const llvm::Value* , int);
 

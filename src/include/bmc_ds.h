@@ -56,7 +56,8 @@ public:
     , m(o)
     , m_model( m_model_ )
     , memory_global_events( solver_ctx )
-    , ar_model_full( o )
+    , ar_memory_model_single( o )
+    , ar_memory_model_multiple ( o )
     , ary_to_int(aim)
 {}
 
@@ -81,12 +82,18 @@ public:
   //interface to array model
 
   array_model_t ar_model_init = NONE;
-  array_model_full      ar_model_full;
+  array_model_memory_arch ar_memory_arch_init = NOT_DEFINED;
+  single_array_model ar_memory_model_single;
+  multiple_array_model ar_memory_model_multiple;
+
+  array_model_full*  ar_model_full = &ar_memory_model_single;
+  // array_model_single      ar_model_full;
   // array_model_fixed_len ar_model_fixed;
   // array_model_partition ar_model_part;
 
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
   std::map< const llvm::Value*, unsigned >& ary_to_int;
+  std::map< unsigned, unsigned > ary_to_base;
 
   void set_array_length( const llvm::Value*, std::vector<expr>& );
   arr_write_expr array_write( unsigned, const llvm::StoreInst*,exprs&, expr& );

@@ -211,8 +211,8 @@ bool bmc_loop_pass::runOnEachLoop(llvm::Loop *L, llvm::Loop *prevL) {
     // copy names from the exit block of previous loop to the initial block of current loop
     bmc_loop* bmc_prev_loop_ptr = bmc_obj.get_loop_formula_map().at(prevL);
     for( auto& exit : bmc_prev_loop_ptr->exits ) {
-      array_state& s = bmc_prev_loop_ptr->ar_model_full.get_state(exit.first);
-      bmc_loop_ptr->ar_model_full.copy_to_init_state(s);
+      array_state& s = bmc_prev_loop_ptr->ar_model_full->get_state(exit.first);
+      bmc_loop_ptr->ar_model_full->copy_to_init_state(s);
     }
     update_names(bmc_loop_ptr, true);
     copy_locals_map(bmc_loop_ptr, bmc_prev_loop_ptr);
@@ -266,11 +266,11 @@ void bmc_loop_pass::update_names(bmc_loop* bmc_loop_ptr, bool is_init) {
 
   if(!is_init) {
     for( auto& exit : bmc_loop_ptr->exits ) {
-      bmc_loop_ptr->ar_model_full.update_names( exit.first, arrays_updated );
+      bmc_loop_ptr->ar_model_full->update_names( exit.first, arrays_updated );
       bmc_obj.m_model.update_name( exit.first, glbs_updated );
     }
   } else {
-    bmc_loop_ptr->ar_model_full.update_names( 0, arrays_updated );
+    bmc_loop_ptr->ar_model_full->update_names( 0, arrays_updated );
     //bmc_obj.g_model.update_name( 0, glbs_updated );
   }
 }

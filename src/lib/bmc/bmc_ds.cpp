@@ -340,11 +340,10 @@ expr bmc_ds::join_state( std::vector<expr>& cs,
 //----------------------------------------------------------------------------
 // manage array model
 
-
-
 void bmc_ds::init_array_model( array_model_t ar_model_local,
                                array_state& s ) {
   unsigned bidx = 0;
+  unsigned int cnt = 0;
   for( const bb* bb : bb_vec ) {
     if( bb == NULL ) continue;
     if( bidx++ < processed_bidx ) continue;
@@ -354,29 +353,30 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
       // I->print(llvm::outs());
       // std::cout <<"\n";
       if( auto load = llvm::dyn_cast<const llvm::LoadInst>(I) ) {
-        // std::cout << "identifying array for load inst\n";
-        auto ary  = identify_array( load->getPointerOperand() );
-        if( ary && exists( ary_to_int, ary ) ) {
-          ary_access_to_index[load] = ary_to_int.at( ary );
+        auto ary_info  = get_array_info( load->getPointerOperand() );
+        if( ary_info.first && exists( ary_to_int, ary_info.first )) {
+          ary_access_to_index[load] = ary_to_int.at( ary_info.first );
+
+          if( ary_info.first && !exists( ary_to_base, ary_access_to_index[load] ) ) {
+            ary_to_base[ary_to_int.at( ary_info.first )] = cnt;
+            cnt += ary_info.second;
+          } 
         }else{
           // llvm_bmc_error("bmc", "Cound not identify array");
         }
       }else if( auto store = llvm::dyn_cast<const llvm::StoreInst>(I) ) {
-        // std::cout << "identifying array for store inst \n";
-        auto ary  = identify_array( store->getPointerOperand() );
-        // I->print(llvm::outs());
-        // if (ary) {
-        //   std::cout << "Identified array -";
-        // } else {
-        //   std::cout << "Unidentified array -";
-        // }
-        // std::cout << "\n";
-        if( ary && exists( ary_to_int, ary ) ){ 
-          ary_access_to_index[store] = ary_to_int.at( ary );
-        } else {
-          // std::cout << "UNCAUGHT\n";
+        auto ary_info  = get_array_info( store->getPointerOperand() );
+        if( ary_info.first && exists( ary_to_int, ary_info.first ) ){
+          ary_access_to_index[store] = ary_to_int.at( ary_info.first );
+          if( ary_info.first && !exists( ary_to_base, ary_access_to_index[store] ) ) {
+            ary_to_base[ary_to_int.at( ary_info.first )] = cnt;
+            cnt += ary_info.second;
+          } 
+        }else{
+          // llvm_bmc_error("bmc", "Cound not identify array");
         }
-      } else if (auto eval = llvm::dyn_cast<const llvm::ExtractValueInst>(I)) {
+      }
+      else if (auto eval = llvm::dyn_cast<const llvm::ExtractValueInst>(I)) {
         auto ary = identify_array( eval);
         if (ary && exists(ary_to_int, ary)) {
           ary_access_to_index[eval] = ary_to_int.at(ary);
@@ -384,18 +384,13 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
           // DO NOTHING
         }
       }
-      // } else if( auto call = llvm::dyn_cast<const llvm::CallInst>(I) ) {
-      //   I->print(llvm::outs());
-      //   std::cout << "\nCALL INSTRUCTION\n";
-      // }
     }
   }
-
   std::map< const llvm::Instruction*, unsigned >& map = ary_access_to_index;
   if(ar_model_local == FULL) {
     // full model using store and select
     init_full_array_model( map );
-    ar_model_full.init_state( 0, s );
+    ar_model_full->init_state( 0, s );
   } else {
     llvm_bmc_error("bmc", "array model initialization");
   }
@@ -413,8 +408,8 @@ init_full_array_model(std::map< const llvm::Instruction*, unsigned >& map) {
   ar_model_init = FULL;
 
   //todo : move to array model code
-  ar_model_full.set_array_info( ary_to_int );
-  ar_model_full.set_access_map( map );
+  ar_model_full->set_array_info( ary_to_int);
+  ar_model_full->set_access_map( map, ary_to_base );
 }
 
 
@@ -422,14 +417,14 @@ init_full_array_model(std::map< const llvm::Instruction*, unsigned >& map) {
 void bmc_ds::refresh_array_state( unsigned bidx,
                                   const llvm::Instruction* I) {
   assert( ar_model_init == FULL );
-  ar_model_full.update_name( bidx, ary_to_int[I] );
+  ar_model_full->update_name( bidx, ary_to_int[I] );
 }
 
 void bmc_ds::set_array_length( const llvm::Value* arr, std::vector<expr>& len ) {
   assert(arr);
   unsigned ar_num = ary_to_int.at(arr);
   switch( ar_model_init ) {
-  case FULL : return ar_model_full.set_array_length( ar_num, len ); break;
+  case FULL : return ar_model_full->set_array_length( ar_num, len ); break;
   default: llvm_bmc_error( "bmc", "array model incomplete implementation!!");
   }
 
@@ -440,7 +435,7 @@ bmc_ds::array_write( unsigned bidx, const llvm::StoreInst* I,
                       exprs& idxs, expr& val ) {
   assert( I );
   switch( ar_model_init ) {
-  case FULL : return ar_model_full.array_write( bidx, I, idxs, val ); break;
+  case FULL : return ar_model_full->array_write( bidx, I, idxs, val ); break;
   default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
   }
 }
@@ -449,8 +444,8 @@ arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::LoadInst* I,
                                exprs& idxs ) {
   assert( I );
   switch( ar_model_init ) {
-  case FULL     : return ar_model_full.array_read( bidx, I, idxs ); break;
-  // case FIXED_LEN: return ar_model_full.array_read( bidx, I, idx ); break;
+  case FULL     : return ar_model_full->array_read( bidx, I, idxs ); break;
+  // case FIXED_LEN: return ar_model_full->array_read( bidx, I, idx ); break;
   default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
   }
 }
@@ -469,7 +464,27 @@ arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::CallInst* I,
                                exprs& idxs ) {
   assert( I );
   switch( ar_model_init ) {
-  case FULL     : return ar_model_full.array_read( bidx, I, idxs ); break;
+  case FULL     : return ar_model_full->array_read( bidx, I, idxs ); break;
+  // case FIXED_LEN: return ar_model_full->array_read( bidx, I, idx ); break;
+  default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
+  }
+}
+
+arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::ExtractValueInst* I,
+                               exprs& idxs ) {
+  assert( I );
+  switch( ar_model_init ) {
+  case FULL     : return ar_model_full->array_read( bidx, I, idxs ); break;
+  // case FIXED_LEN: return ar_model_full.array_read( bidx, I, idx ); break;
+  default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
+  }
+}
+
+arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::CallInst* I,
+                               exprs& idxs ) {
+  assert( I );
+  switch( ar_model_init ) {
+  case FULL     : return ar_model_full->array_read( bidx, I, idxs ); break;
   // case FIXED_LEN: return ar_model_full.array_read( bidx, I, idx ); break;
   default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
   }
@@ -478,24 +493,24 @@ arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::CallInst* I,
 expr bmc_ds::get_array_state_var( unsigned bidx,
                                       const llvm::AllocaInst* alloc ) {
   unsigned ith_ary = ary_to_int.at( alloc );
-  return ar_model_full.get_array_state_var( bidx, ith_ary );
+  return ar_model_full->get_array_state_var( bidx, ith_ary );
 }
 
 expr bmc_ds::get_array_state_var( unsigned bidx,
                                       const llvm::Instruction* alloc ) {
 
   unsigned ith_ary = ary_to_int.at( alloc );
-  return ar_model_full.get_array_state_var( bidx, ith_ary );
+  return ar_model_full->get_array_state_var( bidx, ith_ary );
 }
 
 void bmc_ds::set_array_state( unsigned bidx, array_state& s ) {
   assert( ar_model_init == FULL );
-  return ar_model_full.set_array_state( bidx , s );
+  return ar_model_full->set_array_state( bidx , s );
 }
 
 array_state& bmc_ds::get_array_state( const bb* b ) {
   unsigned bidx = find_block_idx(b);
-  return ar_model_full.get_state( bidx );
+  return ar_model_full->get_state( bidx );
 }
 
 expr bmc_ds::join_array_state(std::vector<expr>& cs,
@@ -504,7 +519,7 @@ expr bmc_ds::join_array_state(std::vector<expr>& cs,
   assert( src );
   assert( cs.size() == prevs.size() );
   switch(ar_model_init) {
-  case FULL:      return ar_model_full.join_array_state(cs, prevs, src ); break;
+  case FULL:      return ar_model_full->join_array_state(cs, prevs, src ); break;
   // case FIXED_LEN: return ar_model_fixed.join_array_state(cs,prevs, src ); break;
   // case PARTITION: return ar_model_part.join_array_state(cs, prevs, src);break;
   default:
