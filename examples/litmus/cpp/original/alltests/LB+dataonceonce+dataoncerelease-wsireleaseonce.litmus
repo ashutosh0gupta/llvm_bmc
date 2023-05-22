@@ -1,0 +1,21 @@
+AArch64 LB+dataonceonce+dataoncerelease-wsireleaseonce
+"DpDatadWOnceOnce RfeOnceOnce DpDatadWOnceRelease WsiReleaseOnce RfeOnceOnce"
+Mapping=0:X2=r1,0:X0=r0,1:X2=r1,1:X0=r0
+Hash=726d8b3ed41926423d71cd0882f51eb1
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=DpDatadWOnceOnce RfeOnceOnce DpDatadWOnceRelease WsiReleaseOnce RfeOnceOnce
+
+{0:X3=y; 0:X1=x; 1:X3=x; 1:X1=y;}
+
+ P0           | P1           ;
+ LDR W0,[X1]  | LDR W0,[X1]  ;
+ EOR W2,W0,W0 | EOR W2,W0,W0 ;
+ ADD W2,W2,#1 | ADD W2,W2,#1 ;
+ STR W2,[X3]  | STLR W2,[X3] ;
+              | MOV W4,#2    ;
+              | STR W4,[X3]  ;
+
+
+
+exists (x=2 /\ 0:X0=2 /\ 1:X0=1)

@@ -1,0 +1,22 @@
+AArch64 ISA2+pooncerelease+poacquireonce+poacquireonce
+"PodWWOnceRelease RfeReleaseAcquire PodRWAcquireOnce RfeOnceAcquire PodRRAcquireOnce FreOnceOnce"
+Mapping=1:X0=r0,2:X2=r1,2:X0=r0
+Hash=0d2d2bc7b03db0c4aa4d85032e71e433
+Cycle=PodRWAcquireOnce RfeOnceAcquire PodRRAcquireOnce FreOnceOnce PodWWOnceRelease RfeReleaseAcquire
+Relax=RfeOnceAcquire RfeReleaseAcquire
+Safe=PodRWAcquireOnce PodRRAcquireOnce FreOnceOnce PodWWOnceRelease
+Prefetch=0:x=F,0:y=W,1:y=F,1:z=W,2:z=F,2:x=T
+Com=Rf Rf Fr
+Orig=PodWWOnceRelease RfeReleaseAcquire PodRWAcquireOnce RfeOnceAcquire PodRRAcquireOnce FreOnceOnce
+
+{0:X1=y; 0:X0=x; 1:X2=z; 1:X1=y; 2:X3=x; 2:X1=z;}
+
+ P0           | P1           | P2           ;
+ MOV W2,#1    | LDAR W0,[X1] | LDAR W0,[X1] ;
+ STR W2,[X0]  | MOV W3,#1    | LDR W2,[X3]  ;
+ MOV W2,#1    | STR W3,[X2]  |              ;
+ STLR W2,[X1] |              |              ;
+
+
+
+exists (1:X0=1 /\ 2:X0=1 /\ 2:X2=0)

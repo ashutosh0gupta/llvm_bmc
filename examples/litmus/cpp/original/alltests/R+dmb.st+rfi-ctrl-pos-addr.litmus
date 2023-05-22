@@ -1,0 +1,24 @@
+AArch64 R+dmb.st+rfi-ctrl-pos-addr
+"DMB.STdWW Wse Rfi DpCtrldR PosRR DpAddrdR Fre"
+Cycle=Rfi DpCtrldR PosRR DpAddrdR Fre DMB.STdWW Wse
+Relax=
+Safe=Rfi Fre Wse PosRR DMB.STdWW DpAddrdR DpCtrldR
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Ws Fr
+Orig=DMB.STdWW Wse Rfi DpCtrldR PosRR DpAddrdR Fre
+{
+0:X1=x; 0:X3=y;
+1:X1=y; 1:X4=z; 1:X8=x;
+}
+ P0          | P1                  ;
+ MOV W0,#1   | MOV W0,#2           ;
+ STR W0,[X1] | STR W0,[X1]         ;
+ DMB ST      | LDR W2,[X1]         ;
+ MOV W2,#1   | CBNZ W2,LC00        ;
+ STR W2,[X3] | LC00:               ;
+             | LDR W3,[X4]         ;
+             | LDR W5,[X4]         ;
+             | EOR W6,W5,W5        ;
+             | LDR W7,[X8,W6,SXTW] ;
+exists
+(x=1 /\ y=2 /\ 1:X2=2 /\ 1:X7=0)

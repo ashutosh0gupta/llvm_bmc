@@ -1,0 +1,22 @@
+AArch64 3.LB+fencembonceonce+fencembonceonce+pooncerelease
+"FenceMbdRWOnceOnce RfeOnceOnce FenceMbdRWOnceOnce RfeOnceOnce PodRWOnceRelease RfeReleaseOnce"
+Mapping=0:X0=r0,1:X0=r0,2:X0=r0
+Hash=5786ca6c68225a417b6c796083eb596e
+Cycle=RfeOnceOnce FenceMbdRWOnceOnce RfeOnceOnce PodRWOnceRelease RfeReleaseOnce FenceMbdRWOnceOnce
+Relax=RfeReleaseOnce
+Safe=RfeOnceOnce FenceMbdRWOnceOnce PodRWOnceRelease
+Prefetch=0:x=F,0:y=W,1:y=F,1:z=W,2:z=F,2:x=W
+Com=Rf Rf Rf
+Orig=FenceMbdRWOnceOnce RfeOnceOnce FenceMbdRWOnceOnce RfeOnceOnce PodRWOnceRelease RfeReleaseOnce
+
+{0:X2=y; 0:X1=x; 1:X2=z; 1:X1=y; 2:X2=x; 2:X1=z;}
+
+ P0          | P1          | P2           ;
+ LDR W0,[X1] | LDR W0,[X1] | LDR W0,[X1]  ;
+ DMB SY      | DMB SY      | MOV W3,#1    ;
+ MOV W3,#1   | MOV W3,#1   | STLR W3,[X2] ;
+ STR W3,[X2] | STR W3,[X2] |              ;
+
+
+
+exists (0:X0=1 /\ 1:X0=1 /\ 2:X0=1)

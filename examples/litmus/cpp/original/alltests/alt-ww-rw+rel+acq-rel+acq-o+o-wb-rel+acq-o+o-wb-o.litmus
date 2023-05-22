@@ -1,0 +1,16 @@
+AArch64 alt-ww-rw+rel+acq-rel+acq-o+o-wb-rel+acq-o+o-wb-o
+Mapping=1:X0=r1,2:X0=r2,4:X0=r3,
+Hash=3c2e9a5da855eadc34c9f34982b436ca
+
+{0:X0=x; 1:X2=y; 1:X1=x; 2:X2=z; 2:X1=y; 3:X1=a; 3:X0=z; 4:X2=c; 4:X1=a; 5:X1=x; 5:X0=c; x=0; y=0;}
+
+ P0           | P1           | P2           | P3           | P4           | P5          ;
+ MOV W1,#1    | LDAR W0,[X1] | LDAR W0,[X1] | MOV W2,#2    | LDAR W0,[X1] | MOV W2,#2   ;
+ STLR W1,[X0] | MOV W3,#1    | MOV W3,#1    | STR W2,[X0]  | MOV W3,#1    | STR W2,[X0] ;
+              | STLR W3,[X2] | STR W3,[X2]  | DMB ST       | STR W3,[X2]  | DMB ST      ;
+              |              |              | MOV W2,#1    |              | MOV W2,#2   ;
+              |              |              | STLR W2,[X1] |              | STR W2,[X1] ;
+
+
+
+exists (1:X0=1 /\ 2:X0=1 /\ z=2 /\ 4:X0=1 /\ c=2 /\ x=1)

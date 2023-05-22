@@ -1,0 +1,22 @@
+AArch64 SB+fencembonceonce+poonceacquire
+"FenceMbdWROnceOnce FreOnceOnce PodWROnceAcquire FreAcquireOnce"
+Mapping=0:X1=r0,1:X1=r0
+Hash=187d96a36f3ef47b527e79b5770bb3cd
+Cycle=FreAcquireOnce FenceMbdWROnceOnce FreOnceOnce PodWROnceAcquire
+Relax=FreAcquireOnce
+Safe=PodWROnceAcquire FreOnceOnce FenceMbdWROnceOnce
+Prefetch=0:x=F,0:y=T,1:y=F,1:x=T
+Com=Fr Fr
+Orig=FenceMbdWROnceOnce FreOnceOnce PodWROnceAcquire FreAcquireOnce
+
+{0:X2=y; 0:X0=x; 1:X2=x; 1:X0=y;}
+
+ P0          | P1           ;
+ MOV W3,#1   | MOV W3,#1    ;
+ STR W3,[X0] | STR W3,[X0]  ;
+ DMB SY      | LDAR W1,[X2] ;
+ LDR W1,[X2] |              ;
+
+
+
+exists (0:X1=0 /\ 1:X1=0)

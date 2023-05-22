@@ -1,0 +1,18 @@
+AArch64 MP+dmb.st+rmw-rfi-addr
+"DMB.STdWW Rfe Rmw Rfi DpAddrdR Fre"
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Rf Fr
+Orig=DMB.STdWW Rfe Rmw Rfi DpAddrdR Fre
+{
+0:X1=x; 0:X3=y;
+1:X0=y; 1:X7=x;
+}
+ P0          | P1                  ;
+ MOV W0,#1   | MOV W2,#2           ;
+ STR W0,[X1] | LDXR W1,[X0]        ;
+ DMB ST      | STXR W3,W2,[X0]     ;
+ MOV W2,#1   | LDR W4,[X0]         ;
+ STR W2,[X3] | AND W5,W4,#128      ;
+             | LDR W6,[X7,W5,SXTW] ;
+exists
+(y=2 /\ 1:X3=0 /\ 1:X1=1 /\ 1:X4=2 /\ 1:X6=0)

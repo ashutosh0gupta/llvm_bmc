@@ -1,0 +1,14 @@
+AArch64 auto/LB-LRW+R-A+R-A
+Mapping=0:X0=r1,1:X0=r1,2:X0=r1
+Hash=5ed304d4c648900ddf7d0b42120554f0
+
+{0:X2=x1; 0:X1=u0; 1:X2=x2; 1:X1=x1; 2:X2=u0; 2:X1=x2;}
+
+ P0           | P1           | P2           ;
+ LDR W0,[X1]  | LDAR W0,[X1] | LDAR W0,[X1] ;
+ MOV W3,#1    | MOV W3,#1    | MOV W3,#1    ;
+ STLR W3,[X2] | STLR W3,[X2] | STR W3,[X2]  ;
+
+
+
+exists (0:X0=1 /\ 1:X0=1 /\ 2:X0=1)

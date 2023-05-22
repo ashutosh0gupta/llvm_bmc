@@ -1,0 +1,21 @@
+AArch64 auto/RW-G+RW-R+RW-G+RW-R-Auxiliary
+Mapping=0:X5=r60201,0:X3=r60101,0:X0=r1,1:X4=r1,1:X2=r50201,1:X0=r50101,2:X5=r60202,2:X3=r60102,2:X0=r1,3:X4=r1,3:X2=r50202,3:X0=r50102
+Hash=eb7b5f39a88ff01f3af56b8b81cd91fa
+
+{0:X7=x1; 0:X6=csend02; 0:X4=csend01; 0:X2=gpstart01; 0:X1=x0; 1:X7=csend01; 1:X6=x2; 1:X5=x1; 1:X3=gpstart02; 1:X1=gpstart01; 2:X7=x3; 2:X6=csend02; 2:X4=csend01; 2:X2=gpstart02; 2:X1=x2; 3:X7=csend02; 3:X6=x0; 3:X5=x3; 3:X3=gpstart02; 3:X1=gpstart01;}
+
+ P0           | P1           | P2           | P3           ;
+ LDR W0,[X1]  | LDAR W0,[X1] | LDR W0,[X1]  | LDAR W0,[X1] ;
+ DMB SY       | LDAR W2,[X3] | DMB SY       | LDAR W2,[X3] ;
+ MOV W8,#1    | LDR W4,[X5]  | MOV W8,#1    | LDR W4,[X5]  ;
+ STLR W8,[X2] | MOV W8,#1    | STLR W8,[X2] | MOV W8,#1    ;
+ DMB SY       | STR W8,[X6]  | DMB SY       | STR W8,[X6]  ;
+ LDAR W3,[X4] | MOV W8,#1    | LDAR W3,[X4] | MOV W8,#1    ;
+ LDAR W5,[X6] | STLR W8,[X7] | LDAR W5,[X6] | STLR W8,[X7] ;
+ DMB SY       |              | DMB SY       |              ;
+ MOV W8,#1    |              | MOV W8,#1    |              ;
+ STR W8,[X7]  |              | STR W8,[X7]  |              ;
+
+
+
+exists (0:X0=1 /\ 1:X4=1 /\ 2:X0=1 /\ 3:X4=1 /\ (1:X0=1 \/ 0:X3=1) /\ (3:X0=1 \/ 0:X5=1) /\ (1:X2=1 \/ 2:X3=1) /\ (3:X2=1 \/ 2:X5=1))

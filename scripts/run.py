@@ -70,7 +70,7 @@ for ex in exs:
    print(ex[0]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
    result = subprocess.check_output(["time", run, str(l), str(lk), f, s ],stderr=subprocess.STDOUT)
    result=result.decode("utf-8")
-   # print(result)
+   print(result)
    # exit()
    time = find_time(result)
    print(time[0]+"\t"+time[1])

@@ -1,0 +1,17 @@
+AArch64 ALAN1
+(* From Alan Stern. Allowed in a model that lets reads issue
+before a po-previous load-acquire is satisfied (but after it was
+issued). *)
+{
+0:X1=z; 0:X3=u; 0:X5=x; 0:X7=y;
+1:X1=y; 1:X3=z; 1:X5=u; 1:X7=v;
+2:X1=v; 2:X3=x;
+}
+ P0           | P1           | P2          ;
+ LDR W0,[X1]  | MOV W0,#1    | LDR W0,[X1] ;
+ STR W0,[X3]  | STR W0,[X1]  | DMB SY      ;
+ LDAR W2,[X5] | STLR W0,[X3] | MOV W2,#1   ;
+ LDR W4,[X7]  | LDR W2,[X5]  | STR W2,[X3] ;
+              | STR W2,[X7]  |             ;
+exists
+(0:X0=1 /\ 0:X2=1 /\ 0:X4=0 /\ 1:X2=1 /\ 2:X0=1)

@@ -1,0 +1,26 @@
+AArch64 JMM00
+"Based on: DMB.STdWW Rfe DMB.STdRW Rfe DpAddrdR Fre"
+{
+int t1;
+int *a;
+int *t2;
+int *b;
+int * 1:X0;
+%t10=t1; %a0=a;
+%a1=a; %t21=t2; %b1=b;
+%b2=b;
+int * 2:X0; int * 2:X1;
+2:X4=-1;
+}
+ P0               | P1               | P2                  ;
+ MOV W0,#1        | LDR X0,[X%a1]    | LDR X0,[X%b2]       ;
+ STR W0,[X%t10]   | STR X0,[X%t21]   | CBZ X0,LEXIT        ;
+ DMB ST           | DMB ST           | LDR X1,[X0]         ;
+ STR X%t10,[X%a0] | STR X%t21,[X%b1] | CBZ X1,LEXIT        ;
+                  |                  | LDR X2,[X%b2]       ;
+                  |                  | LDR X3,[X2]         ;
+                  |                  | LDR W4,[X3]         ;
+                  |                  |LEXIT:               ;
+locations [1:X0;2:X0;2:X1;]
+~exists (2:X4=0)
+

@@ -1,0 +1,23 @@
+AArch64 Z6.2+fencembonceonce+poacquireonce+fencembonceonce
+"FenceMbdWWOnceOnce RfeOnceAcquire PodRWAcquireOnce RfeOnceOnce FenceMbdRWOnceOnce WseOnceOnce"
+Mapping=1:X0=r0,2:X0=r0
+Hash=2cd719403647687c690715bdc7ad6bee
+Cycle=PodRWAcquireOnce RfeOnceOnce FenceMbdRWOnceOnce WseOnceOnce FenceMbdWWOnceOnce RfeOnceAcquire
+Relax=RfeOnceAcquire
+Safe=PodRWAcquireOnce RfeOnceOnce WseOnceOnce FenceMbdWWOnceOnce FenceMbdRWOnceOnce
+Prefetch=0:x=F,0:y=W,1:y=F,1:z=W,2:z=F,2:x=W
+Com=Rf Rf Ws
+Orig=FenceMbdWWOnceOnce RfeOnceAcquire PodRWAcquireOnce RfeOnceOnce FenceMbdRWOnceOnce WseOnceOnce
+
+{0:X1=y; 0:X0=x; 1:X2=z; 1:X1=y; 2:X2=x; 2:X1=z;}
+
+ P0          | P1           | P2          ;
+ MOV W2,#2   | LDAR W0,[X1] | LDR W0,[X1] ;
+ STR W2,[X0] | MOV W3,#1    | DMB SY      ;
+ DMB SY      | STR W3,[X2]  | MOV W3,#1   ;
+ MOV W2,#1   |              | STR W3,[X2] ;
+ STR W2,[X1] |              |             ;
+
+
+
+exists (x=2 /\ 1:X0=1 /\ 2:X0=1)

@@ -1,0 +1,16 @@
+AArch64 ARMv8-csel-addr-write
+(* Is the dependence from P0 load to store ctrl or address? *)
+{
+0:X7=x; 0:X8=y; 0:X9=u;
+int * 0:X2;
+1:X7=x; 1:X8=y;
+
+}
+  P0              |  P1         ;
+ LDR W1,[X7]      |             ;
+ CMP W1,#0        | LDR W3,[X8] ;
+ CSEL X2,X8,X9,NE | DMB SY      ;
+ MOV W3,#1        | MOV W2,#1   ;
+ STR W3,[X2]      | STR W2,[X7] ;
+locations [0:X2;]
+exists (0:X1=1 /\ 1:X3=1)

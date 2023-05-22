@@ -77,6 +77,7 @@ void bmc::run_bmc_pass() {
   passMan.run( *module.get() );
 
   if( o.kbound ) {
+    if(b.sys_spec.)
     collect_globals( module, *this, o.mem_enc, o.solver_ctx, o );
     passMan.add( new kbound(o, module, *this) );
     passMan.run( *module.get() );

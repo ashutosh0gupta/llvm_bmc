@@ -1,0 +1,24 @@
+AArch64 S+fencembonceonce+dataoncerelease-wsireleaseonce-rfionceonce-frionceonce
+"FenceMbdWWOnceOnce RfeOnceOnce DpDatadWOnceRelease WsiReleaseOnce RfiOnceOnce FriOnceOnce WseOnceOnce"
+Mapping=1:X4=r2,1:X2=r1,1:X0=r0
+Hash=67c76e2cf283258298acb993aea63b73
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Ws
+Orig=FenceMbdWWOnceOnce RfeOnceOnce DpDatadWOnceRelease WsiReleaseOnce RfiOnceOnce FriOnceOnce WseOnceOnce
+
+{0:X1=y; 0:X0=x; 1:X3=x; 1:X1=y;}
+
+ P0          | P1           ;
+ MOV W2,#4   | LDR W0,[X1]  ;
+ STR W2,[X0] | EOR W2,W0,W0 ;
+ DMB SY      | ADD W2,W2,#1 ;
+ MOV W2,#1   | STLR W2,[X3] ;
+ STR W2,[X1] | MOV W5,#2    ;
+             | STR W5,[X3]  ;
+             | LDR W4,[X3]  ;
+             | MOV W5,#3    ;
+             | STR W5,[X3]  ;
+
+
+
+exists (x=4 /\ 1:X0=1 /\ 1:X4=2)

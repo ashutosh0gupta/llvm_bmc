@@ -1,0 +1,25 @@
+AArch64 2+2W+dmb.sy+rfi-ctrl-ctrl
+"DMB.SYdWW Wse Rfi DpCtrldR DpCtrldW Wse"
+Cycle=Rfi DpCtrldR DpCtrldW Wse DMB.SYdWW Wse
+Relax=
+Safe=Rfi Wse DMB.SYdWW DpCtrldW DpCtrldR
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Ws Ws
+Orig=DMB.SYdWW Wse Rfi DpCtrldR DpCtrldW Wse
+{
+0:X1=x; 0:X3=y;
+1:X1=y; 1:X4=z; 1:X6=x;
+}
+ P0          | P1           ;
+ MOV W0,#2   | MOV W0,#2    ;
+ STR W0,[X1] | STR W0,[X1]  ;
+ DMB SY      | LDR W2,[X1]  ;
+ MOV W2,#1   | CBNZ W2,LC00 ;
+ STR W2,[X3] | LC00:        ;
+             | LDR W3,[X4]  ;
+             | CBNZ W3,LC01 ;
+             | LC01:        ;
+             | MOV W5,#1    ;
+             | STR W5,[X6]  ;
+exists
+(x=2 /\ y=2 /\ 1:X2=2)

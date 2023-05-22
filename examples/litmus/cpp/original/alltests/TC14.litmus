@@ -1,0 +1,23 @@
+AArch64 TC14
+Mapping=0:X4=r2,0:X2=r9,0:X0=r1,1:X4=r9,1:X2=r3,1:X0=r2
+Hash=534d437f1c1019f6b19358f68a82b4b0
+
+{0:X5=b; 0:X3=y; 0:X1=a; 1:X5=a; 1:X3=b; 1:X1=y; a=0; b=0; y=0;}
+
+ P0                 | P1           ;
+ LDR W0,[X1]        | DMB SY       ;
+ CMP W0,#0          | LDR W0,[X1]  ;
+ B.NE label22       | DMB SY       ;
+ DMB SY             | LDR W2,[X3]  ;
+ MOV W6,#1          | CMP W0,#0    ;
+ STR W6,[X3]        | B.EQ label24 ;
+ DMB SY             | CMP W2,#0    ;
+ CMP W4,#0          | B.EQ label24 ;
+ B.EQ label23       | MOV W6,#1    ;
+ label22: MOV W6,#1 | STR W6,[X5]  ;
+ STR W6,[X5]        | label24:     ;
+ label23:           |              ;
+
+
+
+exists (0:X0=1 /\ 1:X0=0 /\ 1:X2=1)

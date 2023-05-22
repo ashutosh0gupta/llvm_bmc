@@ -1,0 +1,16 @@
+AArch64 RW-rra+RW-ra+RW-rra+CK
+Mapping=0:X0=r2,1:X0=r1,2:X2=r2,2:X0=r1,
+Hash=61e572602c0e1e454f06dc3295f0c76c
+
+{0:X2=x1; 0:X1=y; 1:X2=x2; 1:X1=x1; 2:X3=z; 2:X1=x2; 3:X1=y; 3:X0=z;}
+
+ P0           | P1           | P2           | P3          ;
+ LDR W0,[X1]  | LDAR W0,[X1] | LDAR W0,[X1] | MOV W2,#1   ;
+ MOV W3,#1    | MOV W3,#1    | LDR W2,[X3]  | STR W2,[X0] ;
+ STLR W3,[X2] | STLR W3,[X2] |              | DMB SY      ;
+              |              |              | MOV W2,#1   ;
+              |              |              | STR W2,[X1] ;
+
+
+
+exists (1:X0=1 /\ 2:X0=1 /\ 0:X0=1 /\ 2:X2=0)

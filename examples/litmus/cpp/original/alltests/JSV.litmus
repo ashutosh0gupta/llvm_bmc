@@ -1,0 +1,19 @@
+AArch64 JSV
+"This is a Javascript violation, from Stephen Dolan"
+{
+uint64_t y; uint64_t x; uint64_t z;
+
+uint64_t 1:X2;
+uint64_t 1:X4;
+uint64_t 1:X6;
+
+0:X0=1; 0:X1=x; 0:X2=2; 0:X3=y; 0:X4=z;
+1:X0=2; 1:X1=y; 1:X3=x; 1:X5=z;
+}
+ P0           | P1           ;
+ STLR X0,[X1] | STLR X0,[X1] ;
+ STLR X2,[X1] | LDAR X2,[X3] ;
+ STR X0,[X3]  | LDAR X4,[X5] ;
+ STLR X0,[X4] | LDAR X6,[X1] ;
+exists
+(x=2 /\ 1:X2=1 /\ 1:X4=1 /\ 1:X6=2 /\ (y=1 \/ y=2))

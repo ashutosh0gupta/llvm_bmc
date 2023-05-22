@@ -1,0 +1,21 @@
+AArch64 IRWIW+poacquirerelease+poonceonce+OnceOnce
+"RfeOnceAcquire PodRWAcquireRelease WseReleaseOnce RfeOnceOnce PodRWOnceOnce WseOnceOnce"
+Mapping=1:X0=r0,3:X0=r0
+Hash=d67dc91b698bbb1c4d64d9b388cb0fd3
+Cycle=PodRWAcquireRelease WseReleaseOnce RfeOnceOnce PodRWOnceOnce WseOnceOnce RfeOnceAcquire
+Relax=RfeOnceAcquire WseReleaseOnce
+Safe=PodRWAcquireRelease RfeOnceOnce WseOnceOnce PodRWOnceOnce
+Prefetch=1:x=F,1:y=W,3:y=F,3:x=W
+Com=Rf Ws Rf Ws
+Orig=RfeOnceAcquire PodRWAcquireRelease WseReleaseOnce RfeOnceOnce PodRWOnceOnce WseOnceOnce
+
+{0:X0=x; 1:X2=y; 1:X1=x; 2:X0=y; 3:X2=x; 3:X1=y;}
+
+ P0          | P1           | P2          | P3          ;
+ MOV W1,#2   | LDAR W0,[X1] | MOV W1,#2   | LDR W0,[X1] ;
+ STR W1,[X0] | MOV W3,#1    | STR W1,[X0] | MOV W3,#1   ;
+             | STLR W3,[X2] |             | STR W3,[X2] ;
+
+
+
+exists (x=2 /\ y=2 /\ 1:X0=2 /\ 3:X0=2)

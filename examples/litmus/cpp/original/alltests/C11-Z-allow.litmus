@@ -1,0 +1,43 @@
+AArch64 C11-Z-allow
+
+(*
+Another test by Skaked.
+
+Consider this C11 forbidden execution:
+,-> a:Wsc  x=2       ,-> d:Rsc x=4       ,-- f:Wrlx y=1
+|   b:Wrlx x=3      /    e:Rsc y=1 <-rf-'    g:Wsc  y=2
+|   c:Wrlx x=4 -rf-'                         h:Wsc  x=1
+|                                              |
+'--------------------------co------------------'
+
+mapped to AArch64:
+,-> a:Wrel x=2       ,-> d:Racq x=4       ,-- f:W    y=1
+|   b:W    x=3      /    e:Racq y=1 <-rf-'    g:Wrel y=2
+|   c:W    x=4 -rf-'                          h:Wrel x=1
+|                                               |
+'--------------------------co-------------------'
+
+We use the satisfied load-acquire token to forbid this execution. But at
+the same time we want a similar execution that differs only by the co-order
+of x, 2;1;3;4, to be allowed as it is allowed by C11.
+
+*)
+Hash=5037f85836efadc60c18226fc2e8c699
+{
+0:X1=x;
+1:X1=x; 1:X3=y;
+2:X1=x; 2:X3=y; 
+}
+
+ P0           | P1           | P2          ;
+ MOV W0,#2    | LDAR W2,[X1] | MOV W0,#1   ;
+ STLR W0,[X1] | LDAR W4,[X3] | STR W0,[X3] ;
+ LDR W5,[X1]  |              | MOV W2,#2   ;
+ MOV W3,#3    |              | STLR W2,[X3];
+ STR W3,[X1]  |              | MOV W5,#1   ;
+ MOV W4,#4    |              | STLR W5,[X1];
+ STR W4,[X1]  |		     | LDR W4,[X1] ;
+
+locations [x;y;]
+exists
+ 0:X5=1 /\ 2:X4=3 /\ 1:X2=4 /\ 1:X4=1

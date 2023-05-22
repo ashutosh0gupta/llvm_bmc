@@ -1,0 +1,22 @@
+AArch64 R+poreleaseonce+fencembonceonce
+"PodWWReleaseOnce WseOnceOnce FenceMbdWROnceOnce FreOnceRelease"
+Mapping=1:X1=r0
+Hash=b7d040162d3f46330c1844933b79c1d6
+Cycle=WseOnceOnce FenceMbdWROnceOnce FreOnceRelease PodWWReleaseOnce
+Relax=FreOnceRelease
+Safe=WseOnceOnce FenceMbdWROnceOnce PodWWReleaseOnce
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Ws Fr
+Orig=PodWWReleaseOnce WseOnceOnce FenceMbdWROnceOnce FreOnceRelease
+
+{0:X1=y; 0:X0=x; 1:X2=x; 1:X0=y;}
+
+ P0           | P1          ;
+ MOV W2,#1    | MOV W3,#2   ;
+ STLR W2,[X0] | STR W3,[X0] ;
+ MOV W2,#1    | DMB SY      ;
+ STR W2,[X1]  | LDR W1,[X2] ;
+
+
+
+exists (y=2 /\ 1:X1=0)

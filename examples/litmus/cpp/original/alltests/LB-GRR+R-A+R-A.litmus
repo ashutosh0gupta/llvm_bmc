@@ -1,0 +1,16 @@
+AArch64 auto/LB-GRR+R-A+R-A
+Mapping=0:X0=r1,1:X0=r1,2:X2=r2,2:X0=r1,
+Hash=22881d0810ddae9a14d9257f3338e707
+
+{0:X2=x1; 0:X1=u0; 1:X2=x2; 1:X1=x1; 2:X3=v0; 2:X1=x2; 3:X1=u0; 3:X0=v0;}
+
+ P0           | P1           | P2           | P3          ;
+ LDR W0,[X1]  | LDAR W0,[X1] | LDAR W0,[X1] | MOV W2,#1   ;
+ MOV W3,#1    | MOV W3,#1    | LDR W2,[X3]  | STR W2,[X0] ;
+ STLR W3,[X2] | STLR W3,[X2] |              | DMB SY      ;
+              |              |              | MOV W2,#1   ;
+              |              |              | STR W2,[X1] ;
+
+
+
+exists (2:X2=0 /\ 0:X0=1 /\ 1:X0=1 /\ 2:X0=1)

@@ -1,0 +1,16 @@
+AArch64 S+o-wb-o+o-mb-o
+Mapping=1:X0=r1
+Hash=f9636125fa38aa0b480ebcfc44292b74
+
+{0:X1=x; 0:X0=y; 1:X2=y; 1:X1=x; x=0; y=0;}
+
+ P0          | P1          ;
+ MOV W2,#2   | LDR W0,[X1] ;
+ STR W2,[X0] | DMB SY      ;
+ DMB ST      | MOV W3,#1   ;
+ MOV W2,#1   | STR W3,[X2] ;
+ STR W2,[X1] |             ;
+
+
+
+exists (y=2 /\ 1:X0=1)

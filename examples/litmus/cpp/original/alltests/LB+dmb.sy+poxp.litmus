@@ -1,0 +1,22 @@
+AArch64 LB+dmb.sy+poxp
+"DMB.SYdRW RfePX PodRWXP Rfe"
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=DMB.SYdRW RfePX PodRWXP Rfe
+{ ok=1;
+0:X1=x; 0:X3=y;
+1:X0=y; 1:X4=x; 1:X6=ok;
+}
+ P0          | P1              ;
+ LDR W0,[X1] | LDXR W1,[X0]    ;
+ DMB SY      | STXR W2,W1,[X0] ;
+ MOV W2,#1   | CBNZ W2,Fail1   ;
+ STR W2,[X3] | MOV W3,#1       ;
+             | STR W3,[X4]     ;
+             | B Exit1         ;
+             | Fail1:          ;
+             | MOV W5,#0       ;
+             | STR W5,[X6]     ;
+             | Exit1:          ;
+exists
+(ok=1 /\ y=1 /\ 0:X0=1 /\ 1:X1=1)

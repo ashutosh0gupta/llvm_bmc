@@ -1,0 +1,24 @@
+AArch64 SB+dmb.sy+wsi-rfi-addr-rfi
+"DMB.SYdWR Fre Wsi Rfi DpAddrdW Rfi Fre"
+Cycle=Rfi Fre DMB.SYdWR Fre Wsi Rfi DpAddrdW
+Relax=
+Safe=Rfi Fre Wsi DMB.SYdWR DpAddrdW
+Prefetch=0:x=F,0:y=T,1:y=F,1:x=T
+Com=Fr Fr
+Orig=DMB.SYdWR Fre Wsi Rfi DpAddrdW Rfi Fre
+{
+0:X1=x; 0:X3=y;
+1:X1=y; 1:X6=x;
+}
+ P0          | P1                  ;
+ MOV W0,#2   | MOV W0,#1           ;
+ STR W0,[X1] | STR W0,[X1]         ;
+ DMB SY      | MOV W2,#2           ;
+ LDR W2,[X3] | STR W2,[X1]         ;
+             | LDR W3,[X1]         ;
+             | EOR W4,W3,W3        ;
+             | MOV W5,#1           ;
+             | STR W5,[X6,W4,SXTW] ;
+             | LDR W7,[X6]         ;
+exists
+(x=2 /\ y=2 /\ 0:X2=0 /\ 1:X3=2 /\ 1:X7=1)

@@ -1,0 +1,16 @@
+AArch64 auto/LB-GRR+OB-OB
+Mapping=0:X0=r1,1:X2=r2,1:X0=r1,
+Hash=aa473dab1881e9033debefc508a8331d
+
+{0:X2=x1; 0:X1=u0; 1:X3=v0; 1:X1=x1; 2:X1=u0; 2:X0=v0;}
+
+ P0          | P1          | P2          ;
+ LDR W0,[X1] | LDR W0,[X1] | MOV W2,#1   ;
+ DMB SY      | DMB SY      | STR W2,[X0] ;
+ MOV W3,#1   | LDR W2,[X3] | DMB SY      ;
+ STR W3,[X2] |             | MOV W2,#1   ;
+             |             | STR W2,[X1] ;
+
+
+
+exists (1:X2=0 /\ 0:X0=1 /\ 1:X0=1)

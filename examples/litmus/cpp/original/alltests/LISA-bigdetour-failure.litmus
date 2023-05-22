@@ -1,0 +1,21 @@
+AArch64 LISA-bigdetour-failure
+"PodWWOnceRelease RfeReleaseOnce DpAddrdROnceOnce FrLeaveOnceOnce RfeOnceOnce PodRWOnceRelease RfBackReleaseOnce DpAddrdROnceOnce FreOnceOnce"
+Mapping=1:X8=r5,1:X7=r4,1:X5=r3,1:X3=r2,1:X2=r1,1:X0=r0,3:X0=r0
+Hash=86b79afa1538590b64d78b340153248a
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T,3:z=F,3:a=W
+Com=Rf Fr Rf Rf
+Orig=PodWWOnceRelease RfeReleaseOnce DpAddrdROnceOnce FrLeaveOnceOnce RfeOnceOnce PodRWOnceRelease RfBackReleaseOnce DpAddrdROnceOnce FreOnceOnce
+
+{0:X1=y; 0:X0=x; 1:X9=x; 1:X6=a; 1:X4=z; 1:X1=y; 2:X0=z; 3:X2=a; 3:X1=z;}
+
+ P0           | P1                  | P2          | P3           ;
+ MOV W2,#1    | LDR W0,[X1]         | MOV W1,#1   | LDR W0,[X1]  ;
+ STR W2,[X0]  | AND W2,W0,#8        | STR W1,[X0] | MOV W3,#1    ;
+ MOV W2,#1    | LDR W3,[X4,W2,SXTW] |             | STLR W3,[X2] ;
+ STLR W2,[X1] | LDR W5,[X6]         |             |              ;
+              | AND W7,W5,#8        |             |              ;
+              | LDR W8,[X9,W7,SXTW] |             |              ;
+
+
+
+exists (1:X0=1 /\ 1:X3=0 /\ 1:X5=1 /\ 1:X8=0 /\ 3:X0=1)

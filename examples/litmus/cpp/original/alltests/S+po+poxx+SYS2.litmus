@@ -1,0 +1,20 @@
+AArch64 S+po+poxx+SYS2
+"PodWW RfePX PodRWXX WseXP"
+Cycle=PodWW RfePX PodRWXX WseXP
+Relax=RfePX WseXP
+Safe=PodWW PodRW
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Ws
+Orig=PodWW RfePX PodRWXX WseXP
+{
+0:X1=x; 0:X3=y;
+1:X0=y; 1:X3=x;
+}
+ P0          | P1              ;
+ MOV W0,#2   | LDXR W1,[X0]    ;
+ STR W0,[X1] | STXR W2,W1,[X0] ;
+ MOV W2,#1   | MOV W4,#1       ;
+ STR W2,[X3] | LDXR W5,[X3]    ;
+             | STXR W6,W4,[X3] ;
+exists
+(x=2 /\ y=1 /\ 1:X6=0 /\ 1:X2=0 /\ 1:X1=1 /\ 1:X5=0)

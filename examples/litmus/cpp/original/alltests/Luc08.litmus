@@ -1,0 +1,18 @@
+AArch64 Luc08
+"RfeOnceOnce PodRWOnceRelease RfeReleaseAcquire PodRWAcquireRelease RfeReleaseAcquire PodRWAcquireRelease RfeReleaseAcquire PodRWAcquireOnce"
+Mapping=0:X0=r0,1:X0=r0,2:X0=r0,3:X0=r0
+Hash=319dad3c345842a40bb7b52e7ccc3593
+Prefetch=0:x=F,0:y=W,1:y=F,1:z=W,2:z=F,2:a=W,3:a=F,3:x=W
+Com=Rf Rf Rf Rf
+Orig=RfeOnceOnce PodRWOnceRelease RfeReleaseAcquire PodRWAcquireRelease RfeReleaseAcquire PodRWAcquireRelease RfeReleaseAcquire PodRWAcquireOnce
+
+{0:X2=y; 0:X1=x; 1:X2=z; 1:X1=y; 2:X2=a; 2:X1=z; 3:X2=x; 3:X1=a;}
+
+ P0           | P1           | P2           | P3           ;
+ LDR W0,[X1]  | LDAR W0,[X1] | LDAR W0,[X1] | LDAR W0,[X1] ;
+ MOV W3,#1    | MOV W3,#1    | MOV W3,#1    | MOV W3,#1    ;
+ STLR W3,[X2] | STLR W3,[X2] | STLR W3,[X2] | STR W3,[X2]  ;
+
+
+
+exists (0:X0=1 /\ 1:X0=1 /\ 2:X0=1 /\ 3:X0=1)

@@ -1,0 +1,19 @@
+AArch64 MP+poslp-rfipa-poap+addr
+"PosWWLP RfiPA PodRWAP Rfe DpAddrdR FrePL"
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Rf Fr
+Orig=PosWWLP RfiPA PodRWAP Rfe DpAddrdR FrePL
+{
+0:X1=x; 0:X5=y;
+1:X1=y; 1:X4=x;
+}
+ P0           | P1                  ;
+ MOV W0,#1    | LDR W0,[X1]         ;
+ STLR W0,[X1] | EOR W2,W0,W0        ;
+ MOV W2,#2    | LDR W3,[X4,W2,SXTW] ;
+ STR W2,[X1]  |                     ;
+ LDAR W3,[X1] |                     ;
+ MOV W4,#1    |                     ;
+ STR W4,[X5]  |                     ;
+exists
+(x=2 /\ 0:X3=2 /\ 1:X0=1 /\ 1:X3=0)

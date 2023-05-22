@@ -1,0 +1,17 @@
+AArch64 LB+o-branch-o+o-branch-o
+Mapping=0:X2=r3,0:X0=r1,1:X2=r4,1:X0=r2
+Hash=fa12972be788905c5639069030a20a7b
+
+{0:X3=y; 0:X1=x; 1:X3=x; 1:X1=y; x=0; y=0;}
+
+ P0           | P1           ;
+ LDR W0,[X1]  | LDR W0,[X1]  ;
+ CMP W0,#0    | CMP W0,#0    ;
+ B.EQ label11 | B.EQ label12 ;
+ MOV W4,#1    | MOV W4,#1    ;
+ STR W4,[X3]  | STR W4,[X3]  ;
+ label11:     | label12:     ;
+
+
+
+exists (0:X0=1 /\ 1:X0=1)

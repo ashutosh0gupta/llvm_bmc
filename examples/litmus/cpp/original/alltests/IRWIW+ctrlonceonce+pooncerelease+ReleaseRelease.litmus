@@ -1,0 +1,23 @@
+AArch64 IRWIW+ctrlonceonce+pooncerelease+ReleaseRelease
+"RfeReleaseOnce DpCtrldWOnceOnce WseOnceRelease RfeReleaseOnce PodRWOnceRelease WseReleaseRelease"
+Mapping=1:X2=r1,1:X0=r0,3:X0=r0
+Hash=3c486842e309a80a164a23ca249c7bed
+Cycle=DpCtrldWOnceOnce WseOnceRelease RfeReleaseOnce PodRWOnceRelease WseReleaseRelease RfeReleaseOnce
+Relax=WseOnceRelease RfeReleaseOnce WseReleaseRelease
+Safe=DpCtrldWOnceOnce PodRWOnceRelease
+Prefetch=1:x=F,1:y=W,3:y=F,3:x=W
+Com=Rf Ws Rf Ws
+Orig=RfeReleaseOnce DpCtrldWOnceOnce WseOnceRelease RfeReleaseOnce PodRWOnceRelease WseReleaseRelease
+
+{0:X0=x; 1:X3=y; 1:X1=x; 2:X0=y; 3:X2=x; 3:X1=y;}
+
+ P0           | P1                  | P2           | P3           ;
+ MOV W1,#2    | LDR W0,[X1]         | MOV W1,#2    | LDR W0,[X1]  ;
+ STLR W1,[X0] | CMP W0,#0           | STLR W1,[X0] | MOV W3,#1    ;
+              | B.EQ label164       |              | STLR W3,[X2] ;
+              | label164: MOV W4,#1 |              |              ;
+              | STR W4,[X3]         |              |              ;
+
+
+
+exists (x=2 /\ y=2 /\ 1:X0=2 /\ 3:X0=2)

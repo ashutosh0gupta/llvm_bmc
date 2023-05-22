@@ -1,0 +1,27 @@
+AArch64 RfiRmw
+(*
+  Test the specific total order case of atomicity,
+  where extern write (by P0) is gmo-in-between
+  of R and W of an atomic pair (by P1).
+  P2 is here to force store-forwarding on P1.
+*)   
+{
+0:X1=x;
+1:X1=x; 1:X5=y;
+2:X1=x; 2:X5=y;
+
+}
+ P0          | P1                  | P2          ;
+ MOV W0,#1   | MOV W0,#2           | MOV W0,#1   ;
+ STR W0,[X1] | STR W0,[X1]         | STR W0,[X5] ;
+             | MOV W3,#3           | DMB SY      ;
+             | LDXR W2,[X1]        | LDR W2,[X1] ;
+             | STXR W4,W3,[X1]     |             ;
+             | AND W9,W2,#128      |             ;
+             | LDR W8,[X5,W9,SXTW] |             ;
+exists
+(x = 3)
+/\
+(1:X4=0 /\ 1:X2=2)
+/\
+(1:X8=0 /\ 2:X2=0)

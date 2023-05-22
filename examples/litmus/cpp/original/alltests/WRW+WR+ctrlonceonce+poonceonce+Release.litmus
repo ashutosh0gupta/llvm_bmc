@@ -1,0 +1,23 @@
+AArch64 WRW+WR+ctrlonceonce+poonceonce+Release
+"RfeReleaseOnce DpCtrldWOnceOnce WseOnceOnce PodWROnceOnce FreOnceRelease"
+Mapping=1:X2=r1,1:X0=r0,2:X1=r0
+Hash=0f81264083d73c56c897d413592fbee6
+Cycle=WseOnceOnce PodWROnceOnce FreOnceRelease RfeReleaseOnce DpCtrldWOnceOnce
+Relax=FreOnceRelease RfeReleaseOnce
+Safe=WseOnceOnce PodWROnceOnce DpCtrldWOnceOnce
+Prefetch=1:x=F,1:y=W,2:y=F,2:x=T
+Com=Rf Ws Fr
+Orig=RfeReleaseOnce DpCtrldWOnceOnce WseOnceOnce PodWROnceOnce FreOnceRelease
+
+{0:X0=x; 1:X3=y; 1:X1=x; 2:X2=x; 2:X0=y;}
+
+ P0           | P1                  | P2          ;
+ MOV W1,#1    | LDR W0,[X1]         | MOV W3,#2   ;
+ STLR W1,[X0] | CMP W0,#0           | STR W3,[X0] ;
+              | B.EQ label124       | LDR W1,[X2] ;
+              | label124: MOV W4,#1 |             ;
+              | STR W4,[X3]         |             ;
+
+
+
+exists (y=2 /\ 1:X0=1 /\ 2:X1=0)

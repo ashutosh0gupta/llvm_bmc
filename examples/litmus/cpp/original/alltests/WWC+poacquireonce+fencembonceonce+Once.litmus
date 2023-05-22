@@ -1,0 +1,22 @@
+AArch64 WWC+poacquireonce+fencembonceonce+Once
+"RfeOnceAcquire PodRWAcquireOnce RfeOnceOnce FenceMbdRWOnceOnce WseOnceOnce"
+Mapping=1:X0=r0,2:X0=r0
+Hash=15ad02b1591ded8a6287db0f7859fea9
+Cycle=PodRWAcquireOnce RfeOnceOnce FenceMbdRWOnceOnce WseOnceOnce RfeOnceAcquire
+Relax=RfeOnceAcquire
+Safe=PodRWAcquireOnce RfeOnceOnce WseOnceOnce FenceMbdRWOnceOnce
+Prefetch=1:x=F,1:y=W,2:y=F,2:x=W
+Com=Rf Rf Ws
+Orig=RfeOnceAcquire PodRWAcquireOnce RfeOnceOnce FenceMbdRWOnceOnce WseOnceOnce
+
+{0:X0=x; 1:X2=y; 1:X1=x; 2:X2=x; 2:X1=y;}
+
+ P0          | P1           | P2          ;
+ MOV W1,#2   | LDAR W0,[X1] | LDR W0,[X1] ;
+ STR W1,[X0] | MOV W3,#1    | DMB SY      ;
+             | STR W3,[X2]  | MOV W3,#1   ;
+             |              | STR W3,[X2] ;
+
+
+
+exists (x=2 /\ 1:X0=2 /\ 2:X0=1)

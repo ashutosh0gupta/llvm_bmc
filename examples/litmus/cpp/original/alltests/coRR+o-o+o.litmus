@@ -1,0 +1,13 @@
+AArch64 coRR+o-o+o
+Mapping=0:X2=r2,0:X0=r1,
+Hash=56def69e5b522e805f23e95e9a1a76a1
+
+{0:X1=x; 1:X0=x; x=0;}
+
+ P0          | P1          ;
+ LDR W0,[X1] | MOV W1,#1   ;
+ LDR W2,[X1] | STR W1,[X0] ;
+
+
+
+exists (0:X0=1 /\ 0:X2=0)

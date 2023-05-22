@@ -1,0 +1,19 @@
+AArch64 LB+mb+data
+"FenceMbdRWOnceOnce RfeOnceOnce DpDatadWOnceOnce RfeOnceOnce"
+Mapping=0:X0=r0,1:X2=r1,1:X0=r0
+Hash=3e316f57ab6ab0a45ff6bb771a6bfb7e
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=FenceMbdRWOnceOnce RfeOnceOnce DpDatadWOnceOnce RfeOnceOnce
+
+{0:X2=y; 0:X1=x; 1:X3=x; 1:X1=y;}
+
+ P0          | P1             ;
+ LDR W0,[X1] | LDR W0,[X1]    ;
+ DMB SY      | AND W2,W0,#128 ;
+ MOV W3,#1   | ADD W2,W2,#1   ;
+ STR W3,[X2] | STR W2,[X3]    ;
+
+
+
+exists (0:X0=1 /\ 1:X0=1)

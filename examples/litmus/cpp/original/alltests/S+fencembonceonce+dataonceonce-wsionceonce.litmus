@@ -1,0 +1,21 @@
+AArch64 S+fencembonceonce+dataonceonce-wsionceonce
+"FenceMbdWWOnceOnce RfeOnceOnce DpDatadWOnceOnce WsiOnceOnce WseOnceOnce"
+Mapping=1:X2=r1,1:X0=r0
+Hash=6f7baffec78ca918a6e1fab3eec6893f
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Ws
+Orig=FenceMbdWWOnceOnce RfeOnceOnce DpDatadWOnceOnce WsiOnceOnce WseOnceOnce
+
+{0:X1=y; 0:X0=x; 1:X3=x; 1:X1=y;}
+
+ P0          | P1           ;
+ MOV W2,#3   | LDR W0,[X1]  ;
+ STR W2,[X0] | EOR W2,W0,W0 ;
+ DMB SY      | ADD W2,W2,#1 ;
+ MOV W2,#1   | STR W2,[X3]  ;
+ STR W2,[X1] | MOV W4,#2    ;
+             | STR W4,[X3]  ;
+
+
+
+exists (x=3 /\ 1:X0=1)

@@ -1,0 +1,21 @@
+AArch64 RWC+poonceacquires+Once
+"RfeOnceOnce PodRROnceAcquire FreAcquireOnce PodWROnceAcquire FreAcquireOnce"
+Mapping=1:X2=r1,1:X0=r0,2:X1=r0
+Hash=8c238b2e98461a3f05911cfae1adfa4a
+Cycle=FreAcquireOnce PodWROnceAcquire FreAcquireOnce RfeOnceOnce PodRROnceAcquire
+Relax=FreAcquireOnce
+Safe=PodWROnceAcquire PodRROnceAcquire RfeOnceOnce
+Prefetch=1:x=F,1:y=T,2:y=F,2:x=T
+Com=Rf Fr Fr
+Orig=RfeOnceOnce PodRROnceAcquire FreAcquireOnce PodWROnceAcquire FreAcquireOnce
+
+{0:X0=x; 1:X3=y; 1:X1=x; 2:X2=x; 2:X0=y;}
+
+ P0          | P1           | P2           ;
+ MOV W1,#1   | LDR W0,[X1]  | MOV W3,#1    ;
+ STR W1,[X0] | LDAR W2,[X3] | STR W3,[X0]  ;
+             |              | LDAR W1,[X2] ;
+
+
+
+exists (1:X0=1 /\ 1:X2=0 /\ 2:X1=0)

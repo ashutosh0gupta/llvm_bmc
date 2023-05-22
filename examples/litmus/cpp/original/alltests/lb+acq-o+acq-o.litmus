@@ -1,0 +1,14 @@
+AArch64 LB+acq-o+acq-o
+Mapping=0:X0=r1,1:X0=r3
+Hash=73eef37daac1955fb47681123dbf515a
+
+{0:X2=y; 0:X1=x; 1:X2=x; 1:X1=y; x=0; y=0;}
+
+ P0           | P1           ;
+ LDAR W0,[X1] | LDAR W0,[X1] ;
+ MOV W3,#1    | MOV W3,#1    ;
+ STR W3,[X2]  | STR W3,[X2]  ;
+
+
+
+exists (0:X0=1 /\ 1:X0=1)

@@ -1,0 +1,21 @@
+AArch64 WRC+poonceonce+fencembonceonce+Release
+"RfeReleaseOnce PodRWOnceOnce RfeOnceOnce FenceMbdRROnceOnce FreOnceRelease"
+Mapping=1:X0=r0,2:X2=r1,2:X0=r0
+Hash=bb2f3b180d942e94eff11a16452f6d37
+Cycle=RfeOnceOnce FenceMbdRROnceOnce FreOnceRelease RfeReleaseOnce PodRWOnceOnce
+Relax=FreOnceRelease RfeReleaseOnce
+Safe=RfeOnceOnce PodRWOnceOnce FenceMbdRROnceOnce
+Prefetch=1:x=F,1:y=W,2:y=F,2:x=T
+Com=Rf Rf Fr
+Orig=RfeReleaseOnce PodRWOnceOnce RfeOnceOnce FenceMbdRROnceOnce FreOnceRelease
+
+{0:X0=x; 1:X2=y; 1:X1=x; 2:X3=x; 2:X1=y;}
+
+ P0           | P1          | P2          ;
+ MOV W1,#1    | LDR W0,[X1] | LDR W0,[X1] ;
+ STLR W1,[X0] | MOV W3,#1   | DMB SY      ;
+              | STR W3,[X2] | LDR W2,[X3] ;
+
+
+
+exists (1:X0=1 /\ 2:X0=1 /\ 2:X2=0)

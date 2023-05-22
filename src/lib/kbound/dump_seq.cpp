@@ -415,7 +415,8 @@ void kbound::prefix_seq() {
   // dump_Arrays( "int", reg_list, "NPROC", "NREGS");
 
   dump_Comment("declare arrays for synchronizations");
-  proc_list = { "cl", "cdy", "cds", "cdl", "cisb", "caddr", "ctrl" };
+  proc_list = { "cstart", "creturn", "cl", "cdy", "cds",
+    "cdl", "cisb", "caddr", "ctrl" };
   for( auto ary: proc_list ) dump_Decl_array("int", ary, "NPROC");
   dump_Newline();
 
@@ -538,8 +539,8 @@ void kbound::
 dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
          bool isAcquire, bool isExclusive ) {
 
-  auto gaccess = "("+ tid + ","+ gid + ")";
-  auto cr = "cr"+gaccess;
+  auto gaccess     = "("+ tid + ","+ gid + ")";
+  auto cr          = "cr"+gaccess;
   auto gctx_access = "("+ gid +","+ cr + ")";
 
   dump_Comment("LD: Guess");
@@ -547,7 +548,6 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
   if(isAcquire)     dump_Comment("  : Acquire");
   dump_Assign( "old_cr",  cr);
   dump_Assign_rand_ctx( cr );
-
 
   if( is_sc_semantics ) {
     dump_Comment("Check");
@@ -565,9 +565,9 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
     dump_Assume_geq( cr, "cisb["+ tid + "]" );
     dump_Assume_geq( cr, "cdl[" + tid + "]" );
     dump_Assume_geq( cr, "cl["  + tid + "]" );
-    if( isExclusive ) dump_Assume_geq( cr, "old_cr" );
-    if( isAcquire   ) dump_Assume_geq( cr, "cx"+gaccess ); // extra in lda
-    if( isAcquire   ) dump_geq_globals( cr, "cs"); // extra in lda
+    if( isExclusive ) dump_Assume_geq ( cr, "old_cr" );   // extra in exlusive
+    if( isAcquire   ) dump_Assume_geq ( cr, "cx"+gaccess);// extra in lda
+    if( isAcquire   ) dump_geq_globals( cr, "cs");        // extra in lda
 
     dump_Comment("Update");
     dump_Assign( cval, cr );
@@ -592,15 +592,16 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
   }
   if( isExclusive ) dump_Assign( "delta"+gctx_access, tid );
   if( isExclusive ) active_lax = active_lax + 1;
+  dump_before_return(cr);
 }
 
 void kbound::
 dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
          bool isRelease, bool isExclusive) {
 
-  auto gaccess = "("+ tid + ","+ gid + ")";
-  auto iw = "iw"+gaccess;
-  auto cw = "cw"+gaccess;
+  auto gaccess     = "("+ tid + ","+ gid + ")";
+  auto iw          = "iw"+gaccess;
+  auto cw          = "cw"+gaccess;
   auto gctx_access = "("+ gid +","+ cw + ")";
 
   dump_Comment("ST: Guess");
@@ -656,7 +657,7 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
     if( active_lax > 0 ) dump_Assign( "cx"+gaccess, cw);
     if( isExclusive ) active_lax = active_lax - 1;
   }
-
+  dump_before_return(cw);
 }
 
 
@@ -685,7 +686,7 @@ void kbound::dump_dmbsy() {
   dump_Assume_geq( cdy, "ctrl[" + tid + "]" );
 
   dump_geq_globals( cdy, "cw");
-
+  dump_before_return( cdy );
 }
 
 void kbound::dump_dmbld() {
@@ -695,6 +696,7 @@ void kbound::dump_dmbld() {
   dump_Comment("Check");
   dump_Assume_geq( cdl, "cdy[" + tid + "]" );
   dump_geq_globals( cdl, "cr");
+  dump_before_return(cdl);
 }
 
 void kbound::dump_dmbst() {
@@ -704,6 +706,7 @@ void kbound::dump_dmbst() {
   dump_Comment("Check");
   dump_Assume_geq( cds, "cdy[" + tid + "]" );
   dump_geq_globals( cds, "cw");
+  dump_before_return(cds);
 }
 
 void kbound::dump_isb() {
@@ -714,4 +717,24 @@ void kbound::dump_isb() {
   dump_Assume_geq( cisb, "cdy["   + tid + "]" );
   dump_Assume_geq( cisb, "ctrl["  + tid + "]" );
   dump_Assume_geq( cisb, "caddr[" + tid + "]" );
+  dump_before_return(cisb);
+}
+
+void kbound::dump_before_return( std::string cctx ) {
+  auto creturn = "creturn["+tid+"]";
+  dump_Assume_geq( creturn, cctx  );
+}
+
+void kbound::dump_start_thread() {
+  dump_Comment( "Dumping thread "+ tid );
+  if(is_sc_semantics) dump_Comment( "Thread semanics = SC");
+  dump_Assign( "int ret_thread_"+ tid, "0" );
+
+  auto cdy     = "cdy["     + tid + "]";
+  auto cstart  = "cstart["  + tid + "]";  // if we turn the local variabls
+  auto creturn = "creturn[" + tid + "]";
+  dump_Assign_rand_ctx( cdy     ); //todo : do we need to do this
+  dump_Assign_rand_ctx( cstart  ); //todo : do we need to do this
+  dump_Assign_rand_ctx( creturn ); //todo : do we need to do this
+  dump_Assume_geq( cdy, cstart );
 }
