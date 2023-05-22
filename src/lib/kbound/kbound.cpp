@@ -731,6 +731,7 @@ void kbound::dump_CallInst( unsigned bidx, const llvm::CallInst* call ) {
   assert(call);
   if( llvm::isa<llvm::IntrinsicInst>(call) ) {
   } else if( is_assert(call) ) { dump_CallAssert(bidx, call);
+  } else if( is_assert_fail(call) ) { // do nothing; unreachable will follow
   } else if( is_assume(call) ) { dump_CallAssume( bidx, call);
   } else if( is_nondet(call) ) { dump_CallNondet( bidx, call);
   } else if( is_dmbsy (call) ) { dump_dmbsy();
@@ -745,10 +746,34 @@ void kbound::dump_CallInst( unsigned bidx, const llvm::CallInst* call ) {
   } else if( is_lda   (call) ) { dump_LD_(bidx, call, true,  false);
   } else if( is_ldx   (call) ) { dump_LD_(bidx, call, false, true );
   } else if( is_ldax  (call) ) { dump_LD_(bidx, call, true,  true );
+  } else if( is_thread_create(call) ) { dump_CallThreadCreate( bidx, call );
+  } else if( is_thread_join  (call) ) { dump_CallThreadJoin  ( bidx, call );
   }else{
     LLVM_DUMP(call);
     llvm_bmc_error("kbound", "function call is not recognized !!");
   }
+}
+
+void kbound::dump_CallThreadCreate( unsigned bidx, const llvm::CallInst* call){
+  unsigned j = 0;
+  for (; j < bmc_obj.sys_spec.threads.size(); j++) {
+    if( bmc_obj.sys_spec.threads.at(j).launch_instruction == call )
+      break;
+  }
+  assert( j < bmc_obj.sys_spec.threads.size() );
+  auto child_tid = std::to_string(j);
+  dump_thread_create( bidx, child_tid );
+}
+
+void kbound::dump_CallThreadJoin( unsigned bidx, const llvm::CallInst* call){
+  unsigned j = 0;
+  for (; j < bmc_obj.sys_spec.threads.size(); j++) {
+    if( bmc_obj.sys_spec.threads.at(j).join_instruction == call )
+      break;
+  }
+  assert( j < bmc_obj.sys_spec.threads.size() );
+  auto child_tid = std::to_string(j);
+  dump_thread_join( bidx, child_tid );
 }
 
 void kbound::dump_CastInst( unsigned bidx, const llvm::CastInst* cast ) {

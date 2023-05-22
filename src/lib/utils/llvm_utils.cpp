@@ -1615,6 +1615,11 @@ bool is_assert( const llvm::CallInst* call ) {
   return match_function_names( call, names );
 }
 
+bool is_assert_fail( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "__assert_fail" };
+  return match_function_names( call, names );
+}
+
 bool is_nondet( const llvm::CallInst* call ) {
   std::vector<std::string> names = { "_Z22__VERIFIER_nondet_charv",
                                      "_Z21__VERIFIER_nondet_intv",};
@@ -1623,6 +1628,17 @@ bool is_nondet( const llvm::CallInst* call ) {
 
 bool is_assume( const llvm::CallInst* call ) {
   std::vector<std::string> names = { "_Z6assumeb", "assume", "_Z17__VERIFIER_assumeb" };
+  return match_function_names( call, names );
+}
+
+
+bool is_thread_create( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z6pthread_createb", "pthread_create" };
+  return match_function_names( call, names );
+}
+
+bool is_thread_join( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z6pthread_createb", "pthread_join" };
   return match_function_names( call, names );
 }
 
@@ -2059,7 +2075,8 @@ identify_array( const llvm::Value* op) {
     // llvm::errs() << *ev << "\n";
     // llvm::errs() << "Type of EVAL is " << *(ev->getType()) << "\n";
     auto evi_op = ev->getAggregateOperand();
-    if( auto pty = llvm::dyn_cast<llvm::PointerType>(ev->getType()) ) {
+    if( //auto pty =
+        llvm::dyn_cast<llvm::PointerType>(ev->getType()) ) {
       // llvm::errs() << "POINTER TYPE";
       return identify_lpad_struct(evi_op, 0);
     } else {

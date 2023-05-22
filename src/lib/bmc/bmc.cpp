@@ -4,9 +4,10 @@
 #include "lib/bmc/bmc_loop_pass.h"
 #include "lib/utils/build_name_map.h"
 #include "lib/utils/collect_loopdata.h"
+#include "lib/bmc/collect_globals.h"
+#include "lib/bmc/collect_threads.h"
 #include "lib/utils/llvm_utils.h"
 // #include "lib/bmc/bmc_loop_pass.h"
-#include "lib/bmc/collect_globals.h"
 #include "lib/bmc/ses.h"
 #include "lib/kbound/kbound.h"
 
@@ -77,7 +78,7 @@ void bmc::run_bmc_pass() {
   passMan.run( *module.get() );
 
   if( o.kbound ) {
-    if(b.sys_spec.)
+    collect_threads( module, *this, o );
     collect_globals( module, *this, o.mem_enc, o.solver_ctx, o );
     passMan.add( new kbound(o, module, *this) );
     passMan.run( *module.get() );

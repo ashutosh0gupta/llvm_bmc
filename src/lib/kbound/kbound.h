@@ -123,13 +123,27 @@ private:
 
   void dump_ld( std::string, std::string, std::string, std::string,bool,bool);
   void dump_st( std::string, std::string, std::string, std::string,bool,bool);
+  void dump_dmbsy();
+  void dump_dmbld();
+  void dump_dmbst();
+  void dump_isb();
 
-  unsigned get_word_size(const llvm::Value* v );
-  svec get_init_array(const llvm::Value* v, unsigned size );
+  // thread create
+  void dump_thread_create( unsigned bidx, std::string child_tid );
+  void dump_thread_join  ( unsigned bidx, std::string child_tid );
+
+  // functions to handle start and finish of threads
+  void dump_start_thread();
+  void dump_commit_before_thread_finish( std::string cctx );
 
   //-------------------------------------------------------------------
   void prefix_seq();
   void postfix_seq();
+
+  //-------------------------------------------------------------------
+
+  unsigned get_word_size(const llvm::Value* v );
+  svec get_init_array(const llvm::Value* v, unsigned size );
 
   //---------------------------------------------------------------------
 
@@ -142,7 +156,7 @@ private:
   void dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop);
   void dump_CmpInst    ( unsigned bidx, const llvm::CmpInst* cmp);
   void dump_SelectInst( const llvm::SelectInst *sel );
-  
+ 
   void dump_CallInst( unsigned bidx, const llvm::CallInst* call);
 
   void dump_Active( std::string ctx);
@@ -162,10 +176,6 @@ private:
   void dump_FenceInst( const llvm::FenceInst* fence );
   void dump_ExtractValue( const llvm::ExtractValueInst* eval);
   void dump_geq_globals( std::string c, std::string prop );
-  void dump_dmbsy();
-  void dump_dmbld();
-  void dump_dmbst();
-  void dump_isb();
 
   void addr_name( const llvm::Value* addr, std::string& , std::string&,
                   bool& isLocalUse );
@@ -184,8 +194,10 @@ private:
   void dump_Branch( unsigned bidx, const llvm::BranchInst* br );
   void dump_SwitchInst( unsigned bidx, const llvm::SwitchInst* br );
   void dump_UnreachableInst( unsigned, const llvm::UnreachableInst *I);
-  void dump_before_return( std::string cctx );
-  void dump_start_thread();
+
+  void dump_CallThreadCreate( unsigned bidx, const llvm::CallInst* call );
+  void dump_CallThreadJoin( unsigned bidx, const llvm::CallInst* call );
+
 
   void dump_Thread();
   void dump_Block( unsigned bidx, const bb* b );
