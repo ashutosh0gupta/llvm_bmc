@@ -1,14 +1,14 @@
 /* Copyright (C) 2023 ARM-CBMC
 * This benchmark is part of ARM-CBMC */
 
-#include <pthread.h>
-#include <stdatomic.h>
 #include <assert.h>
 
+#include <pthread.h>
+#include <stdatomic.h>
 // Memory barriers
-void dmbsy();
-void dmbst();
 void dmbld();
+void dmbst();
+void dmbsy();
 void isb();
 
 atomic_int vars[2]; 
@@ -27,7 +27,7 @@ label_1:;
   int v8_W6 = atomic_load_explicit(&vars[0], memory_order_relaxed);
   int v23 = (v8_W6 == 3);
   atomic_store_explicit(&atom_0_X6_3, v23, memory_order_seq_cst);
-
+  return NULL;
 }
 
 void *t1(void *arg){
@@ -39,7 +39,7 @@ label_2:;
   atomic_store_explicit(&atom_1_X3_4, v24, memory_order_seq_cst);
   int v25 = (v11_W2 == 3);
   atomic_store_explicit(&atom_1_X2_3, v25, memory_order_seq_cst);
-
+  return NULL;
 }
 
 int main(int argc, char *argv[]){
@@ -52,8 +52,8 @@ int main(int argc, char *argv[]){
   atomic_init(&atom_1_X3_4, 0); 
   atomic_init(&atom_1_X2_3, 0); 
 
-  pthread_create(&thr0, t0, NULL);
-  pthread_create(&thr1, t1, NULL);
+  pthread_create(&thr0, NULL, t0, NULL);
+  pthread_create(&thr1, NULL, t1, NULL);
 
   pthread_join(thr0, NULL);
   pthread_join(thr1, NULL);
