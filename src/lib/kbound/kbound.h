@@ -184,6 +184,8 @@ private:
   void dump_Branch( unsigned bidx, const llvm::BranchInst* br );
   void dump_SwitchInst( unsigned bidx, const llvm::SwitchInst* br );
   void dump_UnreachableInst( unsigned, const llvm::UnreachableInst *I);
+  void dump_before_return( std::string cctx );
+  void dump_start_thread();
 
   void dump_Thread();
   void dump_Block( unsigned bidx, const bb* b );

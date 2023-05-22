@@ -112,17 +112,23 @@ llvm::StringRef kbound::getPassName() const {
 
 bool kbound::runOnFunction( llvm::Function &f ) {
   EntryFn = demangle(f.getName().str());
-  unsigned j = 0;
-  for (;j < bmc_obj.sys_spec.threads.size(); j++) {
-    if (bmc_obj.sys_spec.threads[j].entry_function == EntryFn) break;
-  }
-  if( j == bmc_obj.sys_spec.threads.size() ) return false;
-  std::cout<< "Function " << EntryFn << "\n";
-  thread_id = j;
-  tid = std::to_string(thread_id);
-  thread_name = bmc_obj.sys_spec.threads.at(j).name;
-  if(bmc_obj.sys_spec.threads.at(j).wmm == weak_memory_model::SC ) {
-    is_sc_semantics = true;
+  if( bmc_obj.sys_spec.threads.size() > 1 ) {
+    unsigned j = 0;
+    for (;j < bmc_obj.sys_spec.threads.size(); j++) {
+      if (bmc_obj.sys_spec.threads[j].entry_function == EntryFn) break;
+    }
+    if( j == bmc_obj.sys_spec.threads.size() ) return false;
+    std::cout<< "Function " << EntryFn << "\n";
+    thread_id = j;
+    tid = std::to_string(thread_id);
+    thread_name = bmc_obj.sys_spec.threads.at(j).name;
+    if( bmc_obj.sys_spec.threads.at(j).wmm == weak_memory_model::SC ) {
+      is_sc_semantics = true;
+    }
+  }else{
+    if ( "main" != EntryFn) {
+      return false;
+    }
   }
   populate_array_name_map(&f);
   auto bmc_fun_ptr = new bmc_fun(o, ary_to_int, bmc_obj.m_model);
@@ -678,6 +684,8 @@ bool is_isb( const llvm::CallInst* call ) {
   return match_function_names(  call,  names );
 }
 
+// l = ldr(&x)
+//
 bool is_str( const llvm::CallInst* call ) {
   std::vector<std::string> names = { "_Z3strPii"};
   return match_function_names(  call,  names );
@@ -1166,12 +1174,14 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
 }
 
 void kbound::dump_Thread() {
-  dump_Comment( "Dumping thread "+ tid );
-  if(is_sc_semantics) dump_Comment( "Thread semanics = SC");
   // for( unsigned i = 0; i < bmc_ds_ptr->bb_vec.size(); i++ ) {
   //   dump_Assign( "char "+ get_path(i), "0" );
   // }
-  dump_Assign( "int ret_thread_"+ tid, "0" );
+  // dump_Comment( "Dumping thread "+ tid );
+  // if(is_sc_semantics) dump_Comment( "Thread semanics = SC");
+  // dump_Assign( "int ret_thread_"+ tid, "0" );
+
+  dump_start_thread();
   unsigned bidx = 0;
   for( const bb* src : bmc_ds_ptr->bb_vec ) {
     dump_Block( bidx, src );
