@@ -1,0 +1,27 @@
+# lazy-cseq with swarm chain (determine by the wrapper)
+# Partioning
+#
+
+workarounds
+functiontracker
+
+preinstrumenter
+constants
+spinlock
+
+# program simplification
+switchtransformer
+dowhileconverter
+conditionextractor
+
+# program flattening
+varnames
+inliner
+unroller
+duplicator
+
+# sequentialization
+condwaitconverter
+@swarm
+@after lazyseqcbmcswarm
+@after instrumenter

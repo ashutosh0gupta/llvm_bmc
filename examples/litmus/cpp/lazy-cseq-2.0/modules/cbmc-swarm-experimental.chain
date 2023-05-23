@@ -1,0 +1,29 @@
+# cbmc with swarm chain (determine by the wrapper)
+# Partioning
+#
+
+cbmcworkarounds
+#functiontracker
+
+preinstrumenter
+#constants
+spinlock
+
+# program simplification
+switchtransformer
+dowhileconverter
+conditionextractor
+
+varnames
+
+# program flattening
+inliner
+unroller
+duplicator
+
+# sequentialization
+#condwaitconverter
+@swarm
+@after cbmclazyseqswarm
+@after cbmcatomicmerger
+@after cbmcinstrumenter
