@@ -1,0 +1,36 @@
+# lazy-cseq with new schedule (September 2016)
+# + AI to predict the number of bits
+
+workarounds
+functiontracker
+
+preinstrumenter
+constants
+spinlock
+
+# program simplification
+switchtransformer
+dowhileconverter
+conditionextractor
+
+# program flattening
+varnames
+inlinerall
+unroller
+duplicator
+
+# sequentialization
+#condwaitconverter
+atomicmerger
+@save witness=tempfile backend=framac time=86400 path-backend=frama-c
+@pre lazyseqai
+@pre instrumenter
+@pre feeder
+@pre cex
+@load framaclog=tempfile env.preanalysistime=<get_time>
+
+@after framaclogprocessor
+@after lazyseqnewschedule
+@after instrumenter
+@after feeder
+@after cex

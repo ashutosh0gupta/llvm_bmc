@@ -1,0 +1,34 @@
+# lazy-cseq with new schedule (August 2016)
+#
+#
+
+cbmcworkarounds
+#functiontracker
+
+preinstrumenter
+#constants
+spinlock
+
+# program simplification
+switchtransformer
+dowhileconverter
+conditionextractor
+
+varnames
+
+# program flattening
+inliner
+unroller
+duplicator
+
+# sequentialization
+#condwaitconverter
+cbmclazyseq
+
+# instrumentation
+cbmcatomicmerger
+cbmcinstrumenter
+
+feeder
+
+cex

@@ -1,0 +1,32 @@
+# fastest lazy-cseq (round-based) encoding so far:
+# SVCOMP15 bitvectors + CAV14 constraints in the main driver
+#
+
+workarounds
+functiontracker
+
+preinstrumenter
+constants
+spinlock
+
+# program simplification
+switchconverter
+dowhileconverter
+conditionextractor
+
+# program flattening
+varnames
+inlinerall
+unroller
+duplicator
+
+# sequentialization
+atomicmerger
+lazyseqnewschedule
+
+# instrumentation
+instrumenter
+
+feeder
+
+cex

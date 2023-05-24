@@ -1,0 +1,35 @@
+# lazy-cseq with wmm translation
+#
+#
+
+workarounds
+functiontracker
+
+preinstrumenter
+constants
+spinlock
+
+# program simplification
+switchtransformer
+dowhileconverter
+conditionextractor
+#shortcircuitconverter
+
+varnames
+
+# program flattening
+inliner
+unroller
+duplicator
+
+# sequentialization
+condwaitconverter
+memoryannotator
+lazyseqnewschedule
+
+# instrumentation
+instrumenter
+
+feeder
+
+cex
