@@ -32,7 +32,7 @@ private:
 
   svec reg_vals,reg_list;
   svec val_init_list, val_list;
-  svec time_list, proc_list, ctx_list;
+  svec time_list, proc_list, thread_ctrl_list, ctx_list;
   svec var_list;
 
   unsigned num_globals = 0;

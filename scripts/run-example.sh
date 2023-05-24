@@ -11,13 +11,21 @@ if [ "$#" -ne 4 ]; then
 fi
 
 tmp_path="."
+if [ -w /tmp/ ]; then
+    tmp_path="/tmp"
+fi
 
 rm $tmp_path/cbmc_out.cpp || true
 
-echo "./llvmbmc --unwind $1 --context-bound $2 -k $3 -s $4"
-./llvmbmc --unwind $1 -o $tmp_path --context-bound $2 -k $3 -s $4 > /dev/null 2>&1
+spec_option=
+if [[ "$4" != "-" ]]; then
+    spec_option="-s $4"
+fi
+
+echo "./llvmbmc --unwind $1 --context-bound $2 -k $3 $spec_option"
+./llvmbmc --unwind $1 -o $tmp_path --context-bound $2 -k $3 $spec_option > /dev/null 2>&1
 timeout $timeout cbmc $tmp_path/cbmc_out.cpp --unwind $1 --trace > $tmp_path/tr.tr 2>&1
-./scripts/clean-cmsb.py
+./scripts/clean-cmsb.py $tmp_path
 
 tr_file=$tmp_path/tr.tr
 

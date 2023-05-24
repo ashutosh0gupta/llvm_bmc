@@ -362,7 +362,8 @@ void kbound::prefix_seq() {
 
   for( auto& v : global_position ) {
     auto g = v.first;
-    dump_Comment( std::to_string(v.second) + ":" + global_name.at(g) );
+    dump_Comment( std::to_string(v.second) + ":" + global_name.at(g) +
+                  + ":" + std::to_string(global_size.at(g)) );
   }
   std::cout << "Running k bound\n";
   // dump_Define("ADDRSIZE",std::to_string( num_globals ) );
@@ -414,9 +415,11 @@ void kbound::prefix_seq() {
   // dump_Arrays( "int", reg_list, "NPROC", "NREGS");
 
   dump_Comment("declare arrays for synchronizations");
-  proc_list = { "cstart", "creturn", "cl", "cdy", "cds",
-    "cdl", "cisb", "caddr", "ctrl" };
+  proc_list = { "cl", "cdy", "cds", "cdl", "cisb", "caddr", "ctrl" };
   for( auto ary: proc_list ) dump_Decl_array("int", ary, "NPROC");
+  thread_ctrl_list = { "cstart", "creturn"};
+  for( auto ary: thread_ctrl_list ) dump_Decl_array("int", ary, "NPROC");
+
   dump_Newline();
 
   dump_Comment( "declare arrays for contexts activity" );
@@ -437,6 +440,7 @@ void kbound::prefix_seq() {
       for( auto ary: time_list ) dump_String( ary + "("+pn+","+xn+") = 0;" );
     }
     for( auto ary: proc_list ) dump_String( ary + "["+ pn + "] = 0;" );
+    for( auto ary: thread_ctrl_list ) dump_Assign_rand_ctx(ary+"["+ pn + "]" );
   }
 
   // records values
@@ -731,10 +735,7 @@ void kbound::dump_start_thread() {
 
   auto cdy     =     "cdy[" + tid + "]";
   auto cstart  =  "cstart[" + tid + "]";  // if we turn the local variabls
-  auto creturn = "creturn[" + tid + "]";
-  dump_Assign_rand_ctx( cdy     ); //todo : do we need to do this
-  dump_Assign_rand_ctx( cstart  ); //todo : do we need to do this
-  dump_Assign_rand_ctx( creturn ); //todo : do we need to do this
+  dump_Assign_rand_ctx( cdy ); //todo : do we need to do this
   dump_Assume_geq( cdy, cstart );
 }
 

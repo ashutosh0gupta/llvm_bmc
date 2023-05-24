@@ -36,7 +36,7 @@
 #pragma GCC diagnostic pop
 
 
-#define CLANG_VERSION "14.0"
+#define CLANG_VERSION "14"
 
 void dump( const llvm::Value* v) {
   if(v)
@@ -396,7 +396,8 @@ getLocFromClangSource( const clang::SourceLocation& loc,
 //   return !CI.getDiagnostics().getClient()->getNumErrors();
 // }
 
- 
+// #define CLANG_INCLUDE "/usr/lib/llvm-"##CLANG_VERSION##"/lib/clang/"##CLANG_VERSION##".0.0/include/"
+
 //Direct translation via API clang
 std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   const std::string filename = o.get_input_file();
@@ -416,9 +417,9 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   include_dirs.push_back( "/usr/include/x86_64-linux-gnu/");      // for wchar.h
   include_dirs.push_back( "/usr/include/x86_64-linux-gnu/c++/11/");    // bits/c++config.h
 
-  include_dirs.push_back( "/usr/lib/gcc/x86_64-linux-gnu/11/include/");   // for stdarg.h
   include_dirs.push_back( "/usr/include/c++/11/tr1");      // for stdarg.h, wchar.h
-  include_dirs.push_back( "/usr/lib/llvm-12/lib/clang/12.0.0/include/");  // for stddef.h
+  include_dirs.push_back( "/usr/lib/gcc/x86_64-linux-gnu/11/include/");   // for stdarg.h
+  include_dirs.push_back( "/usr/lib/llvm-" CLANG_VERSION "/lib/clang/" CLANG_VERSION ".0.0/include/");  // for stddef.h
 
   // include_dirs.push_back( "/usr/include/c++/11/parallel/");         // for features.h
   // include_dirs.push_back( "/usr/include/x86_64-linux-gnu/bits/");  // for locale.h

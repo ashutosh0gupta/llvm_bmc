@@ -45,7 +45,7 @@ collect_threads_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
               if( auto cf = llvm::dyn_cast<const llvm::Function>(efun) ) {
                 spec_thread new_thread;
                 new_thread.name = "";
-                new_thread.entry_function     = cf->getName().str();
+                new_thread.entry_function     = demangle(cf->getName().str());
                 new_thread.launch_function    = (void *)f;
                 new_thread.launch_instruction = (void *)call;
                 tr_obj_map[thread_obj_ptr] = b.sys_spec.threads.size();

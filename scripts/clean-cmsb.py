@@ -9,9 +9,10 @@ import os
 import shutil
 import sys
 
+tmp_path= sys.argv[1]
 
-in_file = '/tmp/tr.tr'
-out_file = '/tmp/clean.tr'
+in_file = tmp_path+'/tr.tr'
+out_file = tmp_path+'/clean.tr'
 
 try:
     with open(in_file) as in_f:
