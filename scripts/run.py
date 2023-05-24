@@ -18,7 +18,9 @@ l = 1
 
 # choose a folder to execute
 
-folder = "examples/kbound/omkar/bench"
+# folder = "examples/kbound/omkar/bench"
+
+folder = "./examples/litmus/cpp/c-litmus-ARMCBMC/"
 
 # folder = "examples/kbound/pldi19-benchmark"
 
@@ -50,9 +52,17 @@ def find_time( result ):
 
 
 print( "Name\t\t\tKind\tN K L Result\tTime" )
-for ex in exs:
+for ex in exs[:10]:
    f = folder + "/"+ ex[0]+".cpp"
-   s = folder + "/"+ ex[1]+".spec"
+   if not os.path.isfile(f):
+      f = folder + "/"+ ex[0]+".c"
+   if not os.path.isfile(f):
+      print(f+' doest not exists!')
+      exit()
+   if ex[1] != "-":
+      s = folder + "/"+ ex[1]+".spec"
+   else:
+      s = "-"
    n = ex[2]
    if( len(ex) > 3):
       lk =  ex[3]
