@@ -657,12 +657,12 @@ void kbound::dump_CallNondet(unsigned bidx, const llvm::CallInst* call) {
 
 
 bool is_dmbsy( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z5dmbsyv"};
+  std::vector<std::string> names = { "_Z5dmbsyv","dmbsy"};
   return match_function_names(  call,  names );
 }
 
 bool is_dmbst( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z5dmbstv"};
+  std::vector<std::string> names = { "_Z5dmbstv","dmbst"};
   return match_function_names(  call,  names );
 }
 

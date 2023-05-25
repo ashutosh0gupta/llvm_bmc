@@ -28,6 +28,8 @@ out=input
 out = re.sub(r'\n.*line ([0-9]*) thread 0\n----------------------------------------------------\n', r'\1 :', out, flags=re.M)
 out = re.sub(r'\nAssumption:\n.*line ([0-9]*) function.*\n', r'\1 :', out, flags=re.M)
 out = re.sub(r'\(signed long int\)', r'', out, flags=re.M)
+out = re.sub(r'\([01 ]*\)$', r'', out, flags=re.M)
+out = re.sub(r'\({[01 ?,]*}\)$', r'', out, flags=re.M)
 
 output.write(out)
 output.close()

@@ -11,8 +11,8 @@ void dmbst();
 void dmbsy();
 void isb();
 
-atomic_int vars[1]; 
-atomic_int atom_0_X0_1; 
+long vars[1]; 
+long atom_0_X0_1; 
 
 void *t0(void *arg){
 label_1:;

@@ -689,6 +689,7 @@ void kbound::dump_dmbsy() {
   dump_Assume_geq( cdy, "ctrl[" + tid + "]" );
 
   dump_geq_globals( cdy, "cw");
+  dump_geq_globals( cdy, "cr");// missing case << 
   dump_commit_before_thread_finish( cdy );
 }
 
