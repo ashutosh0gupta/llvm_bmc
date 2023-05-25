@@ -36,7 +36,7 @@
 #pragma GCC diagnostic pop
 
 
-#define CLANG_VERSION "14.0"
+#define CLANG_VERSION "14"
 
 void dump( const llvm::Value* v) {
   if(v)
@@ -396,7 +396,8 @@ getLocFromClangSource( const clang::SourceLocation& loc,
 //   return !CI.getDiagnostics().getClient()->getNumErrors();
 // }
 
- 
+// #define CLANG_INCLUDE "/usr/lib/llvm-"##CLANG_VERSION##"/lib/clang/"##CLANG_VERSION##".0.0/include/"
+
 //Direct translation via API clang
 std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   const std::string filename = o.get_input_file();
@@ -416,9 +417,9 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   include_dirs.push_back( "/usr/include/x86_64-linux-gnu/");      // for wchar.h
   include_dirs.push_back( "/usr/include/x86_64-linux-gnu/c++/11/");    // bits/c++config.h
 
-  include_dirs.push_back( "/usr/lib/gcc/x86_64-linux-gnu/11/include/");   // for stdarg.h
   include_dirs.push_back( "/usr/include/c++/11/tr1");      // for stdarg.h, wchar.h
-  include_dirs.push_back( "/usr/lib/llvm-12/lib/clang/12.0.0/include/");  // for stddef.h
+  include_dirs.push_back( "/usr/lib/gcc/x86_64-linux-gnu/11/include/");   // for stdarg.h
+  include_dirs.push_back( "/usr/lib/llvm-" CLANG_VERSION "/lib/clang/" CLANG_VERSION ".0.0/include/");  // for stddef.h
 
   // include_dirs.push_back( "/usr/include/c++/11/parallel/");         // for features.h
   // include_dirs.push_back( "/usr/include/x86_64-linux-gnu/bits/");  // for locale.h
@@ -1615,6 +1616,11 @@ bool is_assert( const llvm::CallInst* call ) {
   return match_function_names( call, names );
 }
 
+bool is_assert_fail( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "__assert_fail" };
+  return match_function_names( call, names );
+}
+
 bool is_nondet( const llvm::CallInst* call ) {
   std::vector<std::string> names = { "_Z22__VERIFIER_nondet_charv",
                                      "_Z21__VERIFIER_nondet_intv",};
@@ -1623,6 +1629,17 @@ bool is_nondet( const llvm::CallInst* call ) {
 
 bool is_assume( const llvm::CallInst* call ) {
   std::vector<std::string> names = { "_Z6assumeb", "assume", "_Z17__VERIFIER_assumeb" };
+  return match_function_names( call, names );
+}
+
+
+bool is_thread_create( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z6pthread_createb", "pthread_create" };
+  return match_function_names( call, names );
+}
+
+bool is_thread_join( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z6pthread_createb", "pthread_join" };
   return match_function_names( call, names );
 }
 
@@ -1967,13 +1984,17 @@ identify_array_in_gep(const llvm::GEPOperator* gep ) {
   llvm_bmc_error("bmc", "unseen GEP pattern detected!");
 }
 
-std::pair<const llvm::Value*, uint64_t> identify_lpad_struct(const llvm::Value* op, int index) {
+const llvm::Value* 
+identify_lpad_struct(const llvm::Value* op, int index) {
   auto lpi = llvm::dyn_cast<const llvm::LandingPadInst>(op);
   auto predecessor = lpi->getParent()->getSinglePredecessor();
   auto terminator = predecessor->getTerminator();
-
+  // llvm::errs() << "\n\nGOT PREDECESSOR " << *predecessor << "===========";
+  // llvm::errs() << "\n\nGOT TERMINATOR " << *terminator << "\n===========";
   if (auto invoke = llvm::dyn_cast<const llvm::InvokeInst>(terminator)) {
+    // llvm::errs() << "\n\nIN IF";
     llvm::Function* fp = invoke->getCalledFunction();
+    // llvm::errs() << "\n called function is " << *fp;
     if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
       llvm::Value* arg;
       if (index == 0) {
@@ -1982,74 +2003,63 @@ std::pair<const llvm::Value*, uint64_t> identify_lpad_struct(const llvm::Value* 
         arg = invoke->getArgOperand(index);
         //TODO : add code to convert it into int for future purpose
       }
-      
-      uint64_t size = 0;
-      // Check if the argument is an array and determine its size
-    if (auto arrayTy = llvm::dyn_cast<llvm::ArrayType>(op->getType())) {
-      size = arrayTy->getNumElements();
-      }
-      return std::make_pair(arg, size);
+      // llvm::errs() << "\nDUmping value ";
+      // arg->dump();
+      // llvm::errs() << "\n";
+      return arg;
     }
+  } else {
+    // llvm::errs() << "\n\nIN ELSE";
   }
-
   llvm_bmc_warning("bmc","failed to recognize lpad structure");
   op->dump();
-  return std::make_pair(nullptr, 0);
+  return NULL;
 }
 
-
-const std::pair<const llvm::Value*, uint64_t> get_array_info( const llvm::Value* op) {
-
+const llvm::Value*
+identify_array( const llvm::Value* op) {
   while( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
     op = cast->getOperand(0);
   }
   if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(op) ) {
     auto op_gep_ptr = gep->getPointerOperand();
-    return get_array_info( op_gep_ptr );
+    return identify_array( op_gep_ptr );
   }
   if(auto gep = llvm::dyn_cast<const llvm::GEPOperator>(op)) {
-    return get_array_info(identify_array_in_gep( gep ));
+    return identify_array_in_gep( gep );
+    // auto op_gep_ptr = gep->getPointerOperand();
+    // if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
+    //   op_gep_ptr = cast->getOperand(0);
+    // }
+    // if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op_gep_ptr)) {
+    //   return addr;
+    // }
+    // if(auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
+    //   return addr;
+    // }
+    // gep->print( llvm::outs() );
+    // llvm_bmc_error("bmc", "unseen GEP pattern detected!");
+    // op_gep_ptr->print( llvm::outs() );
   }else if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op)) {
-    // std::string name = glb->getName();
-    uint64_t size = 1; // default size for non-array types
-
-    llvm::Type* type = glb->getValueType();
-    if (llvm::ArrayType* arrayType = llvm::dyn_cast<llvm::ArrayType>(type)) {
-      // llvm::Type* elementType = arrayType->getElementType();
-      size = arrayType->getNumElements();
-    }
-    return std::make_pair(glb, size);
+    return glb;
   }else if( llvm::dyn_cast<const llvm::AllocaInst>(op) ) {
     // auto alloc =
     // To handle a[0] when a is dynamic sized array
-    auto alloca = llvm::dyn_cast<const llvm::AllocaInst>(op);
-    uint64_t size = 0;
-    if (auto arrayTy = llvm::dyn_cast<llvm::ArrayType>(alloca->getAllocatedType())) {
-      size = arrayTy->getNumElements();
-    }
-
-    // llvm::errs() << "Alloca var Name = " << alloca->getName() << " Size = " << size << "\n";
     if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op)) {
       // actual allocation in the code
-      return std::make_pair(addr, size);
+      return addr;
     }
-    
-    return std::make_pair(op, size);
-
   }else if( auto addr = llvm::dyn_cast<const llvm::Argument>(op) ) {
     // passed as an argument
-    uint64_t size = 0;
-    if (auto arrayTy = llvm::dyn_cast<llvm::ArrayType>(op->getType())) {
-      size = arrayTy->getNumElements();
-    }
-    return std::make_pair(addr, size);
+    llvm::errs() << "\n\nArgument passed " << *addr;
+    return addr;
   }else if( auto cnst = llvm::dyn_cast<const llvm::ConstantExpr>(op) ) {
     if( auto gep = llvm::dyn_cast<llvm::GEPOperator>(cnst) ) {
       auto const_ptr = gep->getPointerOperand();
-      return get_array_info(const_ptr);
+      return const_ptr;
     }
     auto cistr = cnst->getAsInstruction();
-    return get_array_info(cistr);
+    return identify_array(cistr);
     // cistr->dump();
     // llvm_bmc_error("bmc", "non GEP constant expression!");
   }else if( auto call = llvm::dyn_cast<const llvm::CallInst>(op) ) {
@@ -2057,17 +2067,18 @@ const std::pair<const llvm::Value*, uint64_t> get_array_info( const llvm::Value*
     llvm::Function* fp = call->getCalledFunction();
     if (fp != NULL && fp->getName().startswith("__cxa_allocate")) {
       // call->print(llvm::outs());std::cout << "RECOGNIZED PATTERN\n";
-      return std::make_pair(call, 0);
+      return call;
     } else if (fp != NULL && fp->getName().startswith("__cxa_begin_catch")) {
-      return std::make_pair(call, 0);
+      return call;
     }
   } else if (auto ev = llvm::dyn_cast<const llvm::ExtractValueInst>(op)) {
     // std::cout << "\nEXtract value instruction found\n";
     // llvm::errs() << *ev << "\n";
     // llvm::errs() << "Type of EVAL is " << *(ev->getType()) << "\n";
     auto evi_op = ev->getAggregateOperand();
-    if( auto pty = llvm::dyn_cast<llvm::PointerType>(ev->getType()) ) {
-
+    if( //auto pty =
+        llvm::dyn_cast<llvm::PointerType>(ev->getType()) ) {
+      // llvm::errs() << "POINTER TYPE";
       return identify_lpad_struct(evi_op, 0);
     } else {
       return identify_lpad_struct(evi_op, 1);
@@ -2103,18 +2114,20 @@ const std::pair<const llvm::Value*, uint64_t> get_array_info( const llvm::Value*
   }
   llvm_bmc_warning("bmc","failed to recognize heap access");
   op->dump();
-  return std::make_pair(nullptr, 0);
+  return NULL;
 }
+
 // TODO: the following and the above functions make
 //       pointless distinction between array and global
-const llvm::Value* identify_global_in_addr( const llvm::Value* op) {
+const llvm::Value*
+identify_global_in_addr( const llvm::Value* op) {
   if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
     op = cast->getOperand(0);
   }
   if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op)) {
     return glb;
   }
-  return get_array_info( op ).first;
+  return identify_array( op );
 }
 
 
