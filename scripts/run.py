@@ -50,9 +50,16 @@ def find_time( result ):
       exit()
    return out[0]
 
+only_error = 'True'
+i = 0
 
-print( "Name\t\t\tKind\tN K L Result\tTime" )
-for ex in exs[:10]:
+print( "Index\tName\t\t\tKind\tN K L Result\tTime" )
+for ex in exs:
+   i = i + 1
+   if ex[0] != 'MP+dmb.sy+addr-wsi-rfi-ctrlisb':
+      continue
+   # if i < 1900:
+   #    continue
    f = folder + "/"+ ex[0]+".cpp"
    if not os.path.isfile(f):
       f = folder + "/"+ ex[0]+".c"
@@ -68,6 +75,7 @@ for ex in exs[:10]:
       lk =  ex[3]
    else:
       lk = 10
+   lk = 6
    if( len(ex) > 4):
       l = ex[4]
    else:
@@ -76,11 +84,16 @@ for ex in exs[:10]:
       kind = ex[5]
    else:
       kind = "unk"
-      
-   print(ex[0]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
+
+   if not only_error:
+      print(str(i)+"\t"+ex[0]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
    result = subprocess.check_output(["time", run, str(l), str(lk), f, s ],stderr=subprocess.STDOUT)
    result=result.decode("utf-8")
-   print(result)
-   # exit()
    time = find_time(result)
-   print(time[0]+"\t"+time[1])
+   if not only_error:
+      print(time[0]+"\t"+time[1])
+   if time[0].lower() != kind:
+      print(str(i)+"\t"+ ex[0]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
+      print(time[0]+"\t"+time[1])
+      print('Error!!')
+   print(i,end="\r")
