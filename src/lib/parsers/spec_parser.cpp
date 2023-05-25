@@ -330,7 +330,7 @@ void spec_parser::read_postcond( std::istream& in, bmc& b ) {
 
 void spec_parser::clear_threadobj( std::istream& in, bmc& b ) {
    std::string symb1 = read_symbol( in );
-   b.sys_spec.threads.push_back(thread_obj);
+   b.sys_spec.threads.push_back(thread_obj); // creates a copy
 
    th_ev_obj.name = thread_obj.name;
    th_ev_obj.events = {};

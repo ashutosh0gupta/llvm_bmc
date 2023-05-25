@@ -73,10 +73,14 @@ bool match_function_names( const llvm::CallInst* call,
                            std::vector<std::string>& names );
 
 // recognizing function calls
-bool is_assume(const llvm::CallInst*);
-bool is_assert(const llvm::CallInst*);
-bool is_nondet(const llvm::CallInst*);
-bool is_error(const llvm::CallInst*);
+bool is_assume( const llvm::CallInst* );
+bool is_assert( const llvm::CallInst* );
+bool is_assert_fail( const llvm::CallInst* );
+bool is_nondet( const llvm::CallInst* );
+bool is_error ( const llvm::CallInst* );
+bool is_thread_create( const llvm::CallInst* );
+bool is_thread_join( const llvm::CallInst* );
+
  bool ignore_special_functions( const llvm::CallInst* fp );
 
 bool isInHeader(llvm::Instruction *, llvm::Loop *);

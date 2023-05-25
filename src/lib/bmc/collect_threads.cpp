@@ -3,12 +3,12 @@
 
 
 collect_threads::collect_threads( std::unique_ptr<llvm::Module>& m_,
-                                  bmc& b, memory_cons& mem_enc_,
-                                  solver_context& solver_ctx__, options& o )
-  : module(m_), b(b), mem_enc(mem_enc_), solver_ctx(solver_ctx__), o(o) {
+                                  bmc& b,
+                                  // memory_cons& mem_enc_,
+                                  // solver_context& solver_ctx__,
+                                  options& o )
+  : module(m_), b(b), mem_enc(o.mem_enc), solver_ctx(o.solver_ctx), o(o) {
   collect_threads_internal(module, b);
-  insert_events(b, mem_enc, solver_ctx, o);
-  //CreateRdWrEvents(module, b);
 }
 
 collect_threads::~collect_threads() {}
@@ -17,69 +17,62 @@ collect_threads::~collect_threads() {}
 void collect_threads::
 collect_threads_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
   if (b.sys_spec.threads.size() == 0) {
-    
+    spec_thread main_thread;
+    main_thread.name = "main";
+    main_thread.entry_function = "main";
+    b.sys_spec.threads.push_back(main_thread);
   }
-  std::set<const llvm::Value*> written;
-  for (unsigned j = 0; j < b.sys_spec.threads.size(); j++) {
+  unsigned j = 0;
+  unsigned size = b.sys_spec.threads.size();
+  std::map<void *, unsigned> tr_obj_map;
+  while( j < size ) {
+  // for (unsigned j = 0; j < b.sys_spec.threads.size(); j++) {
     auto EntryFn = b.sys_spec.threads.at(j).entry_function;
-    for (auto mit = m->begin(); mit != m->end(); mit++) {
+    for( auto mit = m->begin(); mit != m->end(); mit++ ) {
       auto Str1 = mit->getName().str();
       auto dstr = demangle( Str1);
-      if ( Str1 != EntryFn && dstr != EntryFn ) continue;
+      if( Str1 != EntryFn && dstr != EntryFn ) continue;
+      // function found
       auto f = &(*mit);
-      auto& list_gvars = fn_gvars_map[f->getName().str()];
       for (auto bbit = f->begin(); bbit != f->end(); bbit++) {
         auto bb = &(*bbit);
         for( auto it = bb->begin(); it != bb->end(); ++it) {
           auto I = &(*it);
-          llvm::Value* addr = NULL;
-          //I->print( llvm::outs() );     std::cout << "\n";
-          if( auto store = llvm::dyn_cast<llvm::StoreInst>(I) ) {
-            addr = store->getOperand(1);
-            auto glb = identify_global_in_addr( addr );
-            if( glb && !exists( list_gvars, glb ) )
-              list_gvars.push_back(glb);
-            if(glb) written.insert( glb );
-          }else if( auto load = llvm::dyn_cast<llvm::LoadInst>(I) ) {
-            addr = load->getOperand(0);
-            auto glb = identify_global_in_addr( addr );
-            if( glb && !exists( list_gvars, glb ) ) {
-              list_gvars.push_back(glb);
+          if( auto call = llvm::dyn_cast<llvm::CallInst>(I) ) {
+            if( is_thread_create(call) ) {
+              auto thread_obj_ptr = call->getOperand(0);
+              auto efun           = call->getOperand(2);
+              if( auto cf = llvm::dyn_cast<const llvm::Function>(efun) ) {
+                spec_thread new_thread;
+                new_thread.name = "";
+                new_thread.entry_function     = demangle(cf->getName().str());
+                new_thread.launch_function    = (void *)f;
+                new_thread.launch_instruction = (void *)call;
+                tr_obj_map[thread_obj_ptr] = b.sys_spec.threads.size();
+                b.sys_spec.threads.push_back(new_thread);
+              }else{
+                llvm_bmc_error("Collect thread", "Function is not passed");
+              }
             }
-          }else if( auto rmw = llvm::dyn_cast<llvm::AtomicRMWInst>(I) ) {
-            addr = rmw->getPointerOperand();
-            auto glb = identify_global_in_addr( addr );
-            if( glb && !exists( list_gvars, glb ) )
-              list_gvars.push_back(glb);
-            if(glb) written.insert( glb );
-          }else if (auto eval = llvm::dyn_cast<llvm::ExtractValueInst>(I)) {
-            addr = eval->getAggregateOperand();
-            auto glb = identify_global_in_addr(addr);
-            if (glb && !exists(list_gvars, glb)) {
-              std::cout << "\nadded eval gvar in collectGlobalspass\n";
-              list_gvars.push_back(glb);
-            } else {
-              std::cout << "\ndid not add eval gvar in collectGlobalspass\n";
+            if( is_thread_join(call) ) {
+              auto tr_obj_load = call->getOperand(0);
+              if( auto load = llvm::dyn_cast<llvm::LoadInst>(tr_obj_load) ) {
+                auto tr_obj = load->getOperand(0);
+                auto tid = tr_obj_map.at(tr_obj);
+                b.sys_spec.threads.at(tid).join_instruction = call;
+              }else{
+                llvm_bmc_error("Collect thread", "No load in join!");
+              }
             }
-          }else {continue;}
-        }
-      }
-    }
-  }
-  for (auto fpair1 : fn_gvars_map) {
-    auto& glist1 = fpair1.second;
-    for (auto fpair2 : fn_gvars_map) {
-      if( fpair1.first == fpair2.first ) continue;
-      for( auto g : glist1 ) {
-        if( !exists( fpair2.second, g ) ) continue;
-        //if( !exists( written, g) ) continue;
-        //if( auto g1 = llvm::dyn_cast<llvm::GlobalVariable>(g) )
-          {
-          if( !exists(b.concurrent_vars, g) ) {
-            b.concurrent_vars.push_back(g);
           }
         }
       }
     }
+    size = b.sys_spec.threads.size();
+    j++;
+    if( size > 10 ) {
+      llvm_bmc_error("Collect thread", "Too many threads! May be loop!");
+    }
   }
+
 }

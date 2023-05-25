@@ -110,35 +110,39 @@ llvm::StringRef kbound::getPassName() const {
 }
 
 
+// todo : support if a thread returns something and parameters are passed
+
 bool kbound::runOnFunction( llvm::Function &f ) {
   EntryFn = demangle(f.getName().str());
-  if( bmc_obj.sys_spec.threads.size() > 1 ) {
-    unsigned j = 0;
-    for (;j < bmc_obj.sys_spec.threads.size(); j++) {
-      if (bmc_obj.sys_spec.threads[j].entry_function == EntryFn) break;
-    }
-    if( j == bmc_obj.sys_spec.threads.size() ) return false;
-    std::cout<< "Function " << EntryFn << "\n";
+  // A function can be launched at many locations
+  // we need to run that many copies
+  std::vector<unsigned> f_tids;
+  unsigned j = 0;
+  for(;j < bmc_obj.sys_spec.threads.size(); j++) {
+    if (bmc_obj.sys_spec.threads[j].entry_function == EntryFn)
+      f_tids.push_back(j);
+    //break;
+  }
+  //if( f_tids.size() == 0 ) return false;
+  //if( j == bmc_obj.sys_spec.threads.size() ) return false;
+
+  for( auto j : f_tids ) {
     thread_id = j;
+    std::cout<< "Function " << EntryFn << "\n";
     tid = std::to_string(thread_id);
     thread_name = bmc_obj.sys_spec.threads.at(j).name;
     if( bmc_obj.sys_spec.threads.at(j).wmm == weak_memory_model::SC ) {
       is_sc_semantics = true;
     }
-  }else{
-    if ( "main" != EntryFn) {
-      return false;
-    }
-  }
-  populate_array_name_map(&f);
-  auto bmc_fun_ptr = new bmc_fun(o, ary_to_int, bmc_obj.m_model);
-  bmc_ds_ptr = bmc_fun_ptr; // set the pointer in base cla
-  bmc_fun_ptr->fun_initialize( this, f);
-  // bmc_ds_ptr->thread_id = bmc_obj.sys_spec.threads.at(j).thread_num;
+    populate_array_name_map(&f);
+    auto bmc_fun_ptr = new bmc_fun(o, ary_to_int, bmc_obj.m_model);
+    bmc_ds_ptr = bmc_fun_ptr; // set the pointer in base cla
+    bmc_fun_ptr->fun_initialize( this, f);
+    // bmc_ds_ptr->thread_id = bmc_obj.sys_spec.threads.at(j).thread_num;
 
-  dump_Params(f);
-  // dump_Thread();
-  dump_Thread();
+    dump_Params(f);
+    dump_Thread();
+  }
   return false;
 }
 
@@ -314,10 +318,6 @@ void kbound::dump_CmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
   if(cr1 != "") ctrl_dep_ord[cmp].push_back(cr1);
   if(cr2 != "") ctrl_dep_ord[cmp].push_back(cr2);
 
-  // ssa_name[cmp] = cnd;
-
-  // //store the expression
-  // bmc_ds_ptr->m.insert_term_map( cmp, bidx, cnd );
 }
 
 
@@ -344,16 +344,8 @@ void kbound::dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop) {
   auto rt  = get_reg_time( bop );
   auto r1t = get_reg_time( op0 );
   auto r2t = get_reg_time( op1 );
-
-  // dump_Assign_rand_ctx( "new_creg" );
-  // dump_Active( "new_creg" );
-  // dump_Assume_geq( "new_creg", r1t);
-  // dump_Assume_geq( "new_creg", r2t);
-  // dump_Assign_max( rt, "new_creg" );
-
-  // dump_Assign_rand_ctx( rt );
   dump_Assign_max( rt, r1t, r2t );
-  dump_Active( rt );
+  dump_Active( rt ); // todo: do we need it?
 
   unsigned op = bop->getOpcode();
   expr result = solver_ctx.bool_val(true);
@@ -366,8 +358,8 @@ void kbound::dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop) {
   case llvm::Instruction::And:  dump_Assign( ro, r1 +" & "+ r2); break;
   case llvm::Instruction::Or:   dump_Assign( ro, r1 +" | "+ r2); break;
   case llvm::Instruction::Shl:  dump_Assign( ro, r1 +" << "+ r2); break;
-  case llvm::Instruction::AShr:  dump_Assign( ro, r1 +" >> "+ r2); break;
-  case llvm::Instruction::Xor:   dump_Assign( ro, r1 +" ^ "+ r2); break;
+  case llvm::Instruction::AShr: dump_Assign( ro, r1 +" >> "+ r2); break;
+  case llvm::Instruction::Xor:  dump_Assign( ro, r1 +" ^ " + r2); break;
   default: {
     const char* opName = bop->getOpcodeName();
     llvm_bmc_error("kbound", "unsupported instruction \"" << opName << "\" occurred!!");
@@ -675,54 +667,54 @@ bool is_dmbst( const llvm::CallInst* call ) {
 }
 
 bool is_dmbld( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z5dmbldv"};
+  std::vector<std::string> names = { "_Z5dmbldv", "dmbld"};
   return match_function_names(  call,  names );
 }
 
 bool is_isb( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z3isbv"};
+  std::vector<std::string> names = { "_Z3isbv", "isb"};
   return match_function_names(  call,  names );
 }
 
 // l = ldr(&x)
 //
 bool is_str( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z3strPii"};
+  std::vector<std::string> names = { "_Z3strPii", "str"};
   return match_function_names(  call,  names );
 }
 
 bool is_stl( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z3stlPii"};
+  std::vector<std::string> names = { "_Z3stlPii", "stl"};
   return match_function_names(  call,  names );
 }
 
 bool is_stx( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z3stxPii"};
+  std::vector<std::string> names = { "_Z3stxPii", "stx"};
   return match_function_names(  call,  names );
 }
 
 bool is_stlx( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z4stlxPii"};
+  std::vector<std::string> names = { "_Z4stlxPii", "stlx"};
   return match_function_names(  call,  names );
 }
 
 bool is_ldr( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z3ldrPi"};
+  std::vector<std::string> names = { "_Z3ldrPi", "ldr"};
   return match_function_names(  call,  names );
 }
 
 bool is_lda( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z3ldaPi"};
+  std::vector<std::string> names = { "_Z3ldaPi", "lda"};
   return match_function_names(  call,  names );
 }
 
 bool is_ldx( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z3ldxPi"};
+  std::vector<std::string> names = { "_Z3ldxPi", "ldx"};
   return match_function_names(  call,  names );
 }
 
 bool is_ldax( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z4ldaxxPi"};
+  std::vector<std::string> names = { "_Z4ldaxxPi", "lda"};
   return match_function_names(  call,  names );
 }
 
@@ -731,6 +723,7 @@ void kbound::dump_CallInst( unsigned bidx, const llvm::CallInst* call ) {
   assert(call);
   if( llvm::isa<llvm::IntrinsicInst>(call) ) {
   } else if( is_assert(call) ) { dump_CallAssert(bidx, call);
+  } else if( is_assert_fail(call) ) { // do nothing; unreachable will follow
   } else if( is_assume(call) ) { dump_CallAssume( bidx, call);
   } else if( is_nondet(call) ) { dump_CallNondet( bidx, call);
   } else if( is_dmbsy (call) ) { dump_dmbsy();
@@ -745,16 +738,43 @@ void kbound::dump_CallInst( unsigned bidx, const llvm::CallInst* call ) {
   } else if( is_lda   (call) ) { dump_LD_(bidx, call, true,  false);
   } else if( is_ldx   (call) ) { dump_LD_(bidx, call, false, true );
   } else if( is_ldax  (call) ) { dump_LD_(bidx, call, true,  true );
+  } else if( is_thread_create(call) ) { dump_CallThreadCreate( bidx, call );
+  } else if( is_thread_join  (call) ) { dump_CallThreadJoin  ( bidx, call );
   }else{
     LLVM_DUMP(call);
     llvm_bmc_error("kbound", "function call is not recognized !!");
   }
 }
 
+void kbound::dump_CallThreadCreate( unsigned bidx, const llvm::CallInst* call){
+  unsigned j = 0;
+  for (; j < bmc_obj.sys_spec.threads.size(); j++) {
+    if( bmc_obj.sys_spec.threads.at(j).launch_instruction == call )
+      break;
+  }
+  assert( j < bmc_obj.sys_spec.threads.size() );
+  auto child_tid = std::to_string(j);
+  dump_thread_create( bidx, child_tid );
+}
+
+void kbound::dump_CallThreadJoin( unsigned bidx, const llvm::CallInst* call){
+  unsigned j = 0;
+  for (; j < bmc_obj.sys_spec.threads.size(); j++) {
+    if( bmc_obj.sys_spec.threads.at(j).join_instruction == call )
+      break;
+  }
+  assert( j < bmc_obj.sys_spec.threads.size() );
+  auto child_tid = std::to_string(j);
+  dump_thread_join( bidx, child_tid );
+}
+
 void kbound::dump_CastInst( unsigned bidx, const llvm::CastInst* cast ) {
   auto v = cast->getOperand(0);
   auto r = get_reg(v);
-  if( r != "" ) add_reg_map(cast, r);
+  if( r != "" ) {
+    add_reg_map(cast, r);
+    if( r[0] != 'r' ) ctrl_dep_ord[cast] = ctrl_dep_ord.at(v);//todo: Hack??
+  }
 }
 
 void kbound::dump_AllocaInst( const llvm::AllocaInst* alloc ) {
@@ -854,28 +874,6 @@ void kbound::dump_StoreInst(unsigned bidx, const llvm::StoreInst* store ) {
   std::string caddr = "";
   addr_name( addr, gid, caddr );
   dump_st( v, cval, caddr, gid, is_release(ord), false);
-
-  // // jump over casting
-  // while( auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr) ) {
-  //   addr = bcast->getOperand(0);
-  // }
-  // if( llvm::isa<llvm::GEPOperator>(addr) ) {
-  //   assert(false);
-  //   // exprs idxs;
-  //   // get_indexesGEP( gop, idxs);
-  //   // storeToArrayHelper(bidx, store, val, idxs);
-  // } else if(auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
-  //   gid = get_global_idx(gv);
-  //   caddr = "0";//in dynamic addressing this will change
-  // } else if( llvm::isa<const llvm::AllocaInst>(addr) ||
-  //            llvm::isa<const llvm::Argument>(addr) ) {
-  //   assert(false);
-  // } else if( llvm::isa<llvm::Constant>(addr) ) {
-  //   llvm_bmc_error("bmc", "constant access to the memory!");
-  // }else {
-  //   LLVM_DUMP( store );
-  //   llvm_bmc_error("bmc", "Only local array and global write/read supported!");
-  // }
 }
 
 
@@ -1060,6 +1058,8 @@ void kbound::dump_Branch( unsigned bidx, const llvm::BranchInst* br ) {
     dump_Assign_rand_ctx( ctrl );
     dump_Assume_geq( ctrl, "old_ctrl" );
     if( exists( ctrl_dep_ord, (const void *)cond ) ) {
+      //todo: remove this branch if compute the reg_time of the compare
+      //      instruction is computed; already added
       for( auto& dep : ctrl_dep_ord.at(cond) ) {
         dump_Assume_geq( "ctrl["+tid+"]", dep);
       }

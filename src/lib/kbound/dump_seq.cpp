@@ -360,10 +360,10 @@ void kbound::dump_Active( std::string ctx) {
 
 void kbound::prefix_seq() {
 
-
   for( auto& v : global_position ) {
     auto g = v.first;
-    dump_Comment( std::to_string(v.second) + ":" + global_name.at(g) );
+    dump_Comment( std::to_string(v.second) + ":" + global_name.at(g) +
+                  + ":" + std::to_string(global_size.at(g)) );
   }
   std::cout << "Running k bound\n";
   // dump_Define("ADDRSIZE",std::to_string( num_globals ) );
@@ -415,9 +415,11 @@ void kbound::prefix_seq() {
   // dump_Arrays( "int", reg_list, "NPROC", "NREGS");
 
   dump_Comment("declare arrays for synchronizations");
-  proc_list = { "cstart", "creturn", "cl", "cdy", "cds",
-    "cdl", "cisb", "caddr", "ctrl" };
+  proc_list = { "cl", "cdy", "cds", "cdl", "cisb", "caddr", "ctrl" };
   for( auto ary: proc_list ) dump_Decl_array("int", ary, "NPROC");
+  thread_ctrl_list = { "cstart", "creturn"};
+  for( auto ary: thread_ctrl_list ) dump_Decl_array("int", ary, "NPROC");
+
   dump_Newline();
 
   dump_Comment( "declare arrays for contexts activity" );
@@ -438,6 +440,7 @@ void kbound::prefix_seq() {
       for( auto ary: time_list ) dump_String( ary + "("+pn+","+xn+") = 0;" );
     }
     for( auto ary: proc_list ) dump_String( ary + "["+ pn + "] = 0;" );
+    for( auto ary: thread_ctrl_list ) dump_Assign_rand_ctx(ary+"["+ pn + "]" );
   }
 
   // records values
@@ -592,7 +595,7 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
   }
   if( isExclusive ) dump_Assign( "delta"+gctx_access, tid );
   if( isExclusive ) active_lax = active_lax + 1;
-  dump_before_return(cr);
+  dump_commit_before_thread_finish(cr);
 }
 
 void kbound::
@@ -657,7 +660,7 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
     if( active_lax > 0 ) dump_Assign( "cx"+gaccess, cw);
     if( isExclusive ) active_lax = active_lax - 1;
   }
-  dump_before_return(cw);
+  dump_commit_before_thread_finish(cw);
 }
 
 
@@ -686,7 +689,7 @@ void kbound::dump_dmbsy() {
   dump_Assume_geq( cdy, "ctrl[" + tid + "]" );
 
   dump_geq_globals( cdy, "cw");
-  dump_before_return( cdy );
+  dump_commit_before_thread_finish( cdy );
 }
 
 void kbound::dump_dmbld() {
@@ -696,7 +699,7 @@ void kbound::dump_dmbld() {
   dump_Comment("Check");
   dump_Assume_geq( cdl, "cdy[" + tid + "]" );
   dump_geq_globals( cdl, "cr");
-  dump_before_return(cdl);
+  dump_commit_before_thread_finish(cdl);
 }
 
 void kbound::dump_dmbst() {
@@ -706,7 +709,7 @@ void kbound::dump_dmbst() {
   dump_Comment("Check");
   dump_Assume_geq( cds, "cdy[" + tid + "]" );
   dump_geq_globals( cds, "cw");
-  dump_before_return(cds);
+  dump_commit_before_thread_finish(cds);
 }
 
 void kbound::dump_isb() {
@@ -717,10 +720,10 @@ void kbound::dump_isb() {
   dump_Assume_geq( cisb, "cdy["   + tid + "]" );
   dump_Assume_geq( cisb, "ctrl["  + tid + "]" );
   dump_Assume_geq( cisb, "caddr[" + tid + "]" );
-  dump_before_return(cisb);
+  dump_commit_before_thread_finish(cisb);
 }
 
-void kbound::dump_before_return( std::string cctx ) {
+void kbound::dump_commit_before_thread_finish( std::string cctx ) {
   auto creturn = "creturn["+tid+"]";
   dump_Assume_geq( creturn, cctx  );
 }
@@ -730,11 +733,19 @@ void kbound::dump_start_thread() {
   if(is_sc_semantics) dump_Comment( "Thread semanics = SC");
   dump_Assign( "int ret_thread_"+ tid, "0" );
 
-  auto cdy     = "cdy["     + tid + "]";
-  auto cstart  = "cstart["  + tid + "]";  // if we turn the local variabls
-  auto creturn = "creturn[" + tid + "]";
-  dump_Assign_rand_ctx( cdy     ); //todo : do we need to do this
-  dump_Assign_rand_ctx( cstart  ); //todo : do we need to do this
-  dump_Assign_rand_ctx( creturn ); //todo : do we need to do this
+  auto cdy     =     "cdy[" + tid + "]";
+  auto cstart  =  "cstart[" + tid + "]";  // if we turn the local variabls
+  dump_Assign_rand_ctx( cdy ); //todo : do we need to do this
   dump_Assume_geq( cdy, cstart );
+}
+
+// const llvm::CallInst* call
+void kbound::dump_thread_create( unsigned bidx, std::string child_tid ) {
+  dump_dmbsy(); // All in-flight opertions must commit now
+  dump_Assume_geq( "cstart[" + child_tid + "]", "cdy[" + tid + "]");
+}
+
+void kbound::dump_thread_join( unsigned bidx, std::string child_tid ) {
+  dump_dmbsy(); // All in-flight opertions must commit now
+  dump_Assume_geq(  "cdy[" + tid + "]", "creturn[" + child_tid + "]" );
 }

@@ -1,0 +1,17 @@
+# lazy-cseq with new schedule (August 2016)
+#
+#
+
+workarounds
+functiontracker
+
+preinstrumenter
+constants
+spinlock
+
+# program simplification
+switchtransformer
+dowhileconverter
+conditionextractor
+shortcircuitconverter
+

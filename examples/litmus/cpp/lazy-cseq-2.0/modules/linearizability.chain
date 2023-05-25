@@ -1,0 +1,35 @@
+# lazy-cseq with linearizability instrumentation
+# (April 2017)
+
+workarounds
+functiontracker
+
+preinstrumenter
+linearizability
+constants
+spinlock
+
+
+# program simplification
+switchtransformer
+dowhileconverter
+conditionextractor
+#shortcircuitconverter
+
+varnames
+
+# program flattening
+inliner
+unroller
+duplicator
+
+# sequentialization
+condwaitconverter
+lazyseqnewschedule
+
+# instrumentation
+instrumenter
+
+feeder
+
+cex

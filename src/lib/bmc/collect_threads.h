@@ -32,8 +32,8 @@ public:
 /*                        options& o, bmc& b);*/
    collect_threads( std::unique_ptr<llvm::Module>& m_,
                     bmc& b,
-                    memory_cons& mem_enc_,
-                    solver_context& solver_ctx__,
+                    // memory_cons& mem_enc_,
+                    // solver_context& solver_ctx__,
                     options& o );
    ~collect_threads();
 
