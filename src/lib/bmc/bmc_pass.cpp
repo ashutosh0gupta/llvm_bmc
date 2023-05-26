@@ -1207,7 +1207,7 @@ void bmc_pass::translateExtractValueInst( unsigned bidx, const llvm::ExtractValu
   // llvm::errs() << *eval << "\n";
   // llvm::errs() << "Type of EVAL is " << *(eval->getType()) << "\n";
   // auto evi_op = eval->getAggregateOperand();
-  if( auto pty = llvm::dyn_cast<llvm::PointerType>(eval->getType()) ) {
+  if( llvm::isa<llvm::PointerType>(eval->getType()) ) {
     // llvm::errs() << "POINTER TYPE";
     addEVIExprs(eval, indices);
     extractValFromArrayHelper(bidx, eval, indices);
@@ -1937,7 +1937,8 @@ void bmc_pass::do_bmc() {
 
      }
 	for( auto p1 : bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].iter_events ) {
-		auto th_ev = p1.second; auto num = p1.first;
+		auto th_ev = p1.second; 
+    // auto num = p1.first;
 		for (auto h : th_ev) {
 			bmc_obj.edata.ev_threads[bmc_ds_ptr->thread_id].events.push_back(h);
 //			auto gv = h->prog_v;
@@ -1998,8 +1999,9 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
   ary_to_int.clear();
 
   // collect global arrays of the module
+  llvm_bmc_warning("bmc","Treating global variables as array");
   for( auto& glb : f->getParent()->globals()) {
-    if( auto ptr = llvm::dyn_cast<llvm::PointerType>( glb.getType() ) ) {
+    if( llvm::isa<llvm::PointerType>( glb.getType() ) ) {
       // if( ptr->getPointerElementType() ) {
       //   dump(ptr->getPointerElementType());
       // }

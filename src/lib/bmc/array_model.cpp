@@ -326,7 +326,7 @@ single_array_model::array_write( unsigned bidx, const llvm::StoreInst* I,
 
   auto& ls = lengths.at(i);
   auto bound_guard = access_bound_cons(idxs, ls);
-  idxs[0] = (idxs[0] + ar_bases[i]).simplify();
+  idxs[0] = (idxs[0] + static_cast<int>(ar_bases[i])).simplify();
   return arr_write_expr( (new_ar == store( ar_name, idxs, val )),
                          bound_guard, new_ar );
 }
@@ -342,7 +342,7 @@ single_array_model::array_read( unsigned bidx, const llvm::LoadInst* I,
   auto& ls = lengths.at(i);
   auto bound_guard = access_bound_cons(idxs, ls);
 
-  idxs[0] = (idxs[0] + ar_bases[i]).simplify();
+  idxs[0] = (idxs[0] + static_cast<int>(ar_bases[i])).simplify();
 
   return arr_read_expr( select( ar_name, idxs), bound_guard );
 }
@@ -358,7 +358,7 @@ single_array_model::array_read( unsigned bidx, const llvm::ExtractValueInst* I,
   auto& ls = lengths.at(i);
   auto bound_guard = access_bound_cons(idxs, ls);
 
-  idxs[0] = (idxs[0] + ar_bases[i]).simplify();
+  idxs[0] = (idxs[0] + static_cast<int>(ar_bases[i])).simplify();
 
   return arr_read_expr( select( ar_name, idxs), bound_guard );
 }

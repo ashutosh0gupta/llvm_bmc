@@ -2083,7 +2083,7 @@ const std::pair<const llvm::Value*, uint64_t> get_array_info( const llvm::Value*
     // llvm::errs() << *ev << "\n";
     // llvm::errs() << "Type of EVAL is " << *(ev->getType()) << "\n";
     auto evi_op = ev->getAggregateOperand();
-    if( auto pty = llvm::dyn_cast<llvm::PointerType>(ev->getType()) ) {
+    if( llvm::isa<llvm::PointerType>(ev->getType()) ) {
 
       return identify_lpad_struct(evi_op, 0);
     } else {
