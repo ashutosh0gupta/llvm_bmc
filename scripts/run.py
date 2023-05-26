@@ -7,7 +7,6 @@ import sys
 import subprocess
 import time
 
-print("Running kbound implementation:")
 
 # tmp_path = ""
 # subprocess.run(["rm",  tmp_path+"/cbmc_out.cpp" ])
@@ -59,14 +58,20 @@ def find_time( result ):
 only_error = 'True'
 i = 0
 
+print("------------------------------")
+print("Running kbound implementation:")
+print("Example suite :" + folder)
+print("Full report only for wrong answers!")
+print("------------------------------")
 print( "Index\tName\t\t\tKind\tN K L Result\tTime" )
+err_cnt = 0
 for ex in exs:
    i = i + 1   
    # if not ex[0] in fails:
    #    continue
    if ex[0] != 'CO-SBI':
       continue
-   # if i < 1900:
+   # if i > 100:
    #    continue
    f = folder + "/"+ ex[0]+".cpp"
    if not os.path.isfile(f):
@@ -105,5 +110,10 @@ for ex in exs:
    if time[0].lower() != kind:
       print(str(i)+"\t"+ ex[0]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
       print(time[0]+"\t"+time[1])
-      print('Error!!')
+      print('Wrong answer!!')
+      err_cnt += 1
    print(i,end="\r")
+print("------------------------------")
+print("Number of errors:"+str(err_cnt))
+print("------------------------------")
+
