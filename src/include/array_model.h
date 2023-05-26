@@ -38,23 +38,26 @@ public:
 
   //anything else is needed???
   std::vector<expr>& get_name_vec() { return array_index_names; };
+  std::vector<expr>& get_M_name() {return M_name; };
 private:
   std::vector<expr> array_index_names;
+  std::vector<expr> M_name;
 };
 
-
 class array_model_full;
-class array_model_fixed_len;
-class array_model_partition;
+class single_array_model;
+class multiple_array_model;
+// class array_model_fixed_len; 
+// class array_model_partition; 
 
 class array_model{
 public:
   array_model( options& o_ ) :
     o(o_), solver_ctx(o.solver_ctx) {}
 std::map< unsigned, array_state > exit_ary_map;
-  expr join_array_state( std::vector<expr>&,
+  virtual expr join_array_state( std::vector<expr>&,
                          std::vector<unsigned>& prevs,
-                         unsigned src );
+                         unsigned src ) = 0;
   virtual expr get_fresh_ary_name( unsigned ) = 0;
 
   array_state& get_state( unsigned b );
@@ -65,201 +68,120 @@ private:
   options& o;
   solver_context& solver_ctx;
   array_model_t model = NONE;
+  array_model_memory_arch memory_arch = NOT_DEFINED;
   //std::map< unsigned, array_state > exit_ary_map;
 
+  friend single_array_model;
+  friend multiple_array_model;
   friend array_model_full;
-  friend array_model_fixed_len;
-  friend array_model_partition;
 };
 
 class array_model_full : public array_model {
+
 public:
   array_model_full( options& o ) : array_model(o) {
     model = FULL;
   }
-std::vector< std::string > ar_names;
-  std::vector< sort > ar_sorts;
-  //void set_array_num( unsigned len );
-  // void set_array_num(std::vector<const llvm::Type*>& arr_type);
+  
+  //Virtuals
+  virtual void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access, std::map< unsigned, unsigned >& array_start_add ) = 0;
+  virtual arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val ) = 0;
+  virtual arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& ) = 0;
+  virtual arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& ) = 0;
+  virtual void init_state( unsigned ) = 0;
+  virtual void init_state( unsigned eb, array_state& s ) = 0;
+  virtual void copy_to_init_state( array_state& ) = 0;
+
+  //Setter
   void set_array_info(std::map< const llvm::Value*, unsigned >& ary_id);
-
-  // inline void set_array_num( std::vector<sort>& sorts ) {
-  //   ar_sorts = sorts;
-  //   num_arrays = ar_sorts.size();
-  // }
-
-  inline void
-  set_access_map( std::map< const llvm::Instruction*, unsigned >& map ) {
-    ary_access_to_index = map;
-  }
-
-  // inline void
-  // set_lengths_vec( std::vector< expr >& array_lengths ) {
-  //   lengths = array_lengths;
-  // }
-
-  // inline  std::vector<expr>&
-  // get_lengths_vec() {
-  //   return lengths;
-  // }
-
-  // void init_state( const bb* );
-  void init_state( unsigned );
-  void init_state( unsigned eb, array_state& s );
-  virtual expr get_fresh_ary_name( unsigned );
-  //virtual
-
   void set_array_length( unsigned, std::vector<expr>& len );
-  arr_write_expr
-  array_write( unsigned bidx, const llvm::StoreInst* I,
-               exprs& idx, expr& val );
-  arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
-  arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& );
-  arr_read_expr array_read( unsigned bidx, const llvm::CallInst* I, exprs& );
-
   void update_names( unsigned, std::vector<const llvm::Instruction*>&);
   void update_name( unsigned, unsigned );
-  void copy_to_init_state( array_state& );
-
-private:
-  unsigned num_arrays;
-  //std::vector< std::string > ar_names;
-  //std::vector< sort > ar_sorts;
-  std::vector< std::vector<expr> > lengths; // a list of lengths for each array
-  // std::vector< expr > lengths; // length of arrays can be symbolic
-                               // todo: support tuples
-  std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
-
-  // converting llvm array sorts to solver sorts
+  void set_num_arrays(unsigned);
+  
+  //Getter
+  unsigned get_num_arrays();
+  unsigned get_accessed_array( const llvm::Instruction* I );
   sort get_address_sort();
   sort get_solver_array_ty( const llvm::ArrayType* ty );
   sort get_solver_array_ty( const llvm::PointerType* ty );
+  std::vector< std::vector<expr> > get_array_lengths();
+  std::vector< std::string > get_array_names();
+  std::vector< sort > get_array_sorts();
   std::vector<expr> get_array_length( const llvm::Value* arr );
   void get_array_length( const llvm::ArrayType*, std::vector<expr>&);
 
-  expr access_bound_cons( exprs& idxs, exprs& ls);
 
-  unsigned get_accessed_array( const llvm::Instruction* I );
+  //Debug
   void dump_ary_access_to_index();
+
+  //Misc
+  expr access_bound_cons( exprs& , exprs& );
+  expr get_fresh_ary_name( unsigned );
+
+  // Data members
+  unsigned num_arrays;
+  std::vector< std::vector<expr> > lengths;
+  std::vector< std::string > ar_names;
+  std::vector< sort > ar_sorts;
+  std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
 
 };
 
-// class array_model_fixed_len : public array_model {
-// public:
-//   array_model_fixed_len( options& ctx_ ) : array_model(ctx_) {
-//     model = FIXED_LEN;
-//   }
+class single_array_model : public array_model_full {
+public:
+  single_array_model( options& o ) : array_model_full(o) {
+    memory_arch = SINGLE; 
+  }
 
-//   // void init_state( const bb* );
-//   void init_state( unsigned );
+  inline
+  void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access,
+   std::map< unsigned, unsigned >& array_start_add ) {
+    ary_access_to_index = array_access;
+    ar_bases = array_start_add;
+  };
 
-//   inline void set_partition_len( unsigned len ) { num_partition = len; }
-//   inline void
-//   set_access_map( std::map< const llvm::Instruction*, unsigned >& map ) {
-//     ary_access_to_patition_map = map;
-//   }
-//   virtual expr get_fresh_ary_name( unsigned );
-  
-//   arr_write_expr
-//   array_write( unsigned bidx, const llvm::StoreInst* I, expr& idx, expr& val );
-//   arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, expr& val );
+  //Virtual defined
+  arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
+  arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
+  arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& );
+  expr join_array_state( std::vector<expr>&,std::vector<unsigned>& prevs,unsigned src );
 
-// private:
-//   unsigned num_partition=0;
-//   std::map< const llvm::Instruction*, unsigned > ary_access_to_patition_map;
+  //Overridden functions
+  void init_state( unsigned );
+  void init_state( unsigned eb, array_state& s );
+  void copy_to_init_state( array_state& );
 
-// };
+  std::string M_array_name =  "M";
+  std::map< unsigned, unsigned > ar_bases;
 
-// class array_model_partition : public array_model {
-// public:
-//   array_model_partition( options& ctx_ ) : array_model(ctx_) {
-//     model = PARTITION;
-//   }
-//   virtual expr get_fresh_ary_name( unsigned );
+};
 
-// };
+class multiple_array_model : public array_model_full {
+public:
+  multiple_array_model( options& o ) : array_model_full(o) {
+    memory_arch = MULTIPLE;
+  }
 
-// class glb_state {
-// public:
-//   glb_state() {}
-//   std::vector<expr>& get_glb_name_vec() { return glb_names; };
+  inline
+  void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access,
+   std::map< unsigned, unsigned >& array_start_add ) {
+    ary_access_to_index = array_access;
+  };
 
-// private:
-//   std::vector<expr> glb_names;
-// };
+  //Virtual defined
+  arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
+  arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
+  arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& );
+  expr join_array_state( std::vector<expr>&,std::vector<unsigned>& prevs,unsigned src );
 
-// class glb_model{
-// public:
-//   glb_model( solver_context& ctx_ ) : solver_ctx(ctx_) {}
-//   glb_model( solver_context& ctx_, glb_model& g_m_ ) : solver_ctx(ctx_)
-//     , exit_glb_map( g_m_.get_exit_glb_map() )
-//     , glb_sorts( g_m_.get_sorts() )
-//     , glb_to_id( g_m_.get_glb_to_id() )
-//     , name_to_glb( g_m_.get_name_to_glb() )
-//   {}
-
-//   void update_name(unsigned, std::vector<const llvm::GlobalVariable*>&);
-//   expr join_glb_state( std::vector<expr>&,
-//                            std::vector<unsigned>&, unsigned
-//                           // std::vector<const bb*>&, const bb*
-//                            );
-//   void init_state( unsigned );
-//   void set_state( unsigned, glb_state& );
-
-//   expr get_fresh_glb_name( unsigned, std::string );
-//   expr get_fresh_glb_name( unsigned );
-
-//   void insert_glb_sort( sort );
-//   void insert_glb_to_id( const llvm::GlobalVariable*, unsigned );
-//   void insert_name_to_glb( std::string, const llvm::GlobalVariable* );
-
-//   std::pair<expr,expr> glb_write( unsigned bidx,
-//                                           const llvm::StoreInst* ,
-//                                           expr& );
-//   expr glb_read( unsigned bidx, const llvm::LoadInst* );
-
-//   glb_state& get_state( unsigned b ) { return exit_glb_map.at(b); }
+  //Misc
+  void init_state( unsigned );
+  void init_state( unsigned eb, array_state& s );
+  void copy_to_init_state( array_state& );
+};
 
 
-//   inline void set_glb_to_id( std::map< const llvm::GlobalVariable*, unsigned >& g_id_map) {
-//     glb_to_id = g_id_map;
-//   }
-
-//   inline void set_name_to_glb( std::map< std::string, const llvm::GlobalVariable* >& name_glb_map) {
-//     name_to_glb = name_glb_map;
-//   }
-
-//   void refresh_glb_state( unsigned bidx, const llvm::GlobalVariable* g);
-
-//   expr get_state_var( unsigned bidx, const llvm::GlobalVariable* g);
-
-//   expr get_state_var( unsigned bidx, unsigned i);
-
-//   std::map< const llvm::GlobalVariable*, unsigned >& get_glb_to_id() {
-//     return glb_to_id;
-//   }
-
-//   std::vector< sort >& get_sorts() {
-//     return glb_sorts;
-//   }
-
-//   std::map< unsigned, glb_state >& get_exit_glb_map() {
-//     return exit_glb_map;
-//   }
-
-//   std::map< std::string, const llvm::GlobalVariable*>& get_name_to_glb() {
-//     return name_to_glb;
-//   }
-
-// private:
-//   solver_context& solver_ctx;
-//   std::map< unsigned, glb_state > exit_glb_map;
-//   std::vector< sort > glb_sorts;
-//   std::map< const llvm::GlobalVariable*, unsigned > glb_to_id;
-//   std::map< std::string, const llvm::GlobalVariable*> name_to_glb;
-// };
-
-//update heap model
 
 
 #endif // TILER_GLB_MODEL_H

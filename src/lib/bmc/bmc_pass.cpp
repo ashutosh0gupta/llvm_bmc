@@ -906,6 +906,17 @@ void bmc_pass::loadFromArrayHelper( unsigned bidx,
   bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd.return_val );
 }
 
+void bmc_pass::extractValFromArrayHelper( unsigned bidx,
+                                    const llvm::ExtractValueInst* extractVal,
+                                    exprs& idx_exprs ) {
+  auto arr_rd = bmc_ds_ptr->array_read( bidx, extractVal, idx_exprs);
+  if( o.include_out_of_bound_specs ) {
+    expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+    bmc_ds_ptr->add_spec( !path_bit || arr_rd.size_bound_guard, spec_reason_t::OUT_OF_BOUND );
+  }
+  bmc_ds_ptr->m.insert_term_map(extractVal, bidx, arr_rd.return_val );
+}
+
 void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
   //todo: what is the meaning of the second operand in GEP operator?
 
@@ -1143,18 +1154,6 @@ void bmc_pass::translateLoadInst( unsigned bidx,
     llvm_bmc_error("bmc", "Only array and global write/read supported!");
   }
 }
-
-void bmc_pass::extractValFromArrayHelper( unsigned bidx,
-                                    const llvm::ExtractValueInst* extractVal,
-                                    exprs& idx_exprs ) {
-  auto arr_rd = bmc_ds_ptr->array_read( bidx, extractVal, idx_exprs);
-  if( o.include_out_of_bound_specs ) {
-    expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
-    bmc_ds_ptr->add_spec( !path_bit || arr_rd.size_bound_guard, spec_reason_t::OUT_OF_BOUND );
-  }
-  bmc_ds_ptr->m.insert_term_map(extractVal, bidx, arr_rd.return_val );
-}
-
 
 
 void bmc_pass::addEVIExprs( const llvm::ExtractValueInst* evi, exprs& idxs ) {
@@ -2004,9 +2003,9 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
       // if( ptr->getPointerElementType() ) {
       //   dump(ptr->getPointerElementType());
       // }
-      if( ptr->getPointerElementType()->isArrayTy() ) {
+      // if( ptr->getPointerElementType()->isArrayTy() ) {        // Need to disable it to store global variables
         ary_to_int[&glb] = arrCntr++;
-      }
+      // }
     }
   }
 
@@ -2037,6 +2036,16 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
       ary_to_int[a] = arrCntr++;
     }
   }
+
+  // // Allocate Global array to store local arrays
+  auto int_type = llvm::Type::getInt32Ty(f->getContext());
+  auto array_type = llvm::ArrayType::get(int_type, 1000);
+  auto new_array = new llvm::GlobalVariable(*f->getParent(), array_type, false,
+                                             llvm::GlobalValue::ExternalLinkage,
+                                             nullptr, "Global_array");
+  ary_to_int[new_array] = arrCntr++;
+  // llvm::errs()<<"Types"<<" "<<ar->getType()<<"\n";
+  // ar->getType()->print(llvm::outs());
 
 }
 
