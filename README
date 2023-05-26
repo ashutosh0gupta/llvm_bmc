@@ -51,3 +51,5 @@ Testing
 -------
 
 Running kbound
+
+grep -e "c.*]=" -e "c.*[0-9]=" /tmp/clean.tr > ~/tmp/stamps.txt

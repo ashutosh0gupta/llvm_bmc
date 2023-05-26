@@ -96,8 +96,8 @@ private:
   void dump_Assume_geq_max(std::string s1,std::string s2,std::string s3);
   void dump_Assign (std::string r, std::string term);
   void dump_Decl_assign(std::string r, std::string term);
-  void dump_Assign_rand(std::string r, std::string term);
-  void dump_Assign_rand_ctx(std::string r);
+  void dump_Assign_rand(std::string r, std::string term, std::string cmt="");
+  void dump_Assign_rand_ctx(std::string r, std::string cmt="" );
   void dump_Assign_max(std::string, std::string,std::string);
   void dump_Assign_max(std::string, std::string);
 

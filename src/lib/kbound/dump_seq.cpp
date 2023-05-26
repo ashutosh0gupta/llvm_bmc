@@ -240,10 +240,13 @@ void kbound::dump_Decl_assign(std::string r, std::string term) {
   dump_Assign( "int " + r, term );
 }
 
-void kbound::dump_Assign_rand(std::string v, std::string b ) {
+void kbound::dump_Assign_rand(std::string v, std::string b, std::string cmt ) {
   assert( v != "" );
   assert( b != "" );
-  dump_String( v + " = get_rng(0," + b + ");" );
+  if( cmt != "" ) {
+    cmt = "// " + cmt;
+  }
+  dump_String( v + " = get_rng(0," + b + ");" + cmt );
 }
 
 void kbound::dump_Assign_max( std::string v, std::string r1, std::string r2 ) {
@@ -257,8 +260,8 @@ void kbound::dump_Assign_max( std::string v, std::string r2 ) {
   dump_Assign_max(v,v,r2);
 }
 
-void kbound::dump_Assign_rand_ctx(std::string v) {
-  dump_Assign_rand( v, "NCONTEXT-1" );
+void kbound::dump_Assign_rand_ctx(std::string v, std::string cmt) {
+  dump_Assign_rand( v, "NCONTEXT-1", cmt );
 }
 
 void kbound::dump_Comment(std::string s) {
@@ -550,7 +553,7 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
   if(isExclusive)   dump_Comment("  : Exlusive");
   if(isAcquire)     dump_Comment("  : Acquire");
   dump_Assign( "old_cr",  cr);
-  dump_Assign_rand_ctx( cr );
+  dump_Assign_rand_ctx( cr, " ctx for load");
 
   if( is_sc_semantics ) {
     dump_Comment("Check");
@@ -648,7 +651,9 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
     if( isExclusive ) dump_Assume( "delta" + gctx_access + " == "+ tid );
 
     dump_Comment("Update");
-    dump_Assign_max( "caddr[" + tid + "]", cval );
+    // std::cout << caddr;
+    // dump_Assign_max( "caddr[" + tid + "]", cval ); // << error
+    dump_Assign_max( "caddr[" + tid + "]", caddr ); // << error
     dump_Assign( "nu"   + gaccess    , v);
     dump_Assign( "mu"   + gctx_access, v);
     if( isExclusive ) dump_Assign( "cx"   + gaccess, cw);

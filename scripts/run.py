@@ -36,6 +36,12 @@ folder = "./examples/litmus/cpp/c-litmus-ARMCBMC/"
 # my_env = os.environ.copy()
 # my_env["TIMEFORMAT"] = "%R"
 
+in_f = open('/home/akg/tmp/fail.txt')
+lines = in_f.readlines()
+fails = []
+for line in lines:
+   sl = line.split(',')
+   fails.append( sl[1] )
 
 sys.path.append(folder)
 import examples
@@ -55,8 +61,10 @@ i = 0
 
 print( "Index\tName\t\t\tKind\tN K L Result\tTime" )
 for ex in exs:
-   i = i + 1
-   if ex[0] != 'MP+dmb.sy+addr-wsi-rfi-ctrlisb':
+   i = i + 1   
+   # if not ex[0] in fails:
+   #    continue
+   if ex[0] != 'CO-SBI':
       continue
    # if i < 1900:
    #    continue
@@ -75,7 +83,7 @@ for ex in exs:
       lk =  ex[3]
    else:
       lk = 10
-   lk = 6
+   # lk = 6
    if( len(ex) > 4):
       l = ex[4]
    else:
@@ -85,13 +93,15 @@ for ex in exs:
    else:
       kind = "unk"
 
-   if not only_error:
-      print(str(i)+"\t"+ex[0]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
+   print(str(i)+"\t"+ex[0]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
    result = subprocess.check_output(["time", run, str(l), str(lk), f, s ],stderr=subprocess.STDOUT)
    result=result.decode("utf-8")
    time = find_time(result)
-   if not only_error:
-      print(time[0]+"\t"+time[1])
+   print(time[0]+"\t"+time[1],end="")
+   if only_error:
+      print("",end="\r")
+   else:
+      print("")
    if time[0].lower() != kind:
       print(str(i)+"\t"+ ex[0]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
       print(time[0]+"\t"+time[1])
