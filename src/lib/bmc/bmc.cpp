@@ -76,6 +76,16 @@ void bmc::run_bmc_pass() {
                                    revEndLocalNameMap ) );
   passMan.add( new collect_loopdata(o, ld_map, localNameMap, module) );
   passMan.run( *module.get() );
+  // todo: check if only one mode is active
+
+  if( o.psystems ) {
+    collect_threads( module, *this, o );
+    collect_globals( module, *this, o.mem_enc, o.solver_ctx, o );
+    // you can decide how to run your code.
+    passMan.add( new psystems(o, module, *this) );
+    passMan.run( *module.get() );
+    return;
+  }
 
   if( o.kbound ) {
     collect_threads( module, *this, o );

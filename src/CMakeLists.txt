@@ -121,7 +121,7 @@ LINK_DIRECTORIES(${LLVM_LIBRARY_DIRS})
 
 # lib/bmc/bmc_loop_pass.cpp
 SET(SOURCES lib/utils/llvm_utils.cpp
-  lib/utils/collect_points_to.cpp lib/utils/solver_utils.cpp lib/utils/options.cpp lib/utils/build_name_map.cpp lib/utils/loopdata.cpp lib/utils/collect_loopdata.cpp lib/bmc/collect_globals.cpp lib/bmc/collect_threads.cpp lib/parsers/spec_parser.cpp lib/bmc/memory_event.cpp lib/bmc/value_expr_map.cpp lib/bmc/array_model.cpp lib/bmc/memory_model.cpp lib/bmc/ses.cpp lib/bmc/translate_specs.cpp lib/bmc/bmc_pass.cpp lib/bmc/bmc_fun_pass.cpp lib/bmc/bmc_concurrency.cpp lib/bmc/insert_monitor_pass.cpp lib/bmc/bmc_loop_pass.cpp lib/bmc/witness.cpp lib/bmc/bmc_ds.cpp lib/bmc/bmc.cpp lib/bmc/bmc_utils.cpp lib/kbound/kbound.cpp lib/kbound/dump_seq.cpp lib/wp/wp.cpp main.cpp)  
+  lib/utils/collect_points_to.cpp lib/utils/solver_utils.cpp lib/utils/options.cpp lib/utils/build_name_map.cpp lib/utils/loopdata.cpp lib/utils/collect_loopdata.cpp lib/bmc/collect_globals.cpp lib/bmc/collect_threads.cpp lib/parsers/spec_parser.cpp lib/bmc/memory_event.cpp lib/bmc/value_expr_map.cpp lib/bmc/array_model.cpp lib/bmc/memory_model.cpp lib/bmc/ses.cpp lib/bmc/translate_specs.cpp lib/bmc/bmc_pass.cpp lib/bmc/bmc_fun_pass.cpp lib/bmc/bmc_concurrency.cpp lib/bmc/insert_monitor_pass.cpp lib/bmc/bmc_loop_pass.cpp lib/bmc/witness.cpp lib/bmc/bmc_ds.cpp lib/bmc/bmc.cpp lib/bmc/bmc_utils.cpp lib/psystems/psystems.cpp lib/kbound/kbound.cpp lib/kbound/dump_seq.cpp lib/wp/wp.cpp main.cpp)  
 
 add_executable(${LLVMBMC} ${SOURCES})
 

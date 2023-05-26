@@ -74,6 +74,7 @@ public:
   // configuration for concurrent programs
   bool concurrent = false;
   bool kbound = false;
+  bool psystems = false;
   int ctx_bound = 10;
 
 

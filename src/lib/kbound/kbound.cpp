@@ -70,6 +70,7 @@ kbound::kbound( options& o_, std::unique_ptr<llvm::Module>& m_,
   , current_indent(0)
   , ncontext(o.ctx_bound)
 {
+  //module->dump();
   unsigned i = 0;
   for( auto v : bmc_obj.concurrent_vars ) {
     global_position[v] = i;
