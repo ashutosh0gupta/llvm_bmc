@@ -11,16 +11,16 @@ import sys
 
 tmp_path= sys.argv[1]
 
-in_file = tmp_path+'/tr.tr'
-out_file = tmp_path+'/clean.tr'
-cbmc_file = tmp_path+'/cbmc_out.cpp'
-tagged = tmp_path+'/trace-tagged.cpp'
+in_file   = tmp_path + '/tr.tr'
+out_file  = tmp_path + '/clean.tr'
+cbmc_file = tmp_path + '/cbmc_out.cpp'
+tagged    = tmp_path + '/trace-tagged.cpp'
 
 try:
     with open(in_file) as in_f:
         input = in_f.read()
 except IOError as e:
-    print( "failed to open" + in_file  )
+    print( "Failed to open " + in_file  )
     sys.exit(0)
 
 output = open(out_file,'w+')
@@ -43,7 +43,7 @@ try:
     with open(out_file) as out_f:
         out = out_f.readlines()
 except IOError as e:
-    print( "failed to open" + cbmc_file  )
+    print( "Failed to open " + cbmc_file  )
     sys.exit(0)
 
 # grep -e "c.*]=" -e "c.*[0-9]=" /tmp/clean.tr > ~/tmp/stamps.txt

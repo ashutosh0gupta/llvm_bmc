@@ -26,7 +26,7 @@ fi
 echo "./llvmbmc --unwind $1 --context-bound $2 -k $3 $spec_option"
 ./llvmbmc --unwind $1 -o $tmp_path --context-bound $2 -k $3 $spec_option > /dev/null 2>&1
 timeout $timeout cbmc $tmp_path/cbmc_out.cpp --unwind $1 --trace > $tmp_path/tr.tr 2>&1
-./scripts/clean-cmsb.py $tmp_path
+# ./scripts/clean-cmsb.py $tmp_path
 
 tr_file=$tmp_path/tr.tr
 
