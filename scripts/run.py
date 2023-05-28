@@ -35,12 +35,12 @@ folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
 # my_env = os.environ.copy()
 # my_env["TIMEFORMAT"] = "%R"
 
-in_f = open('/home/akg/tmp/fail.txt')
-lines = in_f.readlines()
-fails = []
-for line in lines:
-   sl = line.split(',')
-   fails.append( sl[1] )
+# in_f = open('/home/akg/tmp/fail.txt')
+# lines = in_f.readlines()
+# fails = []
+# for line in lines:
+#    sl = line.split(',')
+#    fails.append( sl[1] )
 
 sys.path.append(folder)
 import examples
