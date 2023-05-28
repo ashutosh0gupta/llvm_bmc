@@ -7,3 +7,10 @@
 ./.vscode/
 ./.z3-trace
 **/__pycache__/
+
+######## CSEQ ###########
+_cs_*.c
+_cs_*.log
+
+######## PYTHON ###########
+*.pyc
