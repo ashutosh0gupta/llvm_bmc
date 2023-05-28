@@ -17,9 +17,9 @@ l = 1
 
 # choose a folder to execute
 
-folder = "examples/kbound/omkar/bench"
+# folder = "examples/kbound/omkar/bench"
 
-# folder = "./examples/litmus/cpp/c-litmus-ARMCBMC/"
+folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
 
 # folder = "examples/kbound/pldi19-benchmark"
 
@@ -55,13 +55,14 @@ def find_time( result ):
       exit()
    return out[0]
 
-only_error = False
+only_error = True
 i = 0
 
 print("------------------------------")
 print("Running kbound implementation:")
 print("Example suite :" + folder)
-print("Full report only for wrong answers!")
+if only_error:
+   print("Full report only for wrong answers!")
 print("------------------------------")
 print( "Index\tName\t\t\tKind\tN K L Result\tTime" )
 err_cnt = 0
