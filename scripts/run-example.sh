@@ -10,10 +10,11 @@ if [ "$#" -ne 4 ]; then
     exit 0
 fi
 
-tmp_path="."
-if [ -w /tmp/ ]; then
-    tmp_path="/tmp"
-fi
+
+tmp_path="./tmp/"
+# if [ -w /tmp/ ]; then
+#     tmp_path="/tmp"
+# fi
 
 rm $tmp_path/cbmc_out.cpp || true
 
