@@ -17,9 +17,9 @@ l = 1
 
 # choose a folder to execute
 
-# folder = "examples/kbound/omkar/bench"
+folder = "examples/kbound/omkar/bench"
 
-folder = "./examples/litmus/cpp/c-litmus-ARMCBMC/"
+# folder = "./examples/litmus/cpp/c-litmus-ARMCBMC/"
 
 # folder = "examples/kbound/pldi19-benchmark"
 
@@ -55,7 +55,7 @@ def find_time( result ):
       exit()
    return out[0]
 
-only_error = 'True'
+only_error = False
 i = 0
 
 print("------------------------------")
@@ -65,12 +65,13 @@ print("Full report only for wrong answers!")
 print("------------------------------")
 print( "Index\tName\t\t\tKind\tN K L Result\tTime" )
 err_cnt = 0
-for ex in exs:
+total_time = 0.0
+for ex in exs: #[:20]
    i = i + 1   
    # if not ex[0] in fails:
    #    continue
-   if ex[0] != 'CO-SBI':
-      continue
+   # if ex[0] != 'CO-SBI':
+   #    continue
    # if i > 100:
    #    continue
    f = folder + "/"+ ex[0]+".cpp"
@@ -88,7 +89,7 @@ for ex in exs:
       lk =  ex[3]
    else:
       lk = 10
-   # lk = 6
+   # lk = 15
    if( len(ex) > 4):
       l = ex[4]
    else:
@@ -102,6 +103,7 @@ for ex in exs:
    result = subprocess.check_output(["time", run, str(l), str(lk), f, s ],stderr=subprocess.STDOUT)
    result=result.decode("utf-8")
    time = find_time(result)
+   total_time += float(time[1])
    print(time[0]+"\t"+time[1],end="")
    if only_error:
       print("",end="\r")
@@ -115,5 +117,6 @@ for ex in exs:
    print(i,end="\r")
 print("------------------------------")
 print("Number of errors:"+str(err_cnt))
+print("Total run time:"+str(total_time))
 print("------------------------------")
 

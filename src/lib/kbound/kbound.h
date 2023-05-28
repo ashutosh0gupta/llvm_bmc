@@ -32,7 +32,7 @@ private:
 
   svec reg_vals,reg_list;
   svec val_init_list, val_list;
-  svec time_list, proc_list, thread_ctrl_list, ctx_list;
+  svec local_list, time_list, proc_list, thread_ctrl_list, ctx_list;
   svec var_list;
 
   unsigned num_globals = 0;
@@ -90,6 +90,7 @@ private:
   void dump_Goto(std::string s);
   void dump_Comment(std::string s);
   void dump_Assume (std::string s);
+  void dump_Assume_implies(std::string s1,std::string s2);
   void dump_Assert (std::string s);
   void dump_Assume_eq ( std::string s1, std::string s2 );
   void dump_Assume_geq( std::string s1, std::string s2 );
@@ -127,6 +128,8 @@ private:
   void dump_dmbld();
   void dump_dmbst();
   void dump_isb();
+  void dump_update_ctrl( const void* cond );
+
 
   // thread create
   void dump_thread_create( unsigned bidx, std::string child_tid );
@@ -137,8 +140,14 @@ private:
   void dump_commit_before_thread_finish( std::string cctx );
 
   //-------------------------------------------------------------------
+  void preamble();
   void prefix_seq();
   void postfix_seq();
+
+  //-------------------------------------------------------------------
+  void dump_ld_new(std::string,std::string,std::string,std::string,bool,bool);
+  void dump_st_new(std::string,std::string,std::string,std::string,bool,bool);
+  void prefix_seq_new();
 
   //-------------------------------------------------------------------
 
@@ -191,6 +200,7 @@ private:
   void dump_PhiNodes( const bb* b, const bb* prev_b );
   void dump_PhiNode( unsigned bidx, const llvm::PHINode* phi );
   void dump_RetInst(const llvm::ReturnInst *ret );
+  void dump_block_successor( unsigned bidx, const bb* succ );
   void dump_Branch( unsigned bidx, const llvm::BranchInst* br );
   void dump_SwitchInst( unsigned bidx, const llvm::SwitchInst* br );
   void dump_UnreachableInst( unsigned, const llvm::UnreachableInst *I);

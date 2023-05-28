@@ -9,12 +9,12 @@
 
 class bmc;       // forward declaration of the bmc class
 
-struct names {
-  std::map<std::string,names> nmap;
-  std::string name;
-};
+// struct names {
+//   std::map<std::string,names> nmap;
+//   std::string name;
+// };
 
-typedef std::vector<std::string> svec;
+// typedef std::vector<std::string> svec;
 
 class psystems : public bmc_pass, public llvm::FunctionPass{
 

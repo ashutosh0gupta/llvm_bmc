@@ -1002,29 +1002,21 @@ void kbound::dump_SelectInst( const llvm::SelectInst *sel ) {
 
 }
 
+void kbound::dump_block_successor( unsigned bidx, const bb* succ ) {
+  // auto succ = br->getSuccessor( succ_num );
+  auto succ_bidx = bmc_ds_ptr->find_block_idx(succ );
+  dump_PhiNodes( succ, bmc_ds_ptr->bb_vec[bidx] );
+  dump_Goto( block_name(succ_bidx) );
+}
+
+
 void kbound::dump_SwitchInst( unsigned bidx,
                               const llvm::SwitchInst *swch ) {
   assert( swch );
-
-  auto cond = swch->getCondition();
   dump_Comment( "Switch statement");
-  //dumping control ordring
-  auto ctrl = "ctrl["+tid+"]";
-  dump_Assign("old_ctrl", ctrl);
-  dump_Assign_rand_ctx( ctrl );
-  dump_Assume_geq( ctrl, "old_ctrl" );
-  if( exists( ctrl_dep_ord, (const void *)cond ) ) {
-    for( auto& dep : ctrl_dep_ord.at(cond) ) {
-      dump_Assume_geq( "ctrl["+tid+"]", dep);
-    }
-  }else{
-    auto cr = get_reg_time( cond );
-    dump_Assume_geq( "ctrl["+tid+"]", cr );
-  }
+  dump_update_ctrl( swch->getCondition() );
 
-
-  // dumping jump
-  auto r = get_reg( cond );
+  auto r = get_reg( swch->getCondition() );
   for( unsigned i = 1; i < swch->getNumSuccessors(); i++ ) {
     auto val = get_reg( swch->getOperand(2*i) );
     if (i == 1) {
@@ -1032,62 +1024,30 @@ void kbound::dump_SwitchInst( unsigned bidx,
     }else{
       dump_ElseIf( r + " == " + val );
     }
-    auto succ = swch->getSuccessor(i);
-    auto succ_bidx =bmc_ds_ptr->find_block_idx( succ );
-    dump_PhiNodes( succ, bmc_ds_ptr->bb_vec[bidx] );
-    dump_Goto( block_name(succ_bidx) );
+    dump_block_successor( bidx, swch->getSuccessor(i) );
   }
   dump_Else();
-  auto succ = swch->getSuccessor(0);
-  auto succ_bidx = bmc_ds_ptr->find_block_idx( succ );
-  dump_PhiNodes( succ, bmc_ds_ptr->bb_vec[bidx] );
-  dump_Goto( block_name(succ_bidx) );
+  {
+    dump_block_successor( bidx, swch->getSuccessor(0) );
+  }
   dump_Close_scope();
-
 }
-
 
 void kbound::dump_Branch( unsigned bidx, const llvm::BranchInst* br ) {
   assert( br );
-
   if( !br->isUnconditional() ) {
-    auto cond = br->getCondition();
-
-    //dumping control ordring
-    auto ctrl = "ctrl["+tid+"]";
-    dump_Assign("old_ctrl", ctrl);
-    dump_Assign_rand_ctx( ctrl );
-    dump_Assume_geq( ctrl, "old_ctrl" );
-    if( exists( ctrl_dep_ord, (const void *)cond ) ) {
-      //todo: remove this branch if compute the reg_time of the compare
-      //      instruction is computed; already added
-      for( auto& dep : ctrl_dep_ord.at(cond) ) {
-        dump_Assume_geq( "ctrl["+tid+"]", dep);
-      }
-    }else{
-      auto cr = get_reg_time( cond );
-      dump_Assume_geq( "ctrl["+tid+"]", cr );
-    }
-
-    // dumping jump
+    dump_update_ctrl( (const void*) br->getCondition() );
     auto r = get_reg( br->getCondition() );
     dump_If( r );
-    auto succ_bidx = bmc_ds_ptr->find_block_idx( br->getSuccessor(0) );
-    dump_PhiNodes( br->getSuccessor(0), bmc_ds_ptr->bb_vec[bidx] );
-    dump_Goto( block_name(succ_bidx) );
+    dump_block_successor( bidx, br->getSuccessor(0) );
     dump_Else();
-    succ_bidx = bmc_ds_ptr->find_block_idx( br->getSuccessor(1) );
-    dump_PhiNodes( br->getSuccessor(1), bmc_ds_ptr->bb_vec[bidx] );
-    dump_Goto( block_name(succ_bidx) );
+    dump_block_successor( bidx, br->getSuccessor(1) );
     dump_Close_scope();
   }else{
-    auto succ_bidx = bmc_ds_ptr->find_block_idx( br->getSuccessor(0) );
-    dump_PhiNodes( br->getSuccessor(0), bmc_ds_ptr->bb_vec[bidx] );
-    dump_Goto( block_name(succ_bidx) );
-    // for unconditional branch, there is no need of constraints
-    // bmc_ds_ptr->bmc_vec.push_back( exit_bit );
+    dump_block_successor( bidx, br->getSuccessor(0) );
   }
 }
+
 
 void kbound::dump_UnreachableInst( unsigned bidx,
                                    const llvm::UnreachableInst *I) {
@@ -1175,13 +1135,6 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
 }
 
 void kbound::dump_Thread() {
-  // for( unsigned i = 0; i < bmc_ds_ptr->bb_vec.size(); i++ ) {
-  //   dump_Assign( "char "+ get_path(i), "0" );
-  // }
-  // dump_Comment( "Dumping thread "+ tid );
-  // if(is_sc_semantics) dump_Comment( "Thread semanics = SC");
-  // dump_Assign( "int ret_thread_"+ tid, "0" );
-
   dump_start_thread();
   unsigned bidx = 0;
   for( const bb* src : bmc_ds_ptr->bb_vec ) {
@@ -1190,6 +1143,13 @@ void kbound::dump_Thread() {
   }
   dump_Newline();
 }
+
+  // for( unsigned i = 0; i < bmc_ds_ptr->bb_vec.size(); i++ ) {
+  //   dump_Assign( "char "+ get_path(i), "0" );
+  // }
+  // dump_Comment( "Dumping thread "+ tid );
+  // if(is_sc_semantics) dump_Comment( "Thread semanics = SC");
+  // dump_Assign( "int ret_thread_"+ tid, "0" );
 
   // for( auto ary: reg_list ) dump_Decl_array("int", ary,reg_copy_size);
   // dump_Newline();
@@ -1235,3 +1195,100 @@ void kbound::dump_Thread() {
   // dump_Close_scope();
   // dump_Close_scope();
   // dump_Newline();
+
+// void kbound::dump_SwitchInst( unsigned bidx,
+//                               const llvm::SwitchInst *swch ) {
+//   assert( swch );
+//   dump_Comment( "Switch statement");
+//   dump_update_ctrl( swch->getCondition() );
+
+//   // auto cond = swch->getCondition();
+//   // //dumping control ordring
+//   // auto ctrl = "ctrl["+tid+"]";
+//   // dump_Assign("old_ctrl", ctrl);
+//   // dump_Assign_rand_ctx( ctrl );
+//   // dump_Assume_geq( ctrl, "old_ctrl" );
+//   // if( exists( ctrl_dep_ord, (const void *)cond ) ) {
+//   //   for( auto& dep : ctrl_dep_ord.at(cond) ) {
+//   //     dump_Assume_geq( "ctrl["+tid+"]", dep);
+//   //   }
+//   // }else{
+//   //   auto cr = get_reg_time( cond );
+//   //   dump_Assume_geq( "ctrl["+tid+"]", cr );
+//   // }
+
+//   // dumping jump
+//   auto cond = swch->getCondition();
+//   auto r = get_reg( cond );
+//   for( unsigned i = 1; i < swch->getNumSuccessors(); i++ ) {
+//     auto val = get_reg( swch->getOperand(2*i) );
+//     if (i == 1) {
+//       dump_If( r + " == " + val );
+//     }else{
+//       dump_ElseIf( r + " == " + val );
+//     }
+//     // auto succ = swch->getSuccessor(i);
+//     // auto succ_bidx =bmc_ds_ptr->find_block_idx( succ );
+//     // dump_PhiNodes( succ, bmc_ds_ptr->bb_vec[bidx] );
+//     // dump_Goto( block_name(succ_bidx) );
+//     dump_block_successor( bidx, swch->getSuccessor(i) );
+//   }
+//   dump_Else();
+//   {
+//     dump_block_successor( bidx, swch->getSuccessor(0) );
+//     // auto succ = swch->getSuccessor(0);
+//     // auto succ_bidx = bmc_ds_ptr->find_block_idx( succ );
+//     // dump_PhiNodes( succ, bmc_ds_ptr->bb_vec[bidx] );
+//     // dump_Goto( block_name(succ_bidx) );
+//   }
+//   dump_Close_scope();
+// }
+
+
+// void kbound::dump_Branch( unsigned bidx, const llvm::BranchInst* br ) {
+//   assert( br );
+
+//   if( !br->isUnconditional() ) {
+//     dump_update_ctrl( (const void*) br->getCondition() );
+//     // auto cond = br->getCondition();
+
+//     // //dumping control ordring
+//     // auto ctrl = "ctrl["+tid+"]";
+//     // dump_Assign("old_ctrl", ctrl);
+//     // dump_Assign_rand_ctx( ctrl );
+//     // dump_Assume_geq( ctrl, "old_ctrl" );
+//     // if( exists( ctrl_dep_ord, (const void *)cond ) ) {
+//     //   //todo: remove this branch if compute the reg_time of the compare
+//     //   //      instruction is computed; already added
+//     //   for( auto& dep : ctrl_dep_ord.at(cond) ) {
+//     //     dump_Assume_geq( "ctrl["+tid+"]", dep);
+//     //   }
+//     // }else{
+//     //   auto cr = get_reg_time( cond );
+//     //   dump_Assume_geq( "ctrl["+tid+"]", cr );
+//     // }
+
+//     // dumping jump
+//     auto r = get_reg( br->getCondition() );
+//     dump_If( r );
+//     {
+//       dump_block_successor( bidx, br->getSuccessor(0) );
+//       // auto succ_bidx = bmc_ds_ptr->find_block_idx( br->getSuccessor(0) );
+//       // dump_PhiNodes( br->getSuccessor(0), bmc_ds_ptr->bb_vec[bidx] );
+//       // dump_Goto( block_name(succ_bidx) );
+//     }
+//     dump_Else();
+//     {
+//       dump_block_successor( bidx, br->getSuccessor(1) );
+//       // auto succ_bidx = bmc_ds_ptr->find_block_idx( br->getSuccessor(1) );
+//       // dump_PhiNodes( br->getSuccessor(1), bmc_ds_ptr->bb_vec[bidx] );
+//       // dump_Goto( block_name(succ_bidx) );
+//     }
+//     dump_Close_scope();
+//   }else{
+//     dump_block_successor( bidx, br->getSuccessor(0) );
+//     // auto succ_bidx = bmc_ds_ptr->find_block_idx( br->getSuccessor(0) );
+//     // dump_PhiNodes( br->getSuccessor(0), bmc_ds_ptr->bb_vec[bidx] );
+//     // dump_Goto( block_name(succ_bidx) );
+//   }
+// }

@@ -36,38 +36,6 @@ std::string kbound::fresh_name() {
   return name;
 }
 
-//----------------------------------------------------------------------------
-
-// std::string kbound::get_reg( const void* v ) {
-//   if( exists( ssa_name, v) ) {
-//     return ssa_name.at(v);
-//   }
-//   return "";
-// }
-
-// void kbound::add_reg_map( const void* v, std::string name) {
-//   ssa_name[v] = name;
-// }
-
-// std::string kbound::add_reg_map( const void* v) {
-//   if( ssa_name.find(v) != ssa_name.end() ) return ssa_name.at(v);
-//   auto fname = fresh_name();
-//   add_reg_map(v, fname );
-//   return get_reg(v);
-// }
-
-// std::string kbound::get_reg_time( const void* v) {
-//   auto name = ssa_name.at(v);
-//   if( name[0] != 'r' ) {
-//     auto vec = ctrl_dep_ord.at(v);
-//     if( vec.size() == 0 ) return "0";
-//     if( vec.size() == 1 ) return vec[0];
-//     if( vec.size() == 2 ) return "max("+vec[0]+","+vec[1]+")";
-//     assert(false);
-//   }
-//   return time_name( ssa_name.at(v) );
-// }
-
 //---------------------------------------------------------------------------
 
 std::string kbound::time_name( std::string name ) {
@@ -213,6 +181,11 @@ void kbound::dump_Assume_eq(std::string s1,std::string s2) {
   assert( s2 != "" );
   if (s1 == s2) return;
   dump_Assume( s1 + " == "+ s2 );
+}
+void kbound::dump_Assume_implies(std::string s1,std::string s2) {
+  assert( s1 != "" );
+  assert( s2 != "" );
+  dump_Assume( "(!("+s1+"))||("+s2+")" );
 }
 
 void kbound::dump_Assume_geq(std::string s1,std::string s2) {
@@ -361,124 +334,6 @@ void kbound::dump_Active( std::string ctx) {
   dump_Assume("active["+ctx+"] == "+tid);
 }
 
-void kbound::prefix_seq() {
-
-  for( auto& v : global_position ) {
-    auto g = v.first;
-    dump_Comment( std::to_string(v.second) + ":" + global_name.at(g) +
-                  + ":" + std::to_string(global_size.at(g)) );
-  }
-  std::cout << "Running k bound\n";
-  // dump_Define("ADDRSIZE",std::to_string( num_globals ) );
-  dump_Define("ADDRSIZE",std::to_string( num_globals ) );
-  dump_Define( "NPROC"   , std::to_string( bmc_obj.sys_spec.threads.size() ) );
-  dump_Define( "NCONTEXT", std::to_string(ncontext) );
-  dump_Newline();
-
-  dump_Define("ASSUME(stmt)", "__CPROVER_assume(stmt)");
-  dump_Define("ASSERT(stmt)", "__CPROVER_assert(stmt, \"error\")");
-  dump_Newline();
-
-  dump_Define("max(a,b)", "(a>b?a:b)");
-  dump_Newline();
-
-  dump_String("char __get_rng();");
-  dump_String("char get_rng( char from, char to ) {");
-  dump_String("   char ret = __get_rng();");
-  dump_String("   ASSUME(ret >= from && ret <= to);");
-  // dump_String("   ctx_used[ret] = 1;");
-  dump_String("   return ret;");
-  dump_String("}");
-  dump_Newline();
-
-  dump_String("char get_rng_th( char from, char to ) {");
-  dump_String("   char ret = __get_rng();");
-  dump_String("   ASSUME(ret >= from && ret <= to);");
-  dump_String("   return ret;");
-  dump_String("}");
-  dump_Newline();
-
-  // dump_Comment("declare arrays for register values");
-  // reg_vals = { "reg" }; //"ireg",
-  // dump_Arrays( "int", reg_vals, "NPROC", "NREGS");
-
-  dump_Decl_fun("int", "main", "int argc, char **argv");
-  dump_Comment("declare arrays for value version in contexts");
-  val_init_list = {"muinit", "nwinit", "deltainit"};
-  dump_Arrays( "int", val_init_list, "ADDRSIZE", "NCONTEXT");
-  val_list = { "mu", "nw",  "delta"};
-  dump_Arrays( "int", val_list, "ADDRSIZE", "NCONTEXT");
-
-  dump_Comment("declare arrays for context stamps");
-  time_list = { "nu", "pw", "cr", "iw", "cw", "cx", "is", "cs"};
-  dump_Arrays( "int", time_list, "NPROC", "ADDRSIZE");
-
-  // dump_Comment("declare arrays for registers");
-  // reg_list = { , "creg" }; //"ireg",
-  // dump_Arrays( "int", reg_list, "NPROC", "NREGS");
-
-  dump_Comment("declare arrays for synchronizations");
-  proc_list = { "cl", "cdy", "cds", "cdl", "cisb", "caddr", "ctrl" };
-  for( auto ary: proc_list ) dump_Decl_array("int", ary, "NPROC");
-  thread_ctrl_list = { "cstart", "creturn"};
-  for( auto ary: thread_ctrl_list ) dump_Decl_array("int", ary, "NPROC");
-
-  dump_Newline();
-
-  dump_Comment( "declare arrays for contexts activity" );
-  ctx_list = {"active","ctx_used"};
-  for( auto ary: ctx_list ) dump_Decl_array( "int", ary, "NCONTEXT" );
-  dump_Newline();
-
-  var_list = { "old_ctrl", "old_cr", "old_cdy", "old_cw",  "new_creg" //, "new_iw", "new_cw",  // "new_ireg",
-  };
-  dump_Newline();
-  dump_String("__LOCALS__");
-
-  // records time and processes
-  for( unsigned p = 0; p < bmc_obj.sys_spec.threads.size(); p++ ) {
-    auto pn = std::to_string(p);
-    for( unsigned x = 0; x < num_globals; x++ ) {
-      auto xn = std::to_string(x);
-      for( auto ary: time_list ) dump_String( ary + "("+pn+","+xn+") = 0;" );
-    }
-    for( auto ary: proc_list ) dump_String( ary + "["+ pn + "] = 0;" );
-    for( auto ary: thread_ctrl_list ) dump_Assign_rand_ctx(ary+"["+ pn + "]" );
-  }
-
-  // records values
-  //dump initializers
-  dump_Comment( "Dumping initializations" );
-  for( auto& v : global_position ) {
-    auto g = v.first;
-    auto pos = std::to_string(v.second);
-    auto size = global_size.at(g);
-    auto& init = global_init.at(g);
-    assert( init.size() == 0 || size == init.size() );
-    for( unsigned i=0; i < size; i++ ) {
-      auto in = std::to_string(i);
-      auto ival = init.size() > 0 ? init[i] : "0";
-      dump_Assign( "mu("+ pos + "+" + in + ",0)", ival );
-    }
-  }
-  dump_Comment( "Dumping context matching equalities" );
-  for( unsigned x = 0; x < num_globals; x++ ) {
-    auto xn = std::to_string(x);
-    // for( auto ary: val_list ) dump_String( ary + "("+xn+",0) = 0;" );
-    // dump_String( "mu("+xn+",0) = 0;" );
-    dump_String( "nw("+xn+",0) = 0;" );
-    dump_String( "delta("+xn+",0) = -1;" );
-    for( unsigned k = 1; k < ncontext; k++ ) {
-      auto kn = std::to_string(k);
-      auto xkn = "("+xn+","+kn+")";
-      // for( auto ary: val_init_list ) dump_String(ary +xkn+" = __get_rng();");
-      for( auto ary: val_list ) dump_Assign( ary+xkn, ary+"init"+xkn );
-
-    }
-  }
-
-}
-
 void kbound::postfix_seq() {
   //initializing value matching
   for( unsigned x = 0; x < num_globals; x++ ) {
@@ -496,7 +351,7 @@ void kbound::postfix_seq() {
   for( auto pair : global_position ) {
     auto gv = global_name.at(pair.first);//(std::string)(pair.first->getName());
     auto gid = pair.second;
-    rename[gv] = "mu("+std::to_string(gid) + ctx_name + ")";
+    rename[gv] = "mem("+std::to_string(gid) + ctx_name + ")";
   }
   for(auto& spec: bmc_obj.sys_spec.posts ) {
     auto term = display(spec, rename);
@@ -537,12 +392,179 @@ void kbound::dump_locals() {
     out.close();
 }
 
-void kbound::dump_sc_semantics( std::string tid, std::string c ) {
-  dump_Assign( "cdy[" + tid + "]", c );
+
+void kbound::preamble() {
+
+  for( auto& v : global_position ) {
+    auto g = v.first;
+    dump_Comment( std::to_string(v.second) + ":" + global_name.at(g) +
+                  + ":" + std::to_string(global_size.at(g)) );
+  }
+  dump_Define("ADDRSIZE",std::to_string( num_globals ) );
+  dump_Define( "NPROC"   , std::to_string( bmc_obj.sys_spec.threads.size() ) );
+  dump_Define( "NCONTEXT", std::to_string(ncontext) );
+  dump_Newline();
+
+  dump_Define("ASSUME(stmt)", "__CPROVER_assume(stmt)");
+  dump_Define("ASSERT(stmt)", "__CPROVER_assert(stmt, \"error\")");
+  dump_Newline();
+
+  dump_Define("max(a,b)", "(a>b?a:b)");
+  dump_Newline();
+
+  dump_String("char __get_rng();");
+  dump_String("char get_rng( char from, char to ) {");
+  dump_String("   char ret = __get_rng();");
+  dump_String("   ASSUME(ret >= from && ret <= to);");
+  dump_String("   return ret;");
+  dump_String("}");
+  dump_Newline();
+
+  dump_String("char get_rng_th( char from, char to ) {");
+  dump_String("   char ret = __get_rng();");
+  dump_String("   ASSUME(ret >= from && ret <= to);");
+  dump_String("   return ret;");
+  dump_String("}");
+  dump_Newline();
+
+  dump_Decl_fun("int", "main", "int argc, char **argv");
+
 }
 
+void kbound::prefix_seq() {
+  std::cout << "Running k bound\n";
+  preamble();
+  // for( auto& v : global_position ) {
+  //   auto g = v.first;
+  //   dump_Comment( std::to_string(v.second) + ":" + global_name.at(g) +
+  //                 + ":" + std::to_string(global_size.at(g)) );
+  // }
+  // std::cout << "Running k bound\n";
+  // dump_Define("ADDRSIZE",std::to_string( num_globals ) );
+  // dump_Define( "NPROC"   , std::to_string( bmc_obj.sys_spec.threads.size() ) );
+  // dump_Define( "NCONTEXT", std::to_string(ncontext) );
+  // dump_Newline();
+
+  // dump_Define("ASSUME(stmt)", "__CPROVER_assume(stmt)");
+  // dump_Define("ASSERT(stmt)", "__CPROVER_assert(stmt, \"error\")");
+  // dump_Newline();
+
+  // dump_Define("max(a,b)", "(a>b?a:b)");
+  // dump_Newline();
+
+  // dump_String("char __get_rng();");
+  // dump_String("char get_rng( char from, char to ) {");
+  // dump_String("   char ret = __get_rng();");
+  // dump_String("   ASSUME(ret >= from && ret <= to);");
+  // dump_String("   return ret;");
+  // dump_String("}");
+  // dump_Newline();
+
+  // dump_String("char get_rng_th( char from, char to ) {");
+  // dump_String("   char ret = __get_rng();");
+  // dump_String("   ASSUME(ret >= from && ret <= to);");
+  // dump_String("   return ret;");
+  // dump_String("}");
+  // dump_Newline();
+
+  // dump_Decl_fun("int", "main", "int argc, char **argv");
+
+  dump_Comment( "declare arrays for intial value version in contexts" );
+  val_init_list = { "meminit", "coinit", "deltainit" };
+  dump_Arrays( "int", val_init_list, "ADDRSIZE", "NCONTEXT");
+
+  dump_Comment( "declare arrays for running value version in contexts" );
+  val_list = {
+    "mem", // Main memory
+    "co",  // Count number of writes; maintain write commit order
+    "delta"// ??
+  };
+  dump_Arrays( "int", val_list, "ADDRSIZE", "NCONTEXT");
+
+  dump_Comment( "declare arrays for local buffer and observed writes" );
+  local_list = {
+    "buff", // Local buffer; not a time stamp
+    "pw",   // Last write seen in the thread
+  };
+  dump_Arrays( "int", local_list, "NPROC", "ADDRSIZE" );
+
+  dump_Comment( "declare arrays for context stamps" );
+  time_list = {
+    "cr",        // Last read commit ctx
+    "iw", "cw",  // Write commit ctx
+    "cx",        // exclusive commit
+    "is",        // RA model write init
+    "cs"         // RA model write commmit
+  };
+  dump_Arrays( "char", time_list, "NPROC", "ADDRSIZE");
+
+  dump_Comment( "declare arrays for synchronizations" );
+  proc_list = {
+    "cl",                        // Timestamps for load acquire
+    "cdy", "cds", "cdl", "cisb", // Timestamps for four kind of fences
+    "caddr", "cctrl"             // Timestamps for addr and ctrl
+  };
+  for( auto ary: proc_list ) dump_Decl_array("int", ary, "NPROC");
+
+  thread_ctrl_list = { "cstart", "creturn"};
+  for( auto ary: thread_ctrl_list ) dump_Decl_array("int", ary, "NPROC");
+
+  dump_Newline();
+
+  dump_Comment( "declare arrays for contexts activity" );
+  ctx_list = { "active", "ctx_used" };
+  for( auto ary: ctx_list ) dump_Decl_array( "int", ary, "NCONTEXT" );
+  dump_Newline();
+
+  var_list = { "old_cctrl", "old_cr", "old_cdy", "old_cw",  "new_creg" };
+  dump_Newline();
+  dump_String("__LOCALS__");
+
+  // records time and processes
+  for( unsigned p = 0; p < bmc_obj.sys_spec.threads.size(); p++ ) {
+    auto pn = std::to_string(p);
+    for( unsigned x = 0; x < num_globals; x++ ) {
+      auto xn = std::to_string(x);
+      for( auto ary: local_list) dump_String( ary + "("+pn+","+xn+") = 0;" );
+      for( auto ary: time_list ) dump_String( ary + "("+pn+","+xn+") = 0;" );
+    }
+    for( auto ary: proc_list ) dump_String( ary + "["+ pn + "] = 0;" );
+    for( auto ary: thread_ctrl_list ) dump_Assign_rand_ctx(ary+"["+ pn + "]" );
+  }
+
+  // records values
+  //dump initializers
+  dump_Comment( "Dumping initializations" );
+  for( auto& v : global_position ) {
+    auto g = v.first;
+    auto pos = std::to_string(v.second);
+    auto size = global_size.at(g);
+    auto& init = global_init.at(g);
+    assert( init.size() == 0 || size == init.size() );
+    for( unsigned i=0; i < size; i++ ) {
+      auto in = std::to_string(i);
+      auto ival = init.size() > 0 ? init[i] : "0";
+      dump_Assign( "mem("+ pos + "+" + in + ",0)", ival );
+    }
+  }
+  dump_Comment( "Dumping context matching equalities" );
+  for( unsigned x = 0; x < num_globals; x++ ) {
+    auto xn = std::to_string(x);
+    dump_String( "co("+xn+",0) = 0;" );
+    dump_String( "delta("+xn+",0) = -1;" );
+    for( unsigned k = 1; k < ncontext; k++ ) {
+      auto kn = std::to_string(k);
+      auto xkn = "("+xn+","+kn+")";
+      for( auto ary: val_list ) dump_Assign( ary+xkn, ary+"init"+xkn );
+    }
+  }
+
+}
+
+
 void kbound::
-dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
+dump_ld( std::string r, std::string cval,std::string caddr,
+         std::string gid,
          bool isAcquire, bool isExclusive ) {
 
   auto gaccess     = "("+ tid + ","+ gid + ")";
@@ -561,7 +583,7 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
     dump_Assume_geq( cr, "cdy[" + tid + "]" );
     dump_Assign( "cdy[" + tid + "]", cr );
     dump_Comment("Update");
-    dump_Assign( r, "mu"+ gctx_access );
+    dump_Assign( r, "mem"+ gctx_access );
   }else{
     dump_Comment("Check");
     dump_Active( cr );
@@ -580,17 +602,19 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
     dump_Assign_max( "caddr["+tid+"]", caddr);
     dump_If( cr + " < " + "cw"+gaccess );
     {
-      dump_Assign( r, "nu"+gaccess );
+      dump_Assign( r, "buff"+gaccess );
     }
     dump_Else();
     {
-      dump_If( "pw" +gaccess + " != " + "nw" + gctx_access );
+      dump_If( "pw" +gaccess + " != " + "co" + gctx_access );
       {
+        // If this thread is reading a new write then
+        // only reads are are ordered.
         dump_Assume_geq( cr, "old_cr" );
       }
       dump_Close_scope();
-      dump_Assign( "pw"+gaccess, "nw"+ gctx_access );
-      dump_Assign( r, "mu"+ gctx_access );
+      dump_Assign( "pw"+gaccess, "co"+ gctx_access );
+      dump_Assign( r, "mem"+ gctx_access );
     }
     dump_Close_scope();
 
@@ -600,6 +624,77 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
   if( isExclusive ) active_lax = active_lax + 1;
   dump_commit_before_thread_finish(cr);
 }
+
+// void kbound::
+// dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
+//          bool isAcquire, bool isExclusive ) {
+
+//   auto gaccess     = "("+ tid + ","+ gid + ")";
+//   auto sr          = "sr"+gaccess; // new
+//   auto cr          = "cr"+gaccess;
+//   auto gctx_access = "("+ gid +","+ cr + ")";
+
+//   dump_Comment("LD: Guess");
+//   if(isExclusive)   dump_Comment("  : Exlusive");
+//   if(isAcquire)     dump_Comment("  : Acquire");
+//   dump_Assign( "old_cr",  cr);
+//   dump_Assign( "old_sr",  sr);
+//   dump_Assign_rand_ctx( cr );
+//   dump_Assign_rand_ctx( sr );
+
+//   if( is_sc_semantics ) {
+//     assert(false);
+//     // dump_Comment("Check");
+//     // dump_Active( cr );
+//     // dump_Assume_geq( cr, "cdy[" + tid + "]" );
+//     // dump_Assign( "cdy[" + tid + "]", cr );
+//     // dump_Comment("Update");
+//     // dump_Assign( r, "mem"+ gctx_access );
+//   }else{
+//     dump_Comment("Check");
+//     dump_Active( cr );
+//     dump_Active( sr );
+//     dump_Assume_geq( cr, sr );
+//     dump_Assume_geq( sr, "old_sr" );
+
+//     dump_Assume_geq( cr, "cla["  + tid + "]" );
+//     dump_Assume_geq( cr, "cdy[" + tid + "]" );
+//     dump_Assume_geq( cr, "cisb["+ tid + "]" );
+//     dump_Assume_geq( cr, "cdl[" + tid + "]" );
+
+//     dump_Assume_geq( cr, caddr );
+
+//     // dump_Assume_geq( cr, "iw"+gaccess );
+
+//     if( isExclusive ) dump_Assume_geq ( cr, "old_cr" );   // extra in exlusive
+//     if( isAcquire   ) dump_Assume_geq ( cr, "cx"+gaccess);// extra in lda
+//     if( isAcquire   ) dump_geq_globals( cr, "cs");        // extra in lda
+
+//     dump_Comment("Update");
+//     dump_Assign( cval, cr );
+//     dump_Assign_max( "caddr["+tid+"]", caddr);
+//     dump_If( cr + " < " + "cw"+gaccess );
+//     {
+//       dump_Assign( r, "buff"+gaccess );
+//     }
+//     dump_Else();
+//     {
+//       dump_If( "pw" +gaccess + " != " + "co" + gctx_access );
+//       {
+//         dump_Assume_geq( cr, "old_cr" );
+//       }
+//       dump_Close_scope();
+//       dump_Assign( "pw"+gaccess, "co"+ gctx_access );
+//       dump_Assign( r, "mem"+ gctx_access );
+//     }
+//     dump_Close_scope();
+
+//     if( isAcquire   ) dump_Assign_max( "cl[" + tid + "]", cr   );
+//   }
+//   if( isExclusive ) dump_Assign( "delta"+gctx_access, tid );
+//   if( isExclusive ) active_lax = active_lax + 1;
+//   dump_commit_before_thread_finish(cr);
+// }
 
 void kbound::
 dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
@@ -625,8 +720,8 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
 
     dump_Comment("Update");
     dump_Assign( "cdy[" + tid + "]", cw );
-    dump_Assign( "mu"   + gctx_access, v);
-    dump_String( "nw"   + gctx_access + "+=1;");
+    dump_Assign( "mem"   + gctx_access, v);
+    dump_String( "co"   + gctx_access + "+=1;");
     dump_Assign( "delta"+ gctx_access, "-1");
     if( isExclusive || active_lax > 0 ) dump_Assign(  "cx" + gaccess, cw);
     if( isExclusive ) active_lax = active_lax - 1;
@@ -644,7 +739,7 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
     dump_Assume_geq( cw,   "cdy[" + tid + "]" );
     dump_Assume_geq( cw,   "cdl[" + tid + "]" );
     dump_Assume_geq( cw,   "cds[" + tid + "]" );
-    dump_Assume_geq( cw,  "ctrl[" + tid + "]" );
+    dump_Assume_geq( cw,  "cctrl[" + tid + "]" );
     dump_Assume_geq( cw, "caddr[" + tid + "]" );
     if( isRelease ) dump_geq_globals( cw, "cr");
     if( isRelease ) dump_geq_globals( cw, "cw");
@@ -653,11 +748,11 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
     dump_Comment("Update");
     // std::cout << caddr;
     // dump_Assign_max( "caddr[" + tid + "]", cval ); // << error
-    dump_Assign_max( "caddr[" + tid + "]", caddr ); // << error
-    dump_Assign( "nu"   + gaccess    , v);
-    dump_Assign( "mu"   + gctx_access, v);
+    dump_Assign_max( "caddr[" + tid + "]", caddr );
+    dump_Assign( "buff"   + gaccess    , v);
+    dump_Assign( "mem"   + gctx_access, v);
     if( isExclusive ) dump_Assign( "cx"   + gaccess, cw);
-    dump_String( "nw"   + gctx_access + "+=1;");
+    dump_String( "co"   + gctx_access + "+=1;");
     dump_Assign( "delta"+ gctx_access, "-1");
 
     if( isRelease ) dump_Assign( "is"+gaccess, iw);
@@ -668,6 +763,26 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
   dump_commit_before_thread_finish(cw);
 }
 
+void kbound::dump_update_ctrl( const void* cond ) {
+    auto ctrl = "cctrl["+tid+"]";
+    dump_Assign("old_cctrl", ctrl);
+    dump_Assign_rand_ctx( ctrl );
+    dump_Assume_geq( ctrl, "old_cctrl" );
+
+    if( exists( ctrl_dep_ord, cond ) ) {
+      //todo: remove this branch if compute the reg_time of the compare
+      //      instruction is computed; already added
+      for( auto& dep : ctrl_dep_ord.at(cond) ) {
+        dump_Assume_geq( ctrl, dep );
+      }
+      // for( auto& dep : ctrl_dep_ord.at(cond) ) {
+      //   dump_Assume_geq( ctrl, dep);
+      // }
+    }else{
+      auto cr = get_reg_time( cond );
+      dump_Assume_geq( ctrl, cr );
+    }
+}
 
 void kbound::dump_geq_globals( std::string c, std::string prop ) {
   for( auto pair : global_position ) {
@@ -691,7 +806,7 @@ void kbound::dump_dmbsy() {
   dump_Assume_geq( cdy, "cdy["  + tid + "]" );
   dump_Assume_geq( cdy, "cdl["  + tid + "]" );
   dump_Assume_geq( cdy, "cds["  + tid + "]" );
-  dump_Assume_geq( cdy, "ctrl[" + tid + "]" );
+  dump_Assume_geq( cdy, "cctrl[" + tid + "]" );
 
   dump_geq_globals( cdy, "cw");
   dump_geq_globals( cdy, "cr");// missing case << 
@@ -724,7 +839,7 @@ void kbound::dump_isb() {
   dump_Assign_rand_ctx( cisb );
   dump_Comment("Check");
   dump_Assume_geq( cisb, "cdy["   + tid + "]" );
-  dump_Assume_geq( cisb, "ctrl["  + tid + "]" );
+  dump_Assume_geq( cisb, "cctrl["  + tid + "]" );
   dump_Assume_geq( cisb, "caddr[" + tid + "]" );
   dump_commit_before_thread_finish(cisb);
 }

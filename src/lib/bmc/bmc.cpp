@@ -10,6 +10,7 @@
 // #include "lib/bmc/bmc_loop_pass.h"
 #include "lib/bmc/ses.h"
 #include "lib/kbound/kbound.h"
+#include "lib/psystems/psystems.h"
 
 #include "bmc_utils.h"
 #include "witness.h"

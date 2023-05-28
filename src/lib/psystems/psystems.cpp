@@ -61,54 +61,55 @@ char psystems::ID = 0;
 //   return init;
 // }
 
-// psystems::psystems( options& o_, std::unique_ptr<llvm::Module>& m_,
-//                 bmc& bmc_ )
-//   : bmc_pass( o_, o_.solver_ctx, bmc_ )
-//   , llvm::FunctionPass(ID)
-//   , module(m_)
-//   , ofcpp(o_.outDirPath.string()+"/cbmc.cpp")
-//   , current_indent(0)
-//   , ncontext(o.ctx_bound)
-// {
-//   module->dump();
-//   unsigned i = 0;
-//   for( auto v : bmc_obj.concurrent_vars ) {
-//     global_position[v] = i;
-//     auto size = get_word_size(v);
-//     global_size[v] = size;
-//     global_name[v] = v->getName().str();
-//     global_init[v] = get_init_array(v, size);
-//     i += size;
-//   }
-//   num_globals = i;
+psystems::psystems( options& o_, std::unique_ptr<llvm::Module>& m_,
+                bmc& bmc_ )
+  : bmc_pass( o_, o_.solver_ctx, bmc_ )
+  , llvm::FunctionPass(ID)
+  , module(m_)
+  , ofcpp(o_.outDirPath.string()+"/cbmc.cpp")
+  , current_indent(0)
+  , ncontext(o.ctx_bound)
+{
+  std::cout << "I am here!! \n";
+  // module->dump();
+  // unsigned i = 0;
+  // for( auto v : bmc_obj.concurrent_vars ) {
+  //   global_position[v] = i;
+  //   auto size = get_word_size(v);
+  //   global_size[v] = size;
+  //   global_name[v] = v->getName().str();
+  //   global_init[v] = get_init_array(v, size);
+  //   i += size;
+  // }
+  // num_globals = i;
 
-//   i = 0;
-//   for( auto v : bmc_obj.local_globals ) {
-//     local_global_position[v] = i;
-//     auto size = get_word_size(v);
-//     local_global_size[v] = size;
-//     local_global_name[v] = v->getName().str();
-//     i += size;
-//   }
-//   num_local_globals = i;
+  // i = 0;
+  // for( auto v : bmc_obj.local_globals ) {
+  //   local_global_position[v] = i;
+  //   auto size = get_word_size(v);
+  //   local_global_size[v] = size;
+  //   local_global_name[v] = v->getName().str();
+  //   i += size;
+  // }
+  // num_local_globals = i;
 
-//   prefix_seq();
-// }
+  // prefix_seq();
+}
 
-// psystems::~psystems() {
-//   postfix_seq();
-//   ofcpp.close();
-//   dump_locals();
-// }
+psystems::~psystems() {
+  // postfix_seq();
+  // ofcpp.close();
+  // dump_locals();
+}
 
-// void psystems::getAnalysisUsage(llvm::AnalysisUsage &au) const {
-//   au.setPreservesAll();
-//   au.addRequired<llvm::LoopInfoWrapperPass>();
-// }
+void psystems::getAnalysisUsage(llvm::AnalysisUsage &au) const {
+  au.setPreservesAll();
+  au.addRequired<llvm::LoopInfoWrapperPass>();
+}
 
-// llvm::StringRef psystems::getPassName() const {
-//   return "Constructs KBMC output for arm memory model!";
-// }
+llvm::StringRef psystems::getPassName() const {
+  return "runs PSYSTEMS verification!";
+}
 
 
 // // todo : support if a thread returns something and parameters are passed
