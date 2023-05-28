@@ -218,7 +218,8 @@ def main():
 
     # Extract the configuration from the command-line or set it to the default.
     cseqenv.chainname = core.utils.extractparamvalue(cseqenv.cmdline, '-l', '--load', core.config.defaultchain)
-    cseqenv.chainfile = 'modules/%s.chain' % core.utils.extractparamvalue(cseqenv.cmdline, '-l', '--load', core.config.defaultchain)
+    dir_path = os.path.dirname(os.path.abspath(__file__))
+    cseqenv.chainfile = dir_path + '/modules/%s.chain' % core.utils.extractparamvalue(cseqenv.cmdline, '-l', '--load', core.config.defaultchain)
 
     if not core.utils.fileExists(cseqenv.chainfile):
         usage(cseqenv.cmdline[0], 'error: unable to open configuration file (%s)' % cseqenv.chainfile, showhelp=False)

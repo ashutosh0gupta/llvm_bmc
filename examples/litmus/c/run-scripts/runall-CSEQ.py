@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # Copyright (C) 2023 Tuan Phong Ngo
-# Run all C litmus tests under PSO semantics with CBMC.
+# Run all C litmus tests under SC semantics with CSEQ.
 
 import datetime
 import subprocess
@@ -12,10 +12,11 @@ import time
 import shlex
 
 curDir = os.getcwd()
-LITMUSDIR = curDir + '/../c-litmus-CBMC'
+LITMUSDIR = curDir + '/../c-litmus-CSEQ'
 EXPECTEDLISTFILE = curDir + '/../aarch64.herd.results.txt'
+PYTHON =  'python2'
 SCRIPT = curDir + '/../lazy-cseq-2.0/cseq-feeder.py'
-LOGFILENAME = curDir + '/../sc.LazyCSEQ.results.txt'
+LOGFILENAME = curDir + '/../sc.cseq.results.txt'
 TIMEOUT = 120  # 120 = 2 minutes
 
 
@@ -36,8 +37,8 @@ def get_expected(fname):
 
 def res_to_string(tst):
     s = tst['tstname'] + ' '
-    if not ('CBMC allow' in tst):
-        if 'CBMC did not find file' in tst['failure']:
+    if not ('CSEQ allow' in tst):
+        if 'CSEQ did not find file' in tst['failure']:
             s = s + 'FILENOTFOUND: '
         else:
             s = s + 'FAILURE: '
@@ -46,25 +47,25 @@ def res_to_string(tst):
         else:
             s = s + '(unknown)'
         return s
-    if tst['CBMC allow'] != tst['expect allow'] and tst['expect allow']:
+    if tst['CSEQ allow'] != tst['expect allow'] and tst['expect allow']:
         s = s + 'FALSE POSITIVE: Unexpected result Forbid due to memory model'
         return s
-    if tst['CBMC allow'] != tst['expect allow']:
-        s = s + 'FAILURE: Unexpected result ' + ('Allow' if tst['CBMC allow'] else 'Forbid')
+    if tst['CSEQ allow'] != tst['expect allow']:
+        s = s + 'FAILURE: Unexpected result ' + ('Allow' if tst['CSEQ allow'] else 'Forbid')
         return s
-    s = s + 'OK: ' + ('Allow' if tst['CBMC allow'] else 'Forbid')
+    s = s + 'OK: ' + ('Allow' if tst['CSEQ allow'] else 'Forbid')
     return s
 
 
 def runall():
     logfile = open(LOGFILENAME, 'w')
     logfile.write('# Results of applying LazyCSEQ to all litmus tests.\n')
-    logfile.write('# cseq-feeder --mm pso TEST.c\n')
+    logfile.write('# cseq-feeder.py -i TEST.c\n')
     logfile.write('#\n')
-    logfile.write('# Tests where "VERIFICATION SUCCESSFUL" was observed are marked "Forbid".\n')
+    logfile.write('# Tests where "SAFE" was observed are marked "Forbid".\n')
     logfile.write('# Otherwise, they are marked "Allow".\n')
     logfile.write('# \n')
-    logfile.write('# The tests where executed using ra-runall-CBMC.py.\n')
+    logfile.write('# The tests where executed using runall-CSEQ.py.\n')
     logfile.write('# Date: ' + datetime.datetime.now().strftime('%y%m%d-%H:%M') + '\n')
     logfile.write('\n')
     tests = get_expected(EXPECTEDLISTFILE)
@@ -73,22 +74,22 @@ def runall():
     for tst in tests:
         n = n + 1
         try:
-            cmd = SCRIPT + ' --mm pso' + ' ' + LITMUSDIR + '/' + tst['tstname'] + '.c'
-            # print(cmd)
+            cmd = PYTHON + ' ' + SCRIPT + ' -i ' + LITMUSDIR + '/' + tst['tstname'] + '.c'
+            #print(cmd)
             result = subprocess.run(shlex.split(cmd), stderr=subprocess.STDOUT, timeout=TIMEOUT, stdout=subprocess.PIPE)
             out = result.stdout.decode()
-            # print(out)
-            if out.find('VERIFICATION FAILED') >= 0:
-                tst['CBMC allow'] = True
-            elif out.find('VERIFICATION SUCCESSFUL') >= 0:
-                tst['CBMC allow'] = False
-            elif out.find('Failed to open input file') >= 0:
-                tst['failure'] = 'CBMC did not find file'
+            print(out)
+            if out.find('UNSAFE') >= 0:
+                tst['CSEQ allow'] = True
+            elif out.find('SAFE') >= 0:
+                tst['CSEQ allow'] = False
+            elif out.find('unable to open input file') >= 0:
+                tst['failure'] = 'CSEQ did not find file'
             else:
-                tst['failure'] = 'CBMC returns unrecognized results'
+                tst['failure'] = 'CSEQ returns unrecognized results'
         except subprocess.CalledProcessError as e:
             print(e)
-            tst['failure'] = 'error in running CBMC'
+            tst['failure'] = 'error in running CSEQ'
             continue
         except subprocess.TimeoutExpired as e:
             print(e)

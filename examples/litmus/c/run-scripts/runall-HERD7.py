@@ -65,7 +65,7 @@ def runallherd():
     logfile.write('# Tests where "Always" with "forall" was observed are marked "Allow".\n')
     logfile.write('# Tests where "Sometimes" or "Never" with "forall" was observed are marked "Forbid".\n')
     logfile.write('# \n')
-    logfile.write('# The tests where executed using runall-herd.py.\n')
+    logfile.write('# The tests where executed using runall-HERD7.py.\n')
     logfile.write('# Date: ' + datetime.datetime.now().strftime('%y%m%d-%H:%M') + '\n')
     logfile.write('\n')
     # tracecount = 0

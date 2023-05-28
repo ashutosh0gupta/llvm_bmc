@@ -47,6 +47,7 @@ from time import gmtime, strftime
 import math, re
 import core.module, core.utils, core.common
 import pycparser.c_ast
+import os
 
 _backends = ['cbmc', 'esbmc', 'llbmc', 'blitz', 'satabs',
             '2ls', 'klee', 'cpachecker', 'framac', 'uautomizer',
@@ -164,6 +165,8 @@ class instrumenter(core.module.Translator):
     __ignore_list = []
     __bit_pthread = False
 
+    __dir_path = os.path.dirname(os.path.abspath(__file__))
+
     def init(self):
         self.addInputParam('backend','backend to use for analysis, available choices are:\n  bounded model-checkers: (blitz, cbmc, esbmc, llbmc, smack)\n  abstraction-based: (cpachecker, satabs, uautomizer, framac)\n  testing: (klee)','b','cbmc',False)
         self.addInputParam('bitwidth','custom bidwidths for integers','w',None,True)
@@ -244,23 +247,23 @@ class instrumenter(core.module.Translator):
 
         # Specific instrumentation for backend
         if self.backend == 'klee':
-            self.insertheader(core.utils.printFile('modules/klee_extra.c'))
+            self.insertheader(core.utils.printFile(self.__dir_path+'/klee_extra.c'))
         elif self.backend == 'cpachecker':
-            self.insertheader(core.utils.printFile('modules/cpa_extra.c'))
+            self.insertheader(core.utils.printFile(self.__dir_path+'/cpa_extra.c'))
         elif self.backend == 'framac':
-            self.insertheader(core.utils.printFile('modules/framac_extra.c'))
+            self.insertheader(core.utils.printFile(self.__dir_path+'/framac_extra.c'))
         elif self.backend == 'uautomizer':
-            self.insertheader(core.utils.printFile('modules/uautomizer_extra.c'))
+            self.insertheader(core.utils.printFile(self.__dir_path+'/uautomizer_extra.c'))
         elif self.backend == 'cbmc':
-            self.insertheader(core.utils.printFile('modules/cbmc_extra.c'))
+            self.insertheader(core.utils.printFile(self.__dir_path+'/cbmc_extra.c'))
         elif self.backend == 'smack':
-            self.insertheader(core.utils.printFile('modules/smack_extra.c'))
+            self.insertheader(core.utils.printFile(self.__dir_path+'/smack_extra.c'))
 
         # Insert external 'system' header if there are (from the file)
         if hasattr(self.env, "systemheaders"):
             self.insertheader(getattr(self.env, "systemheaders"))
 
-        self.insertheader(core.utils.printFile('modules/pthread_defs.c'))
+        self.insertheader(core.utils.printFile(self.__dir_path+'/pthread_defs.c'))
 
         self.insertheader(self._generateheader())  # top comment with translation parameters
 

@@ -87,6 +87,8 @@ class lazyseqnewschedule(core.module.Translator):
 
     __guess_cs_only = False
 
+    __dir_path = os.path.dirname(os.path.abspath(__file__))
+
     def init(self):
         self.addInputParam('rounds', 'round-robin schedules', 'r', '1', False)
         self.addInputParam('threads', 'max no. of thread creations (0 = auto)', 't', '0', False)
@@ -198,12 +200,13 @@ class lazyseqnewschedule(core.module.Translator):
         #
         # the first part is not parsable (contains macros)
         # so it is passed to next module as a header...
+        #print(dir_path)
         if self.__decomposepc:
-            header = core.utils.printFile('modules/lazyseqAdecomposepc.c')
+            header = core.utils.printFile(self.__dir_path+'/lazyseqAdecomposepc.c')
         elif self.__one_pc_cs:
-            header = core.utils.printFile('modules/lazyseqAonepccs.c')
+            header = core.utils.printFile(self.__dir_path+'/lazyseqAonepccs.c')
         else:
-            header = core.utils.printFile('modules/lazyseqA.c')
+            header = core.utils.printFile(self.__dir_path+'/lazyseqA.c')
         header = header.replace('<insert-maxthreads-here>',str(threads))
         header = header.replace('<insert-maxrounds-here>',str(rounds))
         self.setOutputParam('header', header)
@@ -228,18 +231,18 @@ class lazyseqnewschedule(core.module.Translator):
         # as next module is able to parse it.
         if not self._deadlockcheck:
             if self.__decomposepc:
-                header = core.utils.printFile('modules/lazyseqBnewscheduledecomposepc.c').replace('<insert-threadsizes-here>',lines)
+                header = core.utils.printFile(self.__dir_path+'/lazyseqBnewscheduledecomposepc.c').replace('<insert-threadsizes-here>',lines)
                 header = header.replace('<insert-pc-decls-here>', pc_decls + pc_cs_decls)
                 header = header.replace('<insert-join_replace-here>', join_replace)
                 header = header.replace('<insert-numthreads-here>', str(threads+1))
             elif self.__one_pc_cs:
-                header = core.utils.printFile('modules/lazyseqBnewscheduleonepccs.c').replace('<insert-threadsizes-here>',lines)
+                header = core.utils.printFile(self.__dir_path+'/lazyseqBnewscheduleonepccs.c').replace('<insert-threadsizes-here>',lines)
                 header = header.replace('<insert-numthreads-here>', str(threads+1))
             else:
-                header = core.utils.printFile('modules/lazyseqBnewschedule.c').replace('<insert-threadsizes-here>',lines)
+                header = core.utils.printFile(self.__dir_path+'/lazyseqBnewschedule.c').replace('<insert-threadsizes-here>',lines)
                 header = header.replace('<insert-numthreads-here>', str(threads+1))
         else:
-            header = core.utils.printFile('modules/lazyseqBdeadlock.c').replace('<insert-threadsizes-here>',lines)
+            header = core.utils.printFile(self.__dir_path+'/lazyseqBdeadlock.c').replace('<insert-threadsizes-here>',lines)
             header = header.replace('<insert-all1-here>',  ones)
 
         self.insertheader(header)

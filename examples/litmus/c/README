@@ -13,4 +13,7 @@
 ## Running Scripts
 In run-scripts folder run:
 - python3 runall-HERD7.py to run all litmus tests for ARM by Herd7. Output file is ../aarch64.herd.results.txt.
-- python3 runall-CBMC.py to run all litmus tests for PSO by CBMC. Output file is ../pso.CBMC.results.txt
+- python3 runall-CBMC-PSO.py to run all litmus tests for PSO by CBMC. Output file is ../pso.cbmc.results.txt. We expect to have FALSE POSITVE due to different memory models (ARM vs PSO). However, we do not expect FAILUREs.
+- python3 runall-CBMC-SC.py to run all litmus tests for SC by CBMC. Output file is ../sc.cbmc.results.txt. We expect to have FALSE POSITVE due to different memory models (ARM vs SC). However, we do not expect FAILUREs.
+- python3 runall-CSEQ.py to run all litmus tests for SC by CSEQ. Output file is ../sc.cseq.results.txt. We expect to have FALSE POSITVE due to different memory models (ARM vs SC). However, we do not expect FAILUREs.
+
