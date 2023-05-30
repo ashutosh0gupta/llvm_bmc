@@ -2,7 +2,7 @@
 // #include <boost/algorithm/string.hpp>
 
 
-void kbound::prefix_seq_new() {
+void kbound::prefix_seq_v2() {
   std::cout << "Running k bound\n";
   preamble();
 
@@ -18,26 +18,32 @@ void kbound::prefix_seq_new() {
   };
   dump_Arrays( "int", val_list, "ADDRSIZE", "NCONTEXT");
 
+  //to record when can we not commit; no initialization
+  dump_Arrays( "char", {"sforbid"}, "ADDRSIZE", "NCONTEXT");
+
   dump_Comment( "declare arrays for local buffer and observed writes" );
   local_list = {
     "buff", // Local buffer; not a time stamp
-    "pw",   // Last write seen in the thread
+    // "pw",   // Last write seen in the thread
   };
   dump_Arrays( "int", local_list, "NPROC", "ADDRSIZE" );
 
   dump_Comment( "declare arrays for context stamps" );
   time_list = {
-    "cr",        // Last read commit ctx
-    "iw", "cw",  // Write commit ctx
-    "cx",        // exclusive commit
-    "is",        // RA model write init
-    "cs"         // RA model write commmit
+    "csr", "cr",        // Last read commit ctx
+    // "iw",
+    "cw",  // Write commit ctx
+    // "cx",        // exclusive commit
+    // "is",        // RA model write init
+    "clrsaddr",
+    "clrsval",
+    "xpanding",
   };
   dump_Arrays( "char", time_list, "NPROC", "ADDRSIZE");
 
   dump_Comment( "declare arrays for synchronizations" );
   proc_list = {
-    "cl",                        // Timestamps for load acquire
+    "cstr","clda",               // Timestamps for store/load RA
     "cdy", "cds", "cdl", "cisb", // Timestamps for four kind of fences
     "caddr", "cctrl"             // Timestamps for addr and ctrl
   };
@@ -53,7 +59,7 @@ void kbound::prefix_seq_new() {
   for( auto ary: ctx_list ) dump_Decl_array( "int", ary, "NCONTEXT" );
   dump_Newline();
 
-  var_list = { "old_cctrl", "old_cr", "old_cdy", "old_cw",  "new_creg" };
+  var_list = { "old_cctrl", "old_sr", "old_cr", "old_cdy", "old_cw",  "new_creg" };
   dump_Newline();
   dump_String("__LOCALS__");
 
@@ -98,24 +104,43 @@ void kbound::prefix_seq_new() {
 
 }
 
+void kbound::
+range_forbid( std::string gid, std::string lb, std::string ub ) {
+  for( unsigned k = 1; k < ncontext; k++ ) {
+    auto kn = std::to_string(k);
+    auto range = "( ("+lb + " < " + kn+") && ("+ kn + " < " + ub +") )";
+    auto xkn = "(" + gid + ","+ kn +")";
+    dump_Assume_implies( range, "sforbid"+ xkn +"> 0" );
+  }
+}
+
+    // for( unsigned k = 1; k < ncontext; k++ ) {
+    //   auto kn = std::to_string(k);
+    //   auto lb = kn + " > " + "cw"+gaccess;
+    //   auto ub = cr + " > " + kn;
+    //   auto range = "(("+ub+")&&("+lb+"))";
+    //   auto xkn = "(" + gid + ","+ kn +")";
+    //   dump_Assume_implies( range, "sforbid"+ xkn +"> 0" );
+    // }
 
 void kbound::
-dump_ld_new( std::string r, std::string cval,
+dump_ld_v2( std::string r, std::string cval,
              std::string caddr, std::string gid,
              bool isAcquire, bool isExclusive ) {
 
-  auto gaccess     = "("+ tid + ","+ gid + ")";
-  auto csr          = "csr"+gaccess; // new
-  auto cr          = "cr"+gaccess;
-  auto gctx_access = "("+ gid +","+ cr + ")";
+  auto t_g = "("+ tid + ","+ gid + ")";
+  auto csr = "csr"+t_g; // new
+  auto cr  = "cr" +t_g;
+  auto g_cr = "("+ gid +","+ cr + ")";
+  auto t = "["+ tid + "]";
 
   dump_Comment("LD: Guess");
   if(isExclusive)   dump_Comment("  : Exlusive");
   if(isAcquire)     dump_Comment("  : Acquire");
   dump_Assign( "old_cr",  cr);
   dump_Assign( "old_sr",  csr);
-  dump_Assign_rand_ctx( cr );
-  dump_Assign_rand_ctx( csr );
+  dump_Assign_rand_ctx( cr , tid + " ASSIGN LDCOM " );
+  dump_Assign_rand_ctx( csr, tid + " ASSIGN LDSAT " );
 
   dump_Comment("Check");
   dump_Active( cr );
@@ -123,130 +148,119 @@ dump_ld_new( std::string r, std::string cval,
   dump_Assume_geq( cr, csr );
   dump_Assume_geq( csr, "old_sr" );
 
-  dump_Assume_geq( cr,   "cl[" + tid + "]" );
-  dump_Assume_geq( cr,  "cdy[" + tid + "]" );
-  dump_Assume_geq( cr, "cisb[" + tid + "]" );
-  dump_Assume_geq( cr,  "cdl[" + tid + "]" );
+  dump_Assume_geq( cr, "clda" + t );
+  dump_Assume_geq( cr,  "cdy" + t );
+  dump_Assume_geq( cr, "cisb" + t ); // isb is here??
+  dump_Assume_geq( cr,  "cdl" + t );
 
-  dump_Assume_geq( cr, caddr ); //does not match from paper!!
-  dump_Assume_geq( cr, "caddrlrs"+gaccess );
-  dump_Assume_geq( cr, "cdatalrs"+gaccess );
-
-  // dump_Assume_geq( cr, "iw"+gaccess );
-
-  if( isExclusive ) dump_Assume_geq ( cr, "old_cr" );   // extra in exlusive
-  if( isAcquire   ) dump_Assume_geq ( cr, "cx"+gaccess);// extra in lda
-  if( isAcquire   ) dump_geq_globals( cr, "cs");        // extra in lda
+  dump_Assume_geq( cr, caddr ); //does not match from paper; paper is syncing with all addr
+  dump_Assume_geq( cr, "clrsaddr"+t_g );
+  dump_Assume_geq( cr, "clrsval" +t_g );
+  if( isAcquire   ) dump_Assume_geq( cr, "cstr" + t );
 
   dump_Comment("Update");
-  dump_Assign_max( cr, "old_cr" );// ??
-  dump_Assign( cval, cr  );       // ??
-  // dump_Assign( sval, csr );       // ??
+  dump_Assign_max( cr, "old_cr" ); // << cr is updated again??
+  dump_Assign( cval, cr  );        // 
+  // dump_Assign( sval, csr );     // Why??
   dump_Assign_max( "caddr["+tid+"]", caddr);
-  dump_If( csr + " < " + "cw"+gaccess );
+  dump_If( csr + " < " + "cw"+t_g );
   {
-    dump_Assign( r, "buff"+gaccess );
-    for( unsigned k = 1; k < ncontext; k++ ) {
-      auto kn = std::to_string(k);
-      auto lb = kn + " > " + "cw"+gaccess;
-      auto ub = cr + " > " + kn;
-      auto range = "(("+ub+")&&("+lb+"))";
-      auto xkn = "(" + gid + ","+ kn +")";
-      dump_Assume_implies( range, "sforbid"+ xkn +"> 0" );
-    }
+    dump_Assign( r, "buff"+t_g );
+    range_forbid( gid, "cw"+t_g, cr );
   }
   dump_Else();
   {
-    dump_Assign( r, "mem"+ gctx_access );
-    for( unsigned k = 1; k < ncontext; k++ ) {
-      auto kn = std::to_string(k);
-      auto lb = kn + " > " + csr;
-      auto ub = cr + " > " + kn;
-      auto range = "(("+ub+")&&("+lb+"))";
-      auto xkn = "(" + gid + ","+ kn +")";
-      dump_Assume_implies( range, "sforbid"+ xkn +"> 0" );
-    }
-    // dump_If( "pw" +gaccess + " != " + "co" + gctx_access );
-    // {
-    //   dump_Assume_geq( cr, "old_cr" );
-    // }
-    // dump_Close_scope();
-    // dump_Assign( "pw"+gaccess, "co"+ gctx_access ); 
+    dump_Assign( r, "mem"+ g_cr );
+    range_forbid( gid, csr, cr );
   }
   dump_Close_scope();
 
-  if( isAcquire   ) dump_Assign_max( "cl[" + tid + "]", cr   );
-  if( isExclusive ) dump_Assign( "delta"+gctx_access, tid );
+  if( isAcquire   ) dump_Assign_max( "clda" + t, cr   );
+  if( isExclusive ) {
+    dump_If_NonDet();{
+      dump_Assign( "delta"+g_cr, tid );
+    }dump_Close_scope();
+  }
 
-  // if( isExclusive ) dump_Assign( "delta"+gctx_access, tid );
-  // if( isExclusive ) active_lax = active_lax + 1;
   dump_commit_before_thread_finish(cr);
 }
 
+// if( isExclusive ) dump_Assign( "delta"+g_cr, tid );
+// if( isExclusive ) active_lax = active_lax + 1;
+// dump_Assume_geq( cr, "iw"+t_g );
+// if( isExclusive ) dump_Assume_geq ( cr, "old_cr" );   // extra in exlusive
+//   if( isAcquire   ) dump_Assume_geq ( cr, "cx"+t_g);// extra in lda
+
 void kbound::
-dump_st_new( std::string v, std::string cval,std::string caddr,
+dump_st_v2( std::string v, std::string cval,std::string caddr,
              std::string gid, bool isRelease, bool isExclusive ) {
   assert( !is_sc_semantics );
 
-  auto gaccess     = "("+ tid + ","+ gid + ")";
-  // auto iw          = "iw"+gaccess;
-  auto cw          = "cw"+gaccess;
-  auto gctx_access = "("+ gid +","+ cw + ")";
+  auto t_g     = "("+ tid + ","+ gid + ")";
+  // auto iw          = "iw"+t_g;
+  auto cw          = "cw"+t_g;
+  auto g_cw = "("+ gid +","+ cw + ")";
+  auto t = "["+ tid + "]";
 
   dump_Comment("ST: Guess");
   if(isExclusive)   dump_Comment("  : Exlusive");
   if(isRelease)   dump_Comment("  : Release");
-  // dump_Assign_rand_ctx( iw );
   dump_Assign( "old_cw",  cw);
-  dump_Assign_rand_ctx( cw );
+  dump_Assign_rand_ctx( cw, tid + " ASSIGN STCOM " );
 
-  if( is_sc_semantics ) {
-    // dump_Comment("Check");
-    // dump_Active( cw );
-    // dump_Assume_geq( cw, "cdy[" + tid + "]" );
-    // if( isExclusive ) dump_Assume( "delta" + gctx_access + " == "+ tid );
+  dump_Comment("Check");
+  // dump_Active( iw );
+  dump_Active( cw );
+  dump_Assume( "sforbid"+ g_cw + "== 0" );
+  dump_Assume_geq( cw, "old_cw" );
+  dump_Assume_geq( cw, "cr"    + t_g   );
+  dump_Assume_geq( cw, "clda" + t );
 
-    // dump_Comment("Update");
-    // dump_Assign( "cdy[" + tid + "]", cw );
-    // dump_Assign( "mem"   + gctx_access, v);
-    // dump_String( "co"   + gctx_access + "+=1;");
-    // dump_Assign( "delta"+ gctx_access, "-1");
-    // if( isExclusive || active_lax > 0 ) dump_Assign(  "cx" + gaccess, cw);
-    // if( isExclusive ) active_lax = active_lax - 1;
-  }else{
-    dump_Comment("Check");
-    // dump_Active( iw );
-    dump_Active( cw );
-    // dump_Assume_geq( iw, cval  );
-    // dump_Assume_geq( iw, caddr );
-    // dump_Assume_geq( cw, iw );
-    dump_Assume_geq( cw, "old_cw" );
-    dump_Assume_geq( cw, "cr"    + gaccess   );
-    dump_Assume_geq( cw,    "cl[" + tid + "]" );
-    dump_Assume_geq( cw,  "cisb[" + tid + "]" );
-    dump_Assume_geq( cw,   "cdy[" + tid + "]" );
-    dump_Assume_geq( cw,   "cdl[" + tid + "]" );
-    dump_Assume_geq( cw,   "cds[" + tid + "]" );
-    dump_Assume_geq( cw,  "cctrl[" + tid + "]" );
-    dump_Assume_geq( cw, "caddr[" + tid + "]" );
-    if( isRelease ) dump_geq_globals( cw, "cr");
-    if( isRelease ) dump_geq_globals( cw, "cw");
-    if( isExclusive ) dump_Assume( "delta" + gctx_access + " == "+ tid );
+  dump_Assume_geq( cw, "cisb" + t ); // ?? missing in paper
+  dump_Assume_geq( cw, "cdy"  + t );
+  dump_Assume_geq( cw, "cdl"  + t );
+  dump_Assume_geq( cw, "cds"  + t );
 
-    dump_Comment("Update");
-    // std::cout << caddr;
-    // dump_Assign_max( "caddr[" + tid + "]", cval ); // << error
-    dump_Assign_max( "caddr[" + tid + "]", caddr );
-    dump_Assign( "buff"   + gaccess    , v);
-    dump_Assign( "mem"   + gctx_access, v);
-    if( isExclusive ) dump_Assign( "cx"   + gaccess, cw);
-    dump_String( "co"   + gctx_access + "+=1;");
-    dump_Assign( "delta"+ gctx_access, "-1");
+  dump_Assume_geq( cw, cval  );
+  dump_Assume_geq( cw, caddr );
+  // dump_Assume_geq( cw, iw );
 
-    // if( isRelease ) dump_Assign( "is"+gaccess, iw);
-    if( isRelease ) dump_Assign( "cs"+gaccess, cw);
-    if( active_lax > 0 ) dump_Assign( "cx"+gaccess, cw);
-    if( isExclusive ) active_lax = active_lax - 1;
-  }
+  if( isRelease ) dump_geq_globals( cw, "cr"); // missing in paper
+  if( isRelease ) dump_geq_globals( cw, "cw"); // missing in paper
+
+  dump_Assume_geq( cw, "cctrl" + t ); // missing in paper
+  dump_Assume_geq( cw, "caddr" + t );
+
+  if( isExclusive ) dump_Assume( "xpanding" + t_g + ">0" ); // Paper has type mismatch
+  if( isExclusive ) range_forbid( gid, "xpanding"+t_g, cw );
+
+  dump_Comment("Update");
+  dump_Assign( "buff"  + t_g , v);
+  dump_Assign( "mem"   + g_cw, v); // << indexing wrong in paper
+  dump_Assign_max( "caddr"    + t,   caddr );
+  dump_Assign_max( "clrsaddr" + t_g, caddr );
+  dump_Assign_max( "clrsval"  + t_g, cval  );
+  dump_Assign( "xpanding"+ t_g, "0");
+  if( isRelease ) dump_Assign_max( "cstr" + t, cw );
+
   dump_commit_before_thread_finish(cw);
 }
+
+
+  // if( isExclusive ) dump_Assign( "cx"   + t_g, cw);
+  // dump_String( "co"   + g_cw + "+=1;");
+  // dump_Assign( "delta"+ g_cw, "-1");
+
+  //   // if( isRelease ) dump_Assign( "is"+t_g, iw);
+  // if( active_lax > 0 ) dump_Assign( "cx"+t_g, cw);
+  // if( isExclusive ) active_lax = active_lax - 1;
+
+
+    // for( unsigned k = 1; k < ncontext; k++ ) {
+    //   auto kn = std::to_string(k);
+    //   auto lb = kn + " > " + csr;
+    //   auto ub = cr + " > " + kn;
+    //   auto range = "(("+ub+")&&("+lb+"))";
+    //   auto xkn = "(" + gid + ","+ kn +")";
+    //   dump_Assume_implies( range, "sforbid"+ xkn +"> 0" );
+    // }

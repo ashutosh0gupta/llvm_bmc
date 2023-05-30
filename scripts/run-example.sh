@@ -4,14 +4,14 @@
 
 timeout=300s
 
-if [ "$#" -ne 4 ]; then
+if [ "$#" -ne 5 ]; then
     echo "Illegal number of parameters"
     echo "Usage: ./run-example.sh [unwind] [context-bound] [file-name] [spec-file]"
     exit 0
 fi
 
-
-tmp_path="./tmp/"
+tmp_path=$5
+# tmp_path="./tmp/"
 # if [ -w /tmp/ ]; then
 #     tmp_path="/tmp"
 # fi
@@ -26,7 +26,6 @@ fi
 echo "./llvmbmc --unwind $1 --context-bound $2 -k $3 $spec_option"
 ./llvmbmc --unwind $1 -o $tmp_path --context-bound $2 -k $3 $spec_option > /dev/null 2>&1
 timeout $timeout cbmc $tmp_path/cbmc_out.cpp --unwind $1 --trace > $tmp_path/tr.tr 2>&1
-# ./scripts/clean-cmsb.py $tmp_path
 
 tr_file=$tmp_path/tr.tr
 
@@ -34,6 +33,7 @@ if [ -f "$tr_file" ]; then
     if grep -q "VERIFICATION SUCCESSFUL" "$tr_file"; then
         echo -n "SAFE   "
     elif grep -q "VERIFICATION FAILED" "$tr_file"; then
+        ./scripts/clean-cmsb.py $tmp_path
         echo -n "UNSAFE "
     elif grep -q "CONVERSION ERROR" "$tr_file"; then
         echo -n "ERROR  "     

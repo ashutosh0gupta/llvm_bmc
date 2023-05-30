@@ -291,6 +291,10 @@ void kbound::dump_If(std::string s) {
   current_indent++;
 }
 
+void kbound::dump_If_NonDet() {
+  dump_If("__get_rng()");
+}
+
 void kbound::dump_ElseIf(std::string s) {
   current_indent--;
   dump_String( "} else if("+ s + ") {" );
@@ -431,7 +435,7 @@ void kbound::preamble() {
 
 }
 
-void kbound::prefix_seq() {
+void kbound::prefix_seq_v1() {
   std::cout << "Running k bound\n";
   preamble();
   // for( auto& v : global_position ) {
@@ -563,7 +567,7 @@ void kbound::prefix_seq() {
 
 
 void kbound::
-dump_ld( std::string r, std::string cval,std::string caddr,
+dump_ld_v1( std::string r, std::string cval,std::string caddr,
          std::string gid,
          bool isAcquire, bool isExclusive ) {
 
@@ -625,79 +629,9 @@ dump_ld( std::string r, std::string cval,std::string caddr,
   dump_commit_before_thread_finish(cr);
 }
 
-// void kbound::
-// dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
-//          bool isAcquire, bool isExclusive ) {
-
-//   auto gaccess     = "("+ tid + ","+ gid + ")";
-//   auto sr          = "sr"+gaccess; // new
-//   auto cr          = "cr"+gaccess;
-//   auto gctx_access = "("+ gid +","+ cr + ")";
-
-//   dump_Comment("LD: Guess");
-//   if(isExclusive)   dump_Comment("  : Exlusive");
-//   if(isAcquire)     dump_Comment("  : Acquire");
-//   dump_Assign( "old_cr",  cr);
-//   dump_Assign( "old_sr",  sr);
-//   dump_Assign_rand_ctx( cr );
-//   dump_Assign_rand_ctx( sr );
-
-//   if( is_sc_semantics ) {
-//     assert(false);
-//     // dump_Comment("Check");
-//     // dump_Active( cr );
-//     // dump_Assume_geq( cr, "cdy[" + tid + "]" );
-//     // dump_Assign( "cdy[" + tid + "]", cr );
-//     // dump_Comment("Update");
-//     // dump_Assign( r, "mem"+ gctx_access );
-//   }else{
-//     dump_Comment("Check");
-//     dump_Active( cr );
-//     dump_Active( sr );
-//     dump_Assume_geq( cr, sr );
-//     dump_Assume_geq( sr, "old_sr" );
-
-//     dump_Assume_geq( cr, "cla["  + tid + "]" );
-//     dump_Assume_geq( cr, "cdy[" + tid + "]" );
-//     dump_Assume_geq( cr, "cisb["+ tid + "]" );
-//     dump_Assume_geq( cr, "cdl[" + tid + "]" );
-
-//     dump_Assume_geq( cr, caddr );
-
-//     // dump_Assume_geq( cr, "iw"+gaccess );
-
-//     if( isExclusive ) dump_Assume_geq ( cr, "old_cr" );   // extra in exlusive
-//     if( isAcquire   ) dump_Assume_geq ( cr, "cx"+gaccess);// extra in lda
-//     if( isAcquire   ) dump_geq_globals( cr, "cs");        // extra in lda
-
-//     dump_Comment("Update");
-//     dump_Assign( cval, cr );
-//     dump_Assign_max( "caddr["+tid+"]", caddr);
-//     dump_If( cr + " < " + "cw"+gaccess );
-//     {
-//       dump_Assign( r, "buff"+gaccess );
-//     }
-//     dump_Else();
-//     {
-//       dump_If( "pw" +gaccess + " != " + "co" + gctx_access );
-//       {
-//         dump_Assume_geq( cr, "old_cr" );
-//       }
-//       dump_Close_scope();
-//       dump_Assign( "pw"+gaccess, "co"+ gctx_access );
-//       dump_Assign( r, "mem"+ gctx_access );
-//     }
-//     dump_Close_scope();
-
-//     if( isAcquire   ) dump_Assign_max( "cl[" + tid + "]", cr   );
-//   }
-//   if( isExclusive ) dump_Assign( "delta"+gctx_access, tid );
-//   if( isExclusive ) active_lax = active_lax + 1;
-//   dump_commit_before_thread_finish(cr);
-// }
 
 void kbound::
-dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
+dump_st_v1( std::string v, std::string cval,std::string caddr, std::string gid,
          bool isRelease, bool isExclusive) {
 
   auto gaccess     = "("+ tid + ","+ gid + ")";
@@ -869,4 +803,36 @@ void kbound::dump_thread_create( unsigned bidx, std::string child_tid ) {
 void kbound::dump_thread_join( unsigned bidx, std::string child_tid ) {
   dump_dmbsy(); // All in-flight opertions must commit now
   dump_Assume_geq(  "cdy[" + tid + "]", "creturn[" + child_tid + "]" );
+}
+
+
+void kbound::
+dump_ld( std::string r, std::string cval,std::string caddr,
+         std::string gid,
+         bool isAcquire, bool isExclusive ) {
+  if( version == "v1") {
+    dump_ld_v1( r, cval,caddr, gid, isAcquire, isExclusive );
+  }else{
+    dump_ld_v2( r, cval,caddr, gid, isAcquire, isExclusive );
+  }
+}
+
+
+void kbound::
+dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
+         bool isRelease, bool isExclusive) {
+  if( version == "v1") {
+    dump_st_v1(  v,  cval, caddr,  gid, isRelease, isExclusive);
+  }else{
+    dump_st_v2(  v,  cval, caddr,  gid, isRelease, isExclusive);
+  }
+}
+
+
+void kbound::prefix_seq() {
+  if( version == "v1") {
+    prefix_seq_v1();
+  }else{
+    prefix_seq_v2();
+  }
 }

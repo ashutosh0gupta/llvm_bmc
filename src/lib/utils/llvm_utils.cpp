@@ -421,9 +421,9 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   include_dirs.push_back( "/usr/lib/gcc/x86_64-linux-gnu/11/include/");   // for stdarg.h
   include_dirs.push_back( "/usr/lib/llvm-" CLANG_VERSION "/lib/clang/" CLANG_VERSION ".0.0/include/");  // for stddef.h
 
-  // include_dirs.push_back( "/usr/include/c++/11/parallel/");         // for features.h
-  // include_dirs.push_back( "/usr/include/x86_64-linux-gnu/bits/");  // for locale.h
-  // include_dirs.push_back( "/usr/local/include/");
+  include_dirs.push_back( "/usr/include/c++/11/parallel/");         // for features.h
+  include_dirs.push_back( "/usr/include/x86_64-linux-gnu/bits/");  // for locale.h
+  include_dirs.push_back( "/usr/local/include/");
   
   // additional include directories
   for( auto& dir : o.get_include_dirs() ) {

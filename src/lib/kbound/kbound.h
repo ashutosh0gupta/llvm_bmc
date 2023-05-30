@@ -29,6 +29,7 @@ private:
   unsigned active_lax = 0;
   std::string thread_name, EntryFn;
   bool is_sc_semantics = false;
+  std::string version = "v2";
 
   svec reg_vals,reg_list;
   svec val_init_list, val_list;
@@ -113,6 +114,8 @@ private:
   void dump_ElseIf(std::string);
   void dump_Else();
   void dump_Close_scope();
+  void dump_If_NonDet();
+
   void dump_locals();
   void dump_sc_semantics(std::string tid, std::string ctime);
 
@@ -145,9 +148,15 @@ private:
   void postfix_seq();
 
   //-------------------------------------------------------------------
-  void dump_ld_new(std::string,std::string,std::string,std::string,bool,bool);
-  void dump_st_new(std::string,std::string,std::string,std::string,bool,bool);
-  void prefix_seq_new();
+  void dump_ld_v1(std::string,std::string,std::string,std::string,bool,bool);
+  void dump_st_v1(std::string,std::string,std::string,std::string,bool,bool);
+  void prefix_seq_v1();
+
+  void dump_ld_v2(std::string,std::string,std::string,std::string,bool,bool);
+  void dump_st_v2(std::string,std::string,std::string,std::string,bool,bool);
+  void prefix_seq_v2();
+
+  void range_forbid( std::string gid, std::string lb, std::string ub );
 
   //-------------------------------------------------------------------
 

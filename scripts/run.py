@@ -71,10 +71,10 @@ for ex in exs: #[:20]
    i = i + 1   
    # if not ex[0] in fails:
    #    continue
-   # if ex[0] != 'CO-SBI':
+   # if ex[0] != 'MP+popl+poap':
    #    continue
-   # if i > 100:
-   #    continue
+   if i < 1527:
+      continue
    f = folder + "/"+ ex[0]+".cpp"
    if not os.path.isfile(f):
       f = folder + "/"+ ex[0]+".c"
@@ -90,7 +90,7 @@ for ex in exs: #[:20]
       lk =  ex[3]
    else:
       lk = 10
-   # lk = 15
+   lk = 15
    if( len(ex) > 4):
       l = ex[4]
    else:
@@ -99,9 +99,9 @@ for ex in exs: #[:20]
       kind = ex[5]
    else:
       kind = "unk"
-
+   tmp_path = "./tmp/"
    print(str(i)+"\t"+ex[0]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
-   result = subprocess.check_output(["time", run, str(l), str(lk), f, s ],stderr=subprocess.STDOUT)
+   result = subprocess.check_output(["time", run, str(l), str(lk), f, s, tmp_path],stderr=subprocess.STDOUT)
    result=result.decode("utf-8")
    time = find_time(result)
    total_time += float(time[1])
@@ -113,7 +113,14 @@ for ex in exs: #[:20]
    if time[0].lower() != kind:
       print(str(i)+"\t"+ ex[0]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
       print(time[0]+"\t"+time[1])
+      shutil.copyfile('examples/litmus/c/original/alltests/'+ex[0]+".litmus",
+                      "./tmp/wrong.litmus")
+      shutil.copyfile(f,"./tmp/wrong.c")
+      if time[0] == 'UNSAFE':
+         # rerun the clean-cmsb
+         result = subprocess.check_output(["./scripts/clean-cmsb.py", "./tmp/"])
       print('Wrong answer!!')
+      exit()
       err_cnt += 1
    print(i,end="\r")
 print("------------------------------")

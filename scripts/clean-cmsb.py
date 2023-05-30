@@ -62,3 +62,57 @@ tf.writelines(cf)
 tf.close()
 
 
+#--------------------------------------------
+# Stiching litmust files to output of cmsb
+#--------------------------------------------
+wrong     = tmp_path + '/wrong.litmus'
+wrong_tag = tmp_path + '/wrong-tagged.litmus'
+
+if os.path.isfile(wrong):
+    elists = []
+    p = re.compile(r'=([0-9]+)$')
+    for t in range(1,3):
+        tid = str(t)
+        tes = [ k.strip() for k in cf if tid+' ASSIGN' in k ]
+        last_sat = ""
+        es = []
+        for s in tes:
+            match = re.findall( p, s)
+            if 'LDSAT' in s:
+                es.append( match[0]+","+last_sat )
+            if 'LDCOM' in s:
+                last_sat = match[0]
+            if 'STCOM' in s:
+                es.append( match[0] )
+        elists.append(es)
+
+    try:
+        with open(wrong) as wf:
+            ws = wf.readlines()
+    except IOError as e:
+        print( "Failed to open " + cbmc_file  )
+        sys.exit(0)
+    ows = []
+    epos = [0] * len(elists)
+    for w in ws:
+        if "|" in w:
+            ins = w.split("|")
+            t = 0
+            for instr in ins:
+                # instr = instr.strip()
+                if instr.startswith(' LD'):
+                    instr = elists[t][epos[t]]+" "+instr
+                    epos[t] += 1
+                elif instr.startswith(' ST'):
+                    instr = elists[t][epos[t]]+"   "+instr
+                    epos[t] += 1
+                else:
+                    instr = "    "+instr                    
+                ins[t] = instr
+                t += 1
+            w = "|".join(ins)
+        ows.append(w)
+
+    tf = open(wrong_tag,'w+')
+    tf.writelines(ows)
+    tf.close()
