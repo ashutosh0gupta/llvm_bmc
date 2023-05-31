@@ -62,6 +62,9 @@ clean :
 deepclean: clean
 	rm -rf $(BUILDDIR)/*
 
+cleantmp:
+	rm -rf ./tmp/*
+
 #-----------------------------------------------------------------------------
 # Z3 fetch and patch generation
 

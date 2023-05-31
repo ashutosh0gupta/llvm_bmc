@@ -30,7 +30,7 @@ void kbound::prefix_seq_v2() {
 
   dump_Comment( "declare arrays for context stamps" );
   time_list = {
-    "csr", "cr",        // Last read commit ctx
+    "sr", "cr",        // Last read commit ctx
     // "iw",
     "cw",  // Write commit ctx
     // "cx",        // exclusive commit
@@ -39,7 +39,7 @@ void kbound::prefix_seq_v2() {
     "clrsval",
     "xpanding",
   };
-  dump_Arrays( "char", time_list, "NPROC", "ADDRSIZE");
+  dump_Arrays( "int", time_list, "NPROC", "ADDRSIZE");
 
   dump_Comment( "declare arrays for synchronizations" );
   proc_list = {
@@ -104,15 +104,6 @@ void kbound::prefix_seq_v2() {
 
 }
 
-void kbound::
-range_forbid( std::string gid, std::string lb, std::string ub ) {
-  for( unsigned k = 1; k < ncontext; k++ ) {
-    auto kn = std::to_string(k);
-    auto range = "( ("+lb + " < " + kn+") && ("+ kn + " < " + ub +") )";
-    auto xkn = "(" + gid + ","+ kn +")";
-    dump_Assume_implies( range, "sforbid"+ xkn +"> 0" );
-  }
-}
 
     // for( unsigned k = 1; k < ncontext; k++ ) {
     //   auto kn = std::to_string(k);
@@ -128,25 +119,25 @@ dump_ld_v2( std::string r, std::string cval,
              std::string caddr, std::string gid,
              bool isAcquire, bool isExclusive ) {
 
-  auto t_g = "("+ tid + ","+ gid + ")";
-  auto csr = "csr"+t_g; // new
-  auto cr  = "cr" +t_g;
+  auto t_g  = "("+ tid + ","+ gid + ")";
+  auto sr  = "sr"+t_g; // new
+  auto cr   = "cr" +t_g;
   auto g_cr = "("+ gid +","+ cr + ")";
-  auto t = "["+ tid + "]";
+  auto t    = "["+ tid + "]";
 
   dump_Comment("LD: Guess");
   if(isExclusive)   dump_Comment("  : Exlusive");
   if(isAcquire)     dump_Comment("  : Acquire");
   dump_Assign( "old_cr",  cr);
-  dump_Assign( "old_sr",  csr);
-  dump_Assign_rand_ctx( cr , tid + " ASSIGN LDCOM " );
-  dump_Assign_rand_ctx( csr, tid + " ASSIGN LDSAT " );
+  dump_Assign( "old_sr",  sr);
+  dump_Assign_rand_ctx( sr, tid + " ASSIGN LDSAT " );
+  dump_Assign_rand_ctx( cr, tid + " ASSIGN LDCOM " );
 
   dump_Comment("Check");
   dump_Active( cr );
-  dump_Active( csr );
-  dump_Assume_geq( cr, csr );
-  dump_Assume_geq( csr, "old_sr" );
+  dump_Active( sr );
+  dump_Assume_geq( cr, sr );
+  dump_Assume_geq( sr, "old_sr" );
 
   dump_Assume_geq( cr, "clda" + t );
   dump_Assume_geq( cr,  "cdy" + t );
@@ -154,16 +145,19 @@ dump_ld_v2( std::string r, std::string cval,
   dump_Assume_geq( cr,  "cdl" + t );
 
   dump_Assume_geq( cr, caddr ); //does not match from paper; paper is syncing with all addr
-  dump_Assume_geq( cr, "clrsaddr"+t_g );
-  dump_Assume_geq( cr, "clrsval" +t_g );
+  dump_Assume_geq( sr, "clrsaddr"+t_g ); // << different from the paper
+  dump_Assume_geq( sr, "clrsval" +t_g ); // << different from the paper
+
+  // dump_Assume_geq( cr, "clrsaddr"+t_g ); // << in the paper
+  // dump_Assume_geq( cr, "clrsval" +t_g ); // << in the paper
   if( isAcquire   ) dump_Assume_geq( cr, "cstr" + t );
 
   dump_Comment("Update");
   dump_Assign_max( cr, "old_cr" ); // << cr is updated again??
-  dump_Assign( cval, cr  );        // 
-  // dump_Assign( sval, csr );     // Why??
+  dump_Assign( cval, sr  );        //
+  // dump_Assign( sval, sr );     // Why??
   dump_Assign_max( "caddr["+tid+"]", caddr);
-  dump_If( csr + " < " + "cw"+t_g );
+  dump_If( sr + " < " + "cw"+t_g );
   {
     dump_Assign( r, "buff"+t_g );
     range_forbid( gid, "cw"+t_g, cr );
@@ -171,14 +165,14 @@ dump_ld_v2( std::string r, std::string cval,
   dump_Else();
   {
     dump_Assign( r, "mem"+ g_cr );
-    range_forbid( gid, csr, cr );
+    range_forbid( gid, sr, cr );
   }
   dump_Close_scope();
 
   if( isAcquire   ) dump_Assign_max( "clda" + t, cr   );
   if( isExclusive ) {
     dump_If_NonDet();{
-      dump_Assign( "delta"+g_cr, tid );
+      dump_Assign( "xpanding"+g_cr, tid );
     }dump_Close_scope();
   }
 
@@ -258,7 +252,7 @@ dump_st_v2( std::string v, std::string cval,std::string caddr,
 
     // for( unsigned k = 1; k < ncontext; k++ ) {
     //   auto kn = std::to_string(k);
-    //   auto lb = kn + " > " + csr;
+    //   auto lb = kn + " > " + sr;
     //   auto ub = cr + " > " + kn;
     //   auto range = "(("+ub+")&&("+lb+"))";
     //   auto xkn = "(" + gid + ","+ kn +")";

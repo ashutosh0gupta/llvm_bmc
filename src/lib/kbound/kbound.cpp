@@ -66,7 +66,7 @@ kbound::kbound( options& o_, std::unique_ptr<llvm::Module>& m_,
   : bmc_pass( o_, o_.solver_ctx, bmc_ )
   , llvm::FunctionPass(ID)
   , module(m_)
-  , ofcpp(o_.outDirPath.string()+"/cbmc.cpp")
+  , ofcpp(o_.outDirPath.string()+"/"+o.fileName+".cbmc.cpp")
   , current_indent(0)
   , ncontext(o.ctx_bound)
 {

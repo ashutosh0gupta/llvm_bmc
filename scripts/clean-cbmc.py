@@ -10,11 +10,16 @@ import shutil
 import sys
 
 tmp_path= sys.argv[1]
+fname = sys.argv[2]
 
-in_file   = tmp_path + '/tr.tr'
-out_file  = tmp_path + '/clean.tr'
-cbmc_file = tmp_path + '/cbmc_out.cpp'
-tagged    = tmp_path + '/trace-tagged.cpp'
+fname=os.path.basename(fname)
+
+in_file   = tmp_path + '/'+fname+'.tr.tr'
+out_file  = tmp_path + '/'+fname+'.clean.tr'
+cbmc_file = tmp_path + '/'+fname+'.cbmc_out.cpp'
+tagged    = tmp_path + '/'+fname+'.trace-tagged.cpp'
+wrong     = tmp_path + '/'+fname+'.wrong.litmus'
+wrong_tag = tmp_path + '/'+fname+'.wrong-tagged.litmus'
 
 try:
     with open(in_file) as in_f:
@@ -65,9 +70,8 @@ tf.close()
 #--------------------------------------------
 # Stiching litmust files to output of cmsb
 #--------------------------------------------
-wrong     = tmp_path + '/wrong.litmus'
-wrong_tag = tmp_path + '/wrong-tagged.litmus'
 
+print(wrong)
 if os.path.isfile(wrong):
     elists = []
     p = re.compile(r'=([0-9]+)$')
@@ -75,15 +79,18 @@ if os.path.isfile(wrong):
         tid = str(t)
         tes = [ k.strip() for k in cf if tid+' ASSIGN' in k ]
         last_sat = ""
+        last_iw = ""
         es = []
         for s in tes:
             match = re.findall( p, s)
             if 'LDSAT' in s:
-                es.append( match[0]+","+last_sat )
-            if 'LDCOM' in s:
                 last_sat = match[0]
+            if 'LDCOM' in s:
+                es.append( match[0]+","+last_sat )                
+            if 'STIW' in s:
+                last_iw = match[0]
             if 'STCOM' in s:
-                es.append( match[0] )
+                es.append( last_iw + "," + match[0] )
         elists.append(es)
 
     try:

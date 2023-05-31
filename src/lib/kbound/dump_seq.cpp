@@ -366,9 +366,8 @@ void kbound::postfix_seq() {
 }
 
 void kbound::dump_locals() {
-
-  std::ifstream in(o.outDirPath.string()+"/cbmc.cpp");
-  std::ofstream out(o.outDirPath.string()+"/cbmc_out.cpp");
+  std::ifstream in(o.outDirPath.string()+"/"+o.fileName+".cbmc.cpp");
+  std::ofstream out(o.outDirPath.string()+"/"+o.fileName+".cbmc_out.cpp");
   std::string line;
     while (getline(in, line)) {
       if( line == "  __LOCALS__") {
@@ -498,9 +497,13 @@ void kbound::prefix_seq_v1() {
     "iw", "cw",  // Write commit ctx
     "cx",        // exclusive commit
     "is",        // RA model write init
-    "cs"         // RA model write commmit
+    "cs",        // RA model write commmit
+    "crmax"      // max read ctx seen so far //ashu added?
   };
   dump_Arrays( "char", time_list, "NPROC", "ADDRSIZE");
+
+  //to record when can we not commit; no initialization
+  dump_Arrays( "char", {"sforbid"}, "ADDRSIZE", "NCONTEXT");//ashu added?
 
   dump_Comment( "declare arrays for synchronizations" );
   proc_list = {
@@ -579,7 +582,7 @@ dump_ld_v1( std::string r, std::string cval,std::string caddr,
   if(isExclusive)   dump_Comment("  : Exlusive");
   if(isAcquire)     dump_Comment("  : Acquire");
   dump_Assign( "old_cr",  cr);
-  dump_Assign_rand_ctx( cr, " ctx for load");
+  dump_Assign_rand_ctx( cr, tid + " ASSIGN LDCOM ");
 
   if( is_sc_semantics ) {
     dump_Comment("Check");
@@ -593,20 +596,22 @@ dump_ld_v1( std::string r, std::string cval,std::string caddr,
     dump_Active( cr );
     dump_Assume_geq( cr, "iw"+gaccess );
     dump_Assume_geq( cr, caddr );
-    dump_Assume_geq( cr, "cdy[" + tid + "]" );
+    dump_Assume_geq( cr,  "cdy["+ tid + "]" );
     dump_Assume_geq( cr, "cisb["+ tid + "]" );
-    dump_Assume_geq( cr, "cdl[" + tid + "]" );
-    dump_Assume_geq( cr, "cl["  + tid + "]" );
+    dump_Assume_geq( cr,  "cdl["+ tid + "]" );
+    dump_Assume_geq( cr,   "cl["+ tid + "]" );
     if( isExclusive ) dump_Assume_geq ( cr, "old_cr" );   // extra in exlusive
     if( isAcquire   ) dump_Assume_geq ( cr, "cx"+gaccess);// extra in lda
     if( isAcquire   ) dump_geq_globals( cr, "cs");        // extra in lda
 
     dump_Comment("Update");
     dump_Assign( cval, cr );
-    dump_Assign_max( "caddr["+tid+"]", caddr);
+    dump_Assign_max( "crmax"+gaccess, cr);
+    dump_Assign_max( "caddr["+ tid + "]", caddr); //Ashu added?
     dump_If( cr + " < " + "cw"+gaccess );
     {
       dump_Assign( r, "buff"+gaccess );
+      range_forbid( gid, "cw"+gaccess, "crmax"+gaccess ); //Ashu added?
     }
     dump_Else();
     {
@@ -622,7 +627,7 @@ dump_ld_v1( std::string r, std::string cval,std::string caddr,
     }
     dump_Close_scope();
 
-    if( isAcquire   ) dump_Assign_max( "cl[" + tid + "]", cr   );
+    if( isAcquire   ) dump_Assign_max( "cl["+ tid + "]", cr   );
   }
   if( isExclusive ) dump_Assign( "delta"+gctx_access, tid );
   if( isExclusive ) active_lax = active_lax + 1;
@@ -642,9 +647,9 @@ dump_st_v1( std::string v, std::string cval,std::string caddr, std::string gid,
   dump_Comment("ST: Guess");
   if(isExclusive)   dump_Comment("  : Exlusive");
   if(isRelease)   dump_Comment("  : Release");
-  dump_Assign_rand_ctx( iw );
+  dump_Assign_rand_ctx( iw, tid + " ASSIGN STIW " );
   dump_Assign( "old_cw",  cw);
-  dump_Assign_rand_ctx( cw );
+  dump_Assign_rand_ctx( cw, tid + " ASSIGN STCOM " );
 
   if( is_sc_semantics ) {
     dump_Comment("Check");
@@ -663,6 +668,7 @@ dump_st_v1( std::string v, std::string cval,std::string caddr, std::string gid,
     dump_Comment("Check");
     dump_Active( iw );
     dump_Active( cw );
+    dump_Assume( "sforbid"+ gctx_access + "== 0" ); //ashu added?
     dump_Assume_geq( iw, cval  );
     dump_Assume_geq( iw, caddr );
     dump_Assume_geq( cw, iw );
@@ -697,6 +703,17 @@ dump_st_v1( std::string v, std::string cval,std::string caddr, std::string gid,
   dump_commit_before_thread_finish(cw);
 }
 
+
+void kbound::
+range_forbid( std::string gid, std::string lb, std::string ub ) {
+  for( unsigned k = 1; k < ncontext; k++ ) {
+    auto kn = std::to_string(k);
+    auto range = "( ("+lb + " < " + kn+") && ("+ kn + " < " + ub +") )";
+    auto xkn = "(" + gid + ","+ kn +")";
+    dump_Assume_implies( range, "sforbid"+ xkn +"> 0" );
+  }
+}
+
 void kbound::dump_update_ctrl( const void* cond ) {
     auto ctrl = "cctrl["+tid+"]";
     dump_Assign("old_cctrl", ctrl);
@@ -713,8 +730,7 @@ void kbound::dump_update_ctrl( const void* cond ) {
       //   dump_Assume_geq( ctrl, dep);
       // }
     }else{
-      auto cr = get_reg_time( cond );
-      dump_Assume_geq( ctrl, cr );
+      dump_Assume_geq( ctrl, get_reg_time( cond ) );
     }
 }
 
