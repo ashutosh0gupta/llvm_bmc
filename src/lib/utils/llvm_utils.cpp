@@ -399,6 +399,18 @@ getLocFromClangSource( const clang::SourceLocation& loc,
 // #define CLANG_INCLUDE "/usr/lib/llvm-"##CLANG_VERSION##"/lib/clang/"##CLANG_VERSION##".0.0/include/"
 
 //Direct translation via API clang
+
+// void get_system_include_folders(std::string lang) {
+//   std::ostringstream cmd;
+//   cmd << "gcc -x"<< lang << " /dev/null -E -Wp,-v";
+//   // std::cout << cmd.str() << "\n";
+//   if( system( cmd.str().c_str() ) != 0 ) exit(1);
+
+// }
+
+// void get_system_include_folders_c() { 
+// }
+
 std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   const std::string filename = o.get_input_file();
 
@@ -412,6 +424,10 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
     "/usr/include/c++/11",
       "/usr/include/x86_64-linux-gnu/c++/11",
       "/usr/include/c++/11/backward",
+      "/usr/lib/gcc/x86_64-linux-gnu/11/include",
+      "/usr/local/include",
+      "/usr/include/x86_64-linux-gnu",
+      "/usr/include",
       "/usr/lib/gcc/x86_64-linux-gnu/11/include",
       "/usr/local/include",
       "/usr/include/x86_64-linux-gnu",
