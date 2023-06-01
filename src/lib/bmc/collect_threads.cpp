@@ -58,8 +58,12 @@ collect_threads_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
               auto tr_obj_load = call->getOperand(0);
               if( auto load = llvm::dyn_cast<llvm::LoadInst>(tr_obj_load) ) {
                 auto tr_obj = load->getOperand(0);
-                auto tid = tr_obj_map.at(tr_obj);
-                b.sys_spec.threads.at(tid).join_instruction = call;
+                if ( exists(tr_obj_map, (void *)tr_obj) ) {
+                  auto tid = tr_obj_map.at(tr_obj);
+                  b.sys_spec.threads.at(tid).join_instruction = call;
+                }else{
+                  llvm_bmc_warning("Collect thread", "Fails to match join!");
+                }
               }else{
                 llvm_bmc_error("Collect thread", "No load in join!");
               }
@@ -70,7 +74,7 @@ collect_threads_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
     }
     size = b.sys_spec.threads.size();
     j++;
-    if( size > 10 ) {
+    if( size > 20 ) {
       llvm_bmc_error("Collect thread", "Too many threads! May be loop!");
     }
   }
