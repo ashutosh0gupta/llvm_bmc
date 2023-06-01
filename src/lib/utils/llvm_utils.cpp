@@ -411,18 +411,20 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   std::vector<std::string> include_dirs;
 
   //standard include directories
-  include_dirs.push_back("/usr/local/gcc-13.1.0/include/c++/13.1.0");
   include_dirs.push_back( "/usr/include/");               // for features.h, locale.h, pthread.h
   // include_dirs.push_back( "/usr/include/linux");          // for stddef.h
   include_dirs.push_back( "/usr/include/c++/11/");         // for iostream
   include_dirs.push_back( "/usr/include/x86_64-linux-gnu/");      // for wchar.h
   include_dirs.push_back( "/usr/include/x86_64-linux-gnu/c++/11/");    // bits/c++config.h
-  include_dirs.push_back("/home/ashwinabraham/gcc-releases-gcc-13.1.0/build/gcc/include/");
-  include_dirs.push_back("/home/ashwinabraham/gcc-releases-gcc-13.1.0/build/stage1-x86_64-linux-gnu/libstdc++-v3/include/x86_64-linux-gnu/");
   include_dirs.push_back( "/usr/include/c++/11/tr1");      // for stdarg.h, wchar.h
   include_dirs.push_back( "/usr/lib/gcc/x86_64-linux-gnu/11/include/");   // for stdarg.h
   include_dirs.push_back( "/usr/lib/llvm-" CLANG_VERSION "/lib/clang/" CLANG_VERSION ".0.0/include/");  // for stddef.h
+
+  //added by ashwin ~
+  include_dirs.push_back("/usr/local/gcc-13.1.0/include/c++/13.1.0");
   include_dirs.push_back("/home/ashwinabraham/gcc-releases-gcc-13.1.0/libstdc++-v3/include/c_compatibility/");
+  include_dirs.push_back("/home/ashwinabraham/gcc-releases-gcc-13.1.0/build/gcc/include/");
+  include_dirs.push_back("/home/ashwinabraham/gcc-releases-gcc-13.1.0/build/stage1-x86_64-linux-gnu/libstdc++-v3/include/x86_64-linux-gnu/");
 
   // include_dirs.push_back( "/usr/include/c++/11/parallel/");         // for features.h
   // include_dirs.push_back( "/usr/include/x86_64-linux-gnu/bits/");  // for locale.h

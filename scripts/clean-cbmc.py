@@ -78,15 +78,15 @@ if os.path.isfile(wrong):
     for t in range(1,3):
         tid = str(t)
         tes = [ k.strip() for k in cf if tid+' ASSIGN' in k ]
-        last_sat = ""
-        last_iw = ""
+        last_sat = "_"
+        last_iw = "_"
         es = []
         for s in tes:
             match = re.findall( p, s)
             if 'LDSAT' in s:
                 last_sat = match[0]
             if 'LDCOM' in s:
-                es.append( match[0]+","+last_sat )                
+                es.append( last_sat + "," + match[0] )                
             if 'STIW' in s:
                 last_iw = match[0]
             if 'STCOM' in s:
@@ -111,10 +111,10 @@ if os.path.isfile(wrong):
                     instr = elists[t][epos[t]]+" "+instr
                     epos[t] += 1
                 elif instr.startswith(' ST'):
-                    instr = elists[t][epos[t]]+"   "+instr
+                    instr = elists[t][epos[t]]+" "+instr
                     epos[t] += 1
                 else:
-                    instr = "    "+instr                    
+                    instr = "    "+instr
                 ins[t] = instr
                 t += 1
             w = "|".join(ins)

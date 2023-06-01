@@ -78,10 +78,10 @@ def runner(ex):
    report = False
    # if not ex[0] in fails:
    #    continue
-   # if ex[1] != 'JSV': # 'CO-SBI': #'MP+popl+poap':
-   #    return 0
-   if ex[0] < 1564: #1552: #1530: 3579: #3599:
+   if ex[1] != 'MP+dmb.sy+addr-pos-addr': #'MP+dmb.sy+addr-rfi-addr': # 'JSV': # 'CO-SBI': #'MP+popl+poap':
       return 0
+   # if ex[0] < 1552: #1564:  #1530: 3579: #3599:
+   #    return 0
    f = folder + "/"+ ex[1]+".cpp"
    if not os.path.isfile(f):
       f = folder + "/"+ ex[1]+".c"
@@ -97,7 +97,7 @@ def runner(ex):
       lk =  ex[4]
    else:
       lk = 10
-   # lk = 10
+   lk = 10
    if( len(ex) > 4):
       l = ex[5]
    else:
@@ -136,7 +136,7 @@ for ex in exs: #[:20]
    total_time += time
    print(ex[0],end="\r")
 
-# result = Parallel(n_jobs=4)( delayed(runner)(ex) for ex in tqdm(exs[3610:]) )
+# result = Parallel(n_jobs=-1)( delayed(runner)(ex) for ex in tqdm(exs) )
 
 # def f(ex):
 #    print(ex)

@@ -120,7 +120,7 @@ dump_ld_v2( std::string r, std::string cval,
              bool isAcquire, bool isExclusive ) {
 
   auto t_g  = "("+ tid + ","+ gid + ")";
-  auto sr  = "sr"+t_g; // new
+  auto sr   = "sr"+t_g; // new
   auto cr   = "cr" +t_g;
   auto g_cr = "("+ gid +","+ cr + ")";
   auto t    = "["+ tid + "]";
@@ -144,7 +144,8 @@ dump_ld_v2( std::string r, std::string cval,
   dump_Assume_geq( cr, "cisb" + t ); // isb is here??
   dump_Assume_geq( cr,  "cdl" + t );
 
-  dump_Assume_geq( cr, caddr ); //does not match from paper; paper is syncing with all addr
+  // dump_Assume_geq( cr, caddr ); //does not match from paper; paper is syncing with all addr
+  dump_Assume_geq( sr, caddr );          // << ordering against sat
   dump_Assume_geq( sr, "clrsaddr"+t_g ); // << different from the paper
   dump_Assume_geq( sr, "clrsval" +t_g ); // << different from the paper
 
@@ -153,7 +154,8 @@ dump_ld_v2( std::string r, std::string cval,
   if( isAcquire   ) dump_Assume_geq( cr, "cstr" + t );
 
   dump_Comment("Update");
-  dump_Assign_max( cr, "old_cr" ); // << cr is updated again??
+  // dump_Assign_max( cr, "old_cr" ); // << cr is updated again??
+  // dump_Assign_max( "crmax"+t_g, "old_cr" ); // << cr is updated again??
   dump_Assign( cval, sr  );        //
   // dump_Assign( sval, sr );     // Why??
   dump_Assign_max( "caddr["+tid+"]", caddr);
@@ -190,15 +192,14 @@ dump_st_v2( std::string v, std::string cval,std::string caddr,
              std::string gid, bool isRelease, bool isExclusive ) {
   assert( !is_sc_semantics );
 
-  auto t_g     = "("+ tid + ","+ gid + ")";
-  // auto iw          = "iw"+t_g;
-  auto cw          = "cw"+t_g;
+  auto t_g  = "("+ tid + ","+ gid + ")";
+  auto cw   = "cw"+t_g;
   auto g_cw = "("+ gid +","+ cw + ")";
-  auto t = "["+ tid + "]";
+  auto t    = "["+ tid + "]";
 
   dump_Comment("ST: Guess");
-  if(isExclusive)   dump_Comment("  : Exlusive");
-  if(isRelease)   dump_Comment("  : Release");
+  if(isExclusive) dump_Comment("  : Exlusive");
+  if(isRelease  ) dump_Comment("  : Release");
   dump_Assign( "old_cw",  cw);
   dump_Assign_rand_ctx( cw, tid + " ASSIGN STCOM " );
 
