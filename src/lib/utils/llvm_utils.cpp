@@ -408,8 +408,16 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   }
   llvm::LLVMContext& llvm_ctx = o.get_llvm_context();
 
-  std::vector<std::string> include_dirs;
-
+  std::vector<std::string> include_dirs= {
+    "/usr/include/c++/11",
+      "/usr/include/x86_64-linux-gnu/c++/11",
+      "/usr/include/c++/11/backward",
+      "/usr/lib/gcc/x86_64-linux-gnu/11/include",
+      "/usr/local/include",
+      "/usr/include/x86_64-linux-gnu",
+      "/usr/include"
+  };
+     
   //standard include directories
   include_dirs.push_back( "/usr/include/");               // for features.h, locale.h, pthread.h
   // include_dirs.push_back( "/usr/include/linux");          // for stddef.h
@@ -426,9 +434,9 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   include_dirs.push_back("/home/ashwinabraham/gcc-releases-gcc-13.1.0/build/gcc/include/");
   include_dirs.push_back("/home/ashwinabraham/gcc-releases-gcc-13.1.0/build/stage1-x86_64-linux-gnu/libstdc++-v3/include/x86_64-linux-gnu/");
 
-  // include_dirs.push_back( "/usr/include/c++/11/parallel/");         // for features.h
-  // include_dirs.push_back( "/usr/include/x86_64-linux-gnu/bits/");  // for locale.h
-  // include_dirs.push_back( "/usr/local/include/");
+  include_dirs.push_back( "/usr/include/c++/11/parallel/");         // for features.h
+  include_dirs.push_back( "/usr/include/x86_64-linux-gnu/bits/");  // for locale.h
+  include_dirs.push_back( "/usr/local/include/");
   
   // additional include directories
   for( auto& dir : o.get_include_dirs() ) {
