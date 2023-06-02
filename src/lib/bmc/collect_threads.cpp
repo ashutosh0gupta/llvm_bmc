@@ -75,7 +75,7 @@ collect_threads_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
     size = b.sys_spec.threads.size();
     j++;
     if( size > 20 ) {
-      llvm_bmc_error("Collect thread", "Too many threads! May be loop!");
+      llvm_bmc_error("Collect thread","Too many threads! May be in a loop!");
     }
   }
 

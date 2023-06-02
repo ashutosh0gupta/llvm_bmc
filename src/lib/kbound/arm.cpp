@@ -144,8 +144,8 @@ dump_ld_v2( std::string r, std::string cval,
   dump_Assume_geq( cr, "cisb" + t ); // isb is here??
   dump_Assume_geq( cr,  "cdl" + t );
 
-  // dump_Assume_geq( cr, caddr ); //does not match from paper; paper is syncing with all addr
-  dump_Assume_geq( sr, caddr );          // << ordering against sat
+  dump_Assume_geq( cr, caddr ); //does not match from paper; paper is syncing with all addr
+  // dump_Assume_geq( sr, caddr );          // << ordering against sat
   dump_Assume_geq( sr, "clrsaddr"+t_g ); // << different from the paper
   dump_Assume_geq( sr, "clrsval" +t_g ); // << different from the paper
 
