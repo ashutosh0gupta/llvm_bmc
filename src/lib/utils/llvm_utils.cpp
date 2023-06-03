@@ -5,6 +5,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/algorithm/string/predicate.hpp>
 #include <climits>
 
 #pragma GCC diagnostic push
@@ -400,16 +401,41 @@ getLocFromClangSource( const clang::SourceLocation& loc,
 
 //Direct translation via API clang
 
-// void get_system_include_folders(std::string lang) {
-//   std::ostringstream cmd;
-//   cmd << "gcc -x"<< lang << " /dev/null -E -Wp,-v";
-//   // std::cout << cmd.str() << "\n";
-//   if( system( cmd.str().c_str() ) != 0 ) exit(1);
 
-// }
 
-// void get_system_include_folders_c() { 
-// }
+std::string exec(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    return result;
+}
+
+std::vector<std::string> get_system_include_folders( std::string lang ) {
+  std::ostringstream cmd;
+  cmd << "gcc -x"<< lang << " /dev/null -E -Wp,-v 2>&1";
+  std::string result = exec(cmd.str().c_str());
+  std::vector<std::string> dirs;
+  // std::cout << result << "\n";
+
+  auto ss = std::stringstream{result};
+
+  for (std::string line; std::getline(ss, line, '\n');) {
+    if( line[0]==' ') {
+      size_t start = line.find_first_not_of(" ");
+      line = (start == std::string::npos) ? "" : line.substr(start);
+      dirs.push_back(line);
+    }
+  }
+
+  return dirs;
+}
+
 
 std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   const std::string filename = o.get_input_file();
@@ -420,28 +446,41 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   }
   llvm::LLVMContext& llvm_ctx = o.get_llvm_context();
 
-  std::vector<std::string> include_dirs= {
-    "/usr/include/c++/11",
-      "/usr/include/x86_64-linux-gnu/c++/11",
-      "/usr/include/c++/11/backward",
-      "/usr/lib/gcc/x86_64-linux-gnu/11/include",
-      "/usr/local/include",
-      "/usr/include/x86_64-linux-gnu",
-      "/usr/include",
-      "/usr/lib/gcc/x86_64-linux-gnu/11/include",
-      "/usr/local/include",
-      "/usr/include/x86_64-linux-gnu",
-      "/usr/include"
-  };
-     
+  // auto dirs;
+  std::vector<std::string> include_dirs;
+  if(boost::algorithm::ends_with(filename, ".c")) {
+    include_dirs = get_system_include_folders( "c" );
+  }else if(boost::algorithm::ends_with(filename, ".cpp")){
+    include_dirs = get_system_include_folders( "c++" );
+  }else{
+    llvm_bmc_error( "llvm utils", "File type is not recognized!!" );
+  }
+
+  // for( auto d : dirs){
+  //   std::cout << d << "\n";
+  // }
+
+  // std::vector<std::string> include_dirs = dirs;
+  //   {
+  //   "/usr/include/c++/11",
+  //   "/usr/include/x86_64-linux-gnu/c++/11",
+  //   "/usr/include/c++/11/backward",
+  //   "/usr/lib/gcc/x86_64-linux-gnu/11/include",
+  //   "/usr/local/include",
+  //   "/usr/include/x86_64-linux-gnu",
+  //   "/usr/include"
+  // };
+
   //standard include directories
-  include_dirs.push_back("/usr/local/gcc-13.1.0/lib/gcc/x86_64-linux-gnu/13.1.0/include");
-  include_dirs.push_back("/usr/local/include");
-  include_dirs.push_back("/usr/local/gcc-13.1.0/include");
-  include_dirs.push_back("/usr/local/gcc-13.1.0/lib/gcc/x86_64-linux-gnu/13.1.0/include-fixed/x86_64-linux-gnu");
-  include_dirs.push_back("/usr/local/gcc-13.1.0/lib/gcc/x86_64-linux-gnu/13.1.0/include-fixed");
-  include_dirs.push_back("/usr/include/x86_64-linux-gnu");
-  include_dirs.push_back("/usr/include");
+  // include_dirs.push_back("/usr/local/gcc-13.1.0/lib/gcc/x86_64-linux-gnu/13.1.0/include");
+  // include_dirs.push_back("/usr/local/include");
+  // include_dirs.push_back("/usr/local/gcc-13.1.0/include");
+  // include_dirs.push_back("/usr/local/gcc-13.1.0/lib/gcc/x86_64-linux-gnu/13.1.0/include-fixed/x86_64-linux-gnu");
+  // include_dirs.push_back("/usr/local/gcc-13.1.0/lib/gcc/x86_64-linux-gnu/13.1.0/include-fixed");
+  // include_dirs.push_back("/usr/include/x86_64-linux-gnu");
+  // include_dirs.push_back("/usr/include");
+
+
   // include_dirs.push_back( "/usr/include/");               // for features.h, locale.h, pthread.h
   // include_dirs.push_back( "/usr/include/linux");          // for stddef.h
   // include_dirs.push_back( "/usr/include/c++/11/");         // for iostream
@@ -457,10 +496,10 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   // include_dirs.push_back("/home/ashwinabraham/gcc-releases-gcc-13.1.0/build/gcc/include/");
   // include_dirs.push_back("/home/ashwinabraham/gcc-releases-gcc-13.1.0/build/stage1-x86_64-linux-gnu/libstdc++-v3/include/x86_64-linux-gnu/");
 
-  include_dirs.push_back( "/usr/include/c++/11/parallel/");         // for features.h
-  include_dirs.push_back( "/usr/include/x86_64-linux-gnu/bits/");  // for locale.h
-  include_dirs.push_back( "/usr/local/include/");
-  
+  // include_dirs.push_back( "/usr/include/c++/11/parallel/");         // for features.h
+  // include_dirs.push_back( "/usr/include/x86_64-linux-gnu/bits/");  // for locale.h
+  // include_dirs.push_back( "/usr/local/include/");
+
   // additional include directories
   for( auto& dir : o.get_include_dirs() ) {
     include_dirs.push_back( dir );
