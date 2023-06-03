@@ -26,9 +26,9 @@ label_2:;
   if (v3_X0) goto lbl_LC00; else goto lbl_LC00;
 lbl_LC00:;
   int v6_X2 = vars[0];
-  int v10 = ( 0 == 1);
+  int v10 = (v3_X0 == 1);
   v_1_X0_1 = v10;
-  int v11 = ( 0 == 0);
+  int v11 = (v6_X2 == 0);
   v_1_X2_0 = v11;
   return NULL;
 }

@@ -29,9 +29,9 @@ label_2:;
   if (v3_X0) goto lbl_LC00; else goto lbl_LC00;
 lbl_LC00:;
   int v6_X2 = atomic_load_explicit(&vars[0], memory_order_relaxed);
-  int v10 = ( 0 == 1);
+  int v10 = (v3_X0 == 1);
   atomic_store_explicit(&atom_1_X0_1, v10, memory_order_seq_cst);
-  int v11 = ( 0 == 0);
+  int v11 = (v6_X2 == 0);
   atomic_store_explicit(&atom_1_X2_0, v11, memory_order_seq_cst);
   return NULL;
 }

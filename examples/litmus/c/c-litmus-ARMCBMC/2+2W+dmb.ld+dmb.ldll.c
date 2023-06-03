@@ -29,9 +29,9 @@ label_2:;
   return NULL;
 }
 
-int main(int argc, char *argv[]) {
-  pthread_t thr0;
-  pthread_t thr1;
+int main(int argc, char *argv[]){
+  pthread_t thr0; 
+  pthread_t thr1; 
 
   atomic_init(&vars[1], 0);
   atomic_init(&vars[0], 0);
