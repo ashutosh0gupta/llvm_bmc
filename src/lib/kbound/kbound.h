@@ -29,7 +29,7 @@ private:
   unsigned active_lax = 0;
   std::string thread_name, EntryFn;
   bool is_sc_semantics = false;
-  std::string version = "v2";
+  std::string version = "v1";
 
   svec reg_vals,reg_list;
   svec val_init_list, val_list;

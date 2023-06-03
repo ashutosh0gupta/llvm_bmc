@@ -151,7 +151,7 @@ dump_ld_v2( std::string r, std::string cval,
 
   // dump_Assume_geq( cr, "clrsaddr"+t_g ); // << in the paper
   // dump_Assume_geq( cr, "clrsval" +t_g ); // << in the paper
-  if( isAcquire   ) dump_Assume_geq( cr, "cstr" + t );
+  if( isAcquire ) dump_Assume_geq( cr, "cstr" + t );
 
   dump_Comment("Update");
   // dump_Assign_max( cr, "old_cr" ); // << cr is updated again??

@@ -78,7 +78,7 @@ def runner(ex):
    report = False
    # if not ex[0] in fails:
    #    continue
-   if ex[1] != 'MP+dmb.sy+addr-pos-addr': #'MP+dmb.sy+addr-rfi-addr': # 'JSV': # 'CO-SBI': #'MP+popl+poap':
+   if ex[1] != 'MP+dmb.sy+fri-rfi-addr': # 'MP+dmb.sy+addr-pos-addr': #'MP+dmb.sy+addr-rfi-addr': # 'JSV': # 'CO-SBI': #'MP+popl+poap':
       return 0
    # if ex[0] < 1552: #1564:  #1530: 3579: #3599:
    #    return 0
@@ -124,9 +124,9 @@ def runner(ex):
       if time[0] == 'UNSAFE':
          # rerun the clean-cbmc
          result = subprocess.check_output(["./scripts/clean-cbmc.py", "./tmp/",f])
-         print(result)
+         # print(result)
+         # exit()
       print('Wrong answer!!')
-      exit()
       # err_cnt += 1
    return float(time[1])
 
