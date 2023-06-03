@@ -115,7 +115,7 @@ def runallherd():
             #            print('{0:4}: '.format(n),end='')
             #            print(res_to_string(tst))
             #            logfile.write(res_to_string(tst)+'\n')
-            continue
+            #continue
         except subprocess.TimeoutExpired:
             tst['failure'] = 'herd'
         finally:
