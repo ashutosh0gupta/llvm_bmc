@@ -17,4 +17,4 @@ In run-scripts folder run:
 - python3 runall-CBMC-PSO.py to run all litmus tests for PSO by CBMC. Output file is ../pso.cbmc.results.txt. We expect to have FALSE POSITVE due to different memory models (ARM vs PSO). However, we do not expect FAILUREs.
 - python3 runall-CBMC-SC.py to run all litmus tests for SC by CBMC. Output file is ../sc.cbmc.results.txt. We expect to have FALSE POSITVE due to different memory models (ARM vs SC). However, we do not expect FAILUREs.
 - python3 runall-CSEQ.py to run all litmus tests for SC by CSEQ. Output file is ../sc.cseq.results.txt. We expect to have FALSE POSITVE due to different memory models (ARM vs SC). However, we do not expect FAILUREs.
-
+- python3 runall-ARMCBMC.py to run all litmus tests for SC by ARMCBMC. Output file is ../arm.armcbmc.results.txt. FAILUREs should be checked. We do not expect FAILUREs with result Accepted. FAILUREs with result Forbiden might due to the bound of context switching.
