@@ -20,8 +20,8 @@ SCRIPT2 = 'cbmc'
 LOGFILENAME = curDir + '/../arm.armcbmc.results.txt'
 TIMEOUT = 120  # 120 = 2 minutes
 UNWIND = '1'
-BOUND = '5'
-TEMPFOLDER = curDir + '/tmp'
+BOUND = '10' # 5 will miss some behaviours such as in MP+dmb.sy+ctrl-[fr-rf]
+TEMPFOLDER = curDir + '/tmp_10'
 
 
 def get_expected(fname):
@@ -111,15 +111,16 @@ def runall():
                     else:
                         tst['failure'] = 'CBMC returns unrecognized results'
                 except subprocess.CalledProcessError as e2:
-                    print(e2)
+                    #print(e2)
                     tst['failure'] = 'error with CBMC'
                 except subprocess.TimeoutExpired as e2:
+                    #print(e2)
                     tst['failure'] = 'timeout with CBMC'
         except subprocess.CalledProcessError as e1:
-            print(e1)
+            #print(e1)
             tst['failure'] = 'error in translation with ARMCBMC'
         except subprocess.TimeoutExpired as e1:
-            print(e1)
+            #print(e1)
             tst['failure'] = 'timeout in translation with ARMCBMC'
         finally:
             print('{0:4}: '.format(n), end='')

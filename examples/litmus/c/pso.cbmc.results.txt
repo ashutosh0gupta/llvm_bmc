@@ -5,7 +5,7 @@
 # Otherwise, they are marked "Allow".
 # 
 # The tests where executed using runall-CBMC-PSO.py.
-# Date: 230527-10:05
+# Date: 230604-06:43
 
 R OK: Allow
 R+po+polp OK: Allow
@@ -3584,7 +3584,7 @@ John01 FALSE POSITIVE: Unexpected result Forbid due to memory model
 John02 FALSE POSITIVE: Unexpected result Forbid due to memory model
 ARM-super-detour2 OK: Forbid
 LB+dmb.sy+ctrl-rfi-addr OK: Forbid
-JSV FALSE POSITIVE: Unexpected result Forbid due to memory model
+JSV OK: Allow
 CO-SBI OK: Forbid
 Z6.4+poll+pola+pola OK: Forbid
 W+RWC+poll+poaa+pola OK: Forbid
@@ -8658,4 +8658,4 @@ RW-r+RW-a+RW-B+RW-B+RW-B+RW-B+RW-B+RW-B OK: Forbid
 IRIW+poaps+LL OK: Forbid
 IRIW+poap+poaa+LL OK: Forbid
 IRIW+poaas+LL OK: Forbid
-# Time: 1891.23 s
+# Time: 1861.26 s
