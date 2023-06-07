@@ -29,6 +29,7 @@ collect_globals::~collect_globals() {}
 void collect_globals::
 collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
   std::set<const llvm::Value*> written;
+  std::set<const llvm::Value*> read;
   for (unsigned j = 0; j < b.sys_spec.threads.size(); j++) {
     auto EntryFn = b.sys_spec.threads.at(j).entry_function;
     for (auto mit = m->begin(); mit != m->end(); mit++) {
@@ -46,27 +47,26 @@ collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
           if( auto store = llvm::dyn_cast<llvm::StoreInst>(I) ) {
             addr = store->getOperand(1);
             auto glb = identify_global_in_addr( addr );
-            if( glb && !exists( list_gvars, glb ) )
-              list_gvars.push_back(glb);
+            if( glb && !exists( list_gvars, glb ) ) list_gvars.push_back(glb);
             if(glb) written.insert( glb );
           }else if( auto load = llvm::dyn_cast<llvm::LoadInst>(I) ) {
             addr = load->getOperand(0);
             auto glb = identify_global_in_addr( addr );
-            if( glb && !exists( list_gvars, glb ) ) {
-              list_gvars.push_back(glb);
-            }
+            if( glb && !exists( list_gvars, glb ) ) list_gvars.push_back(glb);
+            if(glb) read.insert( glb );
           }else if( auto rmw = llvm::dyn_cast<llvm::AtomicRMWInst>(I) ) {
             addr = rmw->getPointerOperand();
             auto glb = identify_global_in_addr( addr );
-            if( glb && !exists( list_gvars, glb ) )
-              list_gvars.push_back(glb);
+            if( glb && !exists( list_gvars, glb ) ) list_gvars.push_back(glb);
             if(glb) written.insert( glb );
+            if(glb) read.insert( glb );
           }else if (auto eval = llvm::dyn_cast<llvm::ExtractValueInst>(I)) {
             addr = eval->getAggregateOperand();
             auto glb = identify_global_in_addr(addr);
             if (glb && !exists(list_gvars, glb)) {
               std::cout << "\nadded eval gvar in collectGlobalspass\n";
               list_gvars.push_back(glb);
+              //todo: add in read or written set??
             } else {
               std::cout << "\ndid not add eval gvar in collectGlobalspass\n";
             }
@@ -78,10 +78,10 @@ collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
   for (auto fpair1 : fn_gvars_map) {
     auto& glist1 = fpair1.second;
     for (auto fpair2 : fn_gvars_map) {
-      if( fpair1.first == fpair2.first ) continue;
+      if( fpair1.first == fpair2.first ) continue; // different threads
       for( auto g : glist1 ) {
-        // if( !exists( fpair2.second, g ) ) continue;
-        //if( !exists( written, g) ) continue;
+        if( !exists( fpair2.second, g ) ) continue; // No other thread touching
+        if( !exists( written, g) )        continue; // No one has written
         //if( auto g1 = llvm::dyn_cast<llvm::GlobalVariable>(g) )
           {
           if( !exists(b.concurrent_vars, g) ) {
@@ -89,6 +89,16 @@ collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
           }
         }
       }
+    }
+  }
+  for( auto g : read ) {
+    if( !exists(b.concurrent_vars, g) ) {
+      b.local_globals.insert(g);
+    }
+  }
+  for( auto g : written ) {
+    if( !exists(b.concurrent_vars, g) ) {
+      b.local_globals.insert(g);
     }
   }
 }

@@ -9,6 +9,7 @@
 
 class bmc;       // forward declaration of the bmc class
 
+
 struct names {
   std::map<std::string,names> nmap;
   std::string name;
@@ -17,6 +18,8 @@ struct names {
 typedef std::vector<std::string> svec;
 
 class kbound : public bmc_pass, public llvm::FunctionPass{
+
+  enum memory_model { ARMV1, ARMV2, RA, CC, CCV, CM };
 
 private:
   static char ID;
@@ -29,6 +32,7 @@ private:
   unsigned active_lax = 0;
   std::string thread_name, EntryFn;
   bool is_sc_semantics = false;
+  memory_model mm = ARMV1;
   std::string version = "v1";
 
   svec reg_vals,reg_list;
@@ -71,9 +75,10 @@ private:
   std::string get_reg_time  ( const void*, svec& idxs );
   std::string get_global_idx( const void* );
   std::string get_global_idx( const void*, std::string );
-  
+
   bool is_concurrent( const void* v);
-  
+  bool is_local_global( const void* v);
+
   std::string read_const  ( const llvm::Value* );
   std::string add_reg_map ( const llvm::Value* );
   std::string get_reg     ( const llvm::Value* );
@@ -125,8 +130,8 @@ private:
                     std::vector<std::string> arys,
                     std::string dim1, std::string dim2 );
 
-  void dump_ld( std::string, std::string, std::string, std::string,bool,bool);
-  void dump_st( std::string, std::string, std::string, std::string,bool,bool);
+  void dump_ld(std::string,std::string,std::string,std::string,bool,bool,bool);
+  void dump_st(std::string,std::string,std::string,std::string,bool,bool,bool);
   void dump_dmbsy();
   void dump_dmbld();
   void dump_dmbst();
@@ -198,7 +203,7 @@ private:
   void addr_name( const llvm::Value* addr, std::string& , std::string&,
                   bool& isLocalUse );
 
-  void addr_name( const llvm::Value* addr, std::string& , std::string&);
+  // void addr_name( const llvm::Value* addr, std::string& , std::string&);
 
   void addr_local_name( const llvm::Value* addr,
                         std::string& gid, std::string& caddr);

@@ -86,7 +86,7 @@ def runner(ex):
    if not os.path.isfile(f):
       f = folder + "/"+ ex[1]+".c"
    if not os.path.isfile(f):
-      print(f+' doest not exists!')
+      print(f+' does not exists!')
       exit()
    if ex[2] != "-":
       s = folder + "/"+ ex[2]+".spec"
@@ -97,7 +97,7 @@ def runner(ex):
       lk =  ex[4]
    else:
       lk = 10
-   lk = 10
+   lk = n+3
    if( len(ex) > 4):
       l = ex[5]
    else:
@@ -109,7 +109,7 @@ def runner(ex):
    tmp_path = "./tmp/"
    if report:
       print(str(ex[0])+"\t"+ex[1]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
-   result = subprocess.check_output(["time", run, str(l), str(lk), f, s, tmp_path],stderr=subprocess.STDOUT)
+   result = subprocess.check_output(["time", run, str(l), str(lk), f, s, tmp_path,"armv2"],stderr=subprocess.STDOUT)
    result=result.decode("utf-8")
    time = find_time(result)
    if report:
@@ -130,13 +130,17 @@ def runner(ex):
       # err_cnt += 1
    return float(time[1])
 
+#exs = exs[:100]
+# exs = exs[:1]
+seq = True
 
-for ex in exs: #[:20]
-   time = runner(ex)
-   total_time += time
-   print(ex[0],end="\r")
-
-# result = Parallel(n_jobs=-1)( delayed(runner)(ex) for ex in tqdm(exs) )
+if seq:
+   for ex in exs:
+      time = runner(ex)
+      total_time += time
+      print(ex[0],end="\r")
+else:
+   result = Parallel(n_jobs=-1)( delayed(runner)(ex) for ex in tqdm(exs) )
 
 # def f(ex):
 #    print(ex)

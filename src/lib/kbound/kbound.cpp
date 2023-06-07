@@ -70,6 +70,13 @@ kbound::kbound( options& o_, std::unique_ptr<llvm::Module>& m_,
   , current_indent(0)
   , ncontext(o.ctx_bound)
 {
+  if(        o_.memory_model == "armv1" ) { mm = ARMV1;
+  } else if( o_.memory_model == "armv2" ) { mm = ARMV2;
+  } else if( o_.memory_model == "cc"    ) { mm = CC;
+  } else if( o_.memory_model == "ccv"   ) { mm = CCV;
+  } else if( o_.memory_model == "cm"    ) { mm = CM;
+  } else { llvm_bmc_error( "kbound", "unknown memory model!" ); }
+
   //module->dump();
   unsigned i = 0;
   for( auto v : bmc_obj.concurrent_vars ) {
@@ -447,7 +454,7 @@ std::string kbound::get_GEPOperator(const llvm::GEPOperator* gep) {
 }
 
 void kbound::dump_GetElementPtrInst( const llvm::GetElementPtrInst* gep) {
-  bool isLocalUse;
+  bool isLocalUse = false;
   dump_GetElementPtrInst( gep, isLocalUse );
 }
 
@@ -478,17 +485,19 @@ void kbound::dump_GetElementPtrInst( const llvm::GetElementPtrInst* gep,
   }
 
   dump_Assign( o, gid + index );
-  dump_Assume_geq( co, cgid );
-  for( auto cidx : cidxs) dump_Assume_geq( co, cidx );
-  dump_Active( co ); // todo: do we need it?
+  if( !isLocalUse ) {
+    dump_Assume_geq( co, cgid );
+    for( auto cidx : cidxs) dump_Assume_geq( co, cidx );
+    dump_Active( co ); // todo: do we need it?
+  }
 }
 
-void kbound::addr_name( const llvm::Value* addr,
-                        std::string& gid, std::string& caddr) {
-  bool isLocalUse;
-  addr_name( addr, gid, caddr, isLocalUse );
-  assert( gid != "" );
-}
+// void kbound::addr_name( const llvm::Value* addr,
+//                         std::string& gid, std::string& caddr) {
+//   bool isLocalUse;
+//   addr_name( addr, gid, caddr, isLocalUse );
+//   assert( gid != "" );
+// }
 
 void kbound::addr_name( const llvm::Value* addr,
                         std::string& gid, std::string& caddr,
@@ -510,6 +519,7 @@ void kbound::addr_name( const llvm::Value* addr,
   }
   if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
     gid = get_global_idx(gv);
+    isLocalUse = is_local_global(gv);
     caddr = "0";//in dynamic addressing this will change
     return;
   } else if( auto gop = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
@@ -523,6 +533,7 @@ void kbound::addr_name( const llvm::Value* addr,
     return;
   } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
     gid = get_global_idx(alloc);
+    isLocalUse = is_local_global(alloc);
     caddr = "0"; //get_reg_time(gv);
     return;
   } else if( llvm::isa<const llvm::Argument>(addr) ) {
@@ -563,7 +574,8 @@ void kbound::dump_AtomicRMWInst( const llvm::AtomicRMWInst* rmw ) {
   dump_Comment( "Dumping RMW" );
   auto addr = rmw->getPointerOperand();
   std::string gid, caddr;
-  addr_name( addr, gid, caddr );
+  bool isLocalUse;
+  addr_name( addr, gid, caddr, isLocalUse );
 
   //read value
   auto w    = fresh_name();
@@ -573,7 +585,7 @@ void kbound::dump_AtomicRMWInst( const llvm::AtomicRMWInst* rmw ) {
   auto d    = get_reg( rmw->getValOperand() );
   auto cd   = get_reg_time( rmw->getValOperand() );
 
-  dump_ld( r, cw, caddr, gid, is_acquire(ord), true);
+  dump_ld( r, cw, caddr, gid, is_acquire(ord), true, isLocalUse);
 
   dump_Comment("calculate update value!");
   dump_Assume_geq( cw, cd );
@@ -594,7 +606,7 @@ void kbound::dump_AtomicRMWInst( const llvm::AtomicRMWInst* rmw ) {
     llvm_bmc_error("kbound","unspported atomic rmw operation");
   }
 
-  dump_st( w, cw, caddr, gid, is_release(ord), true);
+  dump_st( w, cw, caddr, gid, is_release(ord), true, isLocalUse);
 }
 
 void kbound::dump_AtomicCmpXchgInst( const llvm::AtomicCmpXchgInst* cxng ) {
@@ -602,7 +614,8 @@ void kbound::dump_AtomicCmpXchgInst( const llvm::AtomicCmpXchgInst* cxng ) {
   dump_Comment( "Dumping CmpXCNG" );
   auto addr = cxng->getPointerOperand();
   std::string gid, caddr;
-  addr_name( addr, gid, caddr );
+  bool isLocalUse = false;
+  addr_name( addr, gid, caddr, isLocalUse );
 
   //read value
   // auto w    = fresh_name();
@@ -621,12 +634,12 @@ void kbound::dump_AtomicCmpXchgInst( const llvm::AtomicCmpXchgInst* cxng ) {
 
   dump_Assume_geq( cr, cov ); // old value must be ready
   dump_Assume_geq( cr, cnv ); // new value must be ready
-  dump_ld( r, cr, caddr, gid, is_acquire(sord), true);
+  dump_ld( r, cr, caddr, gid, is_acquire(sord), true, isLocalUse);
 
   dump_Assume_eq( ccnd, cr );
   dump_If( r + "==" + ov );
   dump_Assign( cnd, "1" );
-  dump_st( nv, cnv, caddr, gid, is_release(sord), true );
+  dump_st( nv, cnv, caddr, gid, is_release(sord), true, isLocalUse);
   dump_Else();
   dump_Assign( cnd, "0" );
   dump_Close_scope();
@@ -840,9 +853,10 @@ void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
   auto r = add_reg_map(load);
   auto creg = get_reg_time(load);
   std::string gid, caddr;
-  addr_name( addr, gid, caddr );
+  bool isLocalUse = false;
+  addr_name( addr, gid, caddr, isLocalUse );
   if( gid != "" ) { // Read variable is global, but used locally.
-    dump_ld( r, creg, caddr, gid, is_acquire( ord ), false);
+    dump_ld( r, creg, caddr, gid, is_acquire( ord ), false, isLocalUse);
   }else{
     load->dump();
     llvm_bmc_error("kbound", "we need to support local global optimization!!");
@@ -857,8 +871,9 @@ void kbound::dump_LD_(unsigned bidx, const llvm::CallInst* call,
   auto v    = add_reg_map(call);
   auto cval = get_reg_time(call);
   std::string gid, caddr;
-  addr_name(call->getArgOperand(0), gid, caddr );
-  dump_ld( v, cval, caddr, gid, isAcquire, isExclusive);
+  bool isLocalUse = false;
+  addr_name(call->getArgOperand(0), gid, caddr, isLocalUse );
+  dump_ld( v, cval, caddr, gid, isAcquire, isExclusive, isLocalUse);
 }
 
 
@@ -873,8 +888,9 @@ void kbound::dump_StoreInst(unsigned bidx, const llvm::StoreInst* store ) {
   auto cval = get_reg_time(val);
   std::string gid = "";
   std::string caddr = "";
-  addr_name( addr, gid, caddr );
-  dump_st( v, cval, caddr, gid, is_release(ord), false);
+  bool isLocalUse = false;
+  addr_name( addr, gid, caddr, isLocalUse );
+  dump_st( v, cval, caddr, gid, is_release(ord), false, isLocalUse);
 }
 
 
@@ -884,8 +900,9 @@ void kbound::dump_ST_(unsigned bidx, const llvm::CallInst* call,
   auto v    = get_reg(val);
   auto cval = get_reg_time(val);
   std::string gid, caddr;
-  addr_name(call->getArgOperand(0), gid, caddr );
-  dump_st( v, cval, caddr, gid, isRelease, isExclusive);
+  bool isLocalUse = false;
+  addr_name(call->getArgOperand(0), gid, caddr, isLocalUse );
+  dump_st( v, cval, caddr, gid, isRelease, isExclusive, isLocalUse);
 }
 
 
