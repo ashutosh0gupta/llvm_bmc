@@ -88,13 +88,11 @@ def runall():
             else:
                 tst['failure'] = 'CSEQ returns unrecognized results'
         except subprocess.CalledProcessError as e:
-            print(e)
+            #print(e)
             tst['failure'] = 'error in running CSEQ'
-            continue
         except subprocess.TimeoutExpired as e:
-            print(e)
+            #print(e)
             tst['failure'] = 'timeout'
-            continue
         finally:
             print('{0:4}: '.format(n), end='')
             print(res_to_string(tst))

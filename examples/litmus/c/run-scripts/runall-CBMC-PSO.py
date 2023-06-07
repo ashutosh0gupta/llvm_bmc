@@ -87,13 +87,11 @@ def runall():
             else:
                 tst['failure'] = 'CBMC returns unrecognized results'
         except subprocess.CalledProcessError as e:
-            print(e)
+            #print(e)
             tst['failure'] = 'error in running CBMC'
-            continue
         except subprocess.TimeoutExpired as e:
-            print(e)
+            #print(e)
             tst['failure'] = 'timeout'
-            continue
         finally:
             print('{0:4}: '.format(n), end='')
             print(res_to_string(tst))

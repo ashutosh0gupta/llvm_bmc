@@ -34,11 +34,11 @@ label_2:;
   int v6_X4 = vars[2];
   FENCE();
   int v9_X6 = vars[1];
-  int v24 = ( 0 == 1);
+  int v24 = (v3_X2 == 1);
   v_1_X2_1 = v24;
-  int v25 = ( 0 == 1);
+  int v25 = (v6_X4 == 1);
   v_1_X4_1 = v25;
-  int v26 = ( 0 == 2);
+  int v26 = (v9_X6 == 2);
   v_1_X6_2 = v26;
   return NULL;
 }
