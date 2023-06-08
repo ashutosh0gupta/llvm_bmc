@@ -1,14 +1,16 @@
 #include "lib/psystems/psystems.h"
 #include "include/bmc.h"
 #include "llvm/IR/DataLayout.h"
+#include <algorithm>
 
-#define PSYSTEMS_UNSUPPORTED_INSTRUCTIONS( InstTYPE, Inst )               \
-  if(llvm::isa<llvm::InstTYPE>(Inst) ) {                                \
-    std::cerr << "Occuring in block:\n";                                \
-    LLVM_DUMP( Inst->getParent() )                                      \
-    LLVM_DUMP( Inst )                                                   \
-    llvm_bmc_error( "psystems", "Unsupported instruction!!");             \
-  }
+#define PSYSTEMS_UNSUPPORTED_INSTRUCTIONS(InstTYPE, Inst)        \
+    if (llvm::isa<llvm::InstTYPE>(Inst))                         \
+    {                                                            \
+        std::cerr << "Occuring in block:\n";                     \
+        LLVM_DUMP(Inst->getParent())                             \
+        LLVM_DUMP(Inst)                                          \
+        llvm_bmc_error("psystems", "Unsupported instruction!!"); \
+    }
 
 typedef std::vector<std::string> svec;
 
@@ -61,98 +63,113 @@ char psystems::ID = 0;
 //   return init;
 // }
 
-psystems::psystems( options& o_, std::unique_ptr<llvm::Module>& m_,
-                bmc& bmc_ )
-  : bmc_pass( o_, o_.solver_ctx, bmc_ )
-  , llvm::FunctionPass(ID)
-  , module(m_)
-  , ofcpp(o_.outDirPath.string()+"/cbmc.cpp")
-  , current_indent(0)
-  , ncontext(o.ctx_bound)
+psystems::psystems(options &o_, std::unique_ptr<llvm::Module> &m_,
+                   bmc &bmc_)
+    : bmc_pass(o_, o_.solver_ctx, bmc_), llvm::FunctionPass(ID), module(m_), ofcpp(o_.outDirPath.string() + "/cbmc.cpp"), current_indent(0), ncontext(o.ctx_bound)
 {
-  std::cout << "I am here!! \n";
-  // module->dump();
-  // unsigned i = 0;
-  // for( auto v : bmc_obj.concurrent_vars ) {
-  //   global_position[v] = i;
-  //   auto size = get_word_size(v);
-  //   global_size[v] = size;
-  //   global_name[v] = v->getName().str();
-  //   global_init[v] = get_init_array(v, size);
-  //   i += size;
-  // }
-  // num_globals = i;
+    std::cout << "I am here!! \n";
+    // module->dump();
+    // unsigned i = 0;
+    // for( auto v : bmc_obj.concurrent_vars ) {
+    //   global_position[v] = i;
+    //   auto size = get_word_size(v);
+    //   global_size[v] = size;
+    //   global_name[v] = v->getName().str();
+    //   global_init[v] = get_init_array(v, size);
+    //   i += size;
+    // }
+    // num_globals = i;
 
-  // i = 0;
-  // for( auto v : bmc_obj.local_globals ) {
-  //   local_global_position[v] = i;
-  //   auto size = get_word_size(v);
-  //   local_global_size[v] = size;
-  //   local_global_name[v] = v->getName().str();
-  //   i += size;
-  // }
-  // num_local_globals = i;
+    // i = 0;
+    // for( auto v : bmc_obj.local_globals ) {
+    //   local_global_position[v] = i;
+    //   auto size = get_word_size(v);
+    //   local_global_size[v] = size;
+    //   local_global_name[v] = v->getName().str();
+    //   i += size;
+    // }
+    // num_local_globals = i;
 
-  // prefix_seq();
+    // prefix_seq();
 }
 
-psystems::~psystems() {
-  // postfix_seq();
-  // ofcpp.close();
-  // dump_locals();
+psystems::~psystems()
+{
+    // postfix_seq();
+    // ofcpp.close();
+    // dump_locals();
 }
 
-void psystems::getAnalysisUsage(llvm::AnalysisUsage &au) const {
-  au.setPreservesAll();
-  au.addRequired<llvm::LoopInfoWrapperPass>();
+void psystems::getAnalysisUsage(llvm::AnalysisUsage &au) const
+{
+    au.setPreservesAll();
+    au.addRequired<llvm::LoopInfoWrapperPass>();
 }
 
-llvm::StringRef psystems::getPassName() const {
-  return "runs PSYSTEMS verification!";
+llvm::StringRef psystems::getPassName() const
+{
+    return "runs PSYSTEMS verification!";
 }
 
+std::string getInstructionString(const llvm::Instruction &inst)
+{
+    std::string gis;
+    llvm::raw_string_ostream StringStream(gis);
+    inst.print(StringStream);
+    return StringStream.str();
+}
 
-// // todo : support if a thread returns something and parameters are passed
-
-bool psystems::runOnFunction( llvm::Function &f ) {
-  EntryFn = demangle(f.getName().str());
-  // A function can be launched at many locations
-  // we need to run that many copies
-  std::vector<unsigned> f_tids;
-  unsigned j = 0;
-  for(;j < bmc_obj.sys_spec.threads.size(); j++) {
-    if (bmc_obj.sys_spec.threads[j].entry_function == EntryFn)
-      f_tids.push_back(j);
-    //break;
-  }
-  //if( f_tids.size() == 0 ) return false;
-  //if( j == bmc_obj.sys_spec.threads.size() ) return false;
-
-  for( auto j : f_tids ) {
-    thread_id = j;
-    std::cout<< "Function " << EntryFn << "\n";
-    tid = std::to_string(thread_id);
-    thread_name = bmc_obj.sys_spec.threads.at(j).name;
-    if( bmc_obj.sys_spec.threads.at(j).wmm == weak_memory_model::SC ) {
-      is_sc_semantics = true;
+bool psystems::runOnFunction(llvm::Function &f)
+{
+    EntryFn = demangle(f.getName().str());
+    // A function can be launched at many locations
+    // we need to run that many copies
+    std::vector<unsigned> f_tids;
+    unsigned j = 0;
+    for (; j < bmc_obj.sys_spec.threads.size(); j++)
+    {
+        if (bmc_obj.sys_spec.threads[j].entry_function == EntryFn)
+            f_tids.push_back(j);
+        // break;
     }
-    populate_array_name_map(&f);
-    auto bmc_fun_ptr = new bmc_fun(o, ary_to_int, bmc_obj.m_model);
-    bmc_ds_ptr = bmc_fun_ptr; // set the pointer in base cla
-    bmc_fun_ptr->fun_initialize( this, f);
-    // bmc_ds_ptr->thread_id = bmc_obj.sys_spec.threads.at(j).thread_num;
+    // if( f_tids.size() == 0 ) return false;
+    // if( j == bmc_obj.sys_spec.threads.size() ) return false;
 
-    // dump_Params(f);
-    // dump_Thread();
-  }
-  // traverse 
-  return false;
+    for (auto j : f_tids)
+    {
+        thread_id = j;
+        tid = std::to_string(thread_id);
+        std::cout << "Function " << EntryFn << " on thread " << tid << '\n';
+        // bmc stuff - not required, probably
+        // thread_name = bmc_obj.sys_spec.threads.at(j).name;
+        // if( bmc_obj.sys_spec.threads.at(j).wmm == weak_memory_model::SC ) {
+        //   is_sc_semantics = true;
+        // }
+        // populate_array_name_map(&f);
+        // auto bmc_fun_ptr = new bmc_fun(o, ary_to_int, bmc_obj.m_model);
+        // bmc_ds_ptr = bmc_fun_ptr; // set the pointer in base cla
+        // bmc_fun_ptr->fun_initialize( this, f);
+        // bmc_ds_ptr->thread_id = bmc_obj.sys_spec.threads.at(j).thread_num;
+    }
+    // Assume identical threads are launched from the main thread at the same time
+    for(const auto& bb: f)
+    {
+        bool prev_flag = true;
+        for(const auto &inst: bb)
+        {
+            std::string s = getInstructionString(inst);
+            if(s.find("arrayidx") != s.npos && s.find("store") != s.npos)
+            {
+                std::cout << s << std::endl;
+            }
+        }
+    }
+    // traverse
+    return false;
 }
-
 
 // //----------------------------------------------------------------------------
 // //
-
 
 // // std::string psystems::get_path( unsigned bidx ) {
 // //   return "path_"+tid+"_"+std::to_string(bidx);
@@ -172,7 +189,6 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //   }
 //   return read_const_str( o, v );
 // }
-
 
 // std::string psystems::get_reg( const llvm::Value* v) {
 //   svec idxs;
@@ -211,7 +227,6 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //   // return get_reg_time( (const void*)v );
 // }
 
-
 // std::string psystems::add_reg_map( const llvm::Value* v) {
 //   auto s = read_const(v);
 //   if( s != "" ) return "";
@@ -222,9 +237,7 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //   // return get_reg(v);
 // }
 
-
 // //----------------------------------------------------------------------------
-
 
 // void psystems::dump_Params(llvm::Function &f) {
 //   //  for (auto& f_arg : f.getArgumentList()) {
@@ -323,7 +336,6 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 
 // }
 
-
 // void psystems::dump_RetInst(const llvm::ReturnInst *ret ) {
 //   assert( ret );
 //   llvm::Value* v = ret->getReturnValue();
@@ -334,7 +346,6 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //   }//  else {
 //   // }
 // }
-
 
 // void psystems::dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop) {
 //   assert( bop );
@@ -368,7 +379,6 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //     llvm_bmc_error("psystems", "unsupported instruction \"" << opName << "\" occurred!!");
 //    }
 //   }
-
 
 // }
 
@@ -545,7 +555,6 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //   assert(false);
 // }
 
-
 // // void psystems::addr_local_name( const llvm::Value* addr,
 // //                               std::string& gid, std::string& caddr) {
 // //   addr_name( addr, gid, caddr, true);
@@ -635,7 +644,6 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //   llvm_bmc_warning( "psystems", "Failed ordering constraints are not implementd!");
 // }
 
-
 // //--------------------------------------------------------------------------
 
 // void psystems::dump_CallAssume(unsigned bidx, const llvm::CallInst* call) {
@@ -656,8 +664,6 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //   auto term = get_reg( call->getArgOperand(0) );
 //   dump_String("NONDET(" + term + ");");
 // }
-
-
 
 // bool is_dmbsy( const llvm::CallInst* call ) {
 //   std::vector<std::string> names = { "_Z5dmbsyv","dmbsy"};
@@ -720,7 +726,6 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //   std::vector<std::string> names = { "_Z4ldaxxPi", "lda"};
 //   return match_function_names(  call,  names );
 // }
-
 
 // void psystems::dump_CallInst( unsigned bidx, const llvm::CallInst* call ) {
 //   assert(call);
@@ -811,7 +816,6 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 // //   assert(false);
 // // }
 
-
 // // void psystems::get_global_id( llvm::Value* addr,
 // //                             std::string& gid,
 // //                             std::string& caddr ) {
@@ -863,8 +867,6 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //   dump_ld( v, cval, caddr, gid, isAcquire, isExclusive);
 // }
 
-
-
 // void psystems::dump_StoreInst(unsigned bidx, const llvm::StoreInst* store ) {
 //   assert( store );
 //   auto val = store->getOperand(0);
@@ -879,7 +881,6 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //   dump_st( v, cval, caddr, gid, is_release(ord), false);
 // }
 
-
 // void psystems::dump_ST_(unsigned bidx, const llvm::CallInst* call,
 //                       bool isRelease, bool isExclusive) {
 //   auto val = call->getArgOperand(1);
@@ -889,7 +890,6 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //   addr_name(call->getArgOperand(0), gid, caddr );
 //   dump_st( v, cval, caddr, gid, isRelease, isExclusive);
 // }
-
 
 // void psystems::dump_UnaryInst( unsigned bidx,
 //                              const llvm::UnaryInstruction* I ) {
@@ -914,7 +914,7 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 // void psystems::dump_PhiNode( unsigned bidx, const llvm::PHINode* phi ) {
 //   assert( phi );
 //   return;
-  
+
 //   // unsigned num = phi->getNumIncomingValues();
 
 //   // if( !phi->getType()->isIntegerTy() && !phi->getType()->isFloatTy() ) {
@@ -1024,7 +1024,6 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //     dump_Assume_geq( "ctrl["+tid+"]", cr );
 //   }
 
-
 //   // dumping jump
 //   auto r = get_reg( cond );
 //   for( unsigned i = 1; i < swch->getNumSuccessors(); i++ ) {
@@ -1047,7 +1046,6 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //   dump_Close_scope();
 
 // }
-
 
 // void psystems::dump_Branch( unsigned bidx, const llvm::BranchInst* br ) {
 //   assert( br );
@@ -1097,8 +1095,6 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //   dump_Assign( r, "1" );
 //   in_code_spec.push_back( r + "== 0" );
 // }
-
-
 
 // void psystems::dump_Block( unsigned bidx, const bb* b ) {
 //   assert( b );
@@ -1167,7 +1163,7 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //       PSYSTEMS_UNSUPPORTED_INSTRUCTIONS( InsertElementInst,  I);
 //       PSYSTEMS_UNSUPPORTED_INSTRUCTIONS( ShuffleVectorInst,  I);
 //       PSYSTEMS_UNSUPPORTED_INSTRUCTIONS( InsertValueInst,    I);
-//       // PSYSTEMS_UNSUPPORTED_INSTRUCTIONS( LandingPadInst,     I); // allocates exception object 
+//       // PSYSTEMS_UNSUPPORTED_INSTRUCTIONS( LandingPadInst,     I); // allocates exception object
 //       LLVM_DUMP( I );
 //       llvm_bmc_error("bmc", "unsupported instruction");
 //     }
@@ -1186,4 +1182,3 @@ bool psystems::runOnFunction( llvm::Function &f ) {
 //   }
 //   dump_Newline();
 // }
-
