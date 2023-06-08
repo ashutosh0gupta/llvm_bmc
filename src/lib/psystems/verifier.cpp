@@ -3,44 +3,46 @@
 #include <chrono>
 #include <vector>
 #include <set>
-#include <tuple>
+#include <utility>
 #include <map>
 #include <queue>
 #include <memory>
 
+constexpr uint64_t STATE_SIZE = 10000;
 
-std::map<std::tuple<std::vector<bool>::iterator, std::vector<bool>::iterator, int64_t>, std::unique_ptr<const std::set<std::vector<bool> > > > sks_memo;
-const std::set<std::vector<bool > > & size_k_substrs(const std::vector<bool>::iterator start, const std::vector<bool>::iterator end, int64_t size)
+const std::set<std::vector<uint64_t > > & size_k_substrs(const std::vector<uint64_t>::iterator start, const std::vector<uint64_t>::iterator end, uint64_t size)
 {
-    auto it = sks_memo.find(std::tuple<std::vector<bool>::iterator, std::vector<bool>::iterator, int64_t>(start, end, size));
-    if(it != sks_memo.end())
+    static std::map<std::pair<std::vector<uint64_t>, uint64_t>, std::unique_ptr<const std::set<std::vector<uint64_t> > > > memo;
+    std::pair<std::vector<uint64_t>, uint64_t> args(std::vector<uint64_t>(start, end), size);
+    auto it = memo.find(args);
+    if(it != memo.end())
     {
         return *(it->second);
     }
 
-    std::unique_ptr<std::set<std::vector<bool > > > ret_set = std::make_unique<std::set<std::vector<bool> > >();
+    std::unique_ptr<std::set<std::vector<uint64_t > > > ret_set = std::make_unique<std::set<std::vector<uint64_t> > >();
     if(size == 0)
     {
-        ret_set->insert(std::vector<bool>());
-        sks_memo[std::tuple<std::vector<bool>::iterator, std::vector<bool>::iterator, int64_t>(start, end, size)] = std::move(ret_set);
-        return *sks_memo[std::tuple<std::vector<bool>::iterator, std::vector<bool>::iterator, int64_t>(start, end, size)];
+        ret_set->insert(std::vector<uint64_t>());
+        memo[args] = std::move(ret_set);
+        return *memo[args];
     }
-    for(std::vector<bool>::iterator i = start; i < end; ++i)
+    for(std::vector<uint64_t>::iterator i = start; i < end; ++i)
     {
-        std::set<std::vector<bool> > alph = size_k_substrs(start, i, size - 1);
-        for(std::vector<bool> v: alph)
+        std::set<std::vector<uint64_t> > alph = size_k_substrs(start, i, size - 1);
+        for(std::vector<uint64_t> v: alph)
         {
             v.push_back(*i);
             ret_set->insert(v);
         }
     }
-    sks_memo[std::tuple<std::vector<bool>::iterator, std::vector<bool>::iterator, int64_t>(start, end, size)] = std::move(ret_set);
-    return *sks_memo[std::tuple<std::vector<bool>::iterator, std::vector<bool>::iterator, int64_t>(start, end, size)];
+    memo[args] = std::move(ret_set);
+    return *memo[args];
 }
 
-std::set<std::vector<bool> > alpha(const std::vector<bool>::iterator start, const std::vector<bool>::iterator end, int64_t k)
+std::set<std::vector<uint64_t> > alpha(const std::vector<uint64_t>::iterator start, const std::vector<uint64_t>::iterator end, uint64_t k)
 {
-    std::set<std::vector<bool> > ret_set;
+    std::set<std::vector<uint64_t> > ret_set;
     for(int size = 0; size <= k; ++size)
     {
         auto sks = size_k_substrs(start, end, size);
@@ -52,24 +54,18 @@ std::set<std::vector<bool> > alpha(const std::vector<bool>::iterator start, cons
     return ret_set;
 }
 
-
 struct Trie {
-    std::vector<bool> str;
-    std::unique_ptr<Trie> child[2];
+    std::vector<uint64_t> str;
+    std::unique_ptr<Trie> child[STATE_SIZE];
     Trie *parent;
     bool valid;
     std::set<Trie *> prop_subwords;
 
-    Trie(): valid(true), parent(nullptr)
-    {
-        child[0] = nullptr;
-        child[1] = nullptr;
-    }
+    Trie(): valid(true), parent(nullptr) {}
 
-    Trie(Trie *parent, bool ins): valid(parent->valid), parent(parent), str(parent->str), prop_subwords(parent->prop_subwords)
+    Trie(Trie *parent, uint64_t ins): valid(parent->valid), parent(parent), str(parent->str), prop_subwords(parent->prop_subwords)
     {
-        child[0] = nullptr;
-        child[1] = nullptr;
+        // assert(ins >= 0 && ins < STATE_SIZE)
         str.push_back(ins);
         for(Trie *ptr: parent->prop_subwords)
         {
@@ -90,9 +86,9 @@ struct Trie {
     }
 };
 
-std::set<std::vector<bool> > integral(const std::set<std::vector<bool> > &lang, int64_t k, int64_t l)
+std::set<std::vector<uint64_t> > integral(const std::set<std::vector<uint64_t> > &lang, uint64_t k, uint64_t l)
 {
-    std::set<std::vector<bool> > ret_set;
+    std::set<std::vector<uint64_t> > ret_set;
     std::unique_ptr<Trie> root = std::make_unique<Trie>();
     std::queue<Trie *> bfs;
     bfs.push(root.get());
@@ -107,82 +103,14 @@ std::set<std::vector<bool> > integral(const std::set<std::vector<bool> > &lang, 
                 t->valid = false;
                 break;
             }
-            sks_memo.clear();
         }
         if(t->valid)
         {
             ret_set.insert(t->str);
-            t->child[0] = std::make_unique<Trie>(t, 0);
-            t->child[1] = std::make_unique<Trie>(t, 1);
-            if(t->child[0]->valid) bfs.push(t->child[0].get());
-            if(t->child[1]->valid) bfs.push(t->child[1].get());
+            for(uint64_t i = 0; i < STATE_SIZE; ++i) t->child[i] = std::make_unique<Trie>(t, i);
+            for(uint64_t i = 0; i < STATE_SIZE; ++i) if(t->child[i]->valid) bfs.push(t->child[i].get());
         }
         bfs.pop();
     }
     return ret_set;
-}
-
-int main(int argc, char **argv)
-{
-    if(argc != 2 && argc != 3)
-    {
-        std::cerr << "Usage: " << argv[0] << " <value of l> <optional: debug>" << std::endl;
-        exit(-1);
-    }
-    // ios::sync_with_stdio(false);
-    // cin.tie(0);
-    // cout.tie(0);
-    std::set<std::vector<bool> > language;
-    language.insert(std::vector<bool>());
-    std::string s;
-    while(std::cin >> s)
-    {
-        // cout << "Input taken: " << s << endl;
-        std::vector<bool> b = std::vector<bool>();
-        for(int64_t i = 0; i < s.size(); ++i)
-        {
-            b.push_back(s[i] == '1');
-        }
-        language.insert(b);
-    }
-    // cout << "Language is: ";
-    // for(const auto& vb: language)
-    // {
-    //     for(bool b: vb)
-    //     {
-    //         cout << b;
-    //     }
-    //     cout << endl;
-    // }
-    int64_t l = std::stoi(argv[1]);
-    auto t = std::chrono::steady_clock::now();
-    std::set<std::vector<bool> > integ = integral(language, l - 1, l);
-    std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t).count() << " ms\n";
-    std::cout << "Size: " << integ.size() << std::endl;
-
-    if(argc == 3)
-    {
-        // cout << "Set is: " << endl;
-        for(const auto& v: integ)
-        {
-            for(bool b: v)
-            {
-                std::cout << b;
-            }
-            std::cout << std::endl;
-        }
-        // cout << "NUM IS " << num << endl;
-    }
-    // cout << "MEMO" << endl;
-    // for(auto it = LatticeNode::memo.begin(); it != LatticeNode::memo.end(); ++it)
-    // {
-    //     for(bool b: it->first) cout << b;
-    //     cout << " : ";
-    //     cout << it->second;
-    // }
-    // auto v = witness[root->child[1]->child[0]->child[0]->child[0]->child[0]->child[0]->child[0]->child[0]->child[1]];
-    // if(language.count(v)) cout << "BRUHHHHHH" << endl;
-    // for(bool b: v) cout << b;
-    // cout << endl;
-    return 0;
 }
