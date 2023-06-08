@@ -31,11 +31,11 @@ label_2:;
   long v3_X2 = atomic_load_explicit(&vars[0], memory_order_acquire);
   long v6_X4 = atomic_load_explicit(&vars[2], memory_order_acquire);
   long v9_X6 = atomic_load_explicit(&vars[1], memory_order_acquire);
-  long v24 = ( 0 == 1);
+  long v24 = (v3_X2 == 1);
   atomic_store_explicit(&atom_1_X2_1, v24, memory_order_seq_cst);
-  long v25 = ( 0 == 1);
+  long v25 = (v6_X4 == 1);
   atomic_store_explicit(&atom_1_X4_1, v25, memory_order_seq_cst);
-  long v26 = ( 0 == 2);
+  long v26 = (v9_X6 == 2);
   atomic_store_explicit(&atom_1_X6_2, v26, memory_order_seq_cst);
   return NULL;
 }

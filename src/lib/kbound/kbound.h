@@ -9,6 +9,7 @@
 
 class bmc;       // forward declaration of the bmc class
 
+
 struct names {
   std::map<std::string,names> nmap;
   std::string name;
@@ -17,6 +18,8 @@ struct names {
 typedef std::vector<std::string> svec;
 
 class kbound : public bmc_pass, public llvm::FunctionPass{
+
+  enum memory_model { ARMV1, ARMV2, RA, CC, CCV, CM };
 
 private:
   static char ID;
@@ -29,7 +32,8 @@ private:
   unsigned active_lax = 0;
   std::string thread_name, EntryFn;
   bool is_sc_semantics = false;
-  std::string version = "v2";
+  memory_model mm = ARMV1;
+  std::string version = "v1";
 
   svec reg_vals,reg_list;
   svec val_init_list, val_list;
@@ -44,8 +48,8 @@ private:
 
   unsigned num_local_globals = 0; // Number of variables that are locally used
   std::map<const void*, unsigned   > local_global_position;
-  std::map<const void*, unsigned   > local_global_size;
-  std::map<const void*, std::string> local_global_name;
+  // std::map<const void*, unsigned   > local_global_size;
+  // std::map<const void*, std::string> local_global_name;
 
   unsigned ssa_count = 0;
   std::map<const void*, std::string> ssa_name;
@@ -71,9 +75,10 @@ private:
   std::string get_reg_time  ( const void*, svec& idxs );
   std::string get_global_idx( const void* );
   std::string get_global_idx( const void*, std::string );
-  
+
   bool is_concurrent( const void* v);
-  
+  bool is_local_global( const void* v);
+
   std::string read_const  ( const llvm::Value* );
   std::string add_reg_map ( const llvm::Value* );
   std::string get_reg     ( const llvm::Value* );
@@ -100,6 +105,7 @@ private:
   void dump_Decl_assign(std::string r, std::string term);
   void dump_Assign_rand(std::string r, std::string term, std::string cmt="");
   void dump_Assign_rand_ctx(std::string r, std::string cmt="" );
+  void dump_Assign_rand_thread(std::string r, std::string cmt="" );
   void dump_Assign_max(std::string, std::string,std::string);
   void dump_Assign_max(std::string, std::string);
 
@@ -124,9 +130,12 @@ private:
   void dump_Arrays( std::string type,
                     std::vector<std::string> arys,
                     std::string dim1, std::string dim2 );
+  void dump_Arrays( std::string type,
+                    std::vector<std::string> arys,
+                    std::string dim1, std::string dim2, std::string dim3 );
 
-  void dump_ld( std::string, std::string, std::string, std::string,bool,bool);
-  void dump_st( std::string, std::string, std::string, std::string,bool,bool);
+  void dump_ld(std::string,std::string,std::string,std::string,bool,bool,bool);
+  void dump_st(std::string,std::string,std::string,std::string,bool,bool,bool);
   void dump_dmbsy();
   void dump_dmbld();
   void dump_dmbst();
@@ -146,8 +155,13 @@ private:
   void preamble();
   void prefix_seq();
   void postfix_seq();
+  void dump_begin_transaction();
+  void dump_end_transaction();
+  unsigned inside_transaction = false;
 
   //-------------------------------------------------------------------
+  void range_forbid( std::string gid, std::string lb, std::string ub );
+
   void dump_ld_v1(std::string,std::string,std::string,std::string,bool,bool);
   void dump_st_v1(std::string,std::string,std::string,std::string,bool,bool);
   void prefix_seq_v1();
@@ -156,8 +170,12 @@ private:
   void dump_st_v2(std::string,std::string,std::string,std::string,bool,bool);
   void prefix_seq_v2();
 
-  void range_forbid( std::string gid, std::string lb, std::string ub );
-
+  void dump_ld_cc(std::string,std::string,std::string,std::string,bool,bool);
+  void dump_st_cc(std::string,std::string,std::string,std::string,bool,bool);
+  void prefix_seq_cc();
+  void dump_begin_transaction_cc();
+  void dump_end_transaction_cc();
+  
   //-------------------------------------------------------------------
 
   unsigned get_word_size(const llvm::Value* v );
@@ -198,7 +216,7 @@ private:
   void addr_name( const llvm::Value* addr, std::string& , std::string&,
                   bool& isLocalUse );
 
-  void addr_name( const llvm::Value* addr, std::string& , std::string&);
+  // void addr_name( const llvm::Value* addr, std::string& , std::string&);
 
   void addr_local_name( const llvm::Value* addr,
                         std::string& gid, std::string& caddr);

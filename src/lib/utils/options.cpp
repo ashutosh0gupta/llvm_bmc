@@ -47,8 +47,9 @@ void options::get_description_cmd(po::options_description& config,
     ("include-dirs,I", po::value< std::vector<std::string> >(&include_dirs), "Location of include files")
     ("specifications,s", po::value(&specFilePath), "Set spec file")
     ("kbound,k", po::bool_switch(&kbound), "Run k-context bounded verification")
-    ("psystems,p", po::bool_switch(&psystems), "Run parameterized verification")
     ("context-bound",  po::value<int>(&ctx_bound)->default_value(10), "Run k-context bounded verification")
+    ("memory-model",  po::value<std::string>(&memory_model), "Run k-context bounded verification")
+    ("psystems,p", po::bool_switch(&psystems), "Run parameterized verification")
     ("use-solver",  po::value(&use_solver)->default_value("z3") ,"Use cvc5 or boolector (z3 is default)")
     ("get-solver-model",  po::bool_switch(&get_solver_model), "Dump solver model (for debug)")
     ;

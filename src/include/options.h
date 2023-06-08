@@ -76,6 +76,7 @@ public:
   bool kbound = false;
   bool psystems = false;
   int ctx_bound = 10;
+  std::string memory_model = "armv1";
 
 
   //----------------------------------------

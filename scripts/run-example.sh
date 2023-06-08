@@ -4,9 +4,9 @@
 
 timeout=300s
 
-if [ "$#" -ne 5 ]; then
+if [ "$#" -ne 6 ]; then
     echo "Illegal number of parameters"
-    echo "Usage: ./run-example.sh [unwind] [context-bound] [file-name] [spec-file]"
+    echo "Usage: ./run-example.sh [unwind] [context-bound] [file-name] [spec-file] [tmp path]  [memory-model]"
     exit 0
 fi
 
@@ -25,8 +25,8 @@ if [[ "$4" != "-" ]]; then
     spec_option="-s $4"
 fi
 
-echo "./llvmbmc --unwind $1 --context-bound $2 -k $3 $spec_option"
-./llvmbmc --unwind $1 -o $tmp_path --context-bound $2 -k $3 $spec_option > /dev/null 2>&1
+echo "./llvmbmc --unwind $1 --context-bound $2 --memory-model $6 -k $3 $spec_option"
+./llvmbmc --unwind $1 -o $tmp_path --context-bound $2 --memory-model $6 -k $3 $spec_option > /dev/null 2>&1
 timeout $timeout cbmc $tmp_path/$fname.cbmc_out.cpp --unwind $1 --trace > $tmp_path/$fname.tr.tr 2>&1
 
 tr_file=$tmp_path/$fname.tr.tr
