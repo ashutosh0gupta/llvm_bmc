@@ -78,7 +78,7 @@ def runall():
             #print(cmd)
             result = subprocess.run(shlex.split(cmd), stderr=subprocess.STDOUT, timeout=TIMEOUT, stdout=subprocess.PIPE)
             out = result.stdout.decode()
-            print(out)
+            #print(out)
             if out.find('UNSAFE') >= 0:
                 tst['CSEQ allow'] = True
             elif out.find('SAFE') >= 0:

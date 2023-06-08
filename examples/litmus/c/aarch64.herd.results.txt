@@ -8,8 +8,8 @@
 # Tests where "Always" with "forall" was observed are marked "Allow".
 # Tests where "Sometimes" or "Never" with "forall" was observed are marked "Forbid".
 # 
-# The tests where executed using runall-herd.py.
-# Date: 230522-03:55
+# The tests where executed using runall-HERD7.py.
+# Date: 230604-08:36
 
 R Allow
 R+po+polp Allow
@@ -8662,4 +8662,4 @@ RW-r+RW-a+RW-B+RW-B+RW-B+RW-B+RW-B+RW-B Forbid
 IRIW+poaps+LL Forbid
 IRIW+poap+poaa+LL Forbid
 IRIW+poaas+LL Forbid
-# Time: 797.59 s
+# Time: 775.97 s
