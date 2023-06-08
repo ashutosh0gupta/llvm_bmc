@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/home/ashwinabraham/GitHub/llvm_bmc/src/",
+                "/usr/lib/llvm-14/include/"
+            ],
+            "defines": [],
+            "compilerPath": "/home/ashwinabraham/llvm-project/build/bin/clang",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}
