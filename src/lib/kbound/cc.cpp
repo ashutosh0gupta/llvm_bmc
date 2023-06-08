@@ -1,15 +1,22 @@
 #include "lib/kbound/kbound.h"
 
+void kbound::dump_start_thread_cc() {
+  auto cdy     =     "cdy[" + tid + "]";
+  auto cstart  =  "cstart[" + tid + "]";  // if we turn the local variabls
+  dump_Assign_rand_ctx( cdy ); //todo : do we need to do this
+  dump_Assume_geq( cdy, cstart );
+}
+
 void kbound::prefix_seq_cc() {
   preamble();
 
   dump_Comment( "declare arrays for intial value version in contexts" );
-  val_init_list = { "snapshotinit" };
+  val_init_list = { "meminit" };
   dump_Arrays( "int", val_init_list,  "NPROC", "ADDRSIZE", "NCONTEXT");
 
   dump_Comment( "declare arrays for running value version in contexts" );
   val_list = {
-    "snapshot", // snap shot
+    "mem", // snap shot
   };
   dump_Arrays( "int", val_list,  "NPROC", "ADDRSIZE", "NCONTEXT");
 
@@ -30,7 +37,7 @@ void kbound::prefix_seq_cc() {
       auto ival = init.size() > 0 ? init[i] : "0";
         for( unsigned p = 0; p < bmc_obj.sys_spec.threads.size(); p++ ) {
           auto pn = std::to_string(p);
-          dump_Assign( "snapshot("+ pn + "," + pos + "+" + in + ",0)", ival );
+          dump_Assign( "mem("+ pn + "," + pos + "+" + in + ",0)", ival );
         }
     }
   }
@@ -93,7 +100,7 @@ void kbound::dump_begin_transaction_cc() {
     auto xn = std::to_string(x);
     dump_Assign_rand_thread( "access_idx["+xn+"]");
     dump_Assign( "buff["+xn+"]",
-                 "snapshot( access_idx["+xn+"]" +","+ xn +","+  + "," + ct +")" );
+                 "mem( access_idx["+xn+"]" +","+ xn +","+  + "," + ct +")" );
   }
   if( inside_transaction )
     llvm_bmc_error("kbound", "Nested transactions are not allowed");

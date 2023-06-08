@@ -768,7 +768,7 @@ void kbound::dump_CallInst( unsigned bidx, const llvm::CallInst* call ) {
   } else if( is_thread_create(call) ) { dump_CallThreadCreate( bidx, call );
   } else if( is_thread_join  (call) ) { dump_CallThreadJoin  ( bidx, call );
   } else if( is_begin_transaction(call) ) { dump_begin_transaction();
-  } else if( is_begin_transaction(call) ) { dump_end_transaction();
+  } else if( is_end_transaction(call)   ) { dump_end_transaction();
   }else{
     LLVM_DUMP(call);
     llvm_bmc_error("kbound", "function call is not recognized !!");

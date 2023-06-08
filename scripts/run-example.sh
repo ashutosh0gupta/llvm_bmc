@@ -25,7 +25,7 @@ if [[ "$4" != "-" ]]; then
     spec_option="-s $4"
 fi
 
-echo "./llvmbmc --unwind $1 --context-bound $2 --memory-model $6 -k $3 $spec_option"
+echo "./llvmbmc --unwind $1 -o $tmp_path --context-bound $2 --memory-model $6 -k $3 $spec_option"
 ./llvmbmc --unwind $1 -o $tmp_path --context-bound $2 --memory-model $6 -k $3 $spec_option > /dev/null 2>&1
 timeout $timeout cbmc $tmp_path/$fname.cbmc_out.cpp --unwind $1 --trace > $tmp_path/$fname.tr.tr 2>&1
 

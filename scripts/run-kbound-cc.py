@@ -17,7 +17,7 @@ l = 1
 
 # folder = "examples/kbound/omkar/bench"
 
-folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
+folder = "./examples/kbound/cc/"
 
 
 sys.path.append(folder)
@@ -42,10 +42,11 @@ for ex in exs:
    new_exs.append([i]+ex)
 exs = new_exs
 
-mm = "armv2"
+mm = "cc"
 
 print("------------------------------")
 print("Running kbound implementation:")
+print("Memory model :" + mm)
 print("Example suite :" + folder)
 # if only_error:
 #    print("Full report only for wrong answers!")
@@ -111,7 +112,7 @@ def runner(ex):
 
 #exs = exs[:100]
 # exs = exs[:1]
-seq = False
+seq = True
 
 if seq:
    for ex in exs:

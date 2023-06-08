@@ -162,6 +162,7 @@ private:
   //-------------------------------------------------------------------
   void range_forbid( std::string gid, std::string lb, std::string ub );
 
+  void dump_start_thread_arm();
   void dump_ld_v1(std::string,std::string,std::string,std::string,bool,bool);
   void dump_st_v1(std::string,std::string,std::string,std::string,bool,bool);
   void prefix_seq_v1();
@@ -170,12 +171,13 @@ private:
   void dump_st_v2(std::string,std::string,std::string,std::string,bool,bool);
   void prefix_seq_v2();
 
+  void dump_start_thread_cc();
   void dump_ld_cc(std::string,std::string,std::string,std::string,bool,bool);
   void dump_st_cc(std::string,std::string,std::string,std::string,bool,bool);
   void prefix_seq_cc();
   void dump_begin_transaction_cc();
   void dump_end_transaction_cc();
-  
+
   //-------------------------------------------------------------------
 
   unsigned get_word_size(const llvm::Value* v );
