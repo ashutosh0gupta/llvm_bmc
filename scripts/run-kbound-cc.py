@@ -9,9 +9,6 @@ import time
 from joblib import Parallel, delayed
 from tqdm import tqdm
 
-# tmp_path = ""
-# subprocess.run(["rm",  tmp_path+"/cbmc_out.cpp" ])
-
 run   = "./scripts/run-example.sh"
 k = 10
 l = 1
@@ -22,26 +19,6 @@ l = 1
 
 folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
 
-# folder = "examples/kbound/pldi19-benchmark"
-
-# exs = [ # ["03-dq-deque-safe","03-dq-deque-3",3]
-#         # ["03-dq-opt-deque-safe","03-dq-deque-3",3]
-#         ["01-tl-btlock-unsafe","01-tl-btlock-6",6]
-#        ]
-
-# folder = "examples/kbound/omkar/bench"
-# exs = [ ["burns-safe-fenced","burns"]
-#        ]
-
-# my_env = os.environ.copy()
-# my_env["TIMEFORMAT"] = "%R"
-
-# in_f = open('/home/akg/tmp/fail.txt')
-# lines = in_f.readlines()
-# fails = []
-# for line in lines:
-#    sl = line.split(',')
-#    fails.append( sl[1] )
 
 sys.path.append(folder)
 import examples
@@ -143,12 +120,6 @@ if seq:
       print(ex[0],end="\r")
 else:
    result = Parallel(n_jobs=-1)( delayed(runner)(ex) for ex in tqdm(exs) )
-
-# def f(ex):
-#    print(ex)
-#    exit()
-
-# Parallel(n_jobs=4)(delayed(f)(x) for x in exs)
 
 print("------------------------------")
 # print("Number of errors:"+str(err_cnt))

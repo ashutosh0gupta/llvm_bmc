@@ -93,11 +93,14 @@ kbound::kbound( options& o_, std::unique_ptr<llvm::Module>& m_,
   for( auto v : bmc_obj.local_globals ) {
     local_global_position[v] = i;
     auto size = get_word_size(v);
-    local_global_size[v] = size;
-    local_global_name[v] = v->getName().str();
+    global_size[v] = size;
+    global_name[v] = v->getName().str();
+    global_init[v] = get_init_array(v, size);
     i += size;
   }
   num_local_globals = i;
+
+  std::cout << "Running k bound\n";
 
   prefix_seq();
 }
@@ -732,6 +735,16 @@ bool is_ldax( const llvm::CallInst* call ) {
   return match_function_names(  call,  names );
 }
 
+bool is_begin_transaction( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z4begin_transactionxxPi", "begin_transaction"};
+  return match_function_names(  call,  names );
+}
+
+bool is_end_transaction( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "_Z4end_transactionxxPi", "end_transaction"};
+  return match_function_names(  call,  names );
+}
+
 
 void kbound::dump_CallInst( unsigned bidx, const llvm::CallInst* call ) {
   assert(call);
@@ -754,6 +767,8 @@ void kbound::dump_CallInst( unsigned bidx, const llvm::CallInst* call ) {
   } else if( is_ldax  (call) ) { dump_LD_(bidx, call, true,  true );
   } else if( is_thread_create(call) ) { dump_CallThreadCreate( bidx, call );
   } else if( is_thread_join  (call) ) { dump_CallThreadJoin  ( bidx, call );
+  } else if( is_begin_transaction(call) ) { dump_begin_transaction();
+  } else if( is_begin_transaction(call) ) { dump_end_transaction();
   }else{
     LLVM_DUMP(call);
     llvm_bmc_error("kbound", "function call is not recognized !!");
@@ -860,9 +875,6 @@ void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
   }else{
     load->dump();
     llvm_bmc_error("kbound", "we need to support local global optimization!!");
-    // addr_local_name( addr, gid, caddr );
-    // dump_Assign(    r, gid    );
-    // dump_Assign( creg, caddr  );
   }
 }
 

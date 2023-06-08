@@ -244,6 +244,10 @@ void kbound::dump_Assign_rand_ctx(std::string v, std::string cmt) {
   dump_Assign_rand( v, "NCONTEXT-1", cmt );
 }
 
+void kbound::dump_Assign_rand_thread(std::string v, std::string cmt) {
+  dump_Assign_rand( v, "NTHREAD-1", cmt );
+}
+
 void kbound::dump_Comment(std::string s) {
   boost::replace_all(s, "\n", " ");
   dump_String("// "+s);
@@ -340,6 +344,18 @@ void kbound::dump_Arrays( std::string type,
   dump_Newline();
 }
 
+void kbound::dump_Arrays( std::string type,
+                          svec arys,
+                          std::string dim1, std::string dim2,
+                          std::string dim3 ) {
+  for( std::string ary: arys ) {
+    dump_Decl_array( type, ary+"_", dim1+"*"+dim2+"*"+dim3 );
+    dump_Define( ary + "(t,x,k)",
+                 ary + "_[(t)*"+dim2+"*"+dim3+"+(x)"+dim3+"+k]" );
+  }
+  dump_Newline();
+}
+
 
 void kbound::dump_Active( std::string ctx) {
   dump_Assume("active["+ctx+"] == "+tid);
@@ -414,12 +430,12 @@ void kbound::preamble() {
   dump_Comment("Local global variabls:");
   for( auto& v : local_global_position ) {
     auto g = v.first;
-    dump_Comment( std::to_string(v.second) + ":" + local_global_name.at(g) +
-                  + ":" + std::to_string(local_global_size.at(g)) );
+    dump_Comment( std::to_string(v.second) + ":" + global_name.at(g) +
+                  + ":" + std::to_string(global_size.at(g)) );
   }
   dump_Define("ADDRSIZE"     , std::to_string( num_globals ) );
   dump_Define("LOCALADDRSIZE", std::to_string( num_local_globals ) );
-  dump_Define( "NPROC"   , std::to_string( bmc_obj.sys_spec.threads.size() ) );
+  dump_Define( "NTHREAD"   , std::to_string( bmc_obj.sys_spec.threads.size() ) );
   dump_Define( "NCONTEXT", std::to_string(ncontext) );
   dump_Newline();
 
@@ -450,7 +466,32 @@ void kbound::preamble() {
   if( num_local_globals > 0 ) {
     dump_Comment( "Declare arrays for intial value version in contexts" );
     dump_Decl_array( "int", "local_mem", "LOCALADDRSIZE" );
+
+    dump_Comment( "Dumping initializations" );
+    for( auto& v : local_global_position ) {
+      auto g = v.first;
+      auto pos = std::to_string(v.second);
+      auto size = global_size.at(g);
+      auto& init = global_init.at(g);
+      assert( init.size() == 0 || size == init.size() );
+      for( unsigned i=0; i < size; i++ ) {
+        auto in = std::to_string(i);
+        auto ival = init.size() > 0 ? init[i] : "0";
+        dump_Assign( "local_mem["+ pos + "+" + in + "]", ival );
+      }
+    }
+
   }
+
+  thread_ctrl_list = { "cstart", "creturn"};
+  for( auto ary: thread_ctrl_list ) dump_Decl_array("int", ary, "NTHREAD");
+  dump_Newline();
+
+  dump_Comment( "declare arrays for contexts activity" );
+  ctx_list = { "active", "ctx_used" };
+  for( auto ary: ctx_list ) dump_Decl_array( "int", ary, "NCONTEXT" );
+  dump_Newline();
+
 }
 
 
@@ -583,6 +624,7 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
   switch( mm ) {
   case ARMV1: dump_ld_v1( r, cval,caddr, gid, isAcquire, isExclusive ); break;
   case ARMV2: dump_ld_v2( r, cval,caddr, gid, isAcquire, isExclusive ); break;
+  case CC   : dump_ld_cc( r, cval,caddr, gid, isAcquire, isExclusive ); break;
   default: llvm_bmc_error("kbound", "bad memory model!");
   }
 
@@ -604,6 +646,7 @@ dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
   switch( mm ) {
   case ARMV1: dump_st_v1(  v,  cval, caddr,  gid, isRelease, isExclusive); break;
   case ARMV2: dump_st_v2(  v,  cval, caddr,  gid, isRelease, isExclusive); break;
+  case CC   : dump_st_cc(  v,  cval, caddr,  gid, isRelease, isExclusive); break;
   default: llvm_bmc_error("kbound", "bad memory model!");
   }
 
@@ -620,16 +663,31 @@ void kbound::prefix_seq() {
   switch( mm ) {
   case ARMV1: prefix_seq_v1(); break;
   case ARMV2: prefix_seq_v2(); break;
-  // case CC   : prefix_seq_v1(); break;
+  case CC   : prefix_seq_cc(); break;
   default: llvm_bmc_error("kbound", "bad memory model!");
   }
 }
 
 
-// void kbound::prefix_seq() {
+void kbound::dump_begin_transaction() {
+  switch( mm ) {
+  case CC   : dump_begin_transaction_cc(); break;
+  default: llvm_bmc_error("kbound", "bad memory model!");
+  }
+}
+
+void kbound::dump_end_transaction() {
+  switch( mm ) {
+  case CC   : dump_end_transaction_cc(); break;
+  default: llvm_bmc_error("kbound", "bad memory model!");
+  }
+}
+
+
+// void kbound::dump_end_transaction() {
 //   if( version == "v1") {
-//     prefix_seq_v1();
+//     dump_end_transaction_v1();
 //   }else{
-//     prefix_seq_v2();
+//     dump_end_transaction_v2();
 //   }
 // }

@@ -6,42 +6,7 @@
 //-------------------------------------------------------------------
 
 void kbound::prefix_seq_v1() {
-  std::cout << "Running k bound\n";
   preamble();
-  // for( auto& v : global_position ) {
-  //   auto g = v.first;
-  //   dump_Comment( std::to_string(v.second) + ":" + global_name.at(g) +
-  //                 + ":" + std::to_string(global_size.at(g)) );
-  // }
-  // std::cout << "Running k bound\n";
-  // dump_Define("ADDRSIZE",std::to_string( num_globals ) );
-  // dump_Define( "NPROC"   , std::to_string( bmc_obj.sys_spec.threads.size() ) );
-  // dump_Define( "NCONTEXT", std::to_string(ncontext) );
-  // dump_Newline();
-
-  // dump_Define("ASSUME(stmt)", "__CPROVER_assume(stmt)");
-  // dump_Define("ASSERT(stmt)", "__CPROVER_assert(stmt, \"error\")");
-  // dump_Newline();
-
-  // dump_Define("max(a,b)", "(a>b?a:b)");
-  // dump_Newline();
-
-  // dump_String("char __get_rng();");
-  // dump_String("char get_rng( char from, char to ) {");
-  // dump_String("   char ret = __get_rng();");
-  // dump_String("   ASSUME(ret >= from && ret <= to);");
-  // dump_String("   return ret;");
-  // dump_String("}");
-  // dump_Newline();
-
-  // dump_String("char get_rng_th( char from, char to ) {");
-  // dump_String("   char ret = __get_rng();");
-  // dump_String("   ASSUME(ret >= from && ret <= to);");
-  // dump_String("   return ret;");
-  // dump_String("}");
-  // dump_Newline();
-
-  // dump_Decl_fun("int", "main", "int argc, char **argv");
 
   dump_Comment( "declare arrays for intial value version in contexts" );
   val_init_list = { "meminit", "coinit", "deltainit" };
@@ -60,7 +25,7 @@ void kbound::prefix_seq_v1() {
     "buff", // Local buffer; not a time stamp
     "pw",   // Last write seen in the thread
   };
-  dump_Arrays( "int", local_list, "NPROC", "ADDRSIZE" );
+  dump_Arrays( "int", local_list, "NTHREAD", "ADDRSIZE" );
 
   dump_Comment( "declare arrays for context stamps" );
   time_list = {
@@ -71,7 +36,7 @@ void kbound::prefix_seq_v1() {
     "cs",        // RA model write commmit
     "crmax"      // max read ctx seen so far //ashu added?
   };
-  dump_Arrays( "char", time_list, "NPROC", "ADDRSIZE");
+  dump_Arrays( "char", time_list, "NTHREAD", "ADDRSIZE");
 
   //to record when can we not commit; no initialization
   dump_Arrays( "char", {"sforbid"}, "ADDRSIZE", "NCONTEXT");//ashu added?
@@ -82,17 +47,8 @@ void kbound::prefix_seq_v1() {
     "cdy", "cds", "cdl", "cisb", // Timestamps for four kind of fences
     "caddr", "cctrl"             // Timestamps for addr and ctrl
   };
-  for( auto ary: proc_list ) dump_Decl_array("int", ary, "NPROC");
+  for( auto ary: proc_list ) dump_Decl_array("int", ary, "NTHREAD");
 
-  thread_ctrl_list = { "cstart", "creturn"};
-  for( auto ary: thread_ctrl_list ) dump_Decl_array("int", ary, "NPROC");
-
-  dump_Newline();
-
-  dump_Comment( "declare arrays for contexts activity" );
-  ctx_list = { "active", "ctx_used" };
-  for( auto ary: ctx_list ) dump_Decl_array( "int", ary, "NCONTEXT" );
-  dump_Newline();
 
   var_list = { "old_cctrl", "old_cr", "old_cdy", "old_cw",  "new_creg" };
   dump_Newline();
@@ -279,7 +235,6 @@ dump_st_v1( std::string v, std::string cval,std::string caddr, std::string gid,
 //-------------------------------------------------------------------
 
 void kbound::prefix_seq_v2() {
-  std::cout << "Running k bound\n";
   preamble();
 
   dump_Comment( "declare arrays for intial value version in contexts" );
@@ -302,7 +257,7 @@ void kbound::prefix_seq_v2() {
     "buff", // Local buffer; not a time stamp
     // "pw",   // Last write seen in the thread
   };
-  dump_Arrays( "int", local_list, "NPROC", "ADDRSIZE" );
+  dump_Arrays( "int", local_list, "NTHREAD", "ADDRSIZE" );
 
   dump_Comment( "declare arrays for context stamps" );
   time_list = {
@@ -315,7 +270,7 @@ void kbound::prefix_seq_v2() {
     "clrsval",
     "xpanding",
   };
-  dump_Arrays( "int", time_list, "NPROC", "ADDRSIZE");
+  dump_Arrays( "int", time_list, "NTHREAD", "ADDRSIZE");
 
   dump_Comment( "declare arrays for synchronizations" );
   proc_list = {
@@ -323,17 +278,16 @@ void kbound::prefix_seq_v2() {
     "cdy", "cds", "cdl", "cisb", // Timestamps for four kind of fences
     "caddr", "cctrl"             // Timestamps for addr and ctrl
   };
-  for( auto ary: proc_list ) dump_Decl_array("int", ary, "NPROC");
+  for( auto ary: proc_list ) dump_Decl_array("int", ary, "NTHREAD");
 
-  thread_ctrl_list = { "cstart", "creturn"};
-  for( auto ary: thread_ctrl_list ) dump_Decl_array("int", ary, "NPROC");
+  // thread_ctrl_list = { "cstart", "creturn"};
+  // for( auto ary: thread_ctrl_list ) dump_Decl_array("int", ary, "NTHREAD");
+  // dump_Newline();
 
-  dump_Newline();
-
-  dump_Comment( "declare arrays for contexts activity" );
-  ctx_list = { "active", "ctx_used" };
-  for( auto ary: ctx_list ) dump_Decl_array( "int", ary, "NCONTEXT" );
-  dump_Newline();
+  // dump_Comment( "declare arrays for contexts activity" );
+  // ctx_list = { "active", "ctx_used" };
+  // for( auto ary: ctx_list ) dump_Decl_array( "int", ary, "NCONTEXT" );
+  // dump_Newline();
 
   var_list = { "old_cctrl", "old_sr", "old_cr", "old_cdy", "old_cw",  "new_creg" };
   dump_Newline();
@@ -398,7 +352,7 @@ dump_ld_v2( std::string r, std::string cval,
   auto t_g  = "("+ tid + ","+ gid + ")";
   auto sr   = "sr"+t_g; // new
   auto cr   = "cr" +t_g;
-  auto g_cr = "("+ gid +","+ cr + ")";
+  auto g_sr = "("+ gid +","+ sr + ")";
   auto t    = "["+ tid + "]";
 
   dump_Comment("LD: Guess");
@@ -442,7 +396,7 @@ dump_ld_v2( std::string r, std::string cval,
   }
   dump_Else();
   {
-    dump_Assign( r, "mem"+ g_cr );
+    dump_Assign( r, "mem"+ g_sr );
     range_forbid( gid, sr, cr );
   }
   dump_Close_scope();
@@ -450,18 +404,13 @@ dump_ld_v2( std::string r, std::string cval,
   if( isAcquire   ) dump_Assign_max( "clda" + t, cr   );
   if( isExclusive ) {
     dump_If_NonDet();{
-      dump_Assign( "xpanding"+g_cr, tid );
+      dump_Assign( "xpanding"+g_sr, tid );
     }dump_Close_scope();
   }
 
   dump_commit_before_thread_finish(cr);
 }
 
-// if( isExclusive ) dump_Assign( "delta"+g_cr, tid );
-// if( isExclusive ) active_lax = active_lax + 1;
-// dump_Assume_geq( cr, "iw"+t_g );
-// if( isExclusive ) dump_Assume_geq ( cr, "old_cr" );   // extra in exlusive
-//   if( isAcquire   ) dump_Assume_geq ( cr, "cx"+t_g);// extra in lda
 
 void kbound::
 dump_st_v2( std::string v, std::string cval,std::string caddr,
@@ -535,3 +484,43 @@ dump_st_v2( std::string v, std::string cval,std::string caddr,
     //   auto xkn = "(" + gid + ","+ kn +")";
     //   dump_Assume_implies( range, "sforbid"+ xkn +"> 0" );
     // }
+
+  // for( auto& v : global_position ) {
+  //   auto g = v.first;
+  //   dump_Comment( std::to_string(v.second) + ":" + global_name.at(g) +
+  //                 + ":" + std::to_string(global_size.at(g)) );
+  // }
+  // std::cout << "Running k bound\n";
+  // dump_Define("ADDRSIZE",std::to_string( num_globals ) );
+  // dump_Define( "NTHREAD"   , std::to_string( bmc_obj.sys_spec.threads.size() ) );
+  // dump_Define( "NCONTEXT", std::to_string(ncontext) );
+  // dump_Newline();
+
+  // dump_Define("ASSUME(stmt)", "__CPROVER_assume(stmt)");
+  // dump_Define("ASSERT(stmt)", "__CPROVER_assert(stmt, \"error\")");
+  // dump_Newline();
+
+  // dump_Define("max(a,b)", "(a>b?a:b)");
+  // dump_Newline();
+
+  // dump_String("char __get_rng();");
+  // dump_String("char get_rng( char from, char to ) {");
+  // dump_String("   char ret = __get_rng();");
+  // dump_String("   ASSUME(ret >= from && ret <= to);");
+  // dump_String("   return ret;");
+  // dump_String("}");
+  // dump_Newline();
+
+  // dump_String("char get_rng_th( char from, char to ) {");
+  // dump_String("   char ret = __get_rng();");
+  // dump_String("   ASSUME(ret >= from && ret <= to);");
+  // dump_String("   return ret;");
+  // dump_String("}");
+  // dump_Newline();
+
+  // dump_Decl_fun("int", "main", "int argc, char **argv");
+// if( isExclusive ) dump_Assign( "delta"+g_cr, tid );
+// if( isExclusive ) active_lax = active_lax + 1;
+// dump_Assume_geq( cr, "iw"+t_g );
+// if( isExclusive ) dump_Assume_geq ( cr, "old_cr" );   // extra in exlusive
+//   if( isAcquire   ) dump_Assume_geq ( cr, "cx"+t_g);// extra in lda

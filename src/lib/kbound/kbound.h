@@ -48,8 +48,8 @@ private:
 
   unsigned num_local_globals = 0; // Number of variables that are locally used
   std::map<const void*, unsigned   > local_global_position;
-  std::map<const void*, unsigned   > local_global_size;
-  std::map<const void*, std::string> local_global_name;
+  // std::map<const void*, unsigned   > local_global_size;
+  // std::map<const void*, std::string> local_global_name;
 
   unsigned ssa_count = 0;
   std::map<const void*, std::string> ssa_name;
@@ -105,6 +105,7 @@ private:
   void dump_Decl_assign(std::string r, std::string term);
   void dump_Assign_rand(std::string r, std::string term, std::string cmt="");
   void dump_Assign_rand_ctx(std::string r, std::string cmt="" );
+  void dump_Assign_rand_thread(std::string r, std::string cmt="" );
   void dump_Assign_max(std::string, std::string,std::string);
   void dump_Assign_max(std::string, std::string);
 
@@ -129,6 +130,9 @@ private:
   void dump_Arrays( std::string type,
                     std::vector<std::string> arys,
                     std::string dim1, std::string dim2 );
+  void dump_Arrays( std::string type,
+                    std::vector<std::string> arys,
+                    std::string dim1, std::string dim2, std::string dim3 );
 
   void dump_ld(std::string,std::string,std::string,std::string,bool,bool,bool);
   void dump_st(std::string,std::string,std::string,std::string,bool,bool,bool);
@@ -151,8 +155,13 @@ private:
   void preamble();
   void prefix_seq();
   void postfix_seq();
+  void dump_begin_transaction();
+  void dump_end_transaction();
+  unsigned inside_transaction = false;
 
   //-------------------------------------------------------------------
+  void range_forbid( std::string gid, std::string lb, std::string ub );
+
   void dump_ld_v1(std::string,std::string,std::string,std::string,bool,bool);
   void dump_st_v1(std::string,std::string,std::string,std::string,bool,bool);
   void prefix_seq_v1();
@@ -161,8 +170,12 @@ private:
   void dump_st_v2(std::string,std::string,std::string,std::string,bool,bool);
   void prefix_seq_v2();
 
-  void range_forbid( std::string gid, std::string lb, std::string ub );
-
+  void dump_ld_cc(std::string,std::string,std::string,std::string,bool,bool);
+  void dump_st_cc(std::string,std::string,std::string,std::string,bool,bool);
+  void prefix_seq_cc();
+  void dump_begin_transaction_cc();
+  void dump_end_transaction_cc();
+  
   //-------------------------------------------------------------------
 
   unsigned get_word_size(const llvm::Value* v );
