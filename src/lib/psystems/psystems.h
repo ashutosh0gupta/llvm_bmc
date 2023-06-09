@@ -257,6 +257,8 @@ private:
 
   // void dump_mf_Thread();
   // void dump_mf_Block( unsigned bidx, const bb* b );
+  std::string getInstructionString(const llvm::Instruction &);
+  std::string getBasicBlockString(const llvm::BasicBlock &);
 
   //---------------------------------------------------------------------
 public:
