@@ -454,6 +454,7 @@ dump_ld_v2( std::string r, std::string cval,
 }
 
 
+
 void kbound::
 dump_st_v2( std::string v, std::string cval,std::string caddr,
              std::string gid, bool isRelease, bool isExclusive ) {
@@ -487,10 +488,10 @@ dump_st_v2( std::string v, std::string cval,std::string caddr,
   dump_Assume_geq( cw, caddr );
   // dump_Assume_geq( cw, iw );
 
-  if( isRelease ) dump_geq_globals( cw, "cr"); // missing in paper
-  if( isRelease ) dump_geq_globals( cw, "cw"); // missing in paper
+  if( isRelease ) dump_geq_globals( cw, "cr"); // missing in paper // why? -- old code?
+  if( isRelease ) dump_geq_globals( cw, "cw"); // missing in paper // why? -- old code?
 
-  dump_Assume_geq( cw, "cctrl" + t ); // missing in paper
+  dump_Assume_geq( cw, "cctrl" + t ); // missing in paper (not missing)
   dump_Assume_geq( cw, "caddr" + t );
 
   if( isExclusive ) dump_Assume( "xpanding" + t_g + ">0" ); // Paper has type mismatch

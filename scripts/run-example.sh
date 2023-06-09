@@ -25,8 +25,8 @@ if [[ "$4" != "-" ]]; then
     spec_option="-s $4"
 fi
 
-# debug="--trace"
-debug=
+debug="--trace"
+# debug=
 
 echo "./llvmbmc --unwind $1 -o $tmp_path --context-bound $2 --memory-model $6 -k $3 $spec_option"
 ./llvmbmc --unwind $1 -o $tmp_path --context-bound $2 --memory-model $6 -k $3 $spec_option > /dev/null 2>&1

@@ -49,6 +49,10 @@ std::string kbound::time_name( std::string name ) {
   return "creg_"+name;
 }
 
+std::string kbound::time_sat_name( std::string name ) {
+  return "creg_sat_"+name;
+}
+
 std::string access_name( names& ns,
                          svec& idxs, unsigned pos ) {
   if( idxs.size() > pos ) {
@@ -129,6 +133,7 @@ std::string kbound::get_reg( const void* v ) {
 
 std::string kbound::get_reg_time( const void* v, svec& idxs) {
   auto name = get_reg( v, idxs);
+  name = replace_special(name);
   if( name[0] != 'r' ) {
     assert( idxs.size() == 0 );
     auto vec = ctrl_dep_ord.at(v);
@@ -140,10 +145,30 @@ std::string kbound::get_reg_time( const void* v, svec& idxs) {
   return time_name( name );
 }
 
+
 std::string kbound::get_reg_time( const void* v) {
   svec idxs;
   return get_reg_time( v, idxs );
 }
+
+std::string kbound::get_reg_sat_time( const void* v, svec& idxs) {
+  auto name = get_reg( v, idxs);
+  return time_sat_name( name );
+  // if( name[0] != 'r' ) {
+  //   assert( idxs.size() == 0 );
+  //   auto vec = ctrl_dep_ord.at(v);
+  //   if( vec.size() == 0 ) return "0";
+  //   if( vec.size() == 1 ) return vec[0];
+  //   if( vec.size() == 2 ) return "max("+vec[0]+","+vec[1]+")";
+  //   assert(false);
+  // }
+}
+std::string kbound::get_reg_sat_time( const void* v ) {
+  svec idxs;
+  return get_reg_sat_time( v, idxs );
+}
+
+
 //---------------------------------------------------------------------------
 
 

@@ -219,6 +219,17 @@ std::string kbound::get_reg_time( const llvm::Value* v) {
   // return get_reg_time( (const void*)v );
 }
 
+void kbound::dump_update_reg_time( const llvm::Value *op1,
+                                   const llvm::Value *op2,
+                                   const llvm::Value *out
+                                   ) {
+  auto c1 = get_reg_time( op1 );
+  auto c2 = get_reg_time( op2 );
+  auto co = get_reg_time( out );
+  dump_Assign_max( co, c1, c2 );
+  dump_Active( co ); // todo: do we need it?
+}
+
 
 std::string kbound::add_reg_map( const llvm::Value* v) {
   auto s = read_const(v);
@@ -287,8 +298,6 @@ void kbound::dump_CmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
   auto r1 = get_reg( lhs );
   auto r2 = get_reg( rhs );
 
-  auto cr1 = get_reg_time( lhs );
-  auto cr2 = get_reg_time( rhs );
 
   // construct expression for comparision
   std::string cnd;
@@ -323,9 +332,13 @@ void kbound::dump_CmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
   }
   }
 
-  // double the reg_map for conditions
+  // overload the reg_map for conditions
   add_reg_map(cmp, cnd);
 
+  dump_update_reg_time( lhs, rhs, cmp);
+
+  auto cr1 = get_reg_time( lhs );
+  auto cr2 = get_reg_time( rhs );
   if(cr1 != "") ctrl_dep_ord[cmp].push_back(cr1);
   if(cr2 != "") ctrl_dep_ord[cmp].push_back(cr2);
 
@@ -352,14 +365,14 @@ void kbound::dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop) {
   auto r1 = get_reg( op0 );
   auto r2 = get_reg( op1 );
 
-  auto rt  = get_reg_time( bop );
-  auto r1t = get_reg_time( op0 );
-  auto r2t = get_reg_time( op1 );
-  dump_Assign_max( rt, r1t, r2t );
-  dump_Active( rt ); // todo: do we need it?
+  // auto rt  = get_reg_time( bop );
+  // auto r1t = get_reg_time( op0 );
+  // auto r2t = get_reg_time( op1 );
+  // dump_Assign_max( rt, r1t, r2t );
+  // dump_Active( rt ); // todo: do we need it?
+  dump_update_reg_time( op0, op1, bop );
 
   unsigned op = bop->getOpcode();
-  expr result = solver_ctx.bool_val(true);
   switch( op ) {
   case llvm::Instruction::Add : dump_Assign( ro, r1 +" + "+ r2); break;
   case llvm::Instruction::Sub : dump_Assign( ro, r1 +" - "+ r2); break;
@@ -382,7 +395,6 @@ void kbound::dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop) {
 
 void kbound::dump_ExtractValue( const llvm::ExtractValueInst* eval) {
   auto ro = add_reg_map( eval );
-  auto cro = get_reg_time( eval );
   auto val = eval->getAggregateOperand();
   svec idxs;
   auto indcies = eval->getIndices();
@@ -393,8 +405,9 @@ void kbound::dump_ExtractValue( const llvm::ExtractValueInst* eval) {
   // svec idxs{std::to_string(idx)};
   auto rv = get_reg(val, idxs);
   assert( rv != "" );
-  auto cv = get_reg_time(val, idxs);
   dump_Assign( ro, rv );
+  auto cv = get_reg_time(val, idxs);
+  auto cro = get_reg_time( eval );
   dump_Assign( cro, cv );
 }
 
@@ -473,8 +486,7 @@ void kbound::dump_GetElementPtrInst( const llvm::GetElementPtrInst* gep,
   // auto cgid = get_reg_time(op_gep_ptr);
 
   auto o  = add_reg_map( gep );
-  auto co = get_reg_time( gep );
-  svec cidxs;
+  // svec cidxs;
   std::string index;
   std::string scale = "1";
   assert( gep->getNumIndices() <= 3); //Confirm if correct
@@ -483,13 +495,19 @@ void kbound::dump_GetElementPtrInst( const llvm::GetElementPtrInst* gep,
     auto idx = gep->getOperand(i);
     auto idx_str = get_reg( idx );
     if(idx_str != "0" ) index = '+' + idx_str + "*" + scale + index;
-    auto cidx =  get_reg_time( idx );
-    if( cidx != "0" ) cidxs.push_back( cidx );
+    // auto cidx =  get_reg_time( idx );
+    // if( cidx != "0" ) cidxs.push_back( cidx );
   }
-
   dump_Assign( o, gid + index );
+
   if( !isLocalUse ) {
+    auto co = get_reg_time( gep );
     dump_Assume_geq( co, cgid );
+    svec cidxs;
+    for(unsigned i=gep->getNumOperands()==2?1:2;i<gep->getNumOperands(); i++) {
+      auto cidx =  get_reg_time( gep->getOperand(i) );
+      if( cidx != "0" ) cidxs.push_back( cidx );
+    }
     for( auto cidx : cidxs) dump_Assume_geq( co, cidx );
     dump_Active( co ); // todo: do we need it?
   }
@@ -941,40 +959,6 @@ void kbound::dump_UnaryInst( unsigned bidx,
 void kbound::dump_PhiNode( unsigned bidx, const llvm::PHINode* phi ) {
   assert( phi );
   return;
-  
-  // unsigned num = phi->getNumIncomingValues();
-
-  // if( !phi->getType()->isIntegerTy() && !phi->getType()->isFloatTy() ) {
-  //   // phi->getParent()->dump();
-  //   llvm_bmc_error("kbound", "phi nodes with non integers not supported !!");
-  // }
-
-  // auto v    = add_reg_map(phi);
-  // auto cval = get_reg_time(phi);
-
-  // // std::vector<expr> phi_cons;
-  // for( unsigned i = 0 ; i < num ; i++ ) {
-  //   auto prev    = phi->getIncomingBlock(i);
-  //   auto prev_v_ = phi->getIncomingValue(i);
-  //   auto v_      = get_reg( prev_v_ );
-  //   auto cval_   = get_reg_time( prev_v_ );
-
-  //   // condition to skip??
-  //   std::vector<unsigned> pre_bidxes;
-  //   for( unsigned pre_b_local: bmc_ds_ptr->pred_idxs[bidx]) {
-  //     if( prev == bmc_ds_ptr->bb_vec[pre_b_local] ) {
-  //       pre_bidxes.push_back( pre_b_local );
-  //     }
-  //   }
-  //   assert( pre_bidxes.size() < 2 );
-  //   //todo: check if this works
-  //   for( unsigned pre_bidx : pre_bidxes) {
-  //     dump_If( get_path(pre_bidx) + "== 1"  );
-  //     dump_Assign( v, v_ );
-  //     dump_Assume_geq( cval, cval_ );
-  //     dump_Close_scope();
-  //   }
-  // }
 
 }
 
@@ -1005,6 +989,7 @@ void kbound::dump_PhiNodes( const bb* b, const bb* prev_b ) {
   }
 }
 
+
 void kbound::dump_SelectInst( const llvm::SelectInst *sel ) {
   assert( sel );
   auto cond = sel->getCondition();
@@ -1016,17 +1001,19 @@ void kbound::dump_SelectInst( const llvm::SelectInst *sel ) {
   auto rt = get_reg( tval );
   auto rf = get_reg( fval );
 
-  auto cro = get_reg_time( sel  );
-  auto crc = get_reg_time( cond );
-  auto crt = get_reg_time( tval );
-  auto crf = get_reg_time( fval );
+  // auto cro = get_reg_time( sel  );
+  // auto crc = get_reg_time( cond );
+  // auto crt = get_reg_time( tval );
+  // auto crf = get_reg_time( fval );
 
   dump_If( rc );
   dump_Assign( ro, rt);
-  dump_Assign_max( cro, crc, crt );
+  dump_update_reg_time( cond, tval, sel );
+  // dump_Assign_max( cro, crc, crt );
   dump_Else();
   dump_Assign( ro, rf);
-  dump_Assign_max( cro, crc, crf );
+  dump_update_reg_time( cond, fval, sel );
+  // dump_Assign_max( cro, crc, crf );
   dump_Close_scope();
 
 }
@@ -1321,3 +1308,37 @@ void kbound::dump_Thread() {
 //     // dump_Goto( block_name(succ_bidx) );
 //   }
 // }
+
+  // unsigned num = phi->getNumIncomingValues();
+
+  // if( !phi->getType()->isIntegerTy() && !phi->getType()->isFloatTy() ) {
+  //   // phi->getParent()->dump();
+  //   llvm_bmc_error("kbound", "phi nodes with non integers not supported !!");
+  // }
+
+  // auto v    = add_reg_map(phi);
+  // auto cval = get_reg_time(phi);
+
+  // // std::vector<expr> phi_cons;
+  // for( unsigned i = 0 ; i < num ; i++ ) {
+  //   auto prev    = phi->getIncomingBlock(i);
+  //   auto prev_v_ = phi->getIncomingValue(i);
+  //   auto v_      = get_reg( prev_v_ );
+  //   auto cval_   = get_reg_time( prev_v_ );
+
+  //   // condition to skip??
+  //   std::vector<unsigned> pre_bidxes;
+  //   for( unsigned pre_b_local: bmc_ds_ptr->pred_idxs[bidx]) {
+  //     if( prev == bmc_ds_ptr->bb_vec[pre_b_local] ) {
+  //       pre_bidxes.push_back( pre_b_local );
+  //     }
+  //   }
+  //   assert( pre_bidxes.size() < 2 );
+  //   //todo: check if this works
+  //   for( unsigned pre_bidx : pre_bidxes) {
+  //     dump_If( get_path(pre_bidx) + "== 1"  );
+  //     dump_Assign( v, v_ );
+  //     dump_Assume_geq( cval, cval_ );
+  //     dump_Close_scope();
+  //   }
+  // }

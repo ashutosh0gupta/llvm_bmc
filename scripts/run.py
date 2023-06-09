@@ -99,7 +99,7 @@ def runner(ex):
       lk =  ex[4]
    else:
       lk = 10
-   lk = n+4
+   lk = n+3
    # lk = 10
    if( len(ex) > 4):
       l = ex[5]
@@ -136,7 +136,7 @@ def runner(ex):
 
 # exs = list(filter(lambda ex: "wsi" in ex[1], exs))
 # exs = list(filter(lambda ex: "MP+dmb.sy+addr-wsi-rfi-addr" == ex[1], exs))
-# exs = list(filter(lambda ex: "MP+dmb.sy+addr-addr-rfi-addr" == ex[1], exs))
+exs = list(filter(lambda ex: "MP+dmb.sy+addr-addr-rfi-addr" == ex[1], exs))
 # exs = list(filter(lambda ex: "CO-SBI" == ex[1], exs))
 # exs = list(filter(lambda ex: "Luc21" == ex[1], exs))
 
@@ -144,7 +144,7 @@ def runner(ex):
 # print(len(exs))
 # exit()
 
-exs = exs[1525:2000]
+# exs = exs[1525:2000]
 # exs = exs[:100]
 # exs = exs[:1]
 seq = False

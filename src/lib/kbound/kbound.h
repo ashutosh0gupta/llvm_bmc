@@ -10,6 +10,7 @@
 class bmc;       // forward declaration of the bmc class
 
 
+
 struct names {
   std::map<std::string,names> nmap;
   std::string name;
@@ -62,8 +63,9 @@ private:
   // std::map<const llvm::BasicBlock*, std::string> path_name;
   svec in_code_spec;
 
-  
+
   std::string time_name( std::string name );
+  std::string time_sat_name( std::string name );
   std::string fresh_name();
   void        add_reg_map   ( const void*, std::string );
   void        add_reg_map   ( const void*, svec&, std::string);
@@ -73,6 +75,8 @@ private:
   std::string get_reg       ( const void* v, svec& idxs );
   std::string get_reg_time  ( const void* );
   std::string get_reg_time  ( const void*, svec& idxs );
+  std::string get_reg_sat_time( const void* v, svec& idxs);
+  std::string get_reg_sat_time( const void* v);
   std::string get_global_idx( const void* );
   std::string get_global_idx( const void*, std::string );
 
@@ -121,6 +125,7 @@ private:
   void dump_Else();
   void dump_Close_scope();
   void dump_If_NonDet();
+
 
   void dump_locals();
   void dump_sc_semantics(std::string tid, std::string ctime);
@@ -193,6 +198,10 @@ private:
   svec get_init_array(const llvm::Value* v, unsigned size );
 
   //---------------------------------------------------------------------
+
+  void dump_update_reg_time( const llvm::Value *,
+                             const llvm::Value *,
+                             const llvm::Value *);
 
   bool is_acquire( llvm::AtomicOrdering ord );
   bool is_release( llvm::AtomicOrdering ord );
