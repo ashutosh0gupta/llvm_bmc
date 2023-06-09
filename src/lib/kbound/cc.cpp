@@ -1,11 +1,9 @@
 #include "lib/kbound/kbound.h"
 
-void kbound::dump_start_thread_cc() {
-  auto cdy     =     "cdy[" + tid + "]";
-  auto cstart  =  "cstart[" + tid + "]";  // if we turn the local variabls
-  dump_Assign_rand_ctx( cdy ); //todo : do we need to do this
-  dump_Assume_geq( cdy, cstart );
-}
+
+//-------------------------------------------------------------------
+// Sequential code intialization
+//-------------------------------------------------------------------
 
 void kbound::prefix_seq_cc() {
   preamble();
@@ -54,6 +52,48 @@ void kbound::prefix_seq_cc() {
     }
   }
 }
+
+void kbound::dump_post_context_matching_cc() {
+  for( unsigned p = 0; p < bmc_obj.sys_spec.threads.size(); p++ ) {
+    auto pn = std::to_string(p);
+    for( unsigned x = 0; x < num_globals; x++ ) {
+      auto xn = std::to_string(x);
+      for( unsigned k = 0; k < ncontext-1; k++ ) {
+        auto xkn  = "("+pn+","+xn+","+std::to_string(k)+")";
+        auto xknp = "("+pn+","+xn+","+std::to_string(k+1)+")";
+        for( auto ary: val_list ) dump_Assume(ary+"init"+xknp +" == "+ary+xkn);
+      }
+    }
+  }
+}
+//-------------------------------------------------------------------
+// Thread initialization
+//-------------------------------------------------------------------
+
+void kbound::dump_start_thread_cc() {
+  auto cdy     =     "cdy[" + tid + "]";
+  auto cstart  =  "cstart[" + tid + "]";  // if we turn the local variabls
+  dump_Assign_rand_ctx( cdy ); //todo : do we need to do this
+  dump_Assume_geq( cdy, cstart );
+}
+
+//-------------------------------------------------------------------
+// Thread create and join
+//-------------------------------------------------------------------
+
+void kbound::dump_thread_create_cc(std::string child_tid) {
+  dump_dmbsy(); // All in-flight opertions must commit now
+  dump_Assume_geq( "cstart[" + child_tid + "]", "cdy[" + tid + "]");
+}
+
+void kbound::dump_thread_join_cc( std::string child_tid ) {
+  dump_dmbsy(); // All in-flight opertions must commit now
+  dump_Assume_geq(  "cdy[" + tid + "]", "creturn[" + child_tid + "]" );
+}
+
+//-------------------------------------------------------------------
+// Handling load/store and transaction begin/end
+//-------------------------------------------------------------------
 
 void kbound::
 dump_ld_cc( std::string r,     // register name

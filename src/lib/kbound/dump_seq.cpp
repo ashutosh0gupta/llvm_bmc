@@ -363,14 +363,15 @@ void kbound::dump_Active( std::string ctx) {
 
 void kbound::postfix_seq() {
   //initializing value matching
-  for( unsigned x = 0; x < num_globals; x++ ) {
-    auto xn = std::to_string(x);
-    for( unsigned k = 0; k < ncontext-1; k++ ) {
-      auto xkn = "("+xn+","+std::to_string(k)+")";
-      auto xknp = "("+xn+","+std::to_string(k+1)+")";
-      for( auto ary: val_list ) dump_Assume(ary+"init"+xknp +" == "+ary+xkn);
-    }
-  }
+  dump_post_context_matching();
+  // for( unsigned x = 0; x < num_globals; x++ ) {
+  //   auto xn = std::to_string(x);
+  //   for( unsigned k = 0; k < ncontext-1; k++ ) {
+  //     auto xkn = "("+xn+","+std::to_string(k)+")";
+  //     auto xknp = "("+xn+","+std::to_string(k+1)+")";
+  //     for( auto ary: val_list ) dump_Assume(ary+"init"+xknp +" == "+ary+xkn);
+  //   }
+  // }
   dump_Newline();
   for(auto& term: in_code_spec ) dump_String("ASSERT(" + term + ");");
   std::map<std::string,std::string> rename;
@@ -593,7 +594,6 @@ void kbound::dump_commit_before_thread_finish( std::string cctx ) {
 
 void kbound::dump_start_thread() {
   dump_Comment( "Dumping thread "+ tid );
-  if(is_sc_semantics) dump_Comment( "Thread semanics = SC");
   dump_Assign( "int ret_thread_"+ tid, "0" );
 
   switch( mm ) {
@@ -606,13 +606,24 @@ void kbound::dump_start_thread() {
 
 // const llvm::CallInst* call
 void kbound::dump_thread_create( unsigned bidx, std::string child_tid ) {
-  dump_dmbsy(); // All in-flight opertions must commit now
-  dump_Assume_geq( "cstart[" + child_tid + "]", "cdy[" + tid + "]");
+  switch( mm ) {
+  case ARMV1:
+  case ARMV2: dump_thread_create_arm(child_tid); break;
+  case CC   : dump_thread_create_cc(child_tid); break;
+  default: llvm_bmc_error("kbound", "bad memory model!");
+  }
+
 }
 
 void kbound::dump_thread_join( unsigned bidx, std::string child_tid ) {
-  dump_dmbsy(); // All in-flight opertions must commit now
-  dump_Assume_geq(  "cdy[" + tid + "]", "creturn[" + child_tid + "]" );
+  switch( mm ) {
+  case ARMV1:
+  case ARMV2: dump_thread_join_arm(child_tid); break;
+  case CC   : dump_thread_join_cc(child_tid); break;
+  default: llvm_bmc_error("kbound", "bad memory model!");
+  }
+  // dump_dmbsy(); // All in-flight opertions must commit now
+  // dump_Assume_geq(  "cdy[" + tid + "]", "creturn[" + child_tid + "]" );
 }
 
 
@@ -670,6 +681,14 @@ void kbound::prefix_seq() {
   }
 }
 
+void kbound::dump_post_context_matching() {
+  switch( mm ) {
+  case ARMV1:
+  case ARMV2: dump_post_context_matching_arm(); break;
+  case CC   : dump_post_context_matching_cc(); break;
+  default: llvm_bmc_error("kbound", "bad memory model!");
+  }
+}
 
 void kbound::dump_begin_transaction() {
   switch( mm ) {

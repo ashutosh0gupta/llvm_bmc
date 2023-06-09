@@ -98,14 +98,18 @@ if os.path.isfile(wrong):
         es = []
         for s in tes:
             match = re.findall( p, s)
+            if len(match) == 0:
+                m = "_"
+            else:
+                m = match[0]                
             if 'LDSAT' in s:
-                last_sat = match[0]
+                last_sat = m
             if 'LDCOM' in s:
-                es.append( last_sat + "," + match[0] )                
+                es.append( last_sat + "," + m )                
             if 'STIW' in s:
-                last_iw = match[0]
+                last_iw = m
             if 'STCOM' in s:
-                es.append( last_iw + "," + match[0] )
+                es.append( last_iw + "," + m )
         elists.append(es)
 
     try:

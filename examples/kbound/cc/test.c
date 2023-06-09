@@ -9,14 +9,14 @@
 void begin_transaction();
 void end_transaction();
 
-long vars[2]; 
-long atom_1_X2_0; 
+long vars[2];
+long atom_1_X2_0;
 
 void *t0(void *arg){
 label_1:;
   begin_transaction();
-  atomic_store_explicit(&vars[0], 1, memory_order_relaxed);
-  atomic_store_explicit(&vars[1], 1, memory_order_relaxed);
+  vars[1] = 1;
+  vars[0] = 1;
   end_transaction();
   return NULL;
 }
