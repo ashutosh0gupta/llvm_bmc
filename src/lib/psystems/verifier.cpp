@@ -1,13 +1,8 @@
-#include <vector>
-#include <set>
-#include <utility>
-#include <map>
-#include <queue>
-#include <memory>
+#include "psystems.h"
 
-constexpr uint64_t STATE_SIZE = 10000;
+constexpr uint64_t STATE_SIZE = 6;
 
-const std::set<std::vector<uint64_t > > & size_k_substrs(const std::vector<uint64_t>::iterator start, const std::vector<uint64_t>::iterator end, uint64_t size)
+const std::set<std::vector<uint64_t > > & psystems::size_k_substrs(const std::vector<uint64_t>::iterator start, const std::vector<uint64_t>::iterator end, uint64_t size)
 {
     static std::map<std::pair<std::vector<uint64_t>, uint64_t>, std::unique_ptr<const std::set<std::vector<uint64_t> > > > memo;
     std::pair<std::vector<uint64_t>, uint64_t> args(std::vector<uint64_t>(start, end), size);
@@ -37,7 +32,7 @@ const std::set<std::vector<uint64_t > > & size_k_substrs(const std::vector<uint6
     return *memo[args];
 }
 
-std::set<std::vector<uint64_t> > alpha(const std::vector<uint64_t>::iterator start, const std::vector<uint64_t>::iterator end, uint64_t k)
+std::set<std::vector<uint64_t> > psystems::alpha(const std::vector<uint64_t>::iterator start, const std::vector<uint64_t>::iterator end, uint64_t k)
 {
     std::set<std::vector<uint64_t> > ret_set;
     for(int size = 0; size <= k; ++size)
@@ -51,7 +46,7 @@ std::set<std::vector<uint64_t> > alpha(const std::vector<uint64_t>::iterator sta
     return ret_set;
 }
 
-struct Trie {
+struct psystems::Trie {
     std::vector<uint64_t> str;
     std::unique_ptr<Trie> child[STATE_SIZE];
     Trie *parent;
@@ -83,7 +78,7 @@ struct Trie {
     }
 };
 
-std::set<std::vector<uint64_t> > integral(const std::set<std::vector<uint64_t> > &lang, uint64_t k, uint64_t l)
+std::set<std::vector<uint64_t> > psystems::integral(const std::set<std::vector<uint64_t> > &lang, uint64_t k, uint64_t l)
 {
     std::set<std::vector<uint64_t> > ret_set;
     std::unique_ptr<Trie> root = std::make_unique<Trie>();
