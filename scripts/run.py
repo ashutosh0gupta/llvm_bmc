@@ -99,7 +99,8 @@ def runner(ex):
       lk =  ex[4]
    else:
       lk = 10
-   lk = n+3
+   lk = n+4
+   # lk = 10
    if( len(ex) > 4):
       l = ex[5]
    else:
@@ -113,12 +114,12 @@ def runner(ex):
       print(str(ex[0])+"\t"+ex[1]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
    result = subprocess.check_output(["time", run, str(l), str(lk), f, s, tmp_path,mm],stderr=subprocess.STDOUT)
    result=result.decode("utf-8")
+   # print(result)
    time = find_time(result)
    if report:
       print(time[0]+"\t"+time[1])
-   if time[0].lower() != kind:
-      print(str(ex[0])+"\t"+ ex[1]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
-      print(time[0]+"\t"+time[1])
+   if time[0].lower() != kind:# or True:
+      print(str(ex[0])+"\t"+ ex[1]+"\t"+ kind +"->"+time[0]+"\t"+time[1])
       fname = os.path.basename(f)
       shutil.copyfile('examples/litmus/c/original/alltests/'+ex[1]+".litmus",
                       "./tmp/"+fname+".wrong.litmus")
@@ -128,11 +129,23 @@ def runner(ex):
          result = subprocess.check_output(["./scripts/clean-cbmc.py", "./tmp/",f])
          # print(result)
          # exit()
-      print('Wrong answer!!')
       # err_cnt += 1
    return float(time[1])
 
-#exs = exs[:100]
+# exs = [ ex if ex[1] ]
+
+# exs = list(filter(lambda ex: "wsi" in ex[1], exs))
+# exs = list(filter(lambda ex: "MP+dmb.sy+addr-wsi-rfi-addr" == ex[1], exs))
+# exs = list(filter(lambda ex: "MP+dmb.sy+addr-addr-rfi-addr" == ex[1], exs))
+# exs = list(filter(lambda ex: "CO-SBI" == ex[1], exs))
+# exs = list(filter(lambda ex: "Luc21" == ex[1], exs))
+
+
+# print(len(exs))
+# exit()
+
+exs = exs[1525:2000]
+# exs = exs[:100]
 # exs = exs[:1]
 seq = False
 

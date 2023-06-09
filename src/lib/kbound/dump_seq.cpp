@@ -363,14 +363,15 @@ void kbound::dump_Active( std::string ctx) {
 
 void kbound::postfix_seq() {
   //initializing value matching
-  for( unsigned x = 0; x < num_globals; x++ ) {
-    auto xn = std::to_string(x);
-    for( unsigned k = 0; k < ncontext-1; k++ ) {
-      auto xkn = "("+xn+","+std::to_string(k)+")";
-      auto xknp = "("+xn+","+std::to_string(k+1)+")";
-      for( auto ary: val_list ) dump_Assume(ary+"init"+xknp +" == "+ary+xkn);
-    }
-  }
+  dump_post_context_matching();
+  // for( unsigned x = 0; x < num_globals; x++ ) {
+  //   auto xn = std::to_string(x);
+  //   for( unsigned k = 0; k < ncontext-1; k++ ) {
+  //     auto xkn = "("+xn+","+std::to_string(k)+")";
+  //     auto xknp = "("+xn+","+std::to_string(k+1)+")";
+  //     for( auto ary: val_list ) dump_Assume(ary+"init"+xknp +" == "+ary+xkn);
+  //   }
+  // }
   dump_Newline();
   for(auto& term: in_code_spec ) dump_String("ASSERT(" + term + ");");
   std::map<std::string,std::string> rename;
@@ -507,23 +508,23 @@ range_forbid( std::string gid, std::string lb, std::string ub ) {
 }
 
 void kbound::dump_update_ctrl( const void* cond ) {
-    auto ctrl = "cctrl["+tid+"]";
-    dump_Assign("old_cctrl", ctrl);
-    dump_Assign_rand_ctx( ctrl );
-    dump_Assume_geq( ctrl, "old_cctrl" );
+  auto ctrl = "cctrl["+tid+"]";
+  dump_Assign( "old_cctrl", ctrl );
+  dump_Assign_rand_ctx( ctrl );
+  dump_Assume_geq( ctrl, "old_cctrl" );
 
-    if( exists( ctrl_dep_ord, cond ) ) {
-      //todo: remove this branch if compute the reg_time of the compare
-      //      instruction is computed; already added
-      for( auto& dep : ctrl_dep_ord.at(cond) ) {
-        dump_Assume_geq( ctrl, dep );
-      }
-      // for( auto& dep : ctrl_dep_ord.at(cond) ) {
-      //   dump_Assume_geq( ctrl, dep);
-      // }
-    }else{
-      dump_Assume_geq( ctrl, get_reg_time( cond ) );
+  if( exists( ctrl_dep_ord, cond ) ) {
+    //todo: remove this branch if compute the reg_time of the compare
+    //      instruction is computed; already added
+    for( auto& dep : ctrl_dep_ord.at(cond) ) {
+      dump_Assume_geq( ctrl, dep );
     }
+    // for( auto& dep : ctrl_dep_ord.at(cond) ) {
+    //   dump_Assume_geq( ctrl, dep);
+    // }
+  }else{
+    dump_Assume_geq( ctrl, get_reg_time( cond ) );
+  }
 }
 
 void kbound::dump_geq_globals( std::string c, std::string prop ) {
@@ -593,24 +594,36 @@ void kbound::dump_commit_before_thread_finish( std::string cctx ) {
 
 void kbound::dump_start_thread() {
   dump_Comment( "Dumping thread "+ tid );
-  if(is_sc_semantics) dump_Comment( "Thread semanics = SC");
   dump_Assign( "int ret_thread_"+ tid, "0" );
 
-  auto cdy     =     "cdy[" + tid + "]";
-  auto cstart  =  "cstart[" + tid + "]";  // if we turn the local variabls
-  dump_Assign_rand_ctx( cdy ); //todo : do we need to do this
-  dump_Assume_geq( cdy, cstart );
+  switch( mm ) {
+  case ARMV1:
+  case ARMV2: dump_start_thread_arm(); break;
+  case CC   : dump_start_thread_cc(); break;
+  default: llvm_bmc_error("kbound", "bad memory model!");
+  }
 }
 
 // const llvm::CallInst* call
 void kbound::dump_thread_create( unsigned bidx, std::string child_tid ) {
-  dump_dmbsy(); // All in-flight opertions must commit now
-  dump_Assume_geq( "cstart[" + child_tid + "]", "cdy[" + tid + "]");
+  switch( mm ) {
+  case ARMV1:
+  case ARMV2: dump_thread_create_arm(child_tid); break;
+  case CC   : dump_thread_create_cc(child_tid); break;
+  default: llvm_bmc_error("kbound", "bad memory model!");
+  }
+
 }
 
 void kbound::dump_thread_join( unsigned bidx, std::string child_tid ) {
-  dump_dmbsy(); // All in-flight opertions must commit now
-  dump_Assume_geq(  "cdy[" + tid + "]", "creturn[" + child_tid + "]" );
+  switch( mm ) {
+  case ARMV1:
+  case ARMV2: dump_thread_join_arm(child_tid); break;
+  case CC   : dump_thread_join_cc(child_tid); break;
+  default: llvm_bmc_error("kbound", "bad memory model!");
+  }
+  // dump_dmbsy(); // All in-flight opertions must commit now
+  // dump_Assume_geq(  "cdy[" + tid + "]", "creturn[" + child_tid + "]" );
 }
 
 
@@ -668,6 +681,14 @@ void kbound::prefix_seq() {
   }
 }
 
+void kbound::dump_post_context_matching() {
+  switch( mm ) {
+  case ARMV1:
+  case ARMV2: dump_post_context_matching_arm(); break;
+  case CC   : dump_post_context_matching_cc(); break;
+  default: llvm_bmc_error("kbound", "bad memory model!");
+  }
+}
 
 void kbound::dump_begin_transaction() {
   switch( mm ) {

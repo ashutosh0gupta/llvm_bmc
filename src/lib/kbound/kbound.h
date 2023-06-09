@@ -155,13 +155,18 @@ private:
   void preamble();
   void prefix_seq();
   void postfix_seq();
+  void dump_post_context_matching();
   void dump_begin_transaction();
   void dump_end_transaction();
-  unsigned inside_transaction = false;
 
   //-------------------------------------------------------------------
   void range_forbid( std::string gid, std::string lb, std::string ub );
 
+  // for ARM memory model
+  void dump_thread_create_arm( std::string child_tid );
+  void dump_thread_join_arm  ( std::string child_tid );
+  void dump_start_thread_arm();
+  void dump_post_context_matching_arm();
   void dump_ld_v1(std::string,std::string,std::string,std::string,bool,bool);
   void dump_st_v1(std::string,std::string,std::string,std::string,bool,bool);
   void prefix_seq_v1();
@@ -170,12 +175,18 @@ private:
   void dump_st_v2(std::string,std::string,std::string,std::string,bool,bool);
   void prefix_seq_v2();
 
+  // for CC memory model
+  void dump_thread_create_cc( std::string child_tid );
+  void dump_thread_join_cc  ( std::string child_tid );
+  void dump_start_thread_cc();
   void dump_ld_cc(std::string,std::string,std::string,std::string,bool,bool);
   void dump_st_cc(std::string,std::string,std::string,std::string,bool,bool);
   void prefix_seq_cc();
+  void dump_post_context_matching_cc();
   void dump_begin_transaction_cc();
   void dump_end_transaction_cc();
-  
+  unsigned inside_transaction = false;
+
   //-------------------------------------------------------------------
 
   unsigned get_word_size(const llvm::Value* v );

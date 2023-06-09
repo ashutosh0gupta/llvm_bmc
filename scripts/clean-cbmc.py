@@ -71,11 +71,26 @@ tf.close()
 # Stiching litmust files to output of cmsb
 #--------------------------------------------
 
+def find_num_thread(lfile):
+    # lfile = './examples/litmus/c/original/alltests/'+lname+".litmus"
+    try:
+        with open(lfile) as lf:
+            lines = lf.readlines()
+    except IOError as e:
+        print( "failed to open" + in_file  )
+        sys.exit(0)
+    for line in lines:
+        splits = line.split("|")
+        if len(splits) > 1:
+            return len(splits)
+    return 0
+
 print(wrong)
 if os.path.isfile(wrong):
     elists = []
     p = re.compile(r'=([0-9]+)$')
-    for t in range(1,3):
+    tnum = find_num_thread(wrong)
+    for t in range(1,tnum+1): 
         tid = str(t)
         tes = [ k.strip() for k in cf if tid+' ASSIGN' in k ]
         last_sat = "_"
@@ -83,14 +98,18 @@ if os.path.isfile(wrong):
         es = []
         for s in tes:
             match = re.findall( p, s)
+            if len(match) == 0:
+                m = "_"
+            else:
+                m = match[0]                
             if 'LDSAT' in s:
-                last_sat = match[0]
+                last_sat = m
             if 'LDCOM' in s:
-                es.append( last_sat + "," + match[0] )                
+                es.append( last_sat + "," + m )                
             if 'STIW' in s:
-                last_iw = match[0]
+                last_iw = m
             if 'STCOM' in s:
-                es.append( last_iw + "," + match[0] )
+                es.append( last_iw + "," + m )
         elists.append(es)
 
     try:

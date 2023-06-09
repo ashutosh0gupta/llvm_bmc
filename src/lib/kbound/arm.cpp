@@ -2,6 +2,45 @@
 // #include <boost/algorithm/string.hpp>
 
 //-------------------------------------------------------------------
+// Thread create and join
+//-------------------------------------------------------------------
+
+void kbound::dump_thread_create_arm(std::string child_tid) {
+  dump_dmbsy(); // All in-flight opertions must commit now
+  dump_Assume_geq( "cstart[" + child_tid + "]", "cdy[" + tid + "]");
+}
+
+
+void kbound::dump_thread_join_arm( std::string child_tid ) {
+  dump_dmbsy(); // All in-flight opertions must commit now
+  dump_Assume_geq(  "cdy[" + tid + "]", "creturn[" + child_tid + "]" );
+}
+
+//-------------------------------------------------------------------
+// Thread initializing and final finishing
+//-------------------------------------------------------------------
+
+void kbound::dump_start_thread_arm() {
+  if(is_sc_semantics) dump_Comment( "Thread semanics = SC");
+  auto cdy     =     "cdy[" + tid + "]";
+  auto cstart  =  "cstart[" + tid + "]";  // if we turn the local variabls
+  dump_Assign_rand_ctx( cdy ); //todo : do we need to do this
+  dump_Assume_geq( cdy, cstart );
+}
+
+void kbound::dump_post_context_matching_arm() {
+  for( unsigned x = 0; x < num_globals; x++ ) {
+    auto xn = std::to_string(x);
+    for( unsigned k = 0; k < ncontext-1; k++ ) {
+      auto xkn = "("+xn+","+std::to_string(k)+")";
+      auto xknp = "("+xn+","+std::to_string(k+1)+")";
+      for( auto ary: val_list ) dump_Assume(ary+"init"+xknp +" == "+ary+xkn);
+    }
+  }
+}
+
+
+//-------------------------------------------------------------------
 // ARM V1
 //-------------------------------------------------------------------
 
@@ -269,6 +308,7 @@ void kbound::prefix_seq_v2() {
     "clrsaddr",
     "clrsval",
     "xpanding",
+    "crmax",      // max read ctx seen so far //ashu added?
   };
   dump_Arrays( "int", time_list, "NTHREAD", "ADDRSIZE");
 
@@ -367,7 +407,7 @@ dump_ld_v2( std::string r, std::string cval,
   dump_Active( cr );
   dump_Active( sr );
   dump_Assume_geq( cr, sr );
-  dump_Assume_geq( sr, "old_sr" );
+  // dump_Assume_geq( sr, "old_sr" ); // todo : testing
 
   dump_Assume_geq( cr, "clda" + t );
   dump_Assume_geq( cr,  "cdy" + t );
@@ -375,28 +415,30 @@ dump_ld_v2( std::string r, std::string cval,
   dump_Assume_geq( cr,  "cdl" + t );
 
   dump_Assume_geq( cr, caddr ); //does not match from paper; paper is syncing with all addr
+  // dump_Assume_geq( cr, "clrsaddr"+t_g ); // << in the paper
+  // dump_Assume_geq( cr, "clrsval" +t_g ); // << in the paper
+
   // dump_Assume_geq( sr, caddr );          // << ordering against sat
   dump_Assume_geq( sr, "clrsaddr"+t_g ); // << different from the paper
   dump_Assume_geq( sr, "clrsval" +t_g ); // << different from the paper
 
-  // dump_Assume_geq( cr, "clrsaddr"+t_g ); // << in the paper
-  // dump_Assume_geq( cr, "clrsval" +t_g ); // << in the paper
   if( isAcquire ) dump_Assume_geq( cr, "cstr" + t );
 
   dump_Comment("Update");
   // dump_Assign_max( cr, "old_cr" ); // << cr is updated again??
-  // dump_Assign_max( "crmax"+t_g, "old_cr" ); // << cr is updated again??
-  dump_Assign( cval, sr  );        //
-  // dump_Assign( sval, sr );     // Why??
+  dump_Assign_max( "crmax"+t_g, cr);  // << replaces something in code
+  dump_Assign( cval, sr  );           //
+  // dump_Assign( sval, sr );         // Why??
   dump_Assign_max( "caddr["+tid+"]", caddr);
   dump_If( sr + " < " + "cw"+t_g );
   {
     dump_Assign( r, "buff"+t_g );
-    range_forbid( gid, "cw"+t_g, cr );
+    range_forbid( gid, "cw"+t_g, "crmax"+t_g ); //Ashu added?
   }
   dump_Else();
   {
     dump_Assign( r, "mem"+ g_sr );
+    dump_Assume_geq( sr, "old_sr" ); // << different from paper
     range_forbid( gid, sr, cr );
   }
   dump_Close_scope();
@@ -458,8 +500,12 @@ dump_st_v2( std::string v, std::string cval,std::string caddr,
   dump_Assign( "buff"  + t_g , v);
   dump_Assign( "mem"   + g_cw, v); // << indexing wrong in paper
   dump_Assign_max( "caddr"    + t,   caddr );
-  dump_Assign_max( "clrsaddr" + t_g, caddr );
-  dump_Assign_max( "clrsval"  + t_g, cval  );
+
+  dump_Assign( "clrsaddr" + t_g, caddr ); // << different from paper
+  dump_Assign( "clrsval"  + t_g, cval  ); // << different from paper
+
+  // dump_Assign_max( "clrsaddr" + t_g, caddr ); // << in the paper
+  // dump_Assign_max( "clrsval"  + t_g, cval  ); // << in the paper
   dump_Assign( "xpanding"+ t_g, "0");
   if( isRelease ) dump_Assign_max( "cstr" + t, cw );
 
