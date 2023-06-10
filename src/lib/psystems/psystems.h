@@ -37,19 +37,22 @@ private:
     std::string thread_name, EntryFn;
     bool is_sc_semantics = false;
     struct Trie;
-    struct Post {
+    struct Rules {
         std::vector<std::pair<uint64_t, uint64_t> > local_rules;
-        enum Relation { lt, gt, lte, gte, neq };
+        enum Relation { lt, gt, neq };
         enum Quantifier { forall, exists };
         std::vector<std::pair<std::pair<std::pair<Quantifier, Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > > > global_rules;
-    } post;
+    } rules;
     uint64_t init_state;
     std::vector<uint64_t> bad_min;
     std::string getInstructionString(const llvm::Instruction &);
     std::string getBasicBlockString(const llvm::BasicBlock &);
-    const std::set<std::vector<uint64_t>> &size_k_substrs(const std::vector<uint64_t>::iterator, const std::vector<uint64_t>::iterator, uint64_t);
-    std::set<std::vector<uint64_t> > alpha(const std::vector<uint64_t>::iterator, const std::vector<uint64_t>::iterator, uint64_t);
+    const std::set<std::vector<uint64_t>> &size_k_substrs(std::vector<uint64_t>::const_iterator, std::vector<uint64_t>::const_iterator, uint64_t);
+    std::set<std::vector<uint64_t> > alpha(std::vector<uint64_t>::const_iterator, std::vector<uint64_t>::const_iterator, uint64_t);
+    std::set<std::vector<uint64_t> > alpha(const std::set<std::vector<uint64_t> > &, uint64_t);
     std::set<std::vector<uint64_t> > integral(const std::set<std::vector<uint64_t> > &, uint64_t, uint64_t);
+    const std::set<std::vector<uint64_t> > &post(const std::vector<uint64_t> &);
+    std::set<std::vector<uint64_t> > post(const std::set<std::vector<uint64_t> > &);
     bool verify();
     //---------------------------------------------------------------------
 public:

@@ -1,6 +1,7 @@
 #include "lib/psystems/psystems.h"
 #include "include/bmc.h"
 #include "llvm/IR/DataLayout.h"
+#include "verifier.cpp"
 
 #define PSYSTEMS_UNSUPPORTED_INSTRUCTIONS(InstTYPE, Inst)        \
     if (llvm::isa<llvm::InstTYPE>(Inst))                         \
@@ -21,12 +22,12 @@ psystems::psystems(options &o_, std::unique_ptr<llvm::Module> &m_,
     : bmc_pass(o_, o_.solver_ctx, bmc_), llvm::FunctionPass(ID), module(m_), ofcpp(o_.outDirPath.string() + "/cbmc.cpp"), current_indent(0), ncontext(o.ctx_bound), bad_min({5, 5}), init_state(0)
 {
     // hardcoding Szymanski post - eventually will want to do this in psystems::runOnFunction
-    post.local_rules.push_back(std::pair<uint64_t, uint64_t>(0, 1));
-    post.global_rules.push_back(std::pair<std::pair<std::pair<Post::Quantifier, Post::Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Post::Quantifier, Post::Relation>, std::set<uint64_t> >(std::pair<Post::Quantifier, Post::Relation>(Post::Quantifier::forall, Post::Relation::neq), std::set<uint64_t>({0, 1, 2})), std::pair<uint64_t, uint64_t >(1, 3)));
-    post.global_rules.push_back(std::pair<std::pair<std::pair<Post::Quantifier, Post::Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Post::Quantifier, Post::Relation>, std::set<uint64_t> >(std::pair<Post::Quantifier, Post::Relation>(Post::Quantifier::exists, Post::Relation::neq), std::set<uint64_t>({1})), std::pair<uint64_t, uint64_t >(3, 2)));
-    post.global_rules.push_back(std::pair<std::pair<std::pair<Post::Quantifier, Post::Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Post::Quantifier, Post::Relation>, std::set<uint64_t> >(std::pair<Post::Quantifier, Post::Relation>(Post::Quantifier::exists, Post::Relation::neq), std::set<uint64_t>({4, 5})), std::pair<uint64_t, uint64_t >(2, 4)));
-    post.global_rules.push_back(std::pair<std::pair<std::pair<Post::Quantifier, Post::Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Post::Quantifier, Post::Relation>, std::set<uint64_t> >(std::pair<Post::Quantifier, Post::Relation>(Post::Quantifier::forall, Post::Relation::lt), std::set<uint64_t>({0, 1})), std::pair<uint64_t, uint64_t >(4, 5)));
-    post.global_rules.push_back(std::pair<std::pair<std::pair<Post::Quantifier, Post::Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Post::Quantifier, Post::Relation>, std::set<uint64_t> >(std::pair<Post::Quantifier, Post::Relation>(Post::Quantifier::forall, Post::Relation::gt), std::set<uint64_t>({0, 1, 4, 5})), std::pair<uint64_t, uint64_t >(5, 0)));
+    rules.local_rules.push_back(std::pair<uint64_t, uint64_t>(0, 1));
+    rules.global_rules.push_back(std::pair<std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >(std::pair<Rules::Quantifier, Rules::Relation>(Rules::Quantifier::forall, Rules::Relation::neq), std::set<uint64_t>({0, 1, 2})), std::pair<uint64_t, uint64_t >(1, 3)));
+    rules.global_rules.push_back(std::pair<std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >(std::pair<Rules::Quantifier, Rules::Relation>(Rules::Quantifier::exists, Rules::Relation::neq), std::set<uint64_t>({1})), std::pair<uint64_t, uint64_t >(3, 2)));
+    rules.global_rules.push_back(std::pair<std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >(std::pair<Rules::Quantifier, Rules::Relation>(Rules::Quantifier::exists, Rules::Relation::neq), std::set<uint64_t>({4, 5})), std::pair<uint64_t, uint64_t >(2, 4)));
+    rules.global_rules.push_back(std::pair<std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >(std::pair<Rules::Quantifier, Rules::Relation>(Rules::Quantifier::forall, Rules::Relation::lt), std::set<uint64_t>({0, 1})), std::pair<uint64_t, uint64_t >(4, 5)));
+    rules.global_rules.push_back(std::pair<std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >(std::pair<Rules::Quantifier, Rules::Relation>(Rules::Quantifier::forall, Rules::Relation::gt), std::set<uint64_t>({0, 1, 4, 5})), std::pair<uint64_t, uint64_t >(5, 0)));
 }
 
 psystems::~psystems() {}
@@ -92,10 +93,3 @@ bool psystems::runOnFunction(llvm::Function &f)
     return false;
 }
 
-bool psystems::verify()
-{
-    for(uint64_t k = 1; ; k++)
-    {
-        
-    }
-}
