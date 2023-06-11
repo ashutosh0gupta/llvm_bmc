@@ -69,9 +69,9 @@ struct psystems::Trie {
     bool valid;
     std::set<Trie *> prop_subwords;
 
-    Trie(): valid(true), parent(nullptr) {}
+    Trie(): parent(nullptr), valid(true) {}
 
-    Trie(Trie *parent, uint64_t ins): valid(parent->valid), parent(parent), str(parent->str), prop_subwords(parent->prop_subwords)
+    Trie(Trie *parent, uint64_t ins):  str(parent->str), parent(parent), valid(parent->valid), prop_subwords(parent->prop_subwords)
     {
         // assert(ins >= 0 && ins < STATE_SIZE)
         str.push_back(ins);
@@ -296,7 +296,7 @@ bool psystems::verify()
     // since initial state of each thread is the same (say s), \alpha_k(I) is just words of the form sss... upto size k
     for(uint64_t k = 1; ; k++)
     {
-        auto Ik = std::set<std::vector<uint64_t> >({std::vector<uint64_t>(k, 0)});
+        auto Ik = std::set<std::vector<uint64_t> >({std::vector<uint64_t>(k, init_state)});
         auto alphk = alpha(Ik, k);
         auto Rk = Ik;
         for(const auto& v: post(Ik)) Rk.insert(v);
