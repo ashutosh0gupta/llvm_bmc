@@ -23,11 +23,11 @@ psystems::psystems(options &o_, std::unique_ptr<llvm::Module> &m_,
 {
     // hardcoding Szymanski post - eventually will want to do this in psystems::runOnFunction
     // rules.local_rules.push_back(std::pair<uint64_t, uint64_t>(0, 1));
-    // rules.global_rules.push_back(std::pair<std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >(std::pair<Rules::Quantifier, Rules::Relation>(Rules::Quantifier::forall, Rules::Relation::neq), std::set<uint64_t>({0, 1, 2})), std::pair<uint64_t, uint64_t >(1, 3)));
-    // rules.global_rules.push_back(std::pair<std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >(std::pair<Rules::Quantifier, Rules::Relation>(Rules::Quantifier::exists, Rules::Relation::neq), std::set<uint64_t>({1})), std::pair<uint64_t, uint64_t >(3, 2)));
-    // rules.global_rules.push_back(std::pair<std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >(std::pair<Rules::Quantifier, Rules::Relation>(Rules::Quantifier::exists, Rules::Relation::neq), std::set<uint64_t>({4, 5})), std::pair<uint64_t, uint64_t >(2, 4)));
-    // rules.global_rules.push_back(std::pair<std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >(std::pair<Rules::Quantifier, Rules::Relation>(Rules::Quantifier::forall, Rules::Relation::lt), std::set<uint64_t>({0, 1})), std::pair<uint64_t, uint64_t >(4, 5)));
-    // rules.global_rules.push_back(std::pair<std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Rules::Quantifier, Rules::Relation>, std::set<uint64_t> >(std::pair<Rules::Quantifier, Rules::Relation>(Rules::Quantifier::forall, Rules::Relation::gt), std::set<uint64_t>({0, 1, 4, 5})), std::pair<uint64_t, uint64_t >(5, 0)));
+    // rules.global_rules.push_back(std::pair<std::pair<std::pair<Rules::Quantifier, Rules::AccessRelation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Rules::Quantifier, Rules::AccessRelation>, std::set<uint64_t> >(std::pair<Rules::Quantifier, Rules::AccessRelation>(Rules::Quantifier::forall, Rules::AccessRelation::neq), std::set<uint64_t>({0, 1, 2})), std::pair<uint64_t, uint64_t >(1, 3)));
+    // rules.global_rules.push_back(std::pair<std::pair<std::pair<Rules::Quantifier, Rules::AccessRelation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Rules::Quantifier, Rules::AccessRelation>, std::set<uint64_t> >(std::pair<Rules::Quantifier, Rules::AccessRelation>(Rules::Quantifier::exists, Rules::AccessRelation::neq), std::set<uint64_t>({1})), std::pair<uint64_t, uint64_t >(3, 2)));
+    // rules.global_rules.push_back(std::pair<std::pair<std::pair<Rules::Quantifier, Rules::AccessRelation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Rules::Quantifier, Rules::AccessRelation>, std::set<uint64_t> >(std::pair<Rules::Quantifier, Rules::AccessRelation>(Rules::Quantifier::exists, Rules::AccessRelation::neq), std::set<uint64_t>({4, 5})), std::pair<uint64_t, uint64_t >(2, 4)));
+    // rules.global_rules.push_back(std::pair<std::pair<std::pair<Rules::Quantifier, Rules::AccessRelation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Rules::Quantifier, Rules::AccessRelation>, std::set<uint64_t> >(std::pair<Rules::Quantifier, Rules::AccessRelation>(Rules::Quantifier::forall, Rules::AccessRelation::lt), std::set<uint64_t>({0, 1})), std::pair<uint64_t, uint64_t >(4, 5)));
+    // rules.global_rules.push_back(std::pair<std::pair<std::pair<Rules::Quantifier, Rules::AccessRelation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t > >(std::pair<std::pair<Rules::Quantifier, Rules::AccessRelation>, std::set<uint64_t> >(std::pair<Rules::Quantifier, Rules::AccessRelation>(Rules::Quantifier::forall, Rules::AccessRelation::gt), std::set<uint64_t>({0, 1, 4, 5})), std::pair<uint64_t, uint64_t >(5, 0)));
 }
 
 psystems::~psystems() {}
@@ -125,7 +125,7 @@ bool psystems::runOnFunction(llvm::Function &f)
                 continue;
             }
             Quantifier q = FORALL;
-            Relation r = NEQ;
+            AccessRelation r = NEQ;
             std::set<uint64_t> ss;
             for(auto bb: blocks[i])
             {
@@ -160,7 +160,7 @@ bool psystems::runOnFunction(llvm::Function &f)
                     }
                 }
             }
-            rules.global_rules.push_back(std::pair<std::pair<std::pair<Quantifier, Relation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t>>(std::pair<std::pair<Quantifier, Relation>, std::set<uint64_t> >(std::pair<Quantifier, Relation>(q, r), ss), transition));
+            rules.global_rules.push_back(std::pair<std::pair<std::pair<Quantifier, AccessRelation>, std::set<uint64_t> >, std::pair<uint64_t, uint64_t>>(std::pair<std::pair<Quantifier, AccessRelation>, std::set<uint64_t> >(std::pair<Quantifier, AccessRelation>(q, r), ss), transition));
         }
         std::cout << "System is" << (verify() ? " safe." : " unsafe.") << std::endl;
     }

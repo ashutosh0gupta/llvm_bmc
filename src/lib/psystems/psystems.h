@@ -26,8 +26,8 @@ enum AccessRelation { LT, GT, NEQ };
 enum Quantifier { FORALL, EXISTS };
 
 
-// typedef state_t std::vector<uint64_t>;
-typedef state_t uint64_t;
+// typedef std::vector<uint64_t> state_t;
+typedef uint64_t state_t;
 
 class thread_transition_t {
   // uint64_t from;
@@ -38,14 +38,14 @@ class thread_transition_t {
   state_t from_global;
   state_t to_global;
 
-}
+};
 
 class global_rule_t {
   Quantifier q;
   AccessRelation r;
   std::set<uint64_t> guard;
   thread_transition_t transition;
-}
+};
 
   // condition_t  condition;
 
@@ -65,7 +65,7 @@ private:
     bool is_sc_semantics = false;
     struct Trie;
   typedef std::pair<uint64_t, uint64_t> transition_t;
-  typedef std::pair<std::pair<Quantifier, Relation>, std::set<uint64_t>> condition_t;
+  typedef std::pair<std::pair<Quantifier, AccessRelation>, std::set<uint64_t>> condition_t;
   typedef std::pair<condition_t,transition_t> global_rule_t;
     struct Rules {
         std::vector< transition_t  > local_rules;
