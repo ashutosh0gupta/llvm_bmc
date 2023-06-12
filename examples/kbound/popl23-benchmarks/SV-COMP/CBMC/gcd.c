@@ -63,8 +63,6 @@ OD;
 OUTPUT a
 */
 
-// THIS IS NOT WORKING AT THE MOMENT
-
 #include <assert.h>
 #include <pthread.h>
 
