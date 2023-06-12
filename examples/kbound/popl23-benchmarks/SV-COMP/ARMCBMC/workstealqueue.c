@@ -101,7 +101,7 @@ typedef struct WorkStealQueue {
 WorkStealQueue q;
 
 
-long my_atomic_exchange(atomic_long *obj, long v) {
+long my_atomic_exchange(long *obj, long v) { // A workaround
   __my_atomic_begin();
   long t = atomic_load_explicit(obj, memory_order_relaxed);
   atomic_store_explicit(obj, v, memory_order_relaxed);
@@ -109,7 +109,7 @@ long my_atomic_exchange(atomic_long *obj, long v) {
   return t;
 }
 
-_Bool my_atomic_compare_exchange_strong(atomic_long * obj, long* expected, long desired) {
+_Bool my_atomic_compare_exchange_strong(long * obj, long* expected, long desired) { // A workaround
   int ret = 0;
   __my_atomic_begin();
   if (atomic_load_explicit(obj, memory_order_relaxed)== *expected) {
@@ -123,13 +123,13 @@ _Bool my_atomic_compare_exchange_strong(atomic_long * obj, long* expected, long 
   return ret;
 }
 
-long readV(atomic_long *v) {
+long readV(long *v) {  // A workaround
   long expected = 0;
   my_atomic_compare_exchange_strong(v, &expected, 0);
   return expected;
 }
 
-void writeV(atomic_long *v, long w) {
+void writeV(long *v, long w) {  // A workaround
   my_atomic_exchange(v, w);
 }
 
