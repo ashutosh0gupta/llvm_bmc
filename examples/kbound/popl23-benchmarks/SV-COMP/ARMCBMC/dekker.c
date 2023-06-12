@@ -2,18 +2,17 @@
  * This benchmark is part of ARMCBMC
  */
 
-/* Adapted from https://github.com/sosy-lab/sv-benchmarks/blob/master/c/pthread-atomic/dekker_true-unreach-call.c */
+/* Adapted from https://github.com/sosy-lab/sv-benchmarks/blob/master/c/pthread-atomic/dekker-b.c */
 
 #include <assert.h>
 #include <pthread.h>
 #include <stdatomic.h>
 
 // shared variables
-long flag1;
-long flag2;
-long turn;
-
-long x;
+long flag1; // A workaround
+long flag2; // A workaround
+long turn;  // A workaround
+long x;     // A workaround
 
 void *p1(void *arg)
 {

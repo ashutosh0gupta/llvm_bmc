@@ -23,9 +23,9 @@ int flags[NUM_THREADS];
 void *szymanski(void *pid)
 {
     int id = * (int *) pid;
-    L0:
+    L0: // 0 -> 1 (no check)
     flags[id] = 1;
-    L1:
+    L1: // 1 -> 3 (\forall i != id, flags[i] \in {0, 1, 2})
     for(int i = 0; i < NUM_THREADS; ++i)
     {
         if(i != id && flags[i] != 0 && flags[i] != 1 && flags[i] != 2)
@@ -34,33 +34,31 @@ void *szymanski(void *pid)
         }
     }
     flags[id] = 3;
-    LB:
+    L2: // 3 -> 2 (\exists i != id, flags[i] = 1)
     for(int i = 0; i < NUM_THREADS; ++i)
     {
         if(i != id && flags[i] == 1)
         {
             flags[id] = 2;
-            while(1)
+            L3: // 2 -> 4 (\exists i != id, flags[i] \in {4, 5})
+            for(int j = 0; j < NUM_THREADS; ++j)
             {
-                for(int j = 0; j < NUM_THREADS; ++j)
+                if(j != id && (flags[j] == 4 || flags[j] == 5))
                 {
-                    if(j != id && (flags[j] == 4 || flags[j] == 5))
-                    {
-                        goto L2;
-                    }
+                    goto M0;
                 }
             }
+            goto L3;
         }
     }
-    L2:
+    M0:
     flags[id] = 4;
-    L3:
+    L4: // 4 -> 5 (\forall i < id, flags[i] \in {0, 1})
     for(int i = 0; i < id; ++i)
     {
-        if(flags[i] != 0 && flags[i] != 1) goto L3;
+        if(flags[i] != 0 && flags[i] != 1) goto L4;
     }
     flags[id] = 5;
-    LC:
     /* CRITICAL SECTION */
     for(int i = 0; i < 10; ++i)
     {
@@ -74,10 +72,10 @@ void *szymanski(void *pid)
         fflush(stdout);
         usleep(rand() % 1000);
     }
-    L4:
+    L5: // 5 -> 0 (\forall i > id, flags[i] \in {0, 1, 4, 5})
     for(int i = id + 1; i < NUM_THREADS; ++i)
     {
-        if(flags[i] != 0 && flags[i] != 1 && flags[i] != 4 && flags[i] != 5) goto L4;
+        if(flags[i] != 0 && flags[i] != 1 && flags[i] != 4 && flags[i] != 5) goto L5;
     }
     flags[id] = 0;
     goto L0;

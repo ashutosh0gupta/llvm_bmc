@@ -1,13 +1,11 @@
-#include <vector>
-#include <set>
-#include <utility>
-#include <map>
-#include <queue>
-#include <memory>
+#ifndef PSYSTEMS_VERIFIER_CPP
+#define PSYSTEMS_VERIFIER_CPP
 
-constexpr uint64_t STATE_SIZE = 10000;
+#include "psystems.h"
 
-const std::set<std::vector<uint64_t > > & size_k_substrs(const std::vector<uint64_t>::iterator start, const std::vector<uint64_t>::iterator end, uint64_t size)
+constexpr uint64_t STATE_SIZE = 6;
+
+const std::set<std::vector<uint64_t > > & psystems::size_k_substrs(std::vector<uint64_t>::const_iterator start, std::vector<uint64_t>::const_iterator end, uint64_t size)
 {
     static std::map<std::pair<std::vector<uint64_t>, uint64_t>, std::unique_ptr<const std::set<std::vector<uint64_t> > > > memo;
     std::pair<std::vector<uint64_t>, uint64_t> args(std::vector<uint64_t>(start, end), size);
@@ -24,7 +22,7 @@ const std::set<std::vector<uint64_t > > & size_k_substrs(const std::vector<uint6
         memo[args] = std::move(ret_set);
         return *memo[args];
     }
-    for(std::vector<uint64_t>::iterator i = start; i < end; ++i)
+    for(std::vector<uint64_t>::const_iterator i = start; i < end; ++i)
     {
         std::set<std::vector<uint64_t> > alph = size_k_substrs(start, i, size - 1);
         for(std::vector<uint64_t> v: alph)
@@ -37,10 +35,10 @@ const std::set<std::vector<uint64_t > > & size_k_substrs(const std::vector<uint6
     return *memo[args];
 }
 
-std::set<std::vector<uint64_t> > alpha(const std::vector<uint64_t>::iterator start, const std::vector<uint64_t>::iterator end, uint64_t k)
+std::set<std::vector<uint64_t> > psystems::alpha(std::vector<uint64_t>::const_iterator start, const std::vector<uint64_t>::const_iterator end, uint64_t k)
 {
     std::set<std::vector<uint64_t> > ret_set;
-    for(int size = 0; size <= k; ++size)
+    for(uint64_t size = 0; size <= k; ++size)
     {
         auto sks = size_k_substrs(start, end, size);
         for(const auto &x: sks)
@@ -51,16 +49,29 @@ std::set<std::vector<uint64_t> > alpha(const std::vector<uint64_t>::iterator sta
     return ret_set;
 }
 
-struct Trie {
+std::set<std::vector<uint64_t> > psystems::alpha(const std::set<std::vector<uint64_t> > & lang, uint64_t k)
+{
+    std::set<std::vector<uint64_t> > ret_set;
+    for(const auto& w: lang)
+    {
+        for(const auto& ww: alpha(w.begin(), w.end(), k))
+        {
+            ret_set.insert(ww);
+        }
+    }
+    return ret_set;
+}
+
+struct psystems::Trie {
     std::vector<uint64_t> str;
     std::unique_ptr<Trie> child[STATE_SIZE];
     Trie *parent;
     bool valid;
     std::set<Trie *> prop_subwords;
 
-    Trie(): valid(true), parent(nullptr) {}
+    Trie(): parent(nullptr), valid(true) {}
 
-    Trie(Trie *parent, uint64_t ins): valid(parent->valid), parent(parent), str(parent->str), prop_subwords(parent->prop_subwords)
+    Trie(Trie *parent, uint64_t ins):  str(parent->str), parent(parent), valid(parent->valid), prop_subwords(parent->prop_subwords)
     {
         // assert(ins >= 0 && ins < STATE_SIZE)
         str.push_back(ins);
@@ -83,7 +94,7 @@ struct Trie {
     }
 };
 
-std::set<std::vector<uint64_t> > integral(const std::set<std::vector<uint64_t> > &lang, uint64_t k, uint64_t l)
+std::set<std::vector<uint64_t> > psystems::integral(const std::set<std::vector<uint64_t> > &lang, uint64_t k, uint64_t l)
 {
     std::set<std::vector<uint64_t> > ret_set;
     std::unique_ptr<Trie> root = std::make_unique<Trie>();
@@ -112,3 +123,210 @@ std::set<std::vector<uint64_t> > integral(const std::set<std::vector<uint64_t> >
     return ret_set;
 }
 
+const std::set<std::vector<uint64_t > > &psystems::post(const std::vector<uint64_t> & word)
+{
+    static std::map<std::vector<uint64_t>, std::unique_ptr<const std::set<std::vector<uint64_t> > > > memo;
+    auto it = memo.find(word);
+    if(it != memo.end())
+    {
+        return *(it->second);
+    }
+
+    std::unique_ptr<std::set<std::vector<uint64_t> > > to_ret = std::make_unique<std::set<std::vector<uint64_t> > >();
+    for(uint64_t i = 0; i < word.size(); ++i)
+    {
+        for(const auto& rule: rules.local_rules)
+        {
+            if(rule.first == word[i])
+            {
+                std::vector<uint64_t> v = word;
+                v[i] = rule.second;
+                to_ret->insert(v);
+            }
+        }
+    }
+    for(const auto& rule:rules.global_rules)
+    {
+        for(uint64_t id = 0; id < word.size(); ++id)
+        {
+            if(rule.second.first == word[id])
+            {
+                switch(rule.first.first.second)
+                {
+                    case(LT):
+                    {
+                        switch(rule.first.first.first)
+                        {
+                            case(FORALL):
+                            {
+                                uint64_t i = 0;
+                                for(; i < id; ++i)
+                                {
+                                    if(! rule.first.second.count(word[i])) break;
+                                }
+                                if(i == id)
+                                {
+                                    std::vector<uint64_t> v = word;
+                                    v[id] = rule.second.second;
+                                    to_ret->insert(v);
+                                }
+                                break;
+                            }
+                            case(EXISTS):
+                            {
+                                for(uint64_t i = 0; i < id; ++i)
+                                {
+                                    if(rule.first.second.count(word[i]))
+                                    {
+                                        std::vector<uint64_t> v = word;
+                                        v[id] = rule.second.second;
+                                        to_ret->insert(v);
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                    case(GT):
+                    {
+                        switch(rule.first.first.first)
+                        {
+                            case(FORALL):
+                            {
+                                uint64_t i = id + 1;
+                                for(; i < word.size(); ++i)
+                                {
+                                    if(! rule.first.second.count(word[i])) break;
+                                }
+                                if(i == word.size())
+                                {
+                                    std::vector<uint64_t> v = word;
+                                    v[id] = rule.second.second;
+                                    to_ret->insert(v);
+                                }
+                                break;
+                            }
+                            case(EXISTS):
+                            {
+                                for(uint64_t i = id + 1; i < word.size(); ++i)
+                                {
+                                    if(rule.first.second.count(word[i]))
+                                    {
+                                        std::vector<uint64_t> v = word;
+                                        v[id] = rule.second.second;
+                                        to_ret->insert(v);
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                    case(NEQ):
+                    {
+                        switch(rule.first.first.first)
+                        {
+                            case(FORALL):
+                            {
+                                uint64_t i = 0;
+                                for(; i < word.size(); ++i)
+                                {
+                                    if(i == id) continue;
+                                    if(! rule.first.second.count(word[i])) break;
+                                }
+                                if(i == word.size())
+                                {
+                                    std::vector<uint64_t> v = word;
+                                    v[id] = rule.second.second;
+                                    to_ret->insert(v);
+                                }
+                                break;
+                            }
+                            case(EXISTS):
+                            {
+                                for(uint64_t i = 0; i < word.size(); ++i)
+                                {
+                                    if(i == id) continue;
+                                    if(rule.first.second.count(word[i]))
+                                    {
+                                        std::vector<uint64_t> v = word;
+                                        v[id] = rule.second.second;
+                                        to_ret->insert(v);
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    memo[word] = std::move(to_ret);
+    return *memo[word];
+}
+
+std::set<std::vector<uint64_t> > psystems::post(const std::set<std::vector<uint64_t> > & lang)
+{
+    std::set<std::vector<uint64_t> > ret_set;
+    for(const auto & v: lang)
+    {
+        for(const auto& w: post(v))
+        {
+            ret_set.insert(w);
+        }
+    }
+    return ret_set;
+}
+
+bool is_subword(const std::vector<uint64_t> &sub, const std::vector<uint64_t> &word)
+{
+    uint64_t j = 0;
+    for(uint64_t i = 0; i < word.size() && j < sub.size(); ++i)
+    {
+        if(word[i] == sub[j]) ++j;
+    }
+    return j == sub.size();
+}
+
+bool psystems::verify()
+{
+    // since initial state of each thread is the same (say s), \alpha_k(I) is just words of the form sss... upto size k
+    for(uint64_t k = 1; ; k++)
+    {
+        auto Ik = std::set<std::vector<uint64_t> >({std::vector<uint64_t>(k, init_state)});
+        auto alphk = alpha(Ik, k);
+        auto Rk = Ik;
+        for(const auto& v: post(Ik)) Rk.insert(v);
+        while(Rk != Ik)
+        {
+            Ik = Rk;
+            for(const auto& v: post(Ik)) Rk.insert(v);
+        }
+        for(const auto& r: Rk)
+        {
+            if(is_subword(bad_min, r)) return false;
+        }
+        auto V = alphk;
+        for(const auto& w: alpha(post(integral(alphk, k, k + 1)), k)) V.insert(w);
+        while(V != alphk)
+        {
+            alphk = V;
+            for(const auto& w: alpha(post(integral(alphk, k, k + 1)), k)) V.insert(w);
+        }
+        bool is_subset = true;
+        for(const auto& b: alpha(bad_min.begin(), bad_min.end(), k))
+        {
+            if(! V.count(b))
+            {
+                is_subset = false;
+                break;
+            }
+        }
+        if(! is_subset) return true;
+    }
+}
+
+#endif
