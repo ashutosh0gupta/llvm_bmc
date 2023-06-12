@@ -85,7 +85,9 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
   import_spec_file( module, o, b);
 
   //transform code
-  forced_unroll_pass( o, module );
+  if( !o.psystems ) {
+    forced_unroll_pass( o, module );
+  }
   estimate_comment_location( module, cmts, bb_cmt_map );
   forced_inliner_pass( module );
 
