@@ -1,0 +1,15 @@
+# BENCHMARKS
+
+## C Benchmarks
+- examples/kbound/popl23-benchmarks/.../ARMCBMC contains C benchmarks for ARM-CBMC. C files use <pthread.h> for concurrency, <assert.h> for assertions, and <stdatomic.h> for atomic accesses.
+- examples/kbound/popl23-benchmarks/.../CBMC contains C benchmarks for CBMC/CSEQ. C files use <pthread.h> for concurrency, <assert.h> for assertions.
+
+## Running Scripts/Commands
+### For ARMCBMC
+./llvmbmc --unwind 1 -o ./tmp/ --context-bound 10 -k /home/osboxes/llvm_bmc/llvm_bmc/examples/kbound/popl23-benchmarks/SV-COMP/ARMCBMC/dekker.c
+cbmc ./tmp/dekker.c.cbmc_out.cpp --unwind 1
+### For CBMC
+cbmc /home/osboxes/llvm_bmc/llvm_bmc/examples/kbound/popl23-benchmarks/SV-COMP/ARMCBMC/sigma.c --unwind 1
+### For CSEQ
+python2 /home/osboxes/llvm_bmc/llvm_bmc/examples/litmus/c/lazy-cseq-2.0/cseq-feeder.py --unwind 1 --rounds 1 -i /home/osboxes/llvm_bmc/llvm_bmc/examples/kbound/popl23-benchmarks/SV-COMP/CBMC/sigma.c
+

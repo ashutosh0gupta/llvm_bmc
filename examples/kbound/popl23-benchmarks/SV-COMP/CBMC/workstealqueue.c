@@ -6,13 +6,11 @@
 
 #include <assert.h>
 #include <pthread.h>
-#include <stdatomic.h>
 
 #ifndef N
 #  warning "N was not defined, must be power of 2"
 #  define N 2
 #endif
-
 
 /********************************************************
  *                                                       *
@@ -21,7 +19,6 @@
  ********************************************************/
 
 #define STATICSIZE 16
-
 
 pthread_mutex_t  lock;
 
@@ -33,24 +30,21 @@ void __my_atomic_end(void) {
   pthread_mutex_unlock(&lock);
 }
 
-
-
-
 typedef struct Obj {
-  long field;               // A workaround
+  volatile int field;
 } Obj;
 
 void Init_ObjType(Obj *r) {
-  atomic_init(&r->field, 0);
+  r->field = 0;
 }
 
 void Operation(Obj *r) {
-  int tmp = atomic_load_explicit(&r->field, memory_order_relaxed);
-  atomic_store_explicit(&r->field, tmp+1, memory_order_relaxed);
+  int tmp = r->field;
+  r->field = tmp+1;
 }
 
 void Check(Obj *r) {
-  assert(atomic_load_explicit(&r->field, memory_order_relaxed) == 1);
+  assert(r->field == 1);
 }
 
 //
@@ -86,60 +80,57 @@ typedef struct WorkStealQueue {
   //
   pthread_mutex_t cs;
 
-  long MaxSize;                                             // A workaround
-  long InitialSize; // must be a power of 2                 // A workaround
+  long MaxSize;
+  long InitialSize; // must be a power of 2
 
-  long head;  // only updated by Take                       // A workaround
-  long tail;  // only updated by Push and Pop               // A workaround
+  long head;  // only updated by Take
+  long tail;  // only updated by Push and Pop
 
   Obj*  elems[STATICSIZE];         // the array of tasks
-  long mask;           // the mask for taking modulus       // A workaround
+  volatile long mask;           // the mask for taking modulus
 
 } WorkStealQueue;
 
-
 WorkStealQueue q;
 
-
-long my_atomic_exchange(atomic_long *obj, long v) {
+long my_atomic_exchange(long *obj, long v) {
   __my_atomic_begin();
-  long t = atomic_load_explicit(obj, memory_order_relaxed);
-  atomic_store_explicit(obj, v, memory_order_relaxed);
+  long t = *obj;
+  *obj = v;
   __my_atomic_end();
   return t;
 }
 
-_Bool my_atomic_compare_exchange_strong(atomic_long * obj, long* expected, long desired) {
+_Bool my_atomic_compare_exchange_strong(long * obj, long* expected, long desired) {
   int ret = 0;
   __my_atomic_begin();
-  if (atomic_load_explicit(obj, memory_order_relaxed)== *expected) {
-    atomic_store_explicit(obj, desired, memory_order_relaxed);
+  if (*obj == *expected) {
+    *obj = desired;
     ret = 1;
   } else {
-    *expected = atomic_load_explicit(obj, memory_order_relaxed);
+    *expected = *obj;
     ret = 0;
   }
   __my_atomic_end();
   return ret;
 }
 
-long readV(atomic_long *v) {
+long readV(long *v) {
   long expected = 0;
   my_atomic_compare_exchange_strong(v, &expected, 0);
   return expected;
 }
 
-void writeV(atomic_long *v, long w) {
+void writeV(long *v, long w) {
   my_atomic_exchange(v, w);
 }
 
-
 void Init_WorkStealQueue(long size) {
-  atomic_store_explicit(&q.MaxSize, 1024 * 1024, memory_order_relaxed);
-  atomic_store_explicit(&q.InitialSize, 1024, memory_order_relaxed);
+  q.MaxSize = 1024 * 1024;
+  q.InitialSize = 1024;
   pthread_mutex_init(&q.cs, NULL);
   writeV(&q.head, 0);
-  atomic_store_explicit(&q.mask, size - 1, memory_order_relaxed);
+  q.mask = size - 1;
   writeV(&q.tail, 0);
   // q.elems = malloc(size * sizeof(Obj*));
 }
@@ -175,7 +166,7 @@ _Bool Steal(Obj **result) {
     // == (h+1 <= tail) == (head <= tail)
     //
     // BUG: writeV(&q.head, h + 1);
-    long temp = h & atomic_load_explicit(&q.mask, memory_order_relaxed);
+    long temp = h & q.mask;
     *result = q.elems[temp];
     found = 1;
   } else {
@@ -200,7 +191,7 @@ _Bool SyncPop(Obj **result) {
   if (readV(&q.head) <= t) {
     // == (head <= tail)
     //
-    long temp = t & atomic_load_explicit(&q.mask, memory_order_relaxed);
+    long temp = t & q.mask;
     *result = q.elems[temp];
     found = 1;
   } else {
@@ -231,7 +222,7 @@ _Bool Pop(Obj **result) {
 
     // == (head <= tail)
     //
-    long temp = t & atomic_load_explicit(&q.mask, memory_order_relaxed);;
+    long temp = t & q.mask;
     *result = q.elems[temp];
     return 1;
   } else {
@@ -252,47 +243,44 @@ void SyncPush(Obj* elem) {
 
   // normalize indices
   //
-  h = h & atomic_load_explicit(&q.mask, memory_order_relaxed);           // normalize head
+  h = h & q.mask;           // normalize head
   writeV(&q.head, h);
   writeV(&q.tail, h + count);
 
   // check if we need to enlarge the tasks
   //
-  if (count >= atomic_load_explicit(&q.mask, memory_order_relaxed)) {
+  if (count >= q.mask) {
     // == (count >= size-1)
     //
-    long newsize = (atomic_load_explicit(&q.mask, memory_order_relaxed) == 0 ?
-                    q.InitialSize :
-                    2 * (atomic_load_explicit(&q.mask, memory_order_relaxed) + 1));
+    long newsize = (q.mask == 0 ? q.InitialSize : 2 * (q.mask+ 1));
 
-    assert(newsize < atomic_load_explicit(&q.MaxSize, memory_order_relaxed));
+    assert(newsize < q.MaxSize);
 
     Obj *newtasks[STATICSIZE];
     long i;
     for (i = 0; i < count; i++) {
-      long temp = (h + i) & atomic_load_explicit(&q.mask, memory_order_relaxed);
+      long temp = (h + i) & q.mask;
       newtasks[i] = q.elems[temp];
     }
     for (i = 0; i < newsize; i++) {
       q.elems[i] = newtasks[i];
     }
     // q.elems = newtasks;
-    atomic_store_explicit(&q.mask, newsize - 1, memory_order_relaxed);
+    q.mask = newsize - 1;
     writeV(&q.head, 0);
     writeV(&q.tail, count);
   }
 
-  assert(count < atomic_load_explicit(&q.mask, memory_order_relaxed));
+  assert(count < q.mask);
 
   // push the element
   //
   long t = readV(&q.tail);
-  long temp = t & atomic_load_explicit(&q.mask, memory_order_relaxed);
+  long temp = t & q.mask;
   q.elems[temp] = elem;
   writeV(&q.tail, t + 1);
   pthread_mutex_unlock(&q.cs);
 }
-
 
 void Push(Obj* elem) {
   long t = readV(&q.tail);
@@ -308,14 +296,13 @@ void Push(Obj* elem) {
   // Correct: if (t < readV(&q.head) + mask && t < MaxSize)
   // #define BUG3
 #ifdef BUG3
-  if (t < readV(&q.head) + atomic_load_explicit(&q.mask, memory_order_relaxed) + 1
-      && t < atomic_load_explicit(&q.MaxSize, memory_order_relaxed))
+  if (t < readV(&q.head) + q.mask + 1 && t < q.MaxSize)
 #else
-    if (t < readV(&q.head) + atomic_load_explicit(&q.mask, memory_order_relaxed)    // == t < head + size - 1
-        && t < atomic_load_explicit(&q.MaxSize, memory_order_relaxed))
+    if (   t < readV(&q.head) + q.mask    // == t < head + size - 1
+        && t < q.MaxSize)
 #endif
     {
-      long temp = t & atomic_load_explicit(&q.mask, memory_order_relaxed);
+      long temp = t & q.mask;
       q.elems[temp] = elem;
       writeV(&q.tail, t + 1);       // only increment once we have initialized the task entry.
     } else {
@@ -326,7 +313,6 @@ void Push(Obj* elem) {
 }
 
 #define INITQSIZE N // must be power of 2
-
 #define nItems 4
 #define nStealers 2
 #define nStealAttempts 1
