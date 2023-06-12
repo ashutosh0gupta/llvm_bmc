@@ -136,9 +136,9 @@ void kbound::prefix_seq_v1() {
 
 
 void kbound::
-dump_ld_v1( std::string r, std::string cval,std::string caddr,
-         std::string gid,
-         bool isAcquire, bool isExclusive ) {
+dump_ld_v1( std::string r, reg_time_t cval,reg_time_t caddr,
+            std::string gid,
+            bool isAcquire, bool isExclusive ) {
 
   auto gaccess     = "("+ tid + ","+ gid + ")";
   auto cr          = "cr"+gaccess;
@@ -161,7 +161,7 @@ dump_ld_v1( std::string r, std::string cval,std::string caddr,
     dump_Comment("Check");
     dump_Active( cr );
     dump_Assume_geq( cr, "iw"+gaccess );
-    dump_Assume_geq( cr, caddr );
+    dump_Assume_geq( cr, caddr[COM_TIME] );
     dump_Assume_geq( cr,  "cdy["+ tid + "]" );
     dump_Assume_geq( cr, "cisb["+ tid + "]" );
     dump_Assume_geq( cr,  "cdl["+ tid + "]" );
@@ -171,9 +171,9 @@ dump_ld_v1( std::string r, std::string cval,std::string caddr,
     if( isAcquire   ) dump_geq_globals( cr, "cs");        // extra in lda
 
     dump_Comment("Update");
-    dump_Assign( cval, cr );
+    dump_Assign( cval[COM_TIME], cr );
     dump_Assign_max( "crmax"+gaccess, cr);
-    dump_Assign_max( "caddr["+ tid + "]", caddr); //Ashu added?
+    dump_Assign_max( "caddr["+ tid + "]", caddr[COM_TIME]); //Ashu added?
     dump_If( cr + " < " + "cw"+gaccess );
     {
       dump_Assign( r, "buff"+gaccess );
@@ -202,7 +202,7 @@ dump_ld_v1( std::string r, std::string cval,std::string caddr,
 
 
 void kbound::
-dump_st_v1( std::string v, std::string cval,std::string caddr, std::string gid,
+dump_st_v1( std::string v, reg_time_t cval,reg_time_t caddr, std::string gid,
          bool isRelease, bool isExclusive) {
 
   auto gaccess     = "("+ tid + ","+ gid + ")";
@@ -235,8 +235,8 @@ dump_st_v1( std::string v, std::string cval,std::string caddr, std::string gid,
     dump_Active( iw );
     dump_Active( cw );
     dump_Assume( "sforbid"+ gctx_access + "== 0" ); //ashu added?
-    dump_Assume_geq( iw, cval  );
-    dump_Assume_geq( iw, caddr );
+    dump_Assume_geq( iw, cval[COM_TIME]  );
+    dump_Assume_geq( iw, caddr[COM_TIME] );
     dump_Assume_geq( cw, iw );
     dump_Assume_geq( cw, "old_cw" );
     dump_Assume_geq( cw, "cr"    + gaccess   );
@@ -254,7 +254,7 @@ dump_st_v1( std::string v, std::string cval,std::string caddr, std::string gid,
     dump_Comment("Update");
     // std::cout << caddr;
     // dump_Assign_max( "caddr[" + tid + "]", cval ); // << error
-    dump_Assign_max( "caddr[" + tid + "]", caddr );
+    dump_Assign_max( "caddr[" + tid + "]", caddr[COM_TIME] );
     dump_Assign( "buff"   + gaccess    , v);
     dump_Assign( "mem"   + gctx_access, v);
     if( isExclusive ) dump_Assign( "cx"   + gaccess, cw);
@@ -385,9 +385,11 @@ void kbound::prefix_seq_v2() {
     // }
 
 void kbound::
-dump_ld_v2( std::string r, std::string cval,
-             std::string caddr, std::string gid,
-             bool isAcquire, bool isExclusive ) {
+dump_ld_v2( std::string r,
+            reg_time_t cval, // timestamp for value to be updated
+            reg_time_t caddr,// timestamp of address (input)
+            std::string gid,
+            bool isAcquire, bool isExclusive ) {
 
   auto t_g  = "("+ tid + ","+ gid + ")";
   auto sr   = "sr"+t_g; // new
@@ -414,7 +416,7 @@ dump_ld_v2( std::string r, std::string cval,
   dump_Assume_geq( cr, "cisb" + t ); // isb is here??
   dump_Assume_geq( cr,  "cdl" + t );
 
-  dump_Assume_geq( cr, caddr ); //does not match from paper; paper is syncing with all addr
+  dump_Assume_geq( cr, caddr[COM_TIME] ); //does not match from paper; paper is syncing with all addr
   // dump_Assume_geq( cr, "clrsaddr"+t_g ); // << in the paper
   // dump_Assume_geq( cr, "clrsval" +t_g ); // << in the paper
 
@@ -427,9 +429,10 @@ dump_ld_v2( std::string r, std::string cval,
   dump_Comment("Update");
   // dump_Assign_max( cr, "old_cr" ); // << cr is updated again??
   dump_Assign_max( "crmax"+t_g, cr);  // << replaces something in code
-  dump_Assign( cval, sr  );           //
+  dump_Assign( cval[COM_TIME], sr  ); // << todo : fixit
+  dump_Assign( cval[SAT_TIME], sr  ); //
   // dump_Assign( sval, sr );         // Why??
-  dump_Assign_max( "caddr["+tid+"]", caddr);
+  dump_Assign_max( "caddr["+tid+"]", caddr[COM_TIME]);
   dump_If( sr + " < " + "cw"+t_g );
   {
     dump_Assign( r, "buff"+t_g );
@@ -456,8 +459,12 @@ dump_ld_v2( std::string r, std::string cval,
 
 
 void kbound::
-dump_st_v2( std::string v, std::string cval,std::string caddr,
-             std::string gid, bool isRelease, bool isExclusive ) {
+dump_st_v2( std::string v,
+            reg_time_t cval, // timestamp for value (input)
+            reg_time_t caddr,// timestamp for address (input)
+            std::string gid, // global 
+            bool isRelease,
+            bool isExclusive ) {
   assert( !is_sc_semantics );
 
   auto t_g  = "("+ tid + ","+ gid + ")";
@@ -476,7 +483,8 @@ dump_st_v2( std::string v, std::string cval,std::string caddr,
   dump_Active( cw );
   dump_Assume( "sforbid"+ g_cw + "== 0" );
   dump_Assume_geq( cw, "old_cw" );
-  dump_Assume_geq( cw, "cr"    + t_g   );
+  //dump_Assume_geq( cw, "cr"    + t_g   );//<< was in old version
+  dump_Assume_geq( cw, "crmax"    + t_g   );//sohould used crmax
   dump_Assume_geq( cw, "clda" + t );
 
   dump_Assume_geq( cw, "cisb" + t ); // ?? missing in paper
@@ -484,8 +492,8 @@ dump_st_v2( std::string v, std::string cval,std::string caddr,
   dump_Assume_geq( cw, "cdl"  + t );
   dump_Assume_geq( cw, "cds"  + t );
 
-  dump_Assume_geq( cw, cval  );
-  dump_Assume_geq( cw, caddr );
+  dump_Assume_geq( cw, cval[COM_TIME]  );
+  dump_Assume_geq( cw, caddr[COM_TIME] );//COM_TIME
   // dump_Assume_geq( cw, iw );
 
   if( isRelease ) dump_geq_globals( cw, "cr"); // missing in paper // why? -- old code?
@@ -500,10 +508,10 @@ dump_st_v2( std::string v, std::string cval,std::string caddr,
   dump_Comment("Update");
   dump_Assign( "buff"  + t_g , v);
   dump_Assign( "mem"   + g_cw, v); // << indexing wrong in paper
-  dump_Assign_max( "caddr"    + t,   caddr );
+  dump_Assign_max( "caddr"    + t,   caddr[COM_TIME] );
 
-  dump_Assign( "clrsaddr" + t_g, caddr ); // << different from paper
-  dump_Assign( "clrsval"  + t_g, cval  ); // << different from paper
+  dump_Assign( "clrsaddr" + t_g, caddr[COM_TIME] ); // << different from paper
+  dump_Assign( "clrsval"  + t_g, cval[COM_TIME]  ); // << different from paper
 
   // dump_Assign_max( "clrsaddr" + t_g, caddr ); // << in the paper
   // dump_Assign_max( "clrsval"  + t_g, cval  ); // << in the paper

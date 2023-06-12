@@ -1,13 +1,14 @@
-// #include <stdio.h>
+#include <stdio.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <stdlib.h>
 // #include <signal.h>
 
 #define NUM_THREADS 10
 
 int flags[NUM_THREADS];
 
-// void interrupt_handler(int signo)
+// void interrupt_handler(int)
 // {
 //     printf("Current flags: ");
 //     for(int i = 0; i < NUM_THREADS; ++i)
@@ -19,7 +20,7 @@ int flags[NUM_THREADS];
 //     exit(0);
 // }
 
-void* szymanski(void *pid)
+void *szymanski(void *pid)
 {
     int id = * (int *) pid;
     L0:
@@ -33,6 +34,7 @@ void* szymanski(void *pid)
         }
     }
     flags[id] = 3;
+    LB:
     for(int i = 0; i < NUM_THREADS; ++i)
     {
         if(i != id && flags[i] == 1)
@@ -42,7 +44,7 @@ void* szymanski(void *pid)
             {
                 for(int j = 0; j < NUM_THREADS; ++j)
                 {
-                    if(j != id && flags[j] == 4)
+                    if(j != id && (flags[j] == 4 || flags[j] == 5))
                     {
                         goto L2;
                     }
@@ -57,26 +59,28 @@ void* szymanski(void *pid)
     {
         if(flags[i] != 0 && flags[i] != 1) goto L3;
     }
+    flags[id] = 5;
+    LC:
     /* CRITICAL SECTION */
     for(int i = 0; i < 10; ++i)
     {
-        // printf("Hello ");
-        // fflush(stdout);
-        // usleep((rand() % 1000));
-        // printf("from thread ");
-        // fflush(stdout);
-        // usleep(rand() % 1000);
-        // printf("id : %d\n", i);
-        // fflush(stdout);
-        // usleep(rand() % 1000);
+        printf("Hello ");
+        fflush(stdout);
+        usleep(rand() % 1000);
+        printf("from thread ");
+        fflush(stdout);
+        usleep(rand() % 1000);
+        printf("id : %d, %d\n", id, i);
+        fflush(stdout);
+        usleep(rand() % 1000);
     }
     L4:
     for(int i = id + 1; i < NUM_THREADS; ++i)
     {
-        if(flags[i] != 0 && flags[i] != 1 && flags[i] != 4) goto L4;
+        if(flags[i] != 0 && flags[i] != 1 && flags[i] != 4 && flags[i] != 5) goto L4;
     }
     flags[id] = 0;
-    goto L0; 
+    goto L0;
 }
 
 int main()

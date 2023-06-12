@@ -111,3 +111,4 @@ std::set<std::vector<uint64_t> > integral(const std::set<std::vector<uint64_t> >
     }
     return ret_set;
 }
+

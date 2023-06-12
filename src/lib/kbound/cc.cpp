@@ -97,8 +97,8 @@ void kbound::dump_thread_join_cc( std::string child_tid ) {
 
 void kbound::
 dump_ld_cc( std::string r,     // register name
-            std::string cval,  // context of register value (to be updated)
-            std::string caddr, // context of address   (ignoring here for now)
+            reg_time_t cval,  // context of register value (to be updated)
+            reg_time_t caddr, // context of address   (ignoring here for now)
             std::string gid,   // global variable index
             bool isAcquire,    // properties of access (ignored here)
             bool isExclusive   // properties of access (ignored here)
@@ -106,15 +106,15 @@ dump_ld_cc( std::string r,     // register name
   assert(inside_transaction);
   auto t = "["+ tid +"]";
   auto ct  = "ct"+t;
-  dump_Assume_geq(cval, ct);
+  dump_Assume_geq(cval[COM_TIME], ct);
   dump_Assign( r, "buff["+gid+"]");
 }
 
 
 void kbound::
 dump_st_cc( std::string r,     // register name
-            std::string cval,  // context of register value
-            std::string caddr, // context of address   (ignoring here)
+            reg_time_t cval,  // context of register value
+            reg_time_t caddr, // context of address   (ignoring here)
             std::string gid,   // global variable index
             bool isRelease,    // properties of access (ignored here)
             bool isExclusive   // properties of access (ignored here)
@@ -123,7 +123,7 @@ dump_st_cc( std::string r,     // register name
   auto t = "["+ tid +"]";
   auto ct  = "ct"+t;
   dump_Assign( "buff["+gid+"]", r );
-  dump_Assume_geq(cval, ct);
+  dump_Assume_geq(cval[COM_TIME], ct);
 }
 
 

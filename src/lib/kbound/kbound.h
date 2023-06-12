@@ -1,3 +1,4 @@
+
 #ifndef BMC_KBOUND_H
 #define BMC_KBOUND_H
 
@@ -17,6 +18,12 @@ struct names {
 };
 
 typedef std::vector<std::string> svec;
+typedef std::set<std::string> sset;
+
+#define COM_TIME 0
+#define SAT_TIME 1
+typedef svec reg_time_t;
+typedef std::set<reg_time_t> timeset_t;
 
 class kbound : public bmc_pass, public llvm::FunctionPass{
 
@@ -64,8 +71,7 @@ private:
   svec in_code_spec;
 
 
-  std::string time_name( std::string name );
-  std::string time_sat_name( std::string name );
+  reg_time_t time_name( std::string name );
   std::string fresh_name();
   void        add_reg_map   ( const void*, std::string );
   void        add_reg_map   ( const void*, svec&, std::string);
@@ -73,10 +79,8 @@ private:
   std::string add_reg_map   ( const void* );
   std::string get_reg       ( const void* );
   std::string get_reg       ( const void* v, svec& idxs );
-  std::string get_reg_time  ( const void* );
-  std::string get_reg_time  ( const void*, svec& idxs );
-  std::string get_reg_sat_time( const void* v, svec& idxs);
-  std::string get_reg_sat_time( const void* v);
+  reg_time_t  get_reg_time  ( const void* );
+  reg_time_t  get_reg_time  ( const void*, svec& idxs );
   std::string get_global_idx( const void* );
   std::string get_global_idx( const void*, std::string );
 
@@ -87,8 +91,8 @@ private:
   std::string add_reg_map ( const llvm::Value* );
   std::string get_reg     ( const llvm::Value* );
   std::string get_reg     ( const llvm::Value* , svec& idxs );
-  std::string get_reg_time( const llvm::Value* );
-  std::string get_reg_time( const llvm::Value* , svec& idxs );
+  reg_time_t  get_reg_time( const llvm::Value* );
+  reg_time_t  get_reg_time( const llvm::Value* , svec& idxs );
 
   std::string block_name(unsigned bidx);
   void dump_Params(llvm::Function &f);
@@ -111,6 +115,7 @@ private:
   void dump_Assign_rand_ctx(std::string r, std::string cmt="" );
   void dump_Assign_rand_thread(std::string r, std::string cmt="" );
   void dump_Assign_max(std::string, std::string,std::string);
+  void dump_Assign_max(std::string, sset);
   void dump_Assign_max(std::string, std::string);
 
   void dump_Indent();
@@ -139,8 +144,11 @@ private:
                     std::vector<std::string> arys,
                     std::string dim1, std::string dim2, std::string dim3 );
 
-  void dump_ld(std::string,std::string,std::string,std::string,bool,bool,bool);
-  void dump_st(std::string,std::string,std::string,std::string,bool,bool,bool);
+  void dump_Active( std::string ctx);
+  void dump_Assign_time( reg_time_t&, timeset_t& );
+
+  void dump_ld(std::string,reg_time_t,reg_time_t,std::string,bool,bool,bool);
+  void dump_st(std::string,reg_time_t,reg_time_t,std::string,bool,bool,bool);
   void dump_dmbsy();
   void dump_dmbld();
   void dump_dmbst();
@@ -172,20 +180,20 @@ private:
   void dump_thread_join_arm  ( std::string child_tid );
   void dump_start_thread_arm();
   void dump_post_context_matching_arm();
-  void dump_ld_v1(std::string,std::string,std::string,std::string,bool,bool);
-  void dump_st_v1(std::string,std::string,std::string,std::string,bool,bool);
+  void dump_ld_v1(std::string,reg_time_t,reg_time_t,std::string,bool,bool);
+  void dump_st_v1(std::string,reg_time_t,reg_time_t,std::string,bool,bool);
   void prefix_seq_v1();
 
-  void dump_ld_v2(std::string,std::string,std::string,std::string,bool,bool);
-  void dump_st_v2(std::string,std::string,std::string,std::string,bool,bool);
+  void dump_ld_v2(std::string,reg_time_t,reg_time_t,std::string,bool,bool);
+  void dump_st_v2(std::string,reg_time_t,reg_time_t,std::string,bool,bool);
   void prefix_seq_v2();
 
   // for CC memory model
   void dump_thread_create_cc( std::string child_tid );
   void dump_thread_join_cc  ( std::string child_tid );
   void dump_start_thread_cc();
-  void dump_ld_cc(std::string,std::string,std::string,std::string,bool,bool);
-  void dump_st_cc(std::string,std::string,std::string,std::string,bool,bool);
+  void dump_ld_cc(std::string,reg_time_t,reg_time_t,std::string,bool,bool);
+  void dump_st_cc(std::string,reg_time_t,reg_time_t,std::string,bool,bool);
   void prefix_seq_cc();
   void dump_post_context_matching_cc();
   void dump_begin_transaction_cc();
@@ -198,10 +206,20 @@ private:
   svec get_init_array(const llvm::Value* v, unsigned size );
 
   //---------------------------------------------------------------------
-
+  void dump_update_reg_time( std::set<const llvm::Value*> ops,
+                             const llvm::Value *out,
+                             svec& idxs,
+                             reg_time_t& );
+  void dump_update_reg_time( std::set<const llvm::Value*> ops,
+                             const llvm::Value *out,
+                             svec& idxs);
+  void dump_update_reg_time( std::set<const llvm::Value*> ops,
+                             const llvm::Value *out );
   void dump_update_reg_time( const llvm::Value *,
                              const llvm::Value *,
                              const llvm::Value *);
+  void dump_update_reg_time( const llvm::Value *op1,
+                             const llvm::Value *out );
 
   bool is_acquire( llvm::AtomicOrdering ord );
   bool is_release( llvm::AtomicOrdering ord );
@@ -215,7 +233,6 @@ private:
  
   void dump_CallInst( unsigned bidx, const llvm::CallInst* call);
 
-  void dump_Active( std::string ctx);
   void dump_CallAssume ( unsigned bidx, const llvm::CallInst* cmp);
   void dump_CallAssert ( unsigned bidx, const llvm::CallInst* cmp);
   void dump_CallNondet ( unsigned bidx, const llvm::CallInst* cmp);
@@ -233,7 +250,7 @@ private:
   void dump_ExtractValue( const llvm::ExtractValueInst* eval);
   void dump_geq_globals( std::string c, std::string prop );
 
-  void addr_name( const llvm::Value* addr, std::string& , std::string&,
+  void addr_name( const llvm::Value* addr, std::string& , reg_time_t&,
                   bool& isLocalUse );
 
   // void addr_name( const llvm::Value* addr, std::string& , std::string&);

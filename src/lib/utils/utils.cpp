@@ -1,12 +1,19 @@
-#include "utils.h"
+// #include "utils.h"
+// #include <algorithm>
+// #include <string>
 
-std::vector<std::pair<std::string, std::string>> replacements {
-    { "/", "-" },
-    { "|", ""  },
-    // ...
-    { "ï", "i" }
-};
+// // std::vector<std::pair<char, char>> replacements {
+// //     { "/", "-" },
+// //     { "|", ""  },
+// //     // ...
+// //     { "ï", "i" }
+// // };
 
-for ( auto const &r : replacements) {
-    str.replace(r.first, r.second);
-}
+// std::string replace_special(std::string str ) {
+//   std::replace( str.begin(), str.end(), ',', '_');
+//   // for( auto const &r : replacements ) {
+//   //   // std::replace( str.begin(), str.end(), r.first, r.second);
+//   //   // str.replace(r.first, r.second);
+//   // }
+//   return str;
+// }

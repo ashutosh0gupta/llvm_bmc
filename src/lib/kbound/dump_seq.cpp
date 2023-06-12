@@ -1,6 +1,7 @@
 #include "lib/kbound/kbound.h"
 #include <boost/algorithm/string.hpp>
 
+
 //----------------------------------------------------------------------------
 // Functions for recording names
 
@@ -45,13 +46,25 @@ std::string kbound::fresh_name() {
 
 //---------------------------------------------------------------------------
 
-std::string kbound::time_name( std::string name ) {
-  return "creg_"+name;
+std::string expr_to_name( std::string name ) {
+  if(name[0] == 'r') return name;
+  //improve this translation; make it unqiue
+  std::replace( name.begin(), name.end(), ',', '_');
+  std::replace( name.begin(), name.end(), '(', '_');
+  std::replace( name.begin(), name.end(), ')', '_');
+  std::replace( name.begin(), name.end(), '=', '_');
+  std::replace( name.begin(), name.end(), '!', '_');
+  std::replace( name.begin(), name.end(), '<', '_');
+  std::replace( name.begin(), name.end(), '>', '_');
+  std::replace( name.begin(), name.end(), ' ', '_');
+  return name;
 }
 
-std::string kbound::time_sat_name( std::string name ) {
-  return "creg_sat_"+name;
+reg_time_t kbound::time_name( std::string name ) {
+  name = expr_to_name(name);
+  return {"creg_"+name};
 }
+
 
 std::string access_name( names& ns,
                          svec& idxs, unsigned pos ) {
@@ -131,29 +144,9 @@ std::string kbound::get_reg( const void* v ) {
   return get_reg( v, idxs );
 }
 
-std::string kbound::get_reg_time( const void* v, svec& idxs) {
-  auto name = get_reg( v, idxs);
-  name = replace_special(name);
-  if( name[0] != 'r' ) {
-    assert( idxs.size() == 0 );
-    auto vec = ctrl_dep_ord.at(v);
-    if( vec.size() == 0 ) return "0";
-    if( vec.size() == 1 ) return vec[0];
-    if( vec.size() == 2 ) return "max("+vec[0]+","+vec[1]+")";
-    assert(false);
-  }
+reg_time_t kbound::get_reg_time( const void* v, svec& idxs) {
+  auto name = get_reg( v, idxs );
   return time_name( name );
-}
-
-
-std::string kbound::get_reg_time( const void* v) {
-  svec idxs;
-  return get_reg_time( v, idxs );
-}
-
-std::string kbound::get_reg_sat_time( const void* v, svec& idxs) {
-  auto name = get_reg( v, idxs);
-  return time_sat_name( name );
   // if( name[0] != 'r' ) {
   //   assert( idxs.size() == 0 );
   //   auto vec = ctrl_dep_ord.at(v);
@@ -162,11 +155,31 @@ std::string kbound::get_reg_sat_time( const void* v, svec& idxs) {
   //   if( vec.size() == 2 ) return "max("+vec[0]+","+vec[1]+")";
   //   assert(false);
   // }
+  // return time_name( name );
 }
-std::string kbound::get_reg_sat_time( const void* v ) {
+
+
+reg_time_t kbound::get_reg_time( const void* v) {
   svec idxs;
-  return get_reg_sat_time( v, idxs );
+  return get_reg_time( v, idxs );
 }
+
+// std::string kbound::get_reg_sat_time( const void* v, svec& idxs) {
+//   auto name = get_reg( v, idxs);
+//   return time_sat_name( name );
+//   // if( name[0] != 'r' ) {
+//   //   assert( idxs.size() == 0 );
+//   //   auto vec = ctrl_dep_ord.at(v);
+//   //   if( vec.size() == 0 ) return "0";
+//   //   if( vec.size() == 1 ) return vec[0];
+//   //   if( vec.size() == 2 ) return "max("+vec[0]+","+vec[1]+")";
+//   //   assert(false);
+//   // }
+// }
+// std::string kbound::get_reg_sat_time( const void* v ) {
+//   svec idxs;
+//   return get_reg_sat_time( v, idxs );
+// }
 
 
 //---------------------------------------------------------------------------
@@ -259,6 +272,14 @@ void kbound::dump_Assign_max( std::string v, std::string r1, std::string r2 ) {
   assert( r1 != "" );
   assert( r2 != "" );
   dump_String( v + " = max(" + r1 + ","+ r2 + ");" );
+}
+
+void kbound::dump_Assign_max( std::string v, sset rs ) {
+  std::string expr = "";
+  for( auto r : rs ) {
+    expr = (expr == "") ? r : "max(" + expr + "," + r +")";
+  }
+  dump_Assign( v, expr );
 }
 
 void kbound::dump_Assign_max( std::string v, std::string r2 ) {
@@ -381,6 +402,19 @@ void kbound::dump_Arrays( std::string type,
   dump_Newline();
 }
 
+//------------------------------------------------------------------------
+// encoding
+//------------------------------------------------------------------------
+
+
+void kbound::dump_Assign_time( reg_time_t& v, timeset_t& rs ) {
+  for(unsigned i = 0; i< v.size(); i++ ) {
+    sset ss;
+    for(auto r : rs) ss.insert(r.at(i));
+    dump_Assign_max(v.at(i),ss);
+  }
+}
+
 
 void kbound::dump_Active( std::string ctx) {
   dump_Assume("active["+ctx+"] == "+tid);
@@ -420,15 +454,17 @@ void kbound::dump_locals() {
   std::string line;
     while (getline(in, line)) {
       if( line == "  __LOCALS__") {
-        for( auto& pair : ssa_name ) {
-          auto& name = pair.second;
-          if( name[0] != 'r') continue;
-          out << "  int " << name << "= 0;\n";
-          out << "  char " << get_reg_time(pair.first) << ";\n"; //<< "= 0;\n";
-        }
+        // ashu: remove the following loop; not in use
+        // for( auto& pair : ssa_name ) {
+        //   auto& name = pair.second;
+        //   if( name[0] != 'r') out << "  int " << name << "= 0;\n";
+        //   out << "  char " << get_reg_time(pair.first) << ";\n"; //<< "= 0;\n";
+        // }
         for( auto& v : unmapped_names ) {
-          out << "  int " << v << "= 0;\n";
-          out << "  char " << time_name(v) << ";\n";
+          if( v[0] == 'r') out << "  int " << v << "= 0;\n";
+          for( auto tname : time_name(v) ) {
+            out << "  char " << tname << ";\n";
+          }
         }
         for( auto& v : uninit_names ) {
           out << "  int " << v <<";\n";
@@ -538,18 +574,20 @@ void kbound::dump_update_ctrl( const void* cond ) {
   dump_Assign_rand_ctx( ctrl );
   dump_Assume_geq( ctrl, "old_cctrl" );
 
-  if( exists( ctrl_dep_ord, cond ) ) {
-    //todo: remove this branch if compute the reg_time of the compare
-    //      instruction is computed; already added
-    for( auto& dep : ctrl_dep_ord.at(cond) ) {
-      dump_Assume_geq( ctrl, dep );
-    }
-    // for( auto& dep : ctrl_dep_ord.at(cond) ) {
-    //   dump_Assume_geq( ctrl, dep);
-    // }
-  }else{
-    dump_Assume_geq( ctrl, get_reg_time( cond ) );
-  }
+  dump_Assume_geq( ctrl, get_reg_time( cond ).at(COM_TIME) );
+
+  // if( exists( ctrl_dep_ord, cond ) ) {
+  //   //todo: remove this branch if compute the reg_time of the compare
+  //   //      instruction is computed; already added
+  //   for( auto& dep : ctrl_dep_ord.at(cond) ) {
+  //     dump_Assume_geq( ctrl, dep );
+  //   }
+  //   // for( auto& dep : ctrl_dep_ord.at(cond) ) {
+  //   //   dump_Assume_geq( ctrl, dep);
+  //   // }
+  // }else{
+  //   dump_Assume_geq( ctrl, get_reg_time( cond ) );
+  // }
 }
 
 void kbound::dump_geq_globals( std::string c, std::string prop ) {
@@ -653,7 +691,7 @@ void kbound::dump_thread_join( unsigned bidx, std::string child_tid ) {
 
 
 void kbound::
-dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
+dump_ld( std::string r, reg_time_t cval, reg_time_t caddr, std::string gid,
          bool isAcquire, bool isExclusive, bool isLocalUse ) {
   if(isLocalUse) {
     dump_Assign( r, "local_mem["+ gid +"]" );
@@ -675,7 +713,7 @@ dump_ld( std::string r, std::string cval,std::string caddr, std::string gid,
 
 
 void kbound::
-dump_st( std::string v, std::string cval,std::string caddr, std::string gid,
+dump_st( std::string v, reg_time_t cval, reg_time_t caddr, std::string gid,
          bool isRelease, bool isExclusive, bool isLocalUse ) {
   if(isLocalUse) {
     dump_Assign( "local_mem["   + gid + "]", v);

@@ -38,7 +38,7 @@ if [ -f "$tr_file" ]; then
     if grep -q "VERIFICATION SUCCESSFUL" "$tr_file"; then
         echo -n "SAFE   "
     elif grep -q "VERIFICATION FAILED" "$tr_file"; then
-        # ./scripts/clean-cbmc.py $tmp_path $fname
+        ./scripts/clean-cbmc.py $tmp_path $fname
         echo -n "UNSAFE "
     elif grep -q "CONVERSION ERROR" "$tr_file"; then
         echo -n "ERROR  "     

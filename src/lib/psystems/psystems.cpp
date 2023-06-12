@@ -1,7 +1,6 @@
 #include "lib/psystems/psystems.h"
 #include "include/bmc.h"
 #include "llvm/IR/DataLayout.h"
-#include <algorithm>
 
 #define PSYSTEMS_UNSUPPORTED_INSTRUCTIONS(InstTYPE, Inst)        \
     if (llvm::isa<llvm::InstTYPE>(Inst))                         \
@@ -111,11 +110,19 @@ llvm::StringRef psystems::getPassName() const
     return "runs PSYSTEMS verification!";
 }
 
-std::string getInstructionString(const llvm::Instruction &inst)
+std::string psystems::getInstructionString(const llvm::Instruction &inst)
 {
     std::string gis;
     llvm::raw_string_ostream StringStream(gis);
     inst.print(StringStream);
+    return StringStream.str();
+}
+
+std::string psystems::getBasicBlockString(const llvm::BasicBlock &bb)
+{
+    std::string gis;
+    llvm::raw_string_ostream StringStream(gis);
+    bb.print(StringStream);
     return StringStream.str();
 }
 
@@ -132,39 +139,23 @@ bool psystems::runOnFunction(llvm::Function &f)
             f_tids.push_back(j);
         // break;
     }
-    // if( f_tids.size() == 0 ) return false;
-    // if( j == bmc_obj.sys_spec.threads.size() ) return false;
 
-    for (auto j : f_tids)
-    {
-        thread_id = j;
-        tid = std::to_string(thread_id);
-        std::cout << "Function " << EntryFn << " on thread " << tid << '\n';
-        // bmc stuff - not required, probably
-        // thread_name = bmc_obj.sys_spec.threads.at(j).name;
-        // if( bmc_obj.sys_spec.threads.at(j).wmm == weak_memory_model::SC ) {
-        //   is_sc_semantics = true;
-        // }
-        // populate_array_name_map(&f);
-        // auto bmc_fun_ptr = new bmc_fun(o, ary_to_int, bmc_obj.m_model);
-        // bmc_ds_ptr = bmc_fun_ptr; // set the pointer in base cla
-        // bmc_fun_ptr->fun_initialize( this, f);
-        // bmc_ds_ptr->thread_id = bmc_obj.sys_spec.threads.at(j).thread_num;
-    }
+    // The parameter here is the number of threads which is assumed to be the limit of for loops
     // Assume identical threads are launched from the main thread at the same time
-    for(const auto& bb: f)
+    // Assume flag variable captures the state of the thread completely
+    // Assume initially all flags are 0
+    // Assume a linear topology
+    // Assume all for loops are checks (except the one in critical section)
+    // Assume the name of the called function is known ("szymanski" in this case)
+    // Assume the variable id represents id of the thread
+    // Assume
+    if(EntryFn == "szymanski")
     {
-        bool prev_flag = true;
-        for(const auto &inst: bb)
+        for(auto& bb: f)
         {
-            std::string s = getInstructionString(inst);
-            if(s.find("arrayidx") != s.npos && s.find("store") != s.npos)
-            {
-                std::cout << s << std::endl;
-            }
+            std::cout << getBasicBlockString(bb) << std::endl;
         }
     }
-    // traverse
     return false;
 }
 
