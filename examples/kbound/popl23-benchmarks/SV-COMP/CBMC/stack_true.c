@@ -69,7 +69,6 @@ int pop(void)
   	return 0;
 }
 
-
 void *pushthread(void *arg)
 {
 	int i, tid;

@@ -78,7 +78,6 @@ pthread_mutex_t lock;
 unsigned __VERIFIER_nondet_uint();
 void __VERIFIER_assume(int);
 
-
 void atomic_dec_a(void)
 {
 	pthread_mutex_lock(&lock);
@@ -114,7 +113,6 @@ void  *dec_a(void* arg)
   	return NULL;
 }
 
-
 void  *dec_b(void* arg)
 {
 	while (atomic_load_explicit(&a, memory_order_relaxed) != atomic_load_explicit(&b, memory_order_relaxed))
@@ -138,7 +136,6 @@ void check_gcd(unsigned a_in, unsigned b_in, unsigned gcd)
 
 int main(int argc, char *argv[])
 {
-
 	pthread_t t1, t2;
 
 	pthread_mutex_init(&lock, NULL);

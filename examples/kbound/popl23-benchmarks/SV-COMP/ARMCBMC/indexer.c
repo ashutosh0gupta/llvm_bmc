@@ -37,7 +37,6 @@ int cas(long * tab, int h, int val, int new_val) // A workaround
   return ret_val;
 }
 
-
 void *thread_routine(void * arg)
 {
   	int tid;

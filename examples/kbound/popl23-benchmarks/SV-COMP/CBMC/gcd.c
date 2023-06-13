@@ -101,7 +101,6 @@ void atomic_dec_b(void)
 	pthread_mutex_unlock(&lock);
 }
 
-
 void  *dec_a(void* arg)
 {
 	while (a != b)
@@ -110,7 +109,6 @@ void  *dec_a(void* arg)
   	}
   	return NULL;
 }
-
 
 void  *dec_b(void* arg)
 {

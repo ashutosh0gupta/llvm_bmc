@@ -78,7 +78,6 @@ int enqueue(int x)
  	return 0;
 }
 
-
 int dequeue()
 {
   	int x, _head, _amount;
@@ -130,7 +129,6 @@ void *enqueuethread(void *arg)
   	return NULL;
 }
 
-
 void *dequeuethread(void *arg)
 {
   	int i, _dequeue_flag, _stored_elements_i;
@@ -158,7 +156,6 @@ void *dequeuethread(void *arg)
 
   	return NULL;
 }
-
 
 int arg[NUM_ENQUEUE_THREADS];
 int main(int argc, char *argv[])

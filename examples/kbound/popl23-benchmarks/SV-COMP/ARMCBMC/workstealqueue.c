@@ -7,12 +7,12 @@
 #include <assert.h>
 #include <pthread.h>
 #include <stdatomic.h>
+#include <stdio.h>  // For _Bool
 
 #ifndef N
 #  warning "N was not defined, must be power of 2"
 #  define N 2
 #endif
-
 
 /********************************************************
  *                                                       *
@@ -21,7 +21,6 @@
  ********************************************************/
 
 #define STATICSIZE 16
-
 
 pthread_mutex_t  lock;
 
@@ -32,9 +31,6 @@ void __my_atomic_begin(void) {
 void __my_atomic_end(void) {
   pthread_mutex_unlock(&lock);
 }
-
-
-
 
 typedef struct Obj {
   long field;               // A workaround
@@ -97,9 +93,7 @@ typedef struct WorkStealQueue {
 
 } WorkStealQueue;
 
-
 WorkStealQueue q;
-
 
 long my_atomic_exchange(long *obj, long v) { // A workaround
   __my_atomic_begin();
@@ -132,7 +126,6 @@ long readV(long *v) {  // A workaround
 void writeV(long *v, long w) {  // A workaround
   my_atomic_exchange(v, w);
 }
-
 
 void Init_WorkStealQueue(long size) {
   atomic_store_explicit(&q.MaxSize, 1024 * 1024, memory_order_relaxed);
@@ -292,7 +285,6 @@ void SyncPush(Obj* elem) {
   writeV(&q.tail, t + 1);
   pthread_mutex_unlock(&q.cs);
 }
-
 
 void Push(Obj* elem) {
   long t = readV(&q.tail);

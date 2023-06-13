@@ -6,6 +6,7 @@
 
 #include <assert.h>
 #include <pthread.h>
+#include <stdio.h>  // For _Bool
 
 #ifndef N
 #  warning "N was not defined, must be power of 2"
