@@ -22,7 +22,7 @@ pthread_mutex_t  cas_mutex[SIZE];
 
 pthread_t  tids[NUM_THREADS];
 
-int cas(atomic_int * tab, int h, int val, int new_val)
+int cas(long * tab, int h, int val, int new_val) // A workaround
 {
   int ret_val = 0;
 
@@ -36,7 +36,6 @@ int cas(atomic_int * tab, int h, int val, int new_val)
 
   return ret_val;
 }
-
 
 void *thread_routine(void * arg)
 {

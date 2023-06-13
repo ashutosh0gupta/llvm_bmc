@@ -59,7 +59,6 @@ void *p1(void *arg)
 	return NULL;
 }
 
-
 void *p2(void *arg)
 {
   	int ok1, ok2;
