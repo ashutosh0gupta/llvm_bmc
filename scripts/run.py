@@ -12,6 +12,7 @@ from tqdm import tqdm
 # tmp_path = ""
 # subprocess.run(["rm",  tmp_path+"/cbmc_out.cpp" ])
 
+
 run   = "./scripts/run-example.sh"
 k = 10
 l = 1
@@ -65,7 +66,7 @@ for ex in exs:
    new_exs.append([i]+ex)
 exs = new_exs
 
-mm = "armv1"
+mm = "armv2"
 
 print("------------------------------")
 print("Running kbound implementation:")
@@ -139,7 +140,7 @@ def runner(ex):
 # exs = list(filter(lambda ex: "wsi" in ex[1], exs))
 # exs = list(filter(lambda ex: "MP+dmb.sy+addr-wsi-rfi-addr" == ex[1], exs))
 # exs = list(filter(lambda ex: "MP+dmb.sy+addr-addr-rfi-addr" == ex[1], exs))
-# exs = list(filter(lambda ex: "CO-SBI" == ex[1], exs))
+exs = list(filter(lambda ex: "CO-SBI" == ex[1], exs))
 # exs = list(filter(lambda ex: "Luc21" == ex[1], exs))
 # exs = list(filter(lambda ex: "MP+popl+addr" == ex[1], exs))
 
@@ -147,9 +148,18 @@ def runner(ex):
 # print(len(exs))
 # exit()
 
-exs = exs[1300:]
+# exs = exs[0:1500]
+
+# exs = exs[1500:2000]
+# exs = exs[2000:]
 # exs = exs[:100]
 # exs = exs[:1]
+
+# ensure that ./tmp dir is clean
+if len(exs) > 100:
+   subprocess.run(["make",  "cleantmp" ])
+
+# seq = True
 seq = False
 
 if seq:

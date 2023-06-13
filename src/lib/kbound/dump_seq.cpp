@@ -60,8 +60,16 @@ std::string expr_to_name( std::string name ) {
   return name;
 }
 
+reg_time_t kbound::zero_time() {
+  if(mm == ARMV2)
+    return {"0","0"};//COM,SAT pair
+  return {"0"};
+}
+
 reg_time_t kbound::time_name( std::string name ) {
   name = expr_to_name(name);
+  if(mm == ARMV2)
+    return {"creg_"+name,"creg_sat_"+name};
   return {"creg_"+name};
 }
 

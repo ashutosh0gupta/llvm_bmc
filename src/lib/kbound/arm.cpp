@@ -400,7 +400,7 @@ dump_ld_v2( std::string r,
   dump_Comment("LD: Guess");
   if(isExclusive)   dump_Comment("  : Exlusive");
   if(isAcquire)     dump_Comment("  : Acquire");
-  dump_Assign( "old_cr",  cr);
+  // dump_Assign( "old_cr",  cr);
   dump_Assign( "old_sr",  sr);
   dump_Assign_rand_ctx( sr, tid + " ASSIGN LDSAT " );
   dump_Assign_rand_ctx( cr, tid + " ASSIGN LDCOM " );
@@ -417,26 +417,26 @@ dump_ld_v2( std::string r,
   dump_Assume_geq( cr,  "cdl" + t );
 
   dump_Assume_geq( cr, caddr[COM_TIME] ); //does not match from paper; paper is syncing with all addr
-  // dump_Assume_geq( cr, "clrsaddr"+t_g ); // << in the paper
-  // dump_Assume_geq( cr, "clrsval" +t_g ); // << in the paper
-
-  // dump_Assume_geq( sr, caddr );          // << ordering against sat
   dump_Assume_geq( sr, "clrsaddr"+t_g ); // << different from the paper
   dump_Assume_geq( sr, "clrsval" +t_g ); // << different from the paper
+
+  // dump_Assume_geq( sr, caddr );          // << ordering against sat
+  // dump_Assume_geq( cr, "clrsaddr"+t_g ); // << in the paper
+  // dump_Assume_geq( cr, "clrsval" +t_g ); // << in the paper
 
   if( isAcquire ) dump_Assume_geq( cr, "cstr" + t );
 
   dump_Comment("Update");
   // dump_Assign_max( cr, "old_cr" ); // << cr is updated again??
   dump_Assign_max( "crmax"+t_g, cr);  // << replaces something in code
-  dump_Assign( cval[COM_TIME], sr  ); // << todo : fixit
-  dump_Assign( cval[SAT_TIME], sr  ); //
-  // dump_Assign( sval, sr );         // Why??
+  dump_Assign( cval[COM_TIME], cr  ); //
+  // dump_Assign( cval[SAT_TIME], sr  ); //
   dump_Assign_max( "caddr["+tid+"]", caddr[COM_TIME]);
   dump_If( sr + " < " + "cw"+t_g );
   {
     dump_Assign( r, "buff"+t_g );
-    range_forbid( gid, "cw"+t_g, "crmax"+t_g ); //Ashu added?
+    range_forbid( gid, "cw"+t_g, "crmax"+t_g );
+    // range_forbid( gid, "cw"+t_g, "cr"+t_g );
   }
   dump_Else();
   {
@@ -479,11 +479,10 @@ dump_st_v2( std::string v,
   dump_Assign_rand_ctx( cw, tid + " ASSIGN STCOM " );
 
   dump_Comment("Check");
-  // dump_Active( iw );
   dump_Active( cw );
   dump_Assume( "sforbid"+ g_cw + "== 0" );
   dump_Assume_geq( cw, "old_cw" );
-  //dump_Assume_geq( cw, "cr"    + t_g   );//<< was in old version
+  // dump_Assume_geq( cw, "cr"    + t_g   );//<< was in old version
   dump_Assume_geq( cw, "crmax"    + t_g   );//sohould used crmax
   dump_Assume_geq( cw, "clda" + t );
 
@@ -492,9 +491,9 @@ dump_st_v2( std::string v,
   dump_Assume_geq( cw, "cdl"  + t );
   dump_Assume_geq( cw, "cds"  + t );
 
-  dump_Assume_geq( cw, cval[COM_TIME]  );
-  dump_Assume_geq( cw, caddr[COM_TIME] );//COM_TIME
-  // dump_Assume_geq( cw, iw );
+  dump_Assume_geq( cw,  cval[COM_TIME] );//COM_TIME?
+  // dump_Assume_geq( cw,  cval[SAT_TIME] );//COM_TIME?
+  dump_Assume_geq( cw, caddr[COM_TIME] );
 
   if( isRelease ) dump_geq_globals( cw, "cr"); // missing in paper // why? -- old code?
   if( isRelease ) dump_geq_globals( cw, "cw"); // missing in paper // why? -- old code?

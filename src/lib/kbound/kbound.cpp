@@ -203,11 +203,13 @@ std::string kbound::get_reg( const llvm::Value* v, svec& idxs ) {
   return get_reg( (const void* )v, idxs );
 }
 
+
 reg_time_t kbound::get_reg_time( const llvm::Value* v, svec& idxs) {
   auto s = read_const(v);
   if( s != "" ) {
     assert( idxs.size() == 0 );
-    return {"0"};
+    return zero_time();
+    // return {"0"};
   }
   return get_reg_time( (const void*)v, idxs);
 }
@@ -588,7 +590,7 @@ void kbound::addr_name( const llvm::Value* addr,
   if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
     gid = get_global_idx(gv);
     isLocalUse = is_local_global(gv);
-    caddr = {"0"};//in dynamic addressing this will change
+    caddr = zero_time(); //{"0"};//in dynamic addressing this will change
     return;
   } else if( auto gop = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
     gid = get_reg( gop );
@@ -597,12 +599,12 @@ void kbound::addr_name( const llvm::Value* addr,
     return;
   } else if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
     gid = get_GEPOperator(gop);
-    caddr = {"0"};
+    caddr = zero_time(); //{"0"};
     return;
   } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
     gid = get_global_idx(alloc);
     isLocalUse = is_local_global(alloc);
-    caddr = {"0"}; //get_reg_time(gv);
+    caddr = zero_time(); //{"0"}; //get_reg_time(gv);
     return;
   } else if( llvm::isa<const llvm::Argument>(addr) ) {
     assert(false);

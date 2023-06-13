@@ -70,7 +70,7 @@ private:
   // std::map<const llvm::BasicBlock*, std::string> path_name;
   svec in_code_spec;
 
-
+  reg_time_t zero_time();
   reg_time_t time_name( std::string name );
   std::string fresh_name();
   void        add_reg_map   ( const void*, std::string );
