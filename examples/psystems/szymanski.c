@@ -1,24 +1,8 @@
-#include <stdio.h>
 #include <pthread.h>
-#include <unistd.h>
-#include <stdlib.h>
-// #include <signal.h>
+void critical();
 
 #define NUM_THREADS 10
-
 int flags[NUM_THREADS];
-
-// void interrupt_handler(int)
-// {
-//     printf("Current flags: ");
-//     for(int i = 0; i < NUM_THREADS; ++i)
-//     {
-//         printf("%d ", flags[i]);
-//     }
-//     printf("\n");
-//     fflush(stdout);
-//     exit(0);
-// }
 
 void *szymanski(void *pid)
 {
@@ -60,18 +44,7 @@ void *szymanski(void *pid)
     }
     flags[id] = 5;
     /* CRITICAL SECTION */
-    for(int i = 0; i < 10; ++i)
-    {
-        printf("Hello ");
-        fflush(stdout);
-        usleep(rand() % 1000);
-        printf("from thread ");
-        fflush(stdout);
-        usleep(rand() % 1000);
-        printf("id : %d, %d\n", id, i);
-        fflush(stdout);
-        usleep(rand() % 1000);
-    }
+    critical();
     L5: // 5 -> 0 (\forall i > id, flags[i] \in {0, 1, 4, 5})
     for(int i = id + 1; i < NUM_THREADS; ++i)
     {

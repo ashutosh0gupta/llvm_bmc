@@ -3,29 +3,27 @@
 
 #include "psystems.h"
 
-constexpr uint64_t STATE_SIZE = 6;
-
-const std::set<std::vector<uint64_t > > & psystems::size_k_substrs(std::vector<uint64_t>::const_iterator start, std::vector<uint64_t>::const_iterator end, uint64_t size)
+const psystems::lang_t & psystems::size_k_substrs(word_t::const_iterator start, word_t::const_iterator end, state_t size)
 {
-    static std::map<std::pair<std::vector<uint64_t>, uint64_t>, std::unique_ptr<const std::set<std::vector<uint64_t> > > > memo;
-    std::pair<std::vector<uint64_t>, uint64_t> args(std::vector<uint64_t>(start, end), size);
+    static std::map<std::pair<word_t, state_t>, std::unique_ptr<const lang_t> > memo;
+    std::pair<word_t, state_t> args(word_t(start, end), size);
     auto it = memo.find(args);
     if(it != memo.end())
     {
         return *(it->second);
     }
 
-    std::unique_ptr<std::set<std::vector<uint64_t > > > ret_set = std::make_unique<std::set<std::vector<uint64_t> > >();
+    std::unique_ptr<lang_t> ret_set = std::make_unique<lang_t>();
     if(size == 0)
     {
-        ret_set->insert(std::vector<uint64_t>());
+        ret_set->insert(word_t());
         memo[args] = std::move(ret_set);
         return *memo[args];
     }
-    for(std::vector<uint64_t>::const_iterator i = start; i < end; ++i)
+    for(word_t::const_iterator i = start; i < end; ++i)
     {
-        std::set<std::vector<uint64_t> > alph = size_k_substrs(start, i, size - 1);
-        for(std::vector<uint64_t> v: alph)
+        lang_t alph = size_k_substrs(start, i, size - 1);
+        for(word_t v: alph)
         {
             v.push_back(*i);
             ret_set->insert(v);
@@ -35,10 +33,10 @@ const std::set<std::vector<uint64_t > > & psystems::size_k_substrs(std::vector<u
     return *memo[args];
 }
 
-std::set<std::vector<uint64_t> > psystems::alpha(std::vector<uint64_t>::const_iterator start, const std::vector<uint64_t>::const_iterator end, uint64_t k)
+psystems::lang_t psystems::alpha(word_t::const_iterator start, const word_t::const_iterator end, state_t k)
 {
-    std::set<std::vector<uint64_t> > ret_set;
-    for(uint64_t size = 0; size <= k; ++size)
+    lang_t ret_set;
+    for(state_t size = 0; size <= k; ++size)
     {
         auto sks = size_k_substrs(start, end, size);
         for(const auto &x: sks)
@@ -49,9 +47,9 @@ std::set<std::vector<uint64_t> > psystems::alpha(std::vector<uint64_t>::const_it
     return ret_set;
 }
 
-std::set<std::vector<uint64_t> > psystems::alpha(const std::set<std::vector<uint64_t> > & lang, uint64_t k)
+psystems::lang_t psystems::alpha(const lang_t & lang, state_t k)
 {
-    std::set<std::vector<uint64_t> > ret_set;
+    lang_t ret_set;
     for(const auto& w: lang)
     {
         for(const auto& ww: alpha(w.begin(), w.end(), k))
@@ -63,7 +61,7 @@ std::set<std::vector<uint64_t> > psystems::alpha(const std::set<std::vector<uint
 }
 
 struct psystems::Trie {
-    std::vector<uint64_t> str;
+    word_t str;
     std::unique_ptr<Trie> child[STATE_SIZE];
     Trie *parent;
     bool valid;
@@ -71,7 +69,7 @@ struct psystems::Trie {
 
     Trie(): parent(nullptr), valid(true) {}
 
-    Trie(Trie *parent, uint64_t ins):  str(parent->str), parent(parent), valid(parent->valid), prop_subwords(parent->prop_subwords)
+    Trie(Trie *parent, state_t ins):  str(parent->str), parent(parent), valid(parent->valid), prop_subwords(parent->prop_subwords)
     {
         // assert(ins >= 0 && ins < STATE_SIZE)
         str.push_back(ins);
@@ -94,9 +92,9 @@ struct psystems::Trie {
     }
 };
 
-std::set<std::vector<uint64_t> > psystems::integral(const std::set<std::vector<uint64_t> > &lang, uint64_t k, uint64_t l)
+psystems::lang_t psystems::integral(const lang_t &lang, state_t k, state_t l)
 {
-    std::set<std::vector<uint64_t> > ret_set;
+    lang_t ret_set;
     std::unique_ptr<Trie> root = std::make_unique<Trie>();
     std::queue<Trie *> bfs;
     bfs.push(root.get());
@@ -115,71 +113,71 @@ std::set<std::vector<uint64_t> > psystems::integral(const std::set<std::vector<u
         if(t->valid)
         {
             ret_set.insert(t->str);
-            for(uint64_t i = 0; i < STATE_SIZE; ++i) t->child[i] = std::make_unique<Trie>(t, i);
-            for(uint64_t i = 0; i < STATE_SIZE; ++i) if(t->child[i]->valid) bfs.push(t->child[i].get());
+            for(state_t i = 0; i < STATE_SIZE; ++i) t->child[i] = std::make_unique<Trie>(t, i);
+            for(state_t i = 0; i < STATE_SIZE; ++i) if(t->child[i]->valid) bfs.push(t->child[i].get());
         }
         bfs.pop();
     }
     return ret_set;
 }
 
-const std::set<std::vector<uint64_t > > &psystems::post(const std::vector<uint64_t> & word)
+const psystems::lang_t &psystems::post(const word_t & word)
 {
-    static std::map<std::vector<uint64_t>, std::unique_ptr<const std::set<std::vector<uint64_t> > > > memo;
+    static std::map<word_t, std::unique_ptr<const lang_t> > memo;
     auto it = memo.find(word);
     if(it != memo.end())
     {
         return *(it->second);
     }
 
-    std::unique_ptr<std::set<std::vector<uint64_t> > > to_ret = std::make_unique<std::set<std::vector<uint64_t> > >();
-    for(uint64_t i = 0; i < word.size(); ++i)
+    std::unique_ptr<lang_t> to_ret = std::make_unique<lang_t>();
+    for(state_t i = 0; i < word.size(); ++i)
     {
         for(const auto& rule: rules.local_rules)
         {
-            if(rule.first == word[i])
+            if(rule.from == word[i])
             {
-                std::vector<uint64_t> v = word;
-                v[i] = rule.second;
+                word_t v = word;
+                v[i] = rule.to;
                 to_ret->insert(v);
             }
         }
     }
     for(const auto& rule:rules.global_rules)
     {
-        for(uint64_t id = 0; id < word.size(); ++id)
+        for(state_t id = 0; id < word.size(); ++id)
         {
-            if(rule.second.first == word[id])
+            if(rule.trans.from == word[id])
             {
-                switch(rule.first.first.second)
+                switch(rule.r)
                 {
                     case(LT):
                     {
-                        switch(rule.first.first.first)
+                        switch(rule.q)
                         {
                             case(FORALL):
                             {
-                                uint64_t i = 0;
+                                state_t i = 0;
                                 for(; i < id; ++i)
                                 {
-                                    if(! rule.first.second.count(word[i])) break;
+                                    if(! rule.guard.count(word[i])) break;
                                 }
                                 if(i == id)
                                 {
-                                    std::vector<uint64_t> v = word;
-                                    v[id] = rule.second.second;
+                                    word_t v = word;
+                                    v[id] = rule.trans.to;
                                     to_ret->insert(v);
                                 }
                                 break;
                             }
                             case(EXISTS):
                             {
-                                for(uint64_t i = 0; i < id; ++i)
+                                for(state_t i = 0; i < id; ++i)
                                 {
-                                    if(rule.first.second.count(word[i]))
+                                    if(rule.guard.count(word[i]))
                                     {
-                                        std::vector<uint64_t> v = word;
-                                        v[id] = rule.second.second;
+                                        word_t v = word;
+                                        v[id] = rule.trans.to;
                                         to_ret->insert(v);
                                     }
                                 }
@@ -190,31 +188,31 @@ const std::set<std::vector<uint64_t > > &psystems::post(const std::vector<uint64
                     }
                     case(GT):
                     {
-                        switch(rule.first.first.first)
+                        switch(rule.q)
                         {
                             case(FORALL):
                             {
-                                uint64_t i = id + 1;
+                                state_t i = id + 1;
                                 for(; i < word.size(); ++i)
                                 {
-                                    if(! rule.first.second.count(word[i])) break;
+                                    if(! rule.guard.count(word[i])) break;
                                 }
                                 if(i == word.size())
                                 {
-                                    std::vector<uint64_t> v = word;
-                                    v[id] = rule.second.second;
+                                    word_t v = word;
+                                    v[id] = rule.trans.to;
                                     to_ret->insert(v);
                                 }
                                 break;
                             }
                             case(EXISTS):
                             {
-                                for(uint64_t i = id + 1; i < word.size(); ++i)
+                                for(state_t i = id + 1; i < word.size(); ++i)
                                 {
-                                    if(rule.first.second.count(word[i]))
+                                    if(rule.guard.count(word[i]))
                                     {
-                                        std::vector<uint64_t> v = word;
-                                        v[id] = rule.second.second;
+                                        word_t v = word;
+                                        v[id] = rule.trans.to;
                                         to_ret->insert(v);
                                     }
                                 }
@@ -225,33 +223,33 @@ const std::set<std::vector<uint64_t > > &psystems::post(const std::vector<uint64
                     }
                     case(NEQ):
                     {
-                        switch(rule.first.first.first)
+                        switch(rule.q)
                         {
                             case(FORALL):
                             {
-                                uint64_t i = 0;
+                                state_t i = 0;
                                 for(; i < word.size(); ++i)
                                 {
                                     if(i == id) continue;
-                                    if(! rule.first.second.count(word[i])) break;
+                                    if(! rule.guard.count(word[i])) break;
                                 }
                                 if(i == word.size())
                                 {
-                                    std::vector<uint64_t> v = word;
-                                    v[id] = rule.second.second;
+                                    word_t v = word;
+                                    v[id] = rule.trans.to;
                                     to_ret->insert(v);
                                 }
                                 break;
                             }
                             case(EXISTS):
                             {
-                                for(uint64_t i = 0; i < word.size(); ++i)
+                                for(state_t i = 0; i < word.size(); ++i)
                                 {
                                     if(i == id) continue;
-                                    if(rule.first.second.count(word[i]))
+                                    if(rule.guard.count(word[i]))
                                     {
-                                        std::vector<uint64_t> v = word;
-                                        v[id] = rule.second.second;
+                                        word_t v = word;
+                                        v[id] = rule.trans.to;
                                         to_ret->insert(v);
                                     }
                                 }
@@ -268,9 +266,9 @@ const std::set<std::vector<uint64_t > > &psystems::post(const std::vector<uint64
     return *memo[word];
 }
 
-std::set<std::vector<uint64_t> > psystems::post(const std::set<std::vector<uint64_t> > & lang)
+psystems::lang_t psystems::post(const lang_t & lang)
 {
-    std::set<std::vector<uint64_t> > ret_set;
+    lang_t ret_set;
     for(const auto & v: lang)
     {
         for(const auto& w: post(v))
@@ -281,10 +279,10 @@ std::set<std::vector<uint64_t> > psystems::post(const std::set<std::vector<uint6
     return ret_set;
 }
 
-bool is_subword(const std::vector<uint64_t> &sub, const std::vector<uint64_t> &word)
+bool psystems::is_subword(const word_t &sub, const word_t &word)
 {
-    uint64_t j = 0;
-    for(uint64_t i = 0; i < word.size() && j < sub.size(); ++i)
+    state_t j = 0;
+    for(state_t i = 0; i < word.size() && j < sub.size(); ++i)
     {
         if(word[i] == sub[j]) ++j;
     }
@@ -294,9 +292,9 @@ bool is_subword(const std::vector<uint64_t> &sub, const std::vector<uint64_t> &w
 bool psystems::verify()
 {
     // since initial state of each thread is the same (say s), \alpha_k(I) is just words of the form sss... upto size k
-    for(uint64_t k = 1; ; k++)
+    for(state_t k = 1; ; k++)
     {
-        auto Ik = std::set<std::vector<uint64_t> >({std::vector<uint64_t>(k, init_state)});
+        auto Ik = lang_t({word_t(k, init_state)});
         auto alphk = alpha(Ik, k);
         auto Rk = Ik;
         for(const auto& v: post(Ik)) Rk.insert(v);
