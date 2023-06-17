@@ -22,34 +22,21 @@ class bmc; // forward declaration of the bmc class
 
 // typedef std::vector<std::string> svec;
 
-enum AccessRelation { LT, GT, NEQ };
-enum Quantifier { FORALL, EXISTS };
 
 
 // typedef std::vector<uint64_t> state_t;
-typedef uint64_t state_t;
 
-class thread_transition_t {
-  // uint64_t from;
-  // uint64_t to;
 
-  state_t from_local;
-  state_t to_local;
-  state_t from_global;
-  state_t to_global;
 
-};
 
-class global_rule_t {
-  Quantifier q;
-  AccessRelation r;
-  std::set<uint64_t> guard;
-  thread_transition_t transition;
-};
 
-  // condition_t  condition;
 
-class psystems : public bmc_pass, public llvm::FunctionPass
+// struct
+
+// condition_t  condition;
+
+class psystems : public bmc_pass,
+                 public llvm::FunctionPass
 {
 
 private:
@@ -64,24 +51,66 @@ private:
     std::string thread_name, EntryFn;
     bool is_sc_semantics = false;
     struct Trie;
-  typedef std::pair<uint64_t, uint64_t> transition_t;
-  typedef std::pair<std::pair<Quantifier, AccessRelation>, std::set<uint64_t>> condition_t;
-  typedef std::pair<condition_t,transition_t> global_rule_t;
-    struct Rules {
-        std::vector< transition_t  > local_rules;
-        std::vector< global_rule_t > global_rules;
+
+    typedef uint64_t state_t;
+    typedef std::vector<state_t> word_t;
+    typedef std::set<word_t> lang_t;
+    static constexpr state_t STATE_SIZE = 6;
+
+    enum AccessRelation
+    {
+        LT,
+        GT,
+        NEQ
+    };
+
+    enum Quantifier
+    {
+        FORALL,
+        EXISTS
+    };
+
+    struct transition
+    {
+        // state_t from_local;
+        // state_t to_local;
+        state_t from;
+        state_t to;
+
+        transition(state_t from, state_t to) : from(from), to(to) {}
+    };
+
+    struct global_rule
+    {
+        Quantifier q;
+        AccessRelation r;
+        std::set<state_t> guard;
+        transition trans;
+
+        global_rule(Quantifier q, AccessRelation r, const std::set<state_t> &g, const transition &trans) : q(q), r(r), guard(g), trans(trans)
+        {}
+    };
+
+    // typedef std::pair<state_t, state_t> transition_t;
+    struct Rules
+    {
+        std::vector<transition> local_rules;
+        std::vector<global_rule> global_rules;
     } rules;
-    uint64_t init_state;
-    std::vector<uint64_t> bad_min;
+    state_t init_state;
+    word_t bad_min;
+    const lang_t &size_k_substrs(word_t::const_iterator, word_t::const_iterator, state_t);
+    lang_t alpha(word_t::const_iterator, word_t::const_iterator, state_t);
+    lang_t alpha(const lang_t &, state_t);
+    lang_t integral(const lang_t &, state_t, state_t);
+    const lang_t &post(const word_t &);
+    lang_t post(const lang_t &);
+    bool verify();
+
+    // Helper functions
     std::string getInstructionString(const llvm::Instruction &);
     std::string getBasicBlockString(const llvm::BasicBlock &);
-    const std::set<std::vector<uint64_t>> &size_k_substrs(std::vector<uint64_t>::const_iterator, std::vector<uint64_t>::const_iterator, uint64_t);
-    std::set<std::vector<uint64_t> > alpha(std::vector<uint64_t>::const_iterator, std::vector<uint64_t>::const_iterator, uint64_t);
-    std::set<std::vector<uint64_t> > alpha(const std::set<std::vector<uint64_t> > &, uint64_t);
-    std::set<std::vector<uint64_t> > integral(const std::set<std::vector<uint64_t> > &, uint64_t, uint64_t);
-    const std::set<std::vector<uint64_t> > &post(const std::vector<uint64_t> &);
-    std::set<std::vector<uint64_t> > post(const std::set<std::vector<uint64_t> > &);
-    bool verify();
+    bool is_subword(const word_t &, const word_t &);
     //---------------------------------------------------------------------
 public:
     psystems(options &o_,
