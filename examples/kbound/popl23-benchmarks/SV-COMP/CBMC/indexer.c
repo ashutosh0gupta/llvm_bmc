@@ -31,7 +31,6 @@ int cas(int * tab, int h, int val, int new_val)
   }
   pthread_mutex_unlock(&cas_mutex[h]);
 
-
   return ret_val;
 }
 

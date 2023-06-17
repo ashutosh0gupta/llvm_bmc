@@ -60,13 +60,13 @@ std::string expr_to_name( std::string name ) {
   return name;
 }
 
-reg_time_t kbound::zero_time() {
+reg_ctx_t kbound::zero_ctx() {
   if(mm == ARMV2)
     return {"0","0"};//COM,SAT pair
   return {"0"};
 }
 
-reg_time_t kbound::time_name( std::string name ) {
+reg_ctx_t kbound::ctx_name( std::string name ) {
   name = expr_to_name(name);
   if(mm == ARMV2)
     return {"creg_"+name,"creg_sat_"+name};
@@ -152,9 +152,9 @@ std::string kbound::get_reg( const void* v ) {
   return get_reg( v, idxs );
 }
 
-reg_time_t kbound::get_reg_time( const void* v, svec& idxs) {
+reg_ctx_t kbound::get_reg_ctx( const void* v, svec& idxs) {
   auto name = get_reg( v, idxs );
-  return time_name( name );
+  return ctx_name( name );
   // if( name[0] != 'r' ) {
   //   assert( idxs.size() == 0 );
   //   auto vec = ctrl_dep_ord.at(v);
@@ -163,18 +163,18 @@ reg_time_t kbound::get_reg_time( const void* v, svec& idxs) {
   //   if( vec.size() == 2 ) return "max("+vec[0]+","+vec[1]+")";
   //   assert(false);
   // }
-  // return time_name( name );
+  // return ctx_name( name );
 }
 
 
-reg_time_t kbound::get_reg_time( const void* v) {
+reg_ctx_t kbound::get_reg_ctx( const void* v) {
   svec idxs;
-  return get_reg_time( v, idxs );
+  return get_reg_ctx( v, idxs );
 }
 
-// std::string kbound::get_reg_sat_time( const void* v, svec& idxs) {
+// std::string kbound::get_reg_sat_ctx( const void* v, svec& idxs) {
 //   auto name = get_reg( v, idxs);
-//   return time_sat_name( name );
+//   return ctx_sat_name( name );
 //   // if( name[0] != 'r' ) {
 //   //   assert( idxs.size() == 0 );
 //   //   auto vec = ctrl_dep_ord.at(v);
@@ -184,9 +184,9 @@ reg_time_t kbound::get_reg_time( const void* v) {
 //   //   assert(false);
 //   // }
 // }
-// std::string kbound::get_reg_sat_time( const void* v ) {
+// std::string kbound::get_reg_sat_ctx( const void* v ) {
 //   svec idxs;
-//   return get_reg_sat_time( v, idxs );
+//   return get_reg_sat_ctx( v, idxs );
 // }
 
 
@@ -215,8 +215,13 @@ void kbound::dump_Goto(std::string s) {
   dump_String( "goto " + s + ";");
 }
 
+std::string kbound::block_name(std::string s) {
+  return "T"+tid+"BLOCK"+s;
+}
+
 std::string kbound::block_name(unsigned bidx) {
-  return "T"+tid+"BLOCK"+std::to_string(bidx);
+  return block_name( std::to_string(bidx) );
+  // return "T"+tid+"BLOCK"+std::to_string(bidx);
 }
 
 void kbound::dump_Assume(std::string s) {
@@ -405,7 +410,7 @@ void kbound::dump_Arrays( std::string type,
   for( std::string ary: arys ) {
     dump_Decl_array( type, ary+"_", dim1+"*"+dim2+"*"+dim3 );
     dump_Define( ary + "(t,x,k)",
-                 ary + "_[(t)*"+dim2+"*"+dim3+"+(x)"+dim3+"+k]" );
+                 ary + "_[(t)*"+dim3 + "+(x)*"+dim2+"+k]" );
   }
   dump_Newline();
 }
@@ -415,7 +420,7 @@ void kbound::dump_Arrays( std::string type,
 //------------------------------------------------------------------------
 
 
-void kbound::dump_Assign_time( reg_time_t& v, timeset_t& rs ) {
+void kbound::dump_Assign_ctx( reg_ctx_t& v, ctxset_t& rs ) {
   for(unsigned i = 0; i< v.size(); i++ ) {
     sset ss;
     for(auto r : rs) ss.insert(r.at(i));
@@ -466,11 +471,11 @@ void kbound::dump_locals() {
         // for( auto& pair : ssa_name ) {
         //   auto& name = pair.second;
         //   if( name[0] != 'r') out << "  int " << name << "= 0;\n";
-        //   out << "  char " << get_reg_time(pair.first) << ";\n"; //<< "= 0;\n";
+        //   out << "  char " << get_reg_ctx(pair.first) << ";\n"; //<< "= 0;\n";
         // }
         for( auto& v : unmapped_names ) {
           if( v[0] == 'r') out << "  int " << v << "= 0;\n";
-          for( auto tname : time_name(v) ) {
+          for( auto tname : ctx_name(v) ) {
             out << "  char " << tname << ";\n";
           }
         }
@@ -576,26 +581,16 @@ range_forbid( std::string gid, std::string lb, std::string ub ) {
   }
 }
 
-void kbound::dump_update_ctrl( const void* cond ) {
+void kbound::dump_update_ctrl( //const void* cond,
+                              reg_ctx_t cond_ctx ) {
   auto ctrl = "cctrl["+tid+"]";
   dump_Assign( "old_cctrl", ctrl );
   dump_Assign_rand_ctx( ctrl );
   dump_Assume_geq( ctrl, "old_cctrl" );
 
-  dump_Assume_geq( ctrl, get_reg_time( cond ).at(COM_TIME) );
+  // dump_Assume_geq( ctrl, get_reg_ctx( cond ).at(COM_CTX) );
+  dump_Assume_geq( ctrl, cond_ctx.at(COM_CTX) );
 
-  // if( exists( ctrl_dep_ord, cond ) ) {
-  //   //todo: remove this branch if compute the reg_time of the compare
-  //   //      instruction is computed; already added
-  //   for( auto& dep : ctrl_dep_ord.at(cond) ) {
-  //     dump_Assume_geq( ctrl, dep );
-  //   }
-  //   // for( auto& dep : ctrl_dep_ord.at(cond) ) {
-  //   //   dump_Assume_geq( ctrl, dep);
-  //   // }
-  // }else{
-  //   dump_Assume_geq( ctrl, get_reg_time( cond ) );
-  // }
 }
 
 void kbound::dump_geq_globals( std::string c, std::string prop ) {
@@ -699,16 +694,16 @@ void kbound::dump_thread_join( unsigned bidx, std::string child_tid ) {
 
 
 void kbound::
-dump_ld( std::string r, reg_time_t cval, reg_time_t caddr, std::string gid,
-         bool isAcquire, bool isExclusive, bool isLocalUse ) {
+dump_ld( std::string r, reg_ctx_t cval, reg_ctx_t caddr, std::string gid,
+         bool isAcquire, bool isExclusive, bool isLocalUse, std::string loc) {
   if(isLocalUse) {
     dump_Assign( r, "local_mem["+ gid +"]" );
     return;
   }
   switch( mm ) {
-  case ARMV1: dump_ld_v1( r, cval,caddr, gid, isAcquire, isExclusive ); break;
-  case ARMV2: dump_ld_v2( r, cval,caddr, gid, isAcquire, isExclusive ); break;
-  case CC   : dump_ld_cc( r, cval,caddr, gid, isAcquire, isExclusive ); break;
+  case ARMV1: dump_ld_v1( r, cval,caddr, gid,isAcquire,isExclusive,loc); break;
+  case ARMV2: dump_ld_v2( r, cval,caddr, gid,isAcquire,isExclusive,loc); break;
+  case CC   : dump_ld_cc( r, cval,caddr, gid,isAcquire,isExclusive,loc); break;
   default: llvm_bmc_error("kbound", "bad memory model!");
   }
 
@@ -721,16 +716,16 @@ dump_ld( std::string r, reg_time_t cval, reg_time_t caddr, std::string gid,
 
 
 void kbound::
-dump_st( std::string v, reg_time_t cval, reg_time_t caddr, std::string gid,
-         bool isRelease, bool isExclusive, bool isLocalUse ) {
+dump_st( std::string v, reg_ctx_t cval, reg_ctx_t caddr, std::string gid,
+         bool isRelease, bool isExclusive, bool isLocalUse, std::string loc) {
   if(isLocalUse) {
     dump_Assign( "local_mem["   + gid + "]", v);
     return;
   }
   switch( mm ) {
-  case ARMV1: dump_st_v1(  v,  cval, caddr,  gid, isRelease, isExclusive); break;
-  case ARMV2: dump_st_v2(  v,  cval, caddr,  gid, isRelease, isExclusive); break;
-  case CC   : dump_st_cc(  v,  cval, caddr,  gid, isRelease, isExclusive); break;
+  case ARMV1: dump_st_v1(v, cval, caddr,gid,isRelease,isExclusive,loc); break;
+  case ARMV2: dump_st_v2(v, cval, caddr,gid,isRelease,isExclusive,loc); break;
+  case CC   : dump_st_cc(v, cval, caddr,gid,isRelease,isExclusive,loc); break;
   default: llvm_bmc_error("kbound", "bad memory model!");
   }
 

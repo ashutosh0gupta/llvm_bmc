@@ -89,7 +89,7 @@ def runner(ex):
    tmp_path = "./tmp/"
    if report:
       print(str(ex[0])+"\t"+ex[1]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
-   result = subprocess.check_output(["time", run, str(l), str(lk), f, s, tmp_path,mm],stderr=subprocess.STDOUT)
+   result = subprocess.check_output(["time", run, str(l), str(lk), f, s, tmp_path,mm,'Y'],stderr=subprocess.STDOUT)
    result=result.decode("utf-8")
    time = find_time(result)
    if report:

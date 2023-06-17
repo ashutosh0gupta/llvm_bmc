@@ -4,9 +4,9 @@
 
 timeout=300s
 
-if [ "$#" -ne 6 ]; then
+if [ "$#" -ne 7 ]; then
     echo "Illegal number of parameters"
-    echo "Usage: ./run-example.sh [unwind] [context-bound] [file-name] [spec-file] [tmp path]  [memory-model]"
+    echo "Usage: ./run-example.sh [unwind] [context-bound] [file-name] [spec-file] [tmp path]  [memory-model] [isDebug]"
     exit 0
 fi
 
@@ -25,8 +25,11 @@ if [[ "$4" != "-" ]]; then
     spec_option="-s $4"
 fi
 
-debug="--trace"
-# debug=
+debug=
+if [[ "$7" == "Y" ]]; then
+    debug="--trace"
+fi
+
 
 echo "./llvmbmc --unwind $1 -o $tmp_path --context-bound $2 --memory-model $6 -k $3 $spec_option"
 ./llvmbmc --unwind $1 -o $tmp_path --context-bound $2 --memory-model $6 -k $3 $spec_option > /dev/null 2>&1
@@ -38,7 +41,13 @@ if [ -f "$tr_file" ]; then
     if grep -q "VERIFICATION SUCCESSFUL" "$tr_file"; then
         echo -n "SAFE   "
     elif grep -q "VERIFICATION FAILED" "$tr_file"; then
-        ./scripts/clean-cbmc.py $tmp_path $fname
+        if [[ "$7" == "safe" ]]; then
+            # run cbmc again
+            timeout $timeout cbmc $tmp_path/$fname.cbmc_out.cpp --unwind $1 --trace > $tmp_path/$fname.tr.tr 2>&1
+        fi
+        if [[ "$7" == "Y" ]] || [[ "$7" == "safe" ]]; then
+            ./scripts/clean-cbmc.py $tmp_path $3
+        fi
         echo -n "UNSAFE "
     elif grep -q "CONVERSION ERROR" "$tr_file"; then
         echo -n "ERROR  "     

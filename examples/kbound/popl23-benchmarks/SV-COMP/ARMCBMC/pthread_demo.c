@@ -4,7 +4,6 @@
 
 /* Adapted from: https://github.com/sosy-lab/sv-benchmarks/blob/master/c/pthread-C-DAC/pthread-demo-datarace-1.c */
 
-
 #include <assert.h>
 #include <pthread.h>
 #include <stdatomic.h>

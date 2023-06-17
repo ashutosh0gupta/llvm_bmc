@@ -61,13 +61,13 @@ void kbound::prefix_seq_v1() {
 
   dump_Comment( "declare arrays for local buffer and observed writes" );
   local_list = {
-    "buff", // Local buffer; not a time stamp
+    "buff", // Local buffer; not a ctx stamp
     "pw",   // Last write seen in the thread
   };
   dump_Arrays( "int", local_list, "NTHREAD", "ADDRSIZE" );
 
   dump_Comment( "declare arrays for context stamps" );
-  time_list = {
+  ctx_list = {
     "cr",        // Last read commit ctx
     "iw", "cw",  // Write commit ctx
     "cx",        // exclusive commit
@@ -75,16 +75,16 @@ void kbound::prefix_seq_v1() {
     "cs",        // RA model write commmit
     "crmax"      // max read ctx seen so far //ashu added?
   };
-  dump_Arrays( "char", time_list, "NTHREAD", "ADDRSIZE");
+  dump_Arrays( "char", ctx_list, "NTHREAD", "ADDRSIZE");
 
   //to record when can we not commit; no initialization
   dump_Arrays( "char", {"sforbid"}, "ADDRSIZE", "NCONTEXT");//ashu added?
 
   dump_Comment( "declare arrays for synchronizations" );
   proc_list = {
-    "cl",                        // Timestamps for load acquire
-    "cdy", "cds", "cdl", "cisb", // Timestamps for four kind of fences
-    "caddr", "cctrl"             // Timestamps for addr and ctrl
+    "cl",                        // Ctxstamps for load acquire
+    "cdy", "cds", "cdl", "cisb", // Ctxstamps for four kind of fences
+    "caddr", "cctrl"             // Ctxstamps for addr and ctrl
   };
   for( auto ary: proc_list ) dump_Decl_array("int", ary, "NTHREAD");
 
@@ -93,13 +93,13 @@ void kbound::prefix_seq_v1() {
   dump_Newline();
   dump_String("__LOCALS__");
 
-  // records time and processes
+  // records ctx and processes
   for( unsigned p = 0; p < bmc_obj.sys_spec.threads.size(); p++ ) {
     auto pn = std::to_string(p);
     for( unsigned x = 0; x < num_globals; x++ ) {
       auto xn = std::to_string(x);
       for( auto ary: local_list) dump_String( ary + "("+pn+","+xn+") = 0;" );
-      for( auto ary: time_list ) dump_String( ary + "("+pn+","+xn+") = 0;" );
+      for( auto ary: ctx_list ) dump_String( ary + "("+pn+","+xn+") = 0;" );
     }
     for( auto ary: proc_list ) dump_String( ary + "["+ pn + "] = 0;" );
     for( auto ary: thread_ctrl_list ) dump_Assign_rand_ctx(ary+"["+ pn + "]" );
@@ -136,9 +136,9 @@ void kbound::prefix_seq_v1() {
 
 
 void kbound::
-dump_ld_v1( std::string r, reg_time_t cval,reg_time_t caddr,
+dump_ld_v1( std::string r, reg_ctx_t cval,reg_ctx_t caddr,
             std::string gid,
-            bool isAcquire, bool isExclusive ) {
+            bool isAcquire, bool isExclusive, std::string loc ) {
 
   auto gaccess     = "("+ tid + ","+ gid + ")";
   auto cr          = "cr"+gaccess;
@@ -148,7 +148,7 @@ dump_ld_v1( std::string r, reg_time_t cval,reg_time_t caddr,
   if(isExclusive)   dump_Comment("  : Exlusive");
   if(isAcquire)     dump_Comment("  : Acquire");
   dump_Assign( "old_cr",  cr);
-  dump_Assign_rand_ctx( cr, tid + " ASSIGN LDCOM ");
+  dump_Assign_rand_ctx( cr, tid + " ASSIGN LDCOM " + loc);
 
   if( is_sc_semantics ) {
     dump_Comment("Check");
@@ -161,7 +161,7 @@ dump_ld_v1( std::string r, reg_time_t cval,reg_time_t caddr,
     dump_Comment("Check");
     dump_Active( cr );
     dump_Assume_geq( cr, "iw"+gaccess );
-    dump_Assume_geq( cr, caddr[COM_TIME] );
+    dump_Assume_geq( cr, caddr[COM_CTX] );
     dump_Assume_geq( cr,  "cdy["+ tid + "]" );
     dump_Assume_geq( cr, "cisb["+ tid + "]" );
     dump_Assume_geq( cr,  "cdl["+ tid + "]" );
@@ -171,9 +171,9 @@ dump_ld_v1( std::string r, reg_time_t cval,reg_time_t caddr,
     if( isAcquire   ) dump_geq_globals( cr, "cs");        // extra in lda
 
     dump_Comment("Update");
-    dump_Assign( cval[COM_TIME], cr );
+    dump_Assign( cval[COM_CTX], cr );
     dump_Assign_max( "crmax"+gaccess, cr);
-    dump_Assign_max( "caddr["+ tid + "]", caddr[COM_TIME]); //Ashu added?
+    dump_Assign_max( "caddr["+ tid + "]", caddr[COM_CTX]); //Ashu added?
     dump_If( cr + " < " + "cw"+gaccess );
     {
       dump_Assign( r, "buff"+gaccess );
@@ -202,8 +202,8 @@ dump_ld_v1( std::string r, reg_time_t cval,reg_time_t caddr,
 
 
 void kbound::
-dump_st_v1( std::string v, reg_time_t cval,reg_time_t caddr, std::string gid,
-         bool isRelease, bool isExclusive) {
+dump_st_v1( std::string v, reg_ctx_t cval,reg_ctx_t caddr, std::string gid,
+         bool isRelease, bool isExclusive, std::string loc) {
 
   auto gaccess     = "("+ tid + ","+ gid + ")";
   auto iw          = "iw"+gaccess;
@@ -213,9 +213,9 @@ dump_st_v1( std::string v, reg_time_t cval,reg_time_t caddr, std::string gid,
   dump_Comment("ST: Guess");
   if(isExclusive)   dump_Comment("  : Exlusive");
   if(isRelease)   dump_Comment("  : Release");
-  dump_Assign_rand_ctx( iw, tid + " ASSIGN STIW " );
+  dump_Assign_rand_ctx( iw, tid + " ASSIGN STIW " + loc );
   dump_Assign( "old_cw",  cw);
-  dump_Assign_rand_ctx( cw, tid + " ASSIGN STCOM " );
+  dump_Assign_rand_ctx( cw, tid + " ASSIGN STCOM " + loc );
 
   if( is_sc_semantics ) {
     dump_Comment("Check");
@@ -235,8 +235,8 @@ dump_st_v1( std::string v, reg_time_t cval,reg_time_t caddr, std::string gid,
     dump_Active( iw );
     dump_Active( cw );
     dump_Assume( "sforbid"+ gctx_access + "== 0" ); //ashu added?
-    dump_Assume_geq( iw, cval[COM_TIME]  );
-    dump_Assume_geq( iw, caddr[COM_TIME] );
+    dump_Assume_geq( iw, cval[COM_CTX]  );
+    dump_Assume_geq( iw, caddr[COM_CTX] );
     dump_Assume_geq( cw, iw );
     dump_Assume_geq( cw, "old_cw" );
     dump_Assume_geq( cw, "cr"    + gaccess   );
@@ -254,7 +254,7 @@ dump_st_v1( std::string v, reg_time_t cval,reg_time_t caddr, std::string gid,
     dump_Comment("Update");
     // std::cout << caddr;
     // dump_Assign_max( "caddr[" + tid + "]", cval ); // << error
-    dump_Assign_max( "caddr[" + tid + "]", caddr[COM_TIME] );
+    dump_Assign_max( "caddr[" + tid + "]", caddr[COM_CTX] );
     dump_Assign( "buff"   + gaccess    , v);
     dump_Assign( "mem"   + gctx_access, v);
     if( isExclusive ) dump_Assign( "cx"   + gaccess, cw);
@@ -293,13 +293,13 @@ void kbound::prefix_seq_v2() {
 
   dump_Comment( "declare arrays for local buffer and observed writes" );
   local_list = {
-    "buff", // Local buffer; not a time stamp
+    "buff", // Local buffer; not a ctx stamp
     // "pw",   // Last write seen in the thread
   };
   dump_Arrays( "int", local_list, "NTHREAD", "ADDRSIZE" );
 
   dump_Comment( "declare arrays for context stamps" );
-  time_list = {
+  ctx_list = {
     "sr", "cr",        // Last read commit ctx
     // "iw",
     "cw",  // Write commit ctx
@@ -310,13 +310,13 @@ void kbound::prefix_seq_v2() {
     "xpanding",
     "crmax",      // max read ctx seen so far //ashu added?
   };
-  dump_Arrays( "int", time_list, "NTHREAD", "ADDRSIZE");
+  dump_Arrays( "int", ctx_list, "NTHREAD", "ADDRSIZE");
 
   dump_Comment( "declare arrays for synchronizations" );
   proc_list = {
-    "cstr","clda",               // Timestamps for store/load RA
-    "cdy", "cds", "cdl", "cisb", // Timestamps for four kind of fences
-    "caddr", "cctrl"             // Timestamps for addr and ctrl
+    "cstr","clda",               // Ctxstamps for store/load RA
+    "cdy", "cds", "cdl", "cisb", // Ctxstamps for four kind of fences
+    "caddr", "cctrl"             // Ctxstamps for addr and ctrl
   };
   for( auto ary: proc_list ) dump_Decl_array("int", ary, "NTHREAD");
 
@@ -333,13 +333,13 @@ void kbound::prefix_seq_v2() {
   dump_Newline();
   dump_String("__LOCALS__");
 
-  // records time and processes
+  // records ctx and processes
   for( unsigned p = 0; p < bmc_obj.sys_spec.threads.size(); p++ ) {
     auto pn = std::to_string(p);
     for( unsigned x = 0; x < num_globals; x++ ) {
       auto xn = std::to_string(x);
       for( auto ary: local_list) dump_String( ary + "("+pn+","+xn+") = 0;" );
-      for( auto ary: time_list ) dump_String( ary + "("+pn+","+xn+") = 0;" );
+      for( auto ary: ctx_list ) dump_String( ary + "("+pn+","+xn+") = 0;" );
     }
     for( auto ary: proc_list ) dump_String( ary + "["+ pn + "] = 0;" );
     for( auto ary: thread_ctrl_list ) dump_Assign_rand_ctx(ary+"["+ pn + "]" );
@@ -386,10 +386,10 @@ void kbound::prefix_seq_v2() {
 
 void kbound::
 dump_ld_v2( std::string r,
-            reg_time_t cval, // timestamp for value to be updated
-            reg_time_t caddr,// timestamp of address (input)
+            reg_ctx_t cval, // ctxstamp for value to be updated
+            reg_ctx_t caddr,// ctxstamp of address (input)
             std::string gid,
-            bool isAcquire, bool isExclusive ) {
+            bool isAcquire, bool isExclusive, std::string loc ) {
 
   auto t_g  = "("+ tid + ","+ gid + ")";
   auto sr   = "sr"+t_g; // new
@@ -402,8 +402,8 @@ dump_ld_v2( std::string r,
   if(isAcquire)     dump_Comment("  : Acquire");
   // dump_Assign( "old_cr",  cr);
   dump_Assign( "old_sr",  sr);
-  dump_Assign_rand_ctx( sr, tid + " ASSIGN LDSAT " );
-  dump_Assign_rand_ctx( cr, tid + " ASSIGN LDCOM " );
+  dump_Assign_rand_ctx( sr, tid + " ASSIGN LDSAT " + loc );
+  dump_Assign_rand_ctx( cr, tid + " ASSIGN LDCOM " + loc );
 
   dump_Comment("Check");
   dump_Active( cr );
@@ -416,22 +416,22 @@ dump_ld_v2( std::string r,
   dump_Assume_geq( cr, "cisb" + t ); // isb is here??
   dump_Assume_geq( cr,  "cdl" + t );
 
-  dump_Assume_geq( cr, caddr[COM_TIME] ); //does not match from paper; paper is syncing with all addr
-  dump_Assume_geq( sr, "clrsaddr"+t_g ); // << different from the paper
-  dump_Assume_geq( sr, "clrsval" +t_g ); // << different from the paper
+  dump_Assume_geq( cr, caddr[COM_CTX] ); //does not match from paper; paper is syncing with all addr
+  // dump_Assume_geq( sr, "clrsaddr"+t_g ); // << different from the paper
+  // dump_Assume_geq( sr, "clrsval" +t_g ); // << different from the paper
 
   // dump_Assume_geq( sr, caddr );          // << ordering against sat
-  // dump_Assume_geq( cr, "clrsaddr"+t_g ); // << in the paper
-  // dump_Assume_geq( cr, "clrsval" +t_g ); // << in the paper
+  dump_Assume_geq( cr, "clrsaddr"+t_g ); // << in the paper
+  dump_Assume_geq( cr, "clrsval" +t_g ); // << in the paper
 
   if( isAcquire ) dump_Assume_geq( cr, "cstr" + t );
 
   dump_Comment("Update");
   // dump_Assign_max( cr, "old_cr" ); // << cr is updated again??
   dump_Assign_max( "crmax"+t_g, cr);  // << replaces something in code
-  dump_Assign( cval[COM_TIME], cr  ); //
-  // dump_Assign( cval[SAT_TIME], sr  ); //
-  dump_Assign_max( "caddr["+tid+"]", caddr[COM_TIME]);
+  dump_Assign( cval[COM_CTX], cr  ); //
+  // dump_Assign( cval[SAT_CTX], sr  ); //
+  dump_Assign_max( "caddr["+tid+"]", caddr[COM_CTX]);
   dump_If( sr + " < " + "cw"+t_g );
   {
     dump_Assign( r, "buff"+t_g );
@@ -460,11 +460,11 @@ dump_ld_v2( std::string r,
 
 void kbound::
 dump_st_v2( std::string v,
-            reg_time_t cval, // timestamp for value (input)
-            reg_time_t caddr,// timestamp for address (input)
+            reg_ctx_t cval, // ctxstamp for value (input)
+            reg_ctx_t caddr,// ctxstamp for address (input)
             std::string gid, // global 
             bool isRelease,
-            bool isExclusive ) {
+            bool isExclusive, std::string loc ) {
   assert( !is_sc_semantics );
 
   auto t_g  = "("+ tid + ","+ gid + ")";
@@ -476,14 +476,14 @@ dump_st_v2( std::string v,
   if(isExclusive) dump_Comment("  : Exlusive");
   if(isRelease  ) dump_Comment("  : Release");
   dump_Assign( "old_cw",  cw);
-  dump_Assign_rand_ctx( cw, tid + " ASSIGN STCOM " );
+  dump_Assign_rand_ctx( cw, tid + " ASSIGN STCOM " + loc );
 
   dump_Comment("Check");
   dump_Active( cw );
   dump_Assume( "sforbid"+ g_cw + "== 0" );
   dump_Assume_geq( cw, "old_cw" );
   // dump_Assume_geq( cw, "cr"    + t_g   );//<< was in old version
-  dump_Assume_geq( cw, "crmax"    + t_g   );//sohould used crmax
+  dump_Assume_geq( cw, "crmax"    + t_g   );//should used crmax
   dump_Assume_geq( cw, "clda" + t );
 
   dump_Assume_geq( cw, "cisb" + t ); // ?? missing in paper
@@ -491,14 +491,14 @@ dump_st_v2( std::string v,
   dump_Assume_geq( cw, "cdl"  + t );
   dump_Assume_geq( cw, "cds"  + t );
 
-  dump_Assume_geq( cw,  cval[COM_TIME] );//COM_TIME?
-  // dump_Assume_geq( cw,  cval[SAT_TIME] );//COM_TIME?
-  dump_Assume_geq( cw, caddr[COM_TIME] );
+  // dump_Assume_geq( cw,  cval[SAT_CTX] );//COM_CTX?
+  dump_Assume_geq( cw,  cval[COM_CTX] );//COM_CTX?
+  dump_Assume_geq( cw, caddr[COM_CTX] );
 
   if( isRelease ) dump_geq_globals( cw, "cr"); // missing in paper // why? -- old code?
   if( isRelease ) dump_geq_globals( cw, "cw"); // missing in paper // why? -- old code?
 
-  dump_Assume_geq( cw, "cctrl" + t ); // missing in paper (not missing)
+  dump_Assume_geq( cw, "cctrl" + t );
   dump_Assume_geq( cw, "caddr" + t );
 
   if( isExclusive ) dump_Assume( "xpanding" + t_g + ">0" ); // Paper has type mismatch
@@ -507,13 +507,11 @@ dump_st_v2( std::string v,
   dump_Comment("Update");
   dump_Assign( "buff"  + t_g , v);
   dump_Assign( "mem"   + g_cw, v); // << indexing wrong in paper
-  dump_Assign_max( "caddr"    + t,   caddr[COM_TIME] );
+  dump_Assign_max( "caddr"    + t,   caddr[COM_CTX] );
 
-  dump_Assign( "clrsaddr" + t_g, caddr[COM_TIME] ); // << different from paper
-  dump_Assign( "clrsval"  + t_g, cval[COM_TIME]  ); // << different from paper
+  dump_Assign( "clrsaddr" + t_g, caddr[COM_CTX] ); //
+  dump_Assign( "clrsval"  + t_g, cval[COM_CTX]  ); //
 
-  // dump_Assign_max( "clrsaddr" + t_g, caddr ); // << in the paper
-  // dump_Assign_max( "clrsval"  + t_g, cval  ); // << in the paper
   dump_Assign( "xpanding"+ t_g, "0");
   if( isRelease ) dump_Assign_max( "cstr" + t, cw );
 

@@ -20,8 +20,8 @@ l = 1
 # choose a folder to execute
 
 # folder = "examples/kbound/omkar/bench"
-
-folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
+folder = "./examples/kbound/popl23-benchmarks/TRACER/ARMCBMC/"
+# folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
 
 # folder = "examples/kbound/pldi19-benchmark"
 
@@ -71,6 +71,7 @@ mm = "armv2"
 print("------------------------------")
 print("Running kbound implementation:")
 print("Example suite :" + folder)
+print("Memory model :" + mm)
 # if only_error:
 #    print("Full report only for wrong answers!")
 print("------------------------------")
@@ -113,7 +114,7 @@ def runner(ex):
    tmp_path = "./tmp/"
    if report:
       print(str(ex[0])+"\t"+ex[1]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
-   result = subprocess.check_output(["time", run, str(l), str(lk), f, s, tmp_path,mm],stderr=subprocess.STDOUT)
+   result = subprocess.check_output(["time", run, str(l), str(lk), f, s, tmp_path,mm,'N'],stderr=subprocess.STDOUT)
    result=result.decode("utf-8")
    # print(result)
    time = find_time(result)
@@ -122,9 +123,10 @@ def runner(ex):
    if time[0].lower() != kind:# or True:
       print(str(ex[0])+"\t"+ ex[1]+"\t"+ kind +"->"+time[0]+"\t"+time[1])
       fname = os.path.basename(f)
-      shutil.copyfile('examples/litmus/c/original/alltests/'+ex[1]+".litmus",
-                      "./tmp/"+fname+".wrong.litmus")
-      shutil.copyfile(f,"./tmp/"+fname+".wrong.c")
+      litmus = './examples/litmus/c/original/alltests/'+ex[1]+".litmus"
+      if os.path.isfile(litmus):
+         shutil.copyfile(litmus, tmp_path+fname+".wrong.litmus")
+      shutil.copyfile(f,tmp_path+fname+".wrong.c")
       if time[0] == 'UNSAFE':
          # rerun the clean-cbmc
          result = subprocess.check_output(["./scripts/clean-cbmc.py", "./tmp/",f])
@@ -140,7 +142,7 @@ def runner(ex):
 # exs = list(filter(lambda ex: "wsi" in ex[1], exs))
 # exs = list(filter(lambda ex: "MP+dmb.sy+addr-wsi-rfi-addr" == ex[1], exs))
 # exs = list(filter(lambda ex: "MP+dmb.sy+addr-addr-rfi-addr" == ex[1], exs))
-exs = list(filter(lambda ex: "CO-SBI" == ex[1], exs))
+# exs = list(filter(lambda ex: "CO-SBI" == ex[1], exs))
 # exs = list(filter(lambda ex: "Luc21" == ex[1], exs))
 # exs = list(filter(lambda ex: "MP+popl+addr" == ex[1], exs))
 
@@ -151,7 +153,7 @@ exs = list(filter(lambda ex: "CO-SBI" == ex[1], exs))
 # exs = exs[0:1500]
 
 # exs = exs[1500:2000]
-# exs = exs[2000:]
+# exs = exs[2500+4200:]
 # exs = exs[:100]
 # exs = exs[:1]
 

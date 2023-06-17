@@ -10,16 +10,18 @@ import shutil
 import sys
 
 tmp_path= sys.argv[1]
-fname = sys.argv[2]
+fpath = sys.argv[2]
 
-fname=os.path.basename(fname)
+fname=os.path.basename(fpath)
 
-in_file   = tmp_path + '/'+fname+'.tr.tr'
-out_file  = tmp_path + '/'+fname+'.clean.tr'
-cbmc_file = tmp_path + '/'+fname+'.cbmc_out.cpp'
-tagged    = tmp_path + '/'+fname+'.trace-tagged.cpp'
-wrong     = tmp_path + '/'+fname+'.wrong.litmus'
-wrong_tag = tmp_path + '/'+fname+'.wrong-tagged.litmus'
+in_file     = tmp_path + '/'+fname+'.tr.tr'
+out_file    = tmp_path + '/'+fname+'.clean.tr'
+cbmc_file   = tmp_path + '/'+fname+'.cbmc_out.cpp'
+tagged      = tmp_path + '/'+fname+'.trace-tagged.cpp'
+wrong_c     = tmp_path + '/'+fname+'.wrong.c'
+wrong_tag_c = tmp_path + '/'+fname+'.wrong-tagged.cpp'
+wrong       = tmp_path + '/'+fname+'.wrong.litmus'
+wrong_tag   = tmp_path + '/'+fname+'.wrong-tagged.litmus'
 
 try:
     with open(in_file) as in_f:
@@ -71,7 +73,7 @@ tf.close()
 # Stiching litmust files to output of cmsb
 #--------------------------------------------
 
-def find_num_thread(lfile):
+def find_num_thread_litmus(lfile):
     # lfile = './examples/litmus/c/original/alltests/'+lname+".litmus"
     try:
         with open(lfile) as lf:
@@ -85,33 +87,74 @@ def find_num_thread(lfile):
             return len(splits)
     return 0
 
-print(wrong)
-if os.path.isfile(wrong):
-    elists = []
-    p = re.compile(r'=([0-9]+)$')
-    tnum = find_num_thread(wrong)
-    for t in range(1,tnum+1): 
-        tid = str(t)
-        tes = [ k.strip() for k in cf if tid+' ASSIGN' in k ]
-        last_sat = "_"
-        last_iw = "_"
-        es = []
-        for s in tes:
-            match = re.findall( p, s)
-            if len(match) == 0:
-                m = "_"
-            else:
-                m = match[0]                
-            if 'LDSAT' in s:
-                last_sat = m
-            if 'LDCOM' in s:
-                es.append( last_sat + "," + m )                
-            if 'STIW' in s:
-                last_iw = m
-            if 'STCOM' in s:
-                es.append( last_iw + "," + m )
-        elists.append(es)
+def find_num_thread(cfile):
+    # lfile = './examples/litmus/c/original/alltests/'+lname+".litmus"
+    try:
+        with open(cfile) as cf:
+            lines = cf.readlines()
+    except IOError as e:
+        print( "failed to open" + in_file  )
+        sys.exit(0)
+    tnum = 1
+    for line in lines:
+        if "pthread_create" in line:
+            tnum += 1
+    return tnum
 
+# tnum = find_num_thread_litmus(wrong)
+tnum = find_num_thread(fpath)
+
+# if os.path.isfile(wrong):
+elists = []
+p = re.compile(r'=([0-9]+)$')
+lineno = re.compile(r'_l([0-9]+)_c')
+for t in range(0,tnum): 
+    tid = str(t)
+    tes = [ k.strip() for k in cf if tid+' ASSIGN' in k ]
+    last_sat = "_"
+    last_iw = "_"
+    es = []
+    for s in tes:
+        match = re.findall( p, s)
+        if len(match) == 0:
+            m = "_"
+        else:
+            m = match[0]                
+        l = re.findall( lineno, s)
+        if len(l) == 0:
+            l = "_"
+        else:
+            l = l[0]
+        if 'LDSAT' in s:
+            last_sat = m
+        if 'LDCOM' in s:
+            es.append( (last_sat + "," + m,l) )                
+        if 'STIW' in s:
+            last_iw = m
+        if 'STCOM' in s:
+            es.append( (last_iw + "," + m,l) )
+    elists.append(es)
+
+
+
+shutil.copyfile(fpath, wrong_c)
+with open(wrong_c) as wrong_f:
+    cf = wrong_f.readlines()
+
+for es in elists:
+    for e in es:
+        update = e[0]
+        l = e[1]
+        if l != "_":
+            line_num = int(l)-1
+            cf[line_num] = cf[line_num].rstrip() + '// '+update.rstrip() + '\n'
+    
+tf = open(wrong_tag_c,'w+')
+tf.writelines(cf)
+tf.close()
+exit()
+
+if os.path.isfile(wrong):
     try:
         with open(wrong) as wf:
             ws = wf.readlines()

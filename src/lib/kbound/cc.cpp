@@ -10,15 +10,26 @@ void kbound::prefix_seq_cc() {
 
   dump_Comment( "declare arrays for intial value version in contexts" );
   val_init_list = { "meminit" };
-  dump_Arrays( "int", val_init_list,  "NPROC", "ADDRSIZE", "NCONTEXT");
+  dump_Arrays( "int", val_init_list,  "NTHREAD", "ADDRSIZE", "NCONTEXT");
+
+  // dump_Comment( "declare arrays for context stamps" );
+  // ctx_list = {
+  //   "ct"
+  // };
+  // dump_Arrays( "int", ctx_list, "NTHREAD", "ADDRSIZE");
+
+  proc_list = {
+    "ct"
+  };
+  for( auto ary: proc_list ) dump_Decl_array("int", ary, "NTHREAD");
 
   dump_Comment( "declare arrays for running value version in contexts" );
   val_list = {
     "mem", // snap shot
   };
-  dump_Arrays( "int", val_list,  "NPROC", "ADDRSIZE", "NCONTEXT");
+  dump_Arrays( "int", val_list,  "NTHREAD", "ADDRSIZE", "NCONTEXT");
 
-  var_list = { "old_cctrl", "old_cr", "old_cdy", "old_cw",  "new_creg" };
+  var_list = { "old_ct", "old_cctrl", "old_cr", "old_cdy", "old_cw",  "new_creg" };
   dump_Newline();
   dump_String("__LOCALS__");
 
@@ -66,15 +77,16 @@ void kbound::dump_post_context_matching_cc() {
     }
   }
 }
+
 //-------------------------------------------------------------------
 // Thread initialization
 //-------------------------------------------------------------------
 
 void kbound::dump_start_thread_cc() {
-  auto cdy     =     "cdy[" + tid + "]";
-  auto cstart  =  "cstart[" + tid + "]";  // if we turn the local variabls
-  dump_Assign_rand_ctx( cdy ); //todo : do we need to do this
-  dump_Assume_geq( cdy, cstart );
+  // auto cdy     =     "cdy[" + tid + "]";
+  // auto cstart  =  "cstart[" + tid + "]";  // if we turn the local variabls
+  // dump_Assign_rand_ctx( cdy ); //todo : do we need to do this
+  // dump_Assume_geq( cdy, cstart );
 }
 
 //-------------------------------------------------------------------
@@ -82,13 +94,13 @@ void kbound::dump_start_thread_cc() {
 //-------------------------------------------------------------------
 
 void kbound::dump_thread_create_cc(std::string child_tid) {
-  dump_dmbsy(); // All in-flight opertions must commit now
-  dump_Assume_geq( "cstart[" + child_tid + "]", "cdy[" + tid + "]");
+  // dump_dmbsy(); // All in-flight opertions must commit now
+  // dump_Assume_geq( "cstart[" + child_tid + "]", "cdy[" + tid + "]");
 }
 
 void kbound::dump_thread_join_cc( std::string child_tid ) {
-  dump_dmbsy(); // All in-flight opertions must commit now
-  dump_Assume_geq(  "cdy[" + tid + "]", "creturn[" + child_tid + "]" );
+  // dump_dmbsy(); // All in-flight opertions must commit now
+  // dump_Assume_geq(  "cdy[" + tid + "]", "creturn[" + child_tid + "]" );
 }
 
 //-------------------------------------------------------------------
@@ -97,33 +109,35 @@ void kbound::dump_thread_join_cc( std::string child_tid ) {
 
 void kbound::
 dump_ld_cc( std::string r,     // register name
-            reg_time_t cval,  // context of register value (to be updated)
-            reg_time_t caddr, // context of address   (ignoring here for now)
+            reg_ctx_t cval,  // context of register value (to be updated)
+            reg_ctx_t caddr, // context of address   (ignoring here for now)
             std::string gid,   // global variable index
             bool isAcquire,    // properties of access (ignored here)
-            bool isExclusive   // properties of access (ignored here)
+            bool isExclusive,  // properties of access (ignored here)
+            std::string loc
             ) {
   assert(inside_transaction);
   auto t = "["+ tid +"]";
   auto ct  = "ct"+t;
-  dump_Assume_geq(cval[COM_TIME], ct);
+  dump_Assume_geq(cval[COM_CTX], ct);
   dump_Assign( r, "buff["+gid+"]");
 }
 
 
 void kbound::
 dump_st_cc( std::string r,     // register name
-            reg_time_t cval,  // context of register value
-            reg_time_t caddr, // context of address   (ignoring here)
+            reg_ctx_t cval,  // context of register value
+            reg_ctx_t caddr, // context of address   (ignoring here)
             std::string gid,   // global variable index
             bool isRelease,    // properties of access (ignored here)
-            bool isExclusive   // properties of access (ignored here)
+            bool isExclusive,   // properties of access (ignored here)
+            std::string loc
             ) {
   assert(inside_transaction);
   auto t = "["+ tid +"]";
   auto ct  = "ct"+t;
   dump_Assign( "buff["+gid+"]", r );
-  dump_Assume_geq(cval[COM_TIME], ct);
+  dump_Assume_geq(cval[COM_CTX], ct);
 }
 
 
@@ -140,7 +154,7 @@ void kbound::dump_begin_transaction_cc() {
     auto xn = std::to_string(x);
     dump_Assign_rand_thread( "access_idx["+xn+"]");
     dump_Assign( "buff["+xn+"]",
-                 "mem( access_idx["+xn+"]" +","+ xn +","+  + "," + ct +")" );
+                 "mem( access_idx["+xn+"]" +","+ xn +","+ ct +")" );
   }
   if( inside_transaction )
     llvm_bmc_error("kbound", "Nested transactions are not allowed");

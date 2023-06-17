@@ -173,7 +173,7 @@ std::string kbound::read_const( const llvm::Value* v ) {
   if( auto cexpr = llvm::dyn_cast<const llvm::ConstantExpr>(v) ) {
     if( cexpr->getType()->isPointerTy() ) {
       std::string gid;
-      reg_time_t cgid;
+      reg_ctx_t cgid;
       bool isLocalUse;
       addr_name( cexpr, gid, cgid, isLocalUse );
       return gid;
@@ -204,70 +204,71 @@ std::string kbound::get_reg( const llvm::Value* v, svec& idxs ) {
 }
 
 
-reg_time_t kbound::get_reg_time( const llvm::Value* v, svec& idxs) {
+reg_ctx_t kbound::get_reg_ctx( const llvm::Value* v, svec& idxs) {
   auto s = read_const(v);
   if( s != "" ) {
     assert( idxs.size() == 0 );
-    return zero_time();
+    return zero_ctx();
     // return {"0"};
   }
-  return get_reg_time( (const void*)v, idxs);
+  return get_reg_ctx( (const void*)v, idxs);
 }
 
-reg_time_t kbound::get_reg_time( const llvm::Value* v) {
+reg_ctx_t kbound::get_reg_ctx( const llvm::Value* v) {
   svec idxs;
-  return get_reg_time( v, idxs );
+  return get_reg_ctx( v, idxs );
   // auto s = read_const(v);
   // if( s != "" ) return "0";
-  // return get_reg_time( (const void*)v );
+  // return get_reg_ctx( (const void*)v );
 }
 
 
-void kbound::dump_update_reg_time( std::set<const llvm::Value*> ops,
+void kbound::dump_update_reg_ctx( std::set<const llvm::Value*> ops,
                                    const llvm::Value *out,
                                    svec& idxs,
-                                   reg_time_t& expr
+                                   reg_ctx_t& expr
                                    ) {
   assert( ops.size() > 0 || expr.size() > 0 );
 
   // std::string expr = "";
   // for( auto op : ops ) {
-  //   auto c = get_reg_time( op );
+  //   auto c = get_reg_ctx( op );
   //   expr = (expr == "") ? c : "max(" + expr + "," + c +")";
   // }
-  // auto co = get_reg_time( out );
+  // auto co = get_reg_ctx( out );
   // dump_Assign_max( co, expr );
 
-  timeset_t times;
-  if( expr.size() > 0 ) times.insert(expr);
-  for( auto op : ops ) times.insert( get_reg_time( op ) );
-  auto co = get_reg_time( out );
-  dump_Assign_time( co, times);
+  ctxset_t ctxs;
+  if( expr.size() > 0 ) ctxs.insert(expr);
+  for( auto op : ops ) ctxs.insert( get_reg_ctx( op ) );
+  auto co = get_reg_ctx( out );
+  dump_Assign_ctx( co, ctxs);
 }
 
-void kbound::dump_update_reg_time( std::set<const llvm::Value*> ops,
+void kbound::dump_update_reg_ctx( std::set<const llvm::Value*> ops,
                                    const llvm::Value *out,
                                    svec& idxs ) {
-  reg_time_t empty;
-  dump_update_reg_time(ops, out, idxs, empty);
+  reg_ctx_t empty;
+  dump_update_reg_ctx(ops, out, idxs, empty);
 }
 
-void kbound::dump_update_reg_time( std::set<const llvm::Value*> ops,
+void kbound::dump_update_reg_ctx( std::set<const llvm::Value*> ops,
                                    const llvm::Value *out ) {
-  reg_time_t empty;
+  reg_ctx_t empty;
   svec idxs;
-  dump_update_reg_time( ops, out, idxs, empty );
+  dump_update_reg_ctx( ops, out, idxs, empty );
 }
 
-void kbound::dump_update_reg_time( const llvm::Value *op1,
+void kbound::dump_update_reg_ctx( const llvm::Value *op1,
                                    const llvm::Value *op2,
                                    const llvm::Value *out ) {
-  return dump_update_reg_time( {op1,op2}, out );
+  return dump_update_reg_ctx( {op1,op2}, out );
 }
 
-void kbound::dump_update_reg_time( const llvm::Value *op,
+void kbound::dump_update_reg_ctx( const llvm::Value *op,
                                    const llvm::Value *out ) {
-  return dump_update_reg_time( {op}, out );
+  std::set<const llvm::Value*> ops{op};
+  return dump_update_reg_ctx( ops, out );
 }
 
 std::string kbound::add_reg_map( const llvm::Value* v) {
@@ -374,28 +375,17 @@ void kbound::dump_CmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
   // overload the reg_map for conditions
   add_reg_map(cmp, cnd);
 
-  // auto cr1 = get_reg_time( lhs );
-  // auto cr2 = get_reg_time( rhs );
+  // auto cr1 = get_reg_ctx( lhs );
+  // auto cr2 = get_reg_ctx( rhs );
   // if(cr1 != "") ctrl_dep_ord[cmp].push_back(cr1);
   // if(cr2 != "") ctrl_dep_ord[cmp].push_back(cr2);
 
-  dump_update_reg_time( {lhs, rhs}, cmp);
+  dump_update_reg_ctx( {lhs, rhs}, cmp);
   unmapped_names.push_back( cnd ); // ashu: breaking abstraction
   // unmapped_names should not be accessed here.
 
 }
 
-
-void kbound::dump_RetInst(const llvm::ReturnInst *ret ) {
-  assert( ret );
-  llvm::Value* v = ret->getReturnValue();
-
-  if( v ) {
-    auto r = get_reg(v);
-    dump_String("ret_thread_"+tid + " = " + r + ";");
-  }//  else {
-  // }
-}
 
 
 void kbound::dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop) {
@@ -406,12 +396,12 @@ void kbound::dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop) {
   auto r1 = get_reg( op0 );
   auto r2 = get_reg( op1 );
 
-  // auto rt  = get_reg_time( bop );
-  // auto r1t = get_reg_time( op0 );
-  // auto r2t = get_reg_time( op1 );
+  // auto rt  = get_reg_ctx( bop );
+  // auto r1t = get_reg_ctx( op0 );
+  // auto r2t = get_reg_ctx( op1 );
   // dump_Assign_max( rt, r1t, r2t );
   // dump_Active( rt ); // todo: do we need it?
-  dump_update_reg_time( {op0, op1}, bop );
+  dump_update_reg_ctx( {op0, op1}, bop );
 
   unsigned op = bop->getOpcode();
   switch( op ) {
@@ -447,9 +437,9 @@ void kbound::dump_ExtractValue( const llvm::ExtractValueInst* eval) {
   auto rv = get_reg(val, idxs);
   assert( rv != "" );
   dump_Assign( ro, rv );
-  auto cv = get_reg_time(val, idxs);
-  dump_update_reg_time( {}, eval, cv);
-  // auto cro = get_reg_time( eval );
+  auto cv = get_reg_ctx(val, idxs);
+  dump_update_reg_ctx( {}, eval, cv);
+  // auto cro = get_reg_ctx( eval );
   // dump_Assign( cro, cv );
 }
 
@@ -523,10 +513,10 @@ void kbound::dump_GetElementPtrInst( const llvm::GetElementPtrInst* gep,
   //check if there is recursive access
   auto op_gep_ptr = gep->getPointerOperand();
   std::string gid;
-  reg_time_t cgid;// context for address computation
+  reg_ctx_t cgid;// context for address computation
   addr_name( op_gep_ptr, gid, cgid, isLocalUse );
   // auto gid = get_reg(op_gep_ptr);
-  // auto cgid = get_reg_time(op_gep_ptr);
+  // auto cgid = get_reg_ctx(op_gep_ptr);
 
   auto o  = add_reg_map( gep );
   // svec cidxs;
@@ -538,7 +528,7 @@ void kbound::dump_GetElementPtrInst( const llvm::GetElementPtrInst* gep,
     auto idx = gep->getOperand(i);
     auto idx_str = get_reg( idx );
     if(idx_str != "0" ) index = '+' + idx_str + "*" + scale + index;
-    // auto cidx =  get_reg_time( idx );
+    // auto cidx =  get_reg_ctx( idx );
     // if( cidx != "0" ) cidxs.push_back( cidx );
   }
   dump_Assign( o, gid + index );
@@ -548,13 +538,13 @@ void kbound::dump_GetElementPtrInst( const llvm::GetElementPtrInst* gep,
     for(unsigned i=gep->getNumOperands()==2?1:2;i<gep->getNumOperands(); i++) {
       ops.insert( gep->getOperand(i) );
     }
-    dump_update_reg_time(ops, gep, cgid);
+    dump_update_reg_ctx(ops, gep, cgid);
     //todo: check if this is ok?
-    // auto co = get_reg_time( gep );
+    // auto co = get_reg_ctx( gep );
     // dump_Assume_geq( co, cgid );
     // svec cidxs;
     // for(unsigned i=gep->getNumOperands()==2?1:2;i<gep->getNumOperands(); i++) {
-    //   auto cidx =  get_reg_time( gep->getOperand(i) );
+    //   auto cidx =  get_reg_ctx( gep->getOperand(i) );
     //   if( cidx != "0" ) cidxs.push_back( cidx );
     // }
     // for( auto cidx : cidxs) dump_Assume_geq( co, cidx );
@@ -570,7 +560,7 @@ void kbound::dump_GetElementPtrInst( const llvm::GetElementPtrInst* gep,
 // }
 
 void kbound::addr_name( const llvm::Value* addr,
-                        std::string& gid, reg_time_t& caddr,
+                        std::string& gid, reg_ctx_t& caddr,
                         bool& isLocalUse ) {
   assert(addr);
   if( auto cexpr = llvm::dyn_cast<llvm::ConstantExpr>(addr) ) {
@@ -590,21 +580,21 @@ void kbound::addr_name( const llvm::Value* addr,
   if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
     gid = get_global_idx(gv);
     isLocalUse = is_local_global(gv);
-    caddr = zero_time(); //{"0"};//in dynamic addressing this will change
+    caddr = zero_ctx(); //{"0"};//in dynamic addressing this will change
     return;
   } else if( auto gop = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
     gid = get_reg( gop );
     assert( gid != "");
-    caddr = get_reg_time( gop );
+    caddr = get_reg_ctx( gop );
     return;
   } else if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
     gid = get_GEPOperator(gop);
-    caddr = zero_time(); //{"0"};
+    caddr = zero_ctx(); //{"0"};
     return;
   } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
     gid = get_global_idx(alloc);
     isLocalUse = is_local_global(alloc);
-    caddr = zero_time(); //{"0"}; //get_reg_time(gv);
+    caddr = zero_ctx(); //{"0"}; //get_reg_ctx(gv);
     return;
   } else if( llvm::isa<const llvm::Argument>(addr) ) {
     assert(false);
@@ -615,7 +605,7 @@ void kbound::addr_name( const llvm::Value* addr,
 
   gid = add_reg_map( addr );
   if( gid != "" ) {
-    caddr = get_reg_time(addr);
+    caddr = get_reg_ctx(addr);
     return;
   }
 
@@ -643,23 +633,24 @@ void kbound::dump_AtomicRMWInst( const llvm::AtomicRMWInst* rmw ) {
   //get address id
   dump_Comment( "Dumping RMW" );
   auto addr = rmw->getPointerOperand();
+  auto loc  = getLoc(rmw).position_name();
   std::string gid;
-  reg_time_t caddr;
+  reg_ctx_t caddr;
   bool isLocalUse;
   addr_name( addr, gid, caddr, isLocalUse );
 
   //read value
   auto w    = fresh_name();
   auto r    = add_reg_map(rmw);
-  auto cw   = get_reg_time(rmw);
+  auto cw   = get_reg_ctx(rmw);
   auto ord  = rmw->getOrdering();
   auto d    = get_reg( rmw->getValOperand() );
 
-  dump_ld( r, cw, caddr, gid, is_acquire(ord), true, isLocalUse);
+  dump_ld( r, cw, caddr, gid, is_acquire(ord), true, isLocalUse,loc);
 
   dump_Comment("calculate update value!");
-  dump_update_reg_time( {rmw->getValOperand()}, rmw );
-  // auto cd   = get_reg_time( rmw->getValOperand() );
+  dump_update_reg_ctx( {rmw->getValOperand()}, rmw );
+  // auto cd   = get_reg_ctx( rmw->getValOperand() );
   //dump_Assume_geq( cw, cd );
   switch( rmw->getOperation() ) {
   case llvm::AtomicRMWInst::BinOp::Xchg: dump_Assign( w, d ); break;
@@ -678,15 +669,16 @@ void kbound::dump_AtomicRMWInst( const llvm::AtomicRMWInst* rmw ) {
     llvm_bmc_error("kbound","unspported atomic rmw operation");
   }
 
-  dump_st( w, cw, caddr, gid, is_release(ord), true, isLocalUse);
+  dump_st( w, cw, caddr, gid, is_release(ord), true, isLocalUse,loc);
 }
 
 void kbound::dump_AtomicCmpXchgInst( const llvm::AtomicCmpXchgInst* cxng ) {
   //get address id
   dump_Comment( "Dumping CmpXCNG" );
   auto addr = cxng->getPointerOperand();
+  auto loc  = getLoc(cxng).position_name();
   std::string gid;
-  reg_time_t caddr;
+  reg_ctx_t caddr;
   bool isLocalUse = false;
   addr_name( addr, gid, caddr, isLocalUse );
 
@@ -695,32 +687,32 @@ void kbound::dump_AtomicCmpXchgInst( const llvm::AtomicCmpXchgInst* cxng ) {
   svec zero{"0"};
   svec one{"1"};
   auto r    = add_reg_map (cxng, zero);
-  auto cr   = get_reg_time(cxng, zero);
+  auto cr   = get_reg_ctx(cxng, zero);
   auto cnd  = add_reg_map (cxng, one);
   auto sord = cxng->getSuccessOrdering();
   // auto ford = cxng->getFailureOrdering();
   auto ov   = get_reg( cxng->getCompareOperand() );
   auto nv   = get_reg( cxng->getNewValOperand()  );
 
-  // auto cov  = get_reg_time( cxng->getCompareOperand() );
-  auto cnv  = get_reg_time( cxng->getNewValOperand()  );
+  // auto cov  = get_reg_ctx( cxng->getCompareOperand() );
+  auto cnv  = get_reg_ctx( cxng->getNewValOperand()  );
   // dump_Assume_geq( cr, cov ); // old value must be ready
   // dump_Assume_geq( cr, cnv ); // new value must be ready
 
-  dump_update_reg_time( { cxng->getNewValOperand(),
+  dump_update_reg_ctx( { cxng->getNewValOperand(),
       cxng->getCompareOperand() }, cxng, zero );
 
-  dump_ld( r, cr, caddr, gid, is_acquire(sord), true, isLocalUse);
+  dump_ld( r, cr, caddr, gid, is_acquire(sord), true, isLocalUse,loc);
 
-  auto ccnd = get_reg_time(cxng, one);
+  auto ccnd = get_reg_ctx(cxng, one);
   // dump_Assume_eq( ccnd, cr );
 
-  timeset_t crs{cr};
-  dump_Assign_time( ccnd, crs ); // todo: check this
+  ctxset_t crs{cr};
+  dump_Assign_ctx( ccnd, crs ); // todo: check this
 
   dump_If( r + "==" + ov );
   dump_Assign( cnd, "1" );
-  dump_st( nv, cnv, caddr, gid, is_release(sord), true, isLocalUse);
+  dump_st( nv, cnv, caddr, gid, is_release(sord), true, isLocalUse,loc);
   dump_Else();
   dump_Assign( cnd, "0" );
   dump_Close_scope();
@@ -943,14 +935,15 @@ void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
   assert( load );
   auto addr = load->getOperand(0);
   auto ord  = load->getOrdering();
+  auto loc  = getLoc(load).position_name();
   auto r = add_reg_map(load);
-  auto creg = get_reg_time(load);
+  auto creg = get_reg_ctx(load);
   std::string gid;
-  reg_time_t caddr;
+  reg_ctx_t caddr;
   bool isLocalUse = false;
   addr_name( addr, gid, caddr, isLocalUse );
   if( gid != "" ) { // Read variable is global, but used locally.
-    dump_ld( r, creg, caddr, gid, is_acquire( ord ), false, isLocalUse);
+    dump_ld( r, creg, caddr, gid, is_acquire( ord ), false, isLocalUse,loc);
   }else{
     load->dump();
     llvm_bmc_error("kbound", "we need to support local global optimization!!");
@@ -960,12 +953,13 @@ void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
 void kbound::dump_LD_(unsigned bidx, const llvm::CallInst* call,
                       bool isAcquire, bool isExclusive) {
   auto v    = add_reg_map(call);
-  auto cval = get_reg_time(call);
+  auto cval = get_reg_ctx(call);
+  auto loc  = getLoc(call).position_name();
   std::string gid;
-  reg_time_t caddr;
+  reg_ctx_t caddr;
   bool isLocalUse = false;
   addr_name(call->getArgOperand(0), gid, caddr, isLocalUse );
-  dump_ld( v, cval, caddr, gid, isAcquire, isExclusive, isLocalUse);
+  dump_ld( v, cval, caddr, gid, isAcquire, isExclusive, isLocalUse,loc);
 }
 
 
@@ -975,14 +969,15 @@ void kbound::dump_StoreInst(unsigned bidx, const llvm::StoreInst* store ) {
   auto val = store->getOperand(0);
   auto addr = store->getOperand(1);
   auto ord  = store->getOrdering();
+  auto loc  = getLoc(store).position_name();
 
   auto v    = get_reg(val);
-  auto cval = get_reg_time(val);
+  auto cval = get_reg_ctx(val);
   std::string gid = "";
-  reg_time_t caddr;
+  reg_ctx_t caddr;
   bool isLocalUse = false;
   addr_name( addr, gid, caddr, isLocalUse );
-  dump_st( v, cval, caddr, gid, is_release(ord), false, isLocalUse);
+  dump_st( v, cval, caddr, gid, is_release(ord), false, isLocalUse, loc);
 }
 
 
@@ -990,12 +985,13 @@ void kbound::dump_ST_(unsigned bidx, const llvm::CallInst* call,
                       bool isRelease, bool isExclusive) {
   auto val = call->getArgOperand(1);
   auto v    = get_reg(val);
-  auto cval = get_reg_time(val);
+  auto cval = get_reg_ctx(val);
+  auto loc  = getLoc(call).position_name();
   std::string gid;
-  reg_time_t caddr;
+  reg_ctx_t caddr;
   bool isLocalUse = false;
   addr_name(call->getArgOperand(0), gid, caddr, isLocalUse );
-  dump_st( v, cval, caddr, gid, isRelease, isExclusive, isLocalUse);
+  dump_st( v, cval, caddr, gid, isRelease, isExclusive, isLocalUse, loc);
 }
 
 
@@ -1041,9 +1037,9 @@ void kbound::dump_PhiNodes( const bb* b, const bb* prev_b ) {
         if( llvm::isa<llvm::UndefValue>(prev_v_) ) continue;
         auto v_      = get_reg( prev_v_ );
         dump_Assign( v, v_ );
-        dump_update_reg_time( {prev_v_}, phi );
-        // auto cval  = get_reg_time(phi);
-        // auto cval_ = get_reg_time( prev_v_ );
+        dump_update_reg_ctx( {prev_v_}, phi );
+        // auto cval  = get_reg_ctx(phi);
+        // auto cval_ = get_reg_ctx( prev_v_ );
         // dump_Assume_geq( cval, cval_ );
       }
 
@@ -1065,18 +1061,18 @@ void kbound::dump_SelectInst( const llvm::SelectInst *sel ) {
   auto rt = get_reg( tval );
   auto rf = get_reg( fval );
 
-  // auto cro = get_reg_time( sel  );
-  // auto crc = get_reg_time( cond );
-  // auto crt = get_reg_time( tval );
-  // auto crf = get_reg_time( fval );
+  // auto cro = get_reg_ctx( sel  );
+  // auto crc = get_reg_ctx( cond );
+  // auto crt = get_reg_ctx( tval );
+  // auto crf = get_reg_ctx( fval );
 
   dump_If( rc );
   dump_Assign( ro, rt);
-  dump_update_reg_time( {cond, tval}, sel );
+  dump_update_reg_ctx( {cond, tval}, sel );
   // dump_Assign_max( cro, crc, crt );
   dump_Else();
   dump_Assign( ro, rf);
-  dump_update_reg_time( {cond, fval}, sel );
+  dump_update_reg_ctx( {cond, fval}, sel );
   // dump_Assign_max( cro, crc, crf );
   dump_Close_scope();
 
@@ -1094,7 +1090,7 @@ void kbound::dump_SwitchInst( unsigned bidx,
                               const llvm::SwitchInst *swch ) {
   assert( swch );
   dump_Comment( "Switch statement");
-  dump_update_ctrl( swch->getCondition() );
+  dump_update_ctrl( get_reg_ctx(swch->getCondition()) );
 
   auto r = get_reg( swch->getCondition() );
   for( unsigned i = 1; i < swch->getNumSuccessors(); i++ ) {
@@ -1116,7 +1112,7 @@ void kbound::dump_SwitchInst( unsigned bidx,
 void kbound::dump_Branch( unsigned bidx, const llvm::BranchInst* br ) {
   assert( br );
   if( !br->isUnconditional() ) {
-    dump_update_ctrl( (const void*) br->getCondition() );
+    dump_update_ctrl( get_reg_ctx(br->getCondition()) );
     auto r = get_reg( br->getCondition() );
     dump_If( r );
     dump_block_successor( bidx, br->getSuccessor(0) );
@@ -1133,10 +1129,22 @@ void kbound::dump_UnreachableInst( unsigned bidx,
                                    const llvm::UnreachableInst *I) {
   auto r = add_reg_map( I );
   dump_Assign( r, "1" );
+  dump_Goto( block_name("_END") );
   in_code_spec.push_back( r + "== 0" );
 }
 
 
+void kbound::dump_RetInst(const llvm::ReturnInst *ret ) {
+  assert( ret );
+  llvm::Value* v = ret->getReturnValue();
+
+  if( v ) {
+    auto r = get_reg(v);
+    dump_String("ret_thread_"+tid + " = " + r + ";");
+  }//  else {
+  // }
+  dump_Goto( block_name("_END") );
+}
 
 void kbound::dump_Block( unsigned bidx, const bb* b ) {
   assert( b );
@@ -1165,6 +1173,8 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
       dump_AtomicCmpXchgInst( xchg );
     } else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(I) ) {
       dump_GetElementPtrInst( gep );
+    } else if( auto sel = llvm::dyn_cast<llvm::SelectInst>(I) ) {
+      dump_SelectInst(sel);
       // Terminator instructions
     } else if( auto fence = llvm::dyn_cast<llvm::FenceInst>(I) ) {
       dump_FenceInst( fence );
@@ -1174,8 +1184,6 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
       dump_RetInst( ret );
     } else if( auto swch = llvm::dyn_cast<llvm::SwitchInst>(I) ) {
       dump_SwitchInst(bidx, swch);
-    } else if( auto sel = llvm::dyn_cast<llvm::SelectInst>(I) ) {
-      dump_SelectInst(sel);
     } else if( auto unreach = llvm::dyn_cast<llvm::UnreachableInst>(I) ) {
       dump_UnreachableInst(bidx, unreach);
     // } else if( auto lpad = llvm::dyn_cast<llvm::LandingPadInst>(I) ) {
@@ -1221,6 +1229,7 @@ void kbound::dump_Thread() {
     dump_Block( bidx, src );
     bidx++;
   }
+  dump_Label("_END");
   dump_Newline();
 }
 
@@ -1234,7 +1243,7 @@ void kbound::dump_Thread() {
   // for( auto ary: reg_list ) dump_Decl_array("int", ary,reg_copy_size);
   // dump_Newline();
 
-  // for( auto ary: time_list ){
+  // for( auto ary: ctx_list ){
   //   dump_Decl_array("int", ary, mem_copy_size);
   // }
   // dump_Newline();
@@ -1260,7 +1269,7 @@ void kbound::dump_Thread() {
   //initializing timing constraints
   // dump_For("char", "p", "NPROC");
   // dump_For("char", "x", "ADDRSIZE");
-  // for( auto ary: time_list ) dump_String( ary + "_(p,x) = 0;" );
+  // for( auto ary: ctx_list ) dump_String( ary + "_(p,x) = 0;" );
   // dump_Close_scope();
   // for( auto ary: proc_list ) dump_String( ary + "[p] = 0;" );
   // dump_Close_scope();
@@ -1293,7 +1302,7 @@ void kbound::dump_Thread() {
 //   //     dump_Assume_geq( "ctrl["+tid+"]", dep);
 //   //   }
 //   // }else{
-//   //   auto cr = get_reg_time( cond );
+//   //   auto cr = get_reg_ctx( cond );
 //   //   dump_Assume_geq( "ctrl["+tid+"]", cr );
 //   // }
 
@@ -1338,13 +1347,13 @@ void kbound::dump_Thread() {
 //     // dump_Assign_rand_ctx( ctrl );
 //     // dump_Assume_geq( ctrl, "old_ctrl" );
 //     // if( exists( ctrl_dep_ord, (const void *)cond ) ) {
-//     //   //todo: remove this branch if compute the reg_time of the compare
+//     //   //todo: remove this branch if compute the reg_ctx of the compare
 //     //   //      instruction is computed; already added
 //     //   for( auto& dep : ctrl_dep_ord.at(cond) ) {
 //     //     dump_Assume_geq( "ctrl["+tid+"]", dep);
 //     //   }
 //     // }else{
-//     //   auto cr = get_reg_time( cond );
+//     //   auto cr = get_reg_ctx( cond );
 //     //   dump_Assume_geq( "ctrl["+tid+"]", cr );
 //     // }
 
@@ -1381,14 +1390,14 @@ void kbound::dump_Thread() {
   // }
 
   // auto v    = add_reg_map(phi);
-  // auto cval = get_reg_time(phi);
+  // auto cval = get_reg_ctx(phi);
 
   // // std::vector<expr> phi_cons;
   // for( unsigned i = 0 ; i < num ; i++ ) {
   //   auto prev    = phi->getIncomingBlock(i);
   //   auto prev_v_ = phi->getIncomingValue(i);
   //   auto v_      = get_reg( prev_v_ );
-  //   auto cval_   = get_reg_time( prev_v_ );
+  //   auto cval_   = get_reg_ctx( prev_v_ );
 
   //   // condition to skip??
   //   std::vector<unsigned> pre_bidxes;
