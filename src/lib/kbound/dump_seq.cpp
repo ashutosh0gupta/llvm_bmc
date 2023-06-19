@@ -403,6 +403,10 @@ void kbound::dump_Arrays( std::string type,
   dump_Newline();
 }
 
+void kbound::dump_Return(std::string v) {
+  dump_String( "return "+ v+";" );
+}
+
 void kbound::dump_Arrays( std::string type,
                           svec arys,
                           std::string dim1, std::string dim2,
@@ -458,6 +462,7 @@ void kbound::postfix_seq() {
     dump_String("ASSERT(" + term + ");");
   }
   dump_Newline();
+  dump_Return("0");
   dump_Close_scope();
 }
 

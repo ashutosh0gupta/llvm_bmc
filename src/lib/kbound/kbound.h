@@ -143,6 +143,7 @@ private:
   void dump_Arrays( std::string type,
                     std::vector<std::string> arys,
                     std::string dim1, std::string dim2, std::string dim3 );
+  void dump_Return(std::string v);
 
   void dump_Active( std::string ctx);
   void dump_Assign_ctx( reg_ctx_t&, ctxset_t& );
