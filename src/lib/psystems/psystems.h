@@ -23,18 +23,6 @@ class bmc; // forward declaration of the bmc class
 // typedef std::vector<std::string> svec;
 
 
-
-// typedef std::vector<uint64_t> state_t;
-
-
-
-
-
-
-// struct
-
-// condition_t  condition;
-
 class psystems : public bmc_pass,
                  public llvm::FunctionPass
 {
@@ -100,12 +88,12 @@ private:
     state_t init_state;
     word_t bad_min;
     const lang_t &size_k_substrs(word_t::const_iterator, word_t::const_iterator, state_t);
-    lang_t alpha(word_t::const_iterator, word_t::const_iterator, state_t);
+    lang_t alpha(const word_t &, state_t);
     lang_t alpha(const lang_t &, state_t);
     lang_t integral(const lang_t &, state_t, state_t);
     const lang_t &post(const word_t &);
     lang_t post(const lang_t &);
-    bool verify();
+
 
     // Helper functions
     std::string getInstructionString(const llvm::Instruction &);
@@ -123,7 +111,7 @@ public:
 
     void getAnalysisUsage(llvm::AnalysisUsage &au) const;
     llvm::StringRef getPassName() const;
-
+    bool verify();
     // bool verify_prop();
 };
 

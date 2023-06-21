@@ -2,7 +2,7 @@
 
 // #include <stdio.h>
 // #include <unistd.h>
-void critical(int/*id*/);
+void critical(int/* id*/);
 // {
 //     for(int i = 0; i < 10; ++i)
 //     {
@@ -19,7 +19,6 @@ int flags[NUM_THREADS];
 //     puts("");
 //     for(int i = 0; i < NUM_THREADS; ++i) printf("%d ", flags[i]);
 //     puts("");
-//     sleep(5);
 // }
 
 void *function(void *pid)
@@ -27,59 +26,32 @@ void *function(void *pid)
     int id = * (int *) pid;
     L0:
     flags[id] = 0;
-    L1:
-    flags[id] = 1;
     for(int i = 0; i < NUM_THREADS; ++i)
     {
         if(i == id) continue;
-        if(flags[i] != 0 && flags[i] != 1 && flags[i] != 2 && flags[i] != 5 && flags[i] != 6)
-        {
-            goto L1;
-        }
+        if(flags[i] != 0 && flags[i] != 1 && flags[i] != 4) goto L0;
     }
+    L1:
+    flags[id] = 1;
     L2:
     flags[id] = 2;
+    for(int i = 0; i < id; ++i)
+    {
+        if(flags[i] != 0) goto L2;
+    }
     L3:
     flags[id] = 3;
     for(int i = 0; i < NUM_THREADS; ++i)
     {
         if(i == id) continue;
-        if(flags[i] == 1 || flags[i] == 2)
+        if(flags[i] == 2)
         {
             L4:
             flags[id] = 4;
-            L5:
-            flags[id] = 5;
-            for(int j = 0; j < NUM_THREADS; ++j)
-            {
-                if(j == id) continue;
-                if(flags[j] == 8 || flags[j] == 9 || flags[j] == 10) goto L6;
-            }
-            goto L5;
-            L6:
-            flags[id] = 6;
-            goto L8;
+            critical(id);
+            goto L0;
         }
     }
-    L7:
-    flags[id] = 7;
-    L8:
-    flags[id] = 8;
-    for(int i = 0; i < id; ++i)
-    {
-        if(flags[i] != 0 && flags[i] != 1 && flags[i] != 2) goto L8;
-    }
-    L9:
-    flags[id] = 9;
-    critical(id);
-    L10:
-    flags[id] = 10;
-    for(int i = 0; i < id; ++i)
-    {
-        if(flags[i] != 0 && flags[i] != 1 && flags[i] != 2 && flags[i] != 8 && flags[i] != 9 && flags[i] != 10 && flags[i] != 11) goto L10;
-    }
-    L11:
-    flags[id] = 11;
     goto L0;
 }
 
