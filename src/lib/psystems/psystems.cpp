@@ -22,12 +22,12 @@ psystems::psystems(options &o_, std::unique_ptr<llvm::Module> &m_,
     : bmc_pass(o_, o_.solver_ctx, bmc_), llvm::FunctionPass(ID), module(m_), ofcpp(o_.outDirPath.string() + "/cbmc.cpp"), current_indent(0), ncontext(o.ctx_bound), init_state(0), bad_min({5, 5})
 {
     // hardcoding Szymanski post - eventually will want to do this in psystems::runOnFunction
-    rules.local_rules.push_back(transition(0, 1));
-    rules.global_rules.push_back(global_rule(FORALL, NEQ, {0, 1, 2}, transition(1, 3)));
-    rules.global_rules.push_back(global_rule(EXISTS, NEQ, {1}, transition(3, 2)));
-    rules.global_rules.push_back(global_rule(EXISTS, NEQ, {4, 5}, transition(2, 4)));
-    rules.global_rules.push_back(global_rule(FORALL, LT, {0, 1}, transition(4, 5)));
-    rules.global_rules.push_back(global_rule(FORALL, GT, {0, 1, 4, 5}, transition(5, 0)));
+    // rules.local_rules.push_back(transition(0, 1));
+    // rules.global_rules.push_back(global_rule(FORALL, NEQ, {0, 1, 2}, transition(1, 3)));
+    // rules.global_rules.push_back(global_rule(EXISTS, NEQ, {1}, transition(3, 2)));
+    // rules.global_rules.push_back(global_rule(EXISTS, NEQ, {4, 5}, transition(2, 4)));
+    // rules.global_rules.push_back(global_rule(FORALL, LT, {0, 1}, transition(4, 5)));
+    // rules.global_rules.push_back(global_rule(FORALL, GT, {0, 1, 4, 5}, transition(5, 0)));
 }
 
 psystems::~psystems() {}
@@ -86,6 +86,15 @@ bool psystems::runOnFunction(llvm::Function &f)
     // We have to figure out how the flag changes and what are the conditions of passing the checkpoint
     if(EntryFn == "szymanski")
     {
+        auto &LIWP = getAnalysis<llvm::LoopInfoWrapperPass>();
+        auto &LI = LIWP.getLoopInfo();
+        state_t count;
+        for(auto &I: LI)
+        {
+            I->dump();
+            count++;
+        }
+        std::cout << "COUNT: " << count << std::endl;
         std::cout << "System is" << (verify() ? " safe." : " unsafe.") << std::endl;
     }
     return false;

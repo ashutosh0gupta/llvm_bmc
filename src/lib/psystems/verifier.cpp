@@ -33,13 +33,13 @@ const psystems::lang_t & psystems::size_k_substrs(word_t::const_iterator start, 
     return *memo[args];
 }
 
-psystems::lang_t psystems::alpha(word_t::const_iterator start, const word_t::const_iterator end, state_t k)
+psystems::lang_t psystems::alpha(const word_t &word, state_t k)
 {
     lang_t ret_set;
     for(state_t size = 0; size <= k; ++size)
     {
-        auto sks = size_k_substrs(start, end, size);
-        for(const auto &x: sks)
+        const lang_t &sks = size_k_substrs(word.begin(), word.end(), size);
+        for(const word_t &x: sks)
         {
             ret_set.insert(x);
         }
@@ -50,9 +50,9 @@ psystems::lang_t psystems::alpha(word_t::const_iterator start, const word_t::con
 psystems::lang_t psystems::alpha(const lang_t & lang, state_t k)
 {
     lang_t ret_set;
-    for(const auto& w: lang)
+    for(const word_t& w: lang)
     {
-        for(const auto& ww: alpha(w.begin(), w.end(), k))
+        for(const word_t& ww: alpha(w, k))
         {
             ret_set.insert(ww);
         }
@@ -102,7 +102,7 @@ psystems::lang_t psystems::integral(const lang_t &lang, state_t k, state_t l)
     {
         Trie *t = bfs.front();
         if(t->str.size() > l) break;
-        for(const auto &v: alpha((t->str).begin(), (t->str).end(), k))
+        for(const word_t &v: alpha(t->str, k))
         {
             if(!lang.count(v))
             {
@@ -133,7 +133,7 @@ const psystems::lang_t &psystems::post(const word_t & word)
     std::unique_ptr<lang_t> to_ret = std::make_unique<lang_t>();
     for(state_t i = 0; i < word.size(); ++i)
     {
-        for(const auto& rule: rules.local_rules)
+        for(const transition& rule: rules.local_rules)
         {
             if(rule.from == word[i])
             {
@@ -143,7 +143,7 @@ const psystems::lang_t &psystems::post(const word_t & word)
             }
         }
     }
-    for(const auto& rule:rules.global_rules)
+    for(const global_rule& rule: rules.global_rules)
     {
         for(state_t id = 0; id < word.size(); ++id)
         {
@@ -269,9 +269,9 @@ const psystems::lang_t &psystems::post(const word_t & word)
 psystems::lang_t psystems::post(const lang_t & lang)
 {
     lang_t ret_set;
-    for(const auto & v: lang)
+    for(const word_t &v: lang)
     {
-        for(const auto& w: post(v))
+        for(const word_t &w: post(v))
         {
             ret_set.insert(w);
         }
@@ -294,28 +294,28 @@ bool psystems::verify()
     // since initial state of each thread is the same (say s), \alpha_k(I) is just words of the form sss... upto size k
     for(state_t k = 1; ; k++)
     {
-        auto Ik = lang_t({word_t(k, init_state)});
-        auto alphk = alpha(Ik, k);
-        auto Rk = Ik;
-        for(const auto& v: post(Ik)) Rk.insert(v);
+        lang_t Ik({word_t(k, init_state)});
+        lang_t alphk = alpha(Ik, k);
+        lang_t Rk = Ik;
+        for(const word_t &v: post(Ik)) Rk.insert(v);
         while(Rk != Ik)
         {
             Ik = Rk;
-            for(const auto& v: post(Ik)) Rk.insert(v);
+            for(const word_t &v: post(Ik)) Rk.insert(v);
         }
-        for(const auto& r: Rk)
+        for(const word_t &r: Rk)
         {
             if(is_subword(bad_min, r)) return false;
         }
-        auto V = alphk;
-        for(const auto& w: alpha(post(integral(alphk, k, k + 1)), k)) V.insert(w);
+        lang_t V = alphk;
+        for(const word_t &w: alpha(post(integral(alphk, k, k + 1)), k)) V.insert(w);
         while(V != alphk)
         {
             alphk = V;
-            for(const auto& w: alpha(post(integral(alphk, k, k + 1)), k)) V.insert(w);
+            for(const word_t &w: alpha(post(integral(alphk, k, k + 1)), k)) V.insert(w);
         }
         bool is_subset = true;
-        for(const auto& b: alpha(bad_min.begin(), bad_min.end(), k))
+        for(const word_t &b: alpha(bad_min, k))
         {
             if(! V.count(b))
             {
