@@ -76,7 +76,7 @@ collect_threads_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
                 auto tid = find_thread_obj(tr_obj_map, tr_obj);
                 if ( tid != (unsigned)(-1) ) {
                   // auto tid = tr_obj_map.at(tr_obj);
-                  std::cout << tid << "\n";
+                  // std::cout << tid << "\n";
                   b.sys_spec.threads.at(tid).join_instruction = call;
                 }else{
                   llvm_bmc_warning("Collect thread", "Fails to match join!");

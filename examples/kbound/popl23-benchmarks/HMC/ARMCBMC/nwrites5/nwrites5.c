@@ -30,6 +30,10 @@ int main(int argc, char *argv[])
 		pthread_create(&t[i], NULL, thread_n, &idx[i]);
 	}
 
+	for (int i = 0; i < N; i++) {
+		pthread_join(t[i], NULL);
+	}
+        
 	return 0;
 }
 

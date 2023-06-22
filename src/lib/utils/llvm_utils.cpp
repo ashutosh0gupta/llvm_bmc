@@ -2195,7 +2195,7 @@ get_array_info( const llvm::Value* op) {
     // llvm_bmc_error("bmc", "non array global write/read not supported!");
   }
   llvm_bmc_warning("bmc","failed to recognize heap access");
-  op->dump();
+  //op->dump();
   return std::make_pair(nullptr, 0);
 }
 // TODO: the following and the above functions make

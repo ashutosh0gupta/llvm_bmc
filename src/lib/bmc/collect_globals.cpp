@@ -30,6 +30,7 @@ void collect_globals::
 collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
   std::set<const llvm::Value*> written;
   std::set<const llvm::Value*> read;
+  std::set<const llvm::Value*> passed;
   for (unsigned j = 0; j < b.sys_spec.threads.size(); j++) {
     auto EntryFn = b.sys_spec.threads.at(j).entry_function;
     for (auto mit = m->begin(); mit != m->end(); mit++) {
@@ -37,7 +38,7 @@ collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
       auto dstr = demangle( Str1);
       if ( Str1 != EntryFn && dstr != EntryFn ) continue;
       auto f = &(*mit);
-      auto& list_gvars = fn_gvars_map[f->getName().str()];
+      auto& list_gvars = fn_gvars_map[j];
       for (auto bbit = f->begin(); bbit != f->end(); bbit++) {
         auto bb = &(*bbit);
         for( auto it = bb->begin(); it != bb->end(); ++it) {
@@ -54,6 +55,19 @@ collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
             auto glb = identify_global_in_addr( addr );
             if( glb && !exists( list_gvars, glb ) ) list_gvars.push_back(glb);
             if(glb) read.insert( glb );
+          }else if( auto call = llvm::dyn_cast<llvm::CallInst>(I) ) {
+            if( is_thread_create( call ) ) {
+              addr = call->getOperand(3);// pointer passed to other threads
+              auto glb = identify_global_in_addr( addr );
+              if( glb && !exists( list_gvars, glb )) list_gvars.push_back(glb);
+              if(glb) passed.insert( glb );
+            // }
+            // for( unsigned i = 0; i < call->getNumOperands(); i++) {
+              addr = call->getOperand(0);
+              glb = identify_global_in_addr( addr );
+              if( glb && !exists( list_gvars, glb )) list_gvars.push_back(glb);
+              if(glb) written.insert( glb );
+            }
           }else if( auto rmw = llvm::dyn_cast<llvm::AtomicRMWInst>(I) ) {
             addr = rmw->getPointerOperand();
             auto glb = identify_global_in_addr( addr );
@@ -80,8 +94,10 @@ collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
     for (auto fpair2 : fn_gvars_map) {
       if( fpair1.first == fpair2.first ) continue; // different threads
       for( auto g : glist1 ) {
-        if( !exists( fpair2.second, g ) ) continue; // No other thread touching
-        if( !exists( written, g) )        continue; // No one has written
+        if( !exists( passed, g ) ) {
+          if( !exists( fpair2.second, g) ) continue;// No other thread touching
+          if( !exists( written, g) )       continue; // No one has written
+        }
         //if( auto g1 = llvm::dyn_cast<llvm::GlobalVariable>(g) )
           {
           if( !exists(b.concurrent_vars, g) ) {
@@ -121,16 +137,17 @@ void collect_globals::insert_events( bmc& b, memory_cons& mem_enc,
   b.edata.post_loc = final;
 
   for (unsigned k = 0; k < b.sys_spec.threads.size(); k++) {
-    auto FnName1 = b.sys_spec.threads.at(k).entry_function;
-    if( fn_gvars_map.find(FnName1) != fn_gvars_map.end() ) {
-      list_gvars = fn_gvars_map[FnName1];
-      for (auto i = fn_gvars_map.begin(); i != fn_gvars_map.end(); i++) {
-        if (i->first !=  FnName1) {
+    // auto FnName1 = b.sys_spec.threads.at(k).entry_function;
+    // if( fn_gvars_map.find(FnName1) != fn_gvars_map.end() )
+    {
+      list_gvars = fn_gvars_map[k];
+      // for (auto i = fn_gvars_map.begin(); i != fn_gvars_map.end(); i++) {
+      //   if (i->first !=  FnName1) {
           // for(unsigned j=0; j < list_gvars.size(); j++)
           //   {
           //     auto g1 = list_gvars.at(j);
           for( auto g : list_gvars ) {
-            if( !exists( i->second, g) ) continue;
+            // if( !exists( i->second, g) ) continue;
             if( auto g1 = llvm::dyn_cast<llvm::GlobalVariable>(g) ) {
             // if (find(i->second.begin(), i->second.end(), g1) != i->second.end()) {
             const std::string gvar = (std::string)(g1->getName());
@@ -161,8 +178,8 @@ void collect_globals::insert_events( bmc& b, memory_cons& mem_enc,
             // }
             }
           }
-        }
-      }
+      //   }
+      // }
     }
   }
   /*for(unsigned i=0; i < b.concurrent_vars.size(); i++)

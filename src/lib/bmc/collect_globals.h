@@ -20,7 +20,7 @@ public:
   solver_context& solver_ctx;
   options& o;
   
-  std::map< std::string,  std::vector<const llvm::Value*>> fn_gvars_map;
+  std::map< unsigned,  std::vector<const llvm::Value*>> fn_gvars_map;
   // std::vector<const llvm::GlobalVariable*> list_gvars;
 
   std::vector<const llvm::Value*> list_gvars;
