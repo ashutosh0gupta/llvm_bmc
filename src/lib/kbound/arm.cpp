@@ -91,7 +91,6 @@ void kbound::prefix_seq_v1() {
 
   var_list = { "old_cctrl", "old_cr", "old_cdy", "old_cw",  "new_creg" };
   dump_Newline();
-  dump_String("__LOCALS__");
 
   // records ctx and processes
   for( unsigned p = 0; p < bmc_obj.sys_spec.threads.size(); p++ ) {
@@ -331,7 +330,6 @@ void kbound::prefix_seq_v2() {
 
   var_list = { "old_cctrl", "old_sr", "old_cr", "old_cdy", "old_cw",  "new_creg" };
   dump_Newline();
-  dump_String("__LOCALS__");
 
   // records ctx and processes
   for( unsigned p = 0; p < bmc_obj.sys_spec.threads.size(); p++ ) {

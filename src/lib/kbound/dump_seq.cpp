@@ -439,15 +439,8 @@ void kbound::dump_Active( std::string ctx) {
 
 void kbound::postfix_seq() {
   //initializing value matching
+
   dump_post_context_matching();
-  // for( unsigned x = 0; x < num_globals; x++ ) {
-  //   auto xn = std::to_string(x);
-  //   for( unsigned k = 0; k < ncontext-1; k++ ) {
-  //     auto xkn = "("+xn+","+std::to_string(k)+")";
-  //     auto xknp = "("+xn+","+std::to_string(k+1)+")";
-  //     for( auto ary: val_list ) dump_Assume(ary+"init"+xknp +" == "+ary+xkn);
-  //   }
-  // }
   dump_Newline();
   for(auto& term: in_code_spec ) dump_String("ASSERT(" + term + ");");
   std::map<std::string,std::string> rename;
@@ -478,6 +471,11 @@ void kbound::dump_locals() {
         //   if( name[0] != 'r') out << "  int " << name << "= 0;\n";
         //   out << "  char " << get_reg_ctx(pair.first) << ";\n"; //<< "= 0;\n";
         // }
+
+        for( unsigned i = 0; i < bmc_obj.sys_spec.threads.size();i++ ) {
+          tid = std::to_string(i);
+          out << "  int ret_thread_"   << tid <<";\n";
+        }
         for( auto& v : unmapped_names ) {
           if( v[0] == 'r') out << "  int " << v << "= 0;\n";
           for( auto tname : ctx_name(v) ) {
@@ -572,6 +570,7 @@ void kbound::preamble() {
   for( auto ary: ctx_list ) dump_Decl_array( "int", ary, "NCONTEXT" );
   dump_Newline();
 
+  dump_String("__LOCALS__");
 }
 
 
@@ -665,7 +664,6 @@ void kbound::dump_commit_before_thread_finish( std::string cctx ) {
 
 void kbound::dump_start_thread() {
   dump_Comment( "Dumping thread "+ tid );
-  dump_Assign( "int ret_thread_"+ tid, "0" );
 
   switch( mm ) {
   case ARMV1:

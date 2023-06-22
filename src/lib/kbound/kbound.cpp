@@ -287,15 +287,24 @@ std::string kbound::add_reg_map( const llvm::Value* v) {
 
 void kbound::dump_Params(llvm::Function &f) {
   //  for (auto& f_arg : f.getArgumentList()) {
+  unsigned param_count = 1;
   for( auto ab = f.arg_begin(), ae = f.arg_end(); ab != ae; ab++) {
     auto a = &(*ab);
-    auto ty = a->getType();
 
-    if( !ty->isPointerTy() ) { // input pointers are viewed as arrays
-      add_reg_map(a);
-    }else{ // array case
-      //todo:
-    }
+    auto val = add_reg_map(a);
+    auto pname = "launch_param_"+std::to_string(param_count)+"_"+tid;
+    uninit_names.push_back(pname);
+    dump_Assign( val, pname);
+    param_count++;
+    // auto& vals = thread_received_values[thread_id];
+    // vals.push_back(val);
+
+    // input pointers are viewed as arrays
+    // if( !a->getType()->isPointerTy() ) {
+    //   add_reg_map(a);
+    // }else{ // array case
+    //   //todo:
+    // }
   }
 }
 
@@ -597,7 +606,8 @@ void kbound::addr_name( const llvm::Value* addr,
     caddr = zero_ctx(); //{"0"}; //get_reg_ctx(gv);
     return;
   } else if( llvm::isa<const llvm::Argument>(addr) ) {
-    assert(false);
+    // addr->dump();
+    // assert(false);
   } else if( llvm::isa<llvm::Constant>(addr) ) {
     addr->dump();
     llvm_bmc_error("kbound", "constant access to the memory!");
@@ -846,6 +856,7 @@ void kbound::dump_CallInst( unsigned bidx, const llvm::CallInst* call ) {
 }
 
 void kbound::dump_CallThreadCreate( unsigned bidx, const llvm::CallInst* call){
+  // identify the thread id of the call
   unsigned j = 0;
   for (; j < bmc_obj.sys_spec.threads.size(); j++) {
     if( bmc_obj.sys_spec.threads.at(j).launch_instruction == call )
@@ -853,6 +864,10 @@ void kbound::dump_CallThreadCreate( unsigned bidx, const llvm::CallInst* call){
   }
   assert( j < bmc_obj.sys_spec.threads.size() );
   auto child_tid = std::to_string(j);
+
+  // dump passed value and thread start code
+  auto reg = get_reg( call->getOperand(3) );
+  dump_Assume("launch_param_1_"+child_tid + " == " + reg);
   dump_thread_create( bidx, child_tid );
 }
 
@@ -862,8 +877,14 @@ void kbound::dump_CallThreadJoin( unsigned bidx, const llvm::CallInst* call){
     if( bmc_obj.sys_spec.threads.at(j).join_instruction == call )
       break;
   }
-  assert( j < bmc_obj.sys_spec.threads.size() );
+  if( j == bmc_obj.sys_spec.threads.size() ) {
+    call->dump();
+    llvm_bmc_error("kbound", "thread values did not match!!");
+  }
   auto child_tid = std::to_string(j);
+
+  auto join_reg = add_reg_map(call);
+  dump_Assume( "ret_thread_"+child_tid +" == " + join_reg );
   dump_thread_join( bidx, child_tid );
 }
 
@@ -1140,7 +1161,7 @@ void kbound::dump_RetInst(const llvm::ReturnInst *ret ) {
 
   if( v ) {
     auto r = get_reg(v);
-    dump_String("ret_thread_"+tid + " = " + r + ";");
+    dump_Assume("ret_thread_"+tid + " == " + r);
   }//  else {
   // }
   dump_Goto( block_name("_END") );

@@ -63,6 +63,10 @@ private:
   std::map<const void*, std::string> ssa_name;
   std::map<const void*, names> ssa_name_full;
   std::map<const void*, svec> ctrl_dep_ord;
+  std::map<unsigned, std::string> thread_passed_value;
+  std::map<unsigned, svec       > thread_received_values;
+  std::map<unsigned, std::string> thread_returned_value;
+
   // std::map<const llvm::Value*, std::string> ssa_name;
   // std::map<const llvm::Value*, svec> ctrl_dep_ord;
   svec unmapped_names;

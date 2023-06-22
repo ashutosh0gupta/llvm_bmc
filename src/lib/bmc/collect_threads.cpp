@@ -13,6 +13,20 @@ collect_threads::collect_threads( std::unique_ptr<llvm::Module>& m_,
 
 collect_threads::~collect_threads() {}
 
+unsigned find_thread_obj( std::map<const llvm::Value *,
+                          unsigned>& tr_obj_map,
+                          const llvm::Value * vp) {
+  for( auto& t_map: tr_obj_map) {
+    auto v = t_map.first;
+    if( semantic_match( v, vp)) return t_map.second;
+    // if( auto I = llvm::dyn_cast<const llvm::Instruction>(v) ) {
+    // if( auto Ip = llvm::dyn_cast<const llvm::Instruction>(vp) ) {
+    //   if( Ip->isSameOperationAs(I) ) return t_map.second;
+    // }
+    // }
+  }
+  return (unsigned)(-1); // Dummy return value to integate
+}
 
 void collect_threads::
 collect_threads_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
@@ -24,7 +38,7 @@ collect_threads_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
   }
   unsigned j = 0;
   unsigned size = b.sys_spec.threads.size();
-  std::map<void *, unsigned> tr_obj_map;
+  std::map<const llvm::Value *, unsigned> tr_obj_map;
   while( j < size ) {
   // for (unsigned j = 0; j < b.sys_spec.threads.size(); j++) {
     auto EntryFn = b.sys_spec.threads.at(j).entry_function;
@@ -58,8 +72,11 @@ collect_threads_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
               auto tr_obj_load = call->getOperand(0);
               if( auto load = llvm::dyn_cast<llvm::LoadInst>(tr_obj_load) ) {
                 auto tr_obj = load->getOperand(0);
-                if ( exists(tr_obj_map, (void *)tr_obj) ) {
-                  auto tid = tr_obj_map.at(tr_obj);
+                 // exists(tr_obj_map, (void *)tr_obj)
+                auto tid = find_thread_obj(tr_obj_map, tr_obj);
+                if ( tid != (unsigned)(-1) ) {
+                  // auto tid = tr_obj_map.at(tr_obj);
+                  std::cout << tid << "\n";
                   b.sys_spec.threads.at(tid).join_instruction = call;
                 }else{
                   llvm_bmc_warning("Collect thread", "Fails to match join!");

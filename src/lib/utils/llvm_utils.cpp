@@ -2090,7 +2090,8 @@ std::pair<const llvm::Value*, uint64_t> identify_lpad_struct(const llvm::Value* 
 }
 
 
-const std::pair<const llvm::Value*, uint64_t> get_array_info( const llvm::Value* op) {
+const std::pair<const llvm::Value*, uint64_t>
+get_array_info( const llvm::Value* op) {
 
   while( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
     op = cast->getOperand(0);
@@ -2210,3 +2211,33 @@ const llvm::Value* identify_global_in_addr( const llvm::Value* op) {
 }
 
 
+bool semantic_match( const llvm::Value* op1, const llvm::Value* op2) {
+  if( op1 == op2 ) return true;
+
+  if( auto I1 = llvm::dyn_cast<const llvm::Instruction>(op1) ) {
+    if( auto I2 = llvm::dyn_cast<const llvm::Instruction>(op2) ) {
+      if( !I1->isSameOperationAs(I2) ) return false;
+      if( I1->getNumOperands() != I2->getNumOperands() ) return false;
+      if( llvm::isa<const llvm::AllocaInst>(I1) ) return false;
+      bool r = true;
+      for( unsigned i = 0 ; i < I1->getNumOperands(); i++ ) {
+        r = r && semantic_match( I1->getOperand(i), I2->getOperand(i) );
+      }
+      return r;
+    }else return false;
+  }
+  return false;
+  // if( auto cast1 = llvm::dyn_cast<const llvm::BitCastInst>(op1) ) {
+  //   if( auto cast2 = llvm::dyn_cast<const llvm::BitCastInst>(op2) ) {
+  //     return semantic_match(cast1->getOperand(0), cast2->getOperand(0));
+  //   }else return false;
+  // }
+  // if(auto gep1 = llvm::dyn_cast<const llvm::GEPOperator>(op1)) {
+  //   if(auto gep2 = llvm::dyn_cast<const llvm::GEPOperator>(op2)) {
+  //     if( gep1->getNumOperands() != gep2->getNumOperands() ) return false;
+  //     for(unsigned i = 0 ; i < gep1->getNumOperands(); i++ ) {
+  //       semantic_match( gep1->getOperand(), gep1->getOperand())
+  //     }
+  //   }else return false;
+  // }
+}

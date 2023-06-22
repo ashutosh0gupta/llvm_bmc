@@ -31,7 +31,6 @@ void kbound::prefix_seq_cc() {
 
   var_list = { "old_ct", "old_cctrl", "old_cr", "old_cdy", "old_cw",  "new_creg" };
   dump_Newline();
-  dump_String("__LOCALS__");
 
   //dump initializers
   dump_Comment( "Dumping initializations" );

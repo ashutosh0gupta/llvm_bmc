@@ -228,4 +228,6 @@ std::pair<const llvm::Value*, uint64_t> identify_lpad_struct(const llvm::Value* 
 
 void points_to_analysis( options& o, std::unique_ptr<llvm::Module>& module);
 
+bool semantic_match( const llvm::Value* op1, const llvm::Value* op2);
+
 #endif
