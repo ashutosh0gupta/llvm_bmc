@@ -884,7 +884,7 @@ void kbound::dump_CallThreadJoin( unsigned bidx, const llvm::CallInst* call){
   auto child_tid = std::to_string(j);
 
   auto join_reg = add_reg_map(call);
-  dump_Assume( "ret_thread_"+child_tid +" == " + join_reg );
+  //dump_Assume( "ret_thread_"+child_tid +" == " + join_reg );
   dump_thread_join( bidx, child_tid );
 }
 
