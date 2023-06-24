@@ -12,15 +12,15 @@ void dmbsy();
 void isb();
 
 long vars[2]; 
-long atom_0_X1_0; 
-long atom_1_X1_0; 
+int atom_0_X1_0; 
+int atom_1_X1_0; 
 
 void *t0(void *arg){
 label_1:;
   atomic_store_explicit(&vars[1], 1, memory_order_relaxed);
   int v3_W1 = atomic_load_explicit(&vars[0], memory_order_relaxed);
   int v10 = (v3_W1 == 0);
-  atomic_store_explicit(&atom_0_X1_0, v10, memory_order_seq_cst);
+  atom_0_X1_0 = v10;
   return NULL;
 }
 
@@ -29,7 +29,7 @@ label_2:;
   atomic_store_explicit(&vars[0], 1, memory_order_release);
   int v6_W1 = atomic_load_explicit(&vars[1], memory_order_relaxed);
   int v11 = (v6_W1 == 0);
-  atomic_store_explicit(&atom_1_X1_0, v11, memory_order_seq_cst);
+  atom_1_X1_0 = v11;
   return NULL;
 }
 
@@ -39,8 +39,8 @@ int main(int argc, char *argv[]){
 
   atomic_init(&vars[1], 0);
   atomic_init(&vars[0], 0);
-  atomic_init(&atom_0_X1_0, 0); 
-  atomic_init(&atom_1_X1_0, 0); 
+  atom_0_X1_0 = 0; 
+  atom_1_X1_0 = 0; 
 
   pthread_create(&thr0, NULL, t0, NULL);
   pthread_create(&thr1, NULL, t1, NULL);
@@ -48,8 +48,8 @@ int main(int argc, char *argv[]){
   pthread_join(thr0, NULL);
   pthread_join(thr1, NULL);
 
-  int v7 = atomic_load_explicit(&atom_0_X1_0, memory_order_seq_cst);
-  int v8 = atomic_load_explicit(&atom_1_X1_0, memory_order_seq_cst);
+  int v7 = atom_0_X1_0;
+  int v8 = atom_1_X1_0;
   int v9_conj = v7 & v8;
   if (v9_conj == 1) assert(0);
   return 0;

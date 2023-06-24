@@ -12,14 +12,14 @@ void dmbsy();
 void isb();
 
 long vars[8]; 
-long atom_0_X0_1; 
-long atom_1_X0_1; 
-long atom_2_X0_1; 
-long atom_3_X0_1; 
-long atom_4_X0_1; 
-long atom_5_X0_1; 
-long atom_6_X0_1; 
-long atom_7_X0_1; 
+int atom_0_X0_1; 
+int atom_1_X0_1; 
+int atom_2_X0_1; 
+int atom_3_X0_1; 
+int atom_4_X0_1; 
+int atom_5_X0_1; 
+int atom_6_X0_1; 
+int atom_7_X0_1; 
 
 void *t0(void *arg){
 label_1:;
@@ -27,7 +27,7 @@ label_1:;
   dmbsy();
   atomic_store_explicit(&vars[0], 1, memory_order_relaxed);
   int v40 = (v3_W0 == 1);
-  atomic_store_explicit(&atom_0_X0_1, v40, memory_order_seq_cst);
+  atom_0_X0_1 = v40;
   return NULL;
 }
 
@@ -37,7 +37,7 @@ label_2:;
   dmbsy();
   atomic_store_explicit(&vars[2], 1, memory_order_relaxed);
   int v41 = (v6_W0 == 1);
-  atomic_store_explicit(&atom_1_X0_1, v41, memory_order_seq_cst);
+  atom_1_X0_1 = v41;
   return NULL;
 }
 
@@ -47,7 +47,7 @@ label_3:;
   dmbsy();
   atomic_store_explicit(&vars[3], 1, memory_order_relaxed);
   int v42 = (v9_W0 == 1);
-  atomic_store_explicit(&atom_2_X0_1, v42, memory_order_seq_cst);
+  atom_2_X0_1 = v42;
   return NULL;
 }
 
@@ -57,7 +57,7 @@ label_4:;
   dmbsy();
   atomic_store_explicit(&vars[4], 1, memory_order_relaxed);
   int v43 = (v12_W0 == 1);
-  atomic_store_explicit(&atom_3_X0_1, v43, memory_order_seq_cst);
+  atom_3_X0_1 = v43;
   return NULL;
 }
 
@@ -67,7 +67,7 @@ label_5:;
   dmbsy();
   atomic_store_explicit(&vars[5], 1, memory_order_relaxed);
   int v44 = (v15_W0 == 1);
-  atomic_store_explicit(&atom_4_X0_1, v44, memory_order_seq_cst);
+  atom_4_X0_1 = v44;
   return NULL;
 }
 
@@ -77,7 +77,7 @@ label_6:;
   dmbsy();
   atomic_store_explicit(&vars[6], 1, memory_order_relaxed);
   int v45 = (v18_W0 == 1);
-  atomic_store_explicit(&atom_5_X0_1, v45, memory_order_seq_cst);
+  atom_5_X0_1 = v45;
   return NULL;
 }
 
@@ -87,7 +87,7 @@ label_7:;
   dmbsy();
   atomic_store_explicit(&vars[7], 1, memory_order_relaxed);
   int v46 = (v21_W0 == 1);
-  atomic_store_explicit(&atom_6_X0_1, v46, memory_order_seq_cst);
+  atom_6_X0_1 = v46;
   return NULL;
 }
 
@@ -97,7 +97,7 @@ label_8:;
   dmbsy();
   atomic_store_explicit(&vars[1], 1, memory_order_relaxed);
   int v47 = (v24_W0 == 1);
-  atomic_store_explicit(&atom_7_X0_1, v47, memory_order_seq_cst);
+  atom_7_X0_1 = v47;
   return NULL;
 }
 
@@ -119,14 +119,14 @@ int main(int argc, char *argv[]){
   atomic_init(&vars[2], 0);
   atomic_init(&vars[1], 0);
   atomic_init(&vars[0], 0);
-  atomic_init(&atom_0_X0_1, 0); 
-  atomic_init(&atom_1_X0_1, 0); 
-  atomic_init(&atom_2_X0_1, 0); 
-  atomic_init(&atom_3_X0_1, 0); 
-  atomic_init(&atom_4_X0_1, 0); 
-  atomic_init(&atom_5_X0_1, 0); 
-  atomic_init(&atom_6_X0_1, 0); 
-  atomic_init(&atom_7_X0_1, 0); 
+  atom_0_X0_1 = 0; 
+  atom_1_X0_1 = 0; 
+  atom_2_X0_1 = 0; 
+  atom_3_X0_1 = 0; 
+  atom_4_X0_1 = 0; 
+  atom_5_X0_1 = 0; 
+  atom_6_X0_1 = 0; 
+  atom_7_X0_1 = 0; 
 
   pthread_create(&thr0, NULL, t0, NULL);
   pthread_create(&thr1, NULL, t1, NULL);
@@ -146,14 +146,14 @@ int main(int argc, char *argv[]){
   pthread_join(thr6, NULL);
   pthread_join(thr7, NULL);
 
-  int v25 = atomic_load_explicit(&atom_0_X0_1, memory_order_seq_cst);
-  int v26 = atomic_load_explicit(&atom_1_X0_1, memory_order_seq_cst);
-  int v27 = atomic_load_explicit(&atom_2_X0_1, memory_order_seq_cst);
-  int v28 = atomic_load_explicit(&atom_3_X0_1, memory_order_seq_cst);
-  int v29 = atomic_load_explicit(&atom_4_X0_1, memory_order_seq_cst);
-  int v30 = atomic_load_explicit(&atom_5_X0_1, memory_order_seq_cst);
-  int v31 = atomic_load_explicit(&atom_6_X0_1, memory_order_seq_cst);
-  int v32 = atomic_load_explicit(&atom_7_X0_1, memory_order_seq_cst);
+  int v25 = atom_0_X0_1;
+  int v26 = atom_1_X0_1;
+  int v27 = atom_2_X0_1;
+  int v28 = atom_3_X0_1;
+  int v29 = atom_4_X0_1;
+  int v30 = atom_5_X0_1;
+  int v31 = atom_6_X0_1;
+  int v32 = atom_7_X0_1;
   int v33_conj = v31 & v32;
   int v34_conj = v30 & v33_conj;
   int v35_conj = v29 & v34_conj;

@@ -12,10 +12,10 @@ void dmbsy();
 void isb();
 
 long vars[3]; 
-long atom_1_X0_1; 
-long atom_1_X3_1; 
-long atom_1_X5_2; 
-long atom_1_X7_0; 
+int atom_1_X0_1; 
+int atom_1_X3_1; 
+int atom_1_X5_2; 
+int atom_1_X7_0; 
 
 void *t0(void *arg){
 label_1:;
@@ -35,13 +35,13 @@ label_2:;
   int v11_W6 = v10_W5 ^ v10_W5;
   int v14_W7 = atomic_load_explicit(&vars[0+v11_W6], memory_order_relaxed);
   int v25 = (v3_W0 == 1);
-  atomic_store_explicit(&atom_1_X0_1, v25, memory_order_seq_cst);
+  atom_1_X0_1 = v25;
   int v26 = (v7_W3 == 1);
-  atomic_store_explicit(&atom_1_X3_1, v26, memory_order_seq_cst);
+  atom_1_X3_1 = v26;
   int v27 = (v10_W5 == 2);
-  atomic_store_explicit(&atom_1_X5_2, v27, memory_order_seq_cst);
+  atom_1_X5_2 = v27;
   int v28 = (v14_W7 == 0);
-  atomic_store_explicit(&atom_1_X7_0, v28, memory_order_seq_cst);
+  atom_1_X7_0 = v28;
   return NULL;
 }
 
@@ -59,10 +59,10 @@ int main(int argc, char *argv[]){
   atomic_init(&vars[2], 0);
   atomic_init(&vars[1], 0);
   atomic_init(&vars[0], 0);
-  atomic_init(&atom_1_X0_1, 0); 
-  atomic_init(&atom_1_X3_1, 0); 
-  atomic_init(&atom_1_X5_2, 0); 
-  atomic_init(&atom_1_X7_0, 0); 
+  atom_1_X0_1 = 0; 
+  atom_1_X3_1 = 0; 
+  atom_1_X5_2 = 0; 
+  atom_1_X7_0 = 0; 
 
   pthread_create(&thr0, NULL, t0, NULL);
   pthread_create(&thr1, NULL, t1, NULL);
@@ -72,12 +72,12 @@ int main(int argc, char *argv[]){
   pthread_join(thr1, NULL);
   pthread_join(thr2, NULL);
 
-  int v15 = atomic_load_explicit(&vars[2], memory_order_seq_cst);
+  int v15 = atomic_load_explicit(&vars[2], memory_order_relaxed);
   int v16 = (v15 == 2);
-  int v17 = atomic_load_explicit(&atom_1_X0_1, memory_order_seq_cst);
-  int v18 = atomic_load_explicit(&atom_1_X3_1, memory_order_seq_cst);
-  int v19 = atomic_load_explicit(&atom_1_X5_2, memory_order_seq_cst);
-  int v20 = atomic_load_explicit(&atom_1_X7_0, memory_order_seq_cst);
+  int v17 = atom_1_X0_1;
+  int v18 = atom_1_X3_1;
+  int v19 = atom_1_X5_2;
+  int v20 = atom_1_X7_0;
   int v21_conj = v19 & v20;
   int v22_conj = v18 & v21_conj;
   int v23_conj = v17 & v22_conj;

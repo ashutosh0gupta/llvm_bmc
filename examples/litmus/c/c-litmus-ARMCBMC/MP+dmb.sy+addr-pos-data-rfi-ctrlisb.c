@@ -12,9 +12,9 @@ void dmbsy();
 void isb();
 
 long vars[4]; 
-long atom_1_X0_1; 
-long atom_1_X8_1; 
-long atom_1_X9_0; 
+int atom_1_X0_1; 
+int atom_1_X8_1; 
+int atom_1_X9_0; 
 
 void *t0(void *arg){
 label_1:;
@@ -39,11 +39,11 @@ lbl_LC00:;
   isb();
   int v18_W9 = atomic_load_explicit(&vars[0], memory_order_relaxed);
   int v33 = (v3_W0 == 1);
-  atomic_store_explicit(&atom_1_X0_1, v33, memory_order_seq_cst);
+  atom_1_X0_1 = v33;
   int v34 = (v15_W8 == 1);
-  atomic_store_explicit(&atom_1_X8_1, v34, memory_order_seq_cst);
+  atom_1_X8_1 = v34;
   int v35 = (v18_W9 == 0);
-  atomic_store_explicit(&atom_1_X9_0, v35, memory_order_seq_cst);
+  atom_1_X9_0 = v35;
   return NULL;
 }
 
@@ -55,9 +55,9 @@ int main(int argc, char *argv[]){
   atomic_init(&vars[2], 0);
   atomic_init(&vars[1], 0);
   atomic_init(&vars[0], 0);
-  atomic_init(&atom_1_X0_1, 0); 
-  atomic_init(&atom_1_X8_1, 0); 
-  atomic_init(&atom_1_X9_0, 0); 
+  atom_1_X0_1 = 0; 
+  atom_1_X8_1 = 0; 
+  atom_1_X9_0 = 0; 
 
   pthread_create(&thr0, NULL, t0, NULL);
   pthread_create(&thr1, NULL, t1, NULL);
@@ -65,15 +65,15 @@ int main(int argc, char *argv[]){
   pthread_join(thr0, NULL);
   pthread_join(thr1, NULL);
 
-  int v19 = atomic_load_explicit(&vars[3], memory_order_seq_cst);
+  int v19 = atomic_load_explicit(&vars[3], memory_order_relaxed);
   int v20 = (v19 == 1);
-  int v21 = atomic_load_explicit(&vars[0], memory_order_seq_cst);
+  int v21 = atomic_load_explicit(&vars[0], memory_order_relaxed);
   int v22 = (v21 == 1);
-  int v23 = atomic_load_explicit(&vars[1], memory_order_seq_cst);
+  int v23 = atomic_load_explicit(&vars[1], memory_order_relaxed);
   int v24 = (v23 == 1);
-  int v25 = atomic_load_explicit(&atom_1_X0_1, memory_order_seq_cst);
-  int v26 = atomic_load_explicit(&atom_1_X8_1, memory_order_seq_cst);
-  int v27 = atomic_load_explicit(&atom_1_X9_0, memory_order_seq_cst);
+  int v25 = atom_1_X0_1;
+  int v26 = atom_1_X8_1;
+  int v27 = atom_1_X9_0;
   int v28_conj = v26 & v27;
   int v29_conj = v25 & v28_conj;
   int v30_conj = v24 & v29_conj;

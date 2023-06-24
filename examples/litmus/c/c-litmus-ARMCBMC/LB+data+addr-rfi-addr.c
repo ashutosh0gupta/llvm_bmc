@@ -12,9 +12,9 @@ void dmbsy();
 void isb();
 
 long vars[3]; 
-long atom_0_X0_1; 
-long atom_1_X0_1; 
-long atom_1_X5_1; 
+int atom_0_X0_1; 
+int atom_1_X0_1; 
+int atom_1_X5_1; 
 
 void *t0(void *arg){
 label_1:;
@@ -23,7 +23,7 @@ label_1:;
   int v5_W2 = v4_W2 + 1;
   atomic_store_explicit(&vars[1], v5_W2, memory_order_relaxed);
   int v28 = (v3_W0 == 1);
-  atomic_store_explicit(&atom_0_X0_1, v28, memory_order_seq_cst);
+  atom_0_X0_1 = v28;
   return NULL;
 }
 
@@ -36,9 +36,9 @@ label_2:;
   int v13_W6 = v12_W5 ^ v12_W5;
   atomic_store_explicit(&vars[0+v13_W6], 1, memory_order_relaxed);
   int v29 = (v8_W0 == 1);
-  atomic_store_explicit(&atom_1_X0_1, v29, memory_order_seq_cst);
+  atom_1_X0_1 = v29;
   int v30 = (v12_W5 == 1);
-  atomic_store_explicit(&atom_1_X5_1, v30, memory_order_seq_cst);
+  atom_1_X5_1 = v30;
   return NULL;
 }
 
@@ -49,9 +49,9 @@ int main(int argc, char *argv[]){
   atomic_init(&vars[2], 0);
   atomic_init(&vars[1], 0);
   atomic_init(&vars[0], 0);
-  atomic_init(&atom_0_X0_1, 0); 
-  atomic_init(&atom_1_X0_1, 0); 
-  atomic_init(&atom_1_X5_1, 0); 
+  atom_0_X0_1 = 0; 
+  atom_1_X0_1 = 0; 
+  atom_1_X5_1 = 0; 
 
   pthread_create(&thr0, NULL, t0, NULL);
   pthread_create(&thr1, NULL, t1, NULL);
@@ -59,15 +59,15 @@ int main(int argc, char *argv[]){
   pthread_join(thr0, NULL);
   pthread_join(thr1, NULL);
 
-  int v14 = atomic_load_explicit(&vars[0], memory_order_seq_cst);
+  int v14 = atomic_load_explicit(&vars[0], memory_order_relaxed);
   int v15 = (v14 == 1);
-  int v16 = atomic_load_explicit(&vars[1], memory_order_seq_cst);
+  int v16 = atomic_load_explicit(&vars[1], memory_order_relaxed);
   int v17 = (v16 == 1);
-  int v18 = atomic_load_explicit(&vars[2], memory_order_seq_cst);
+  int v18 = atomic_load_explicit(&vars[2], memory_order_relaxed);
   int v19 = (v18 == 1);
-  int v20 = atomic_load_explicit(&atom_0_X0_1, memory_order_seq_cst);
-  int v21 = atomic_load_explicit(&atom_1_X0_1, memory_order_seq_cst);
-  int v22 = atomic_load_explicit(&atom_1_X5_1, memory_order_seq_cst);
+  int v20 = atom_0_X0_1;
+  int v21 = atom_1_X0_1;
+  int v22 = atom_1_X5_1;
   int v23_conj = v21 & v22;
   int v24_conj = v20 & v23_conj;
   int v25_conj = v19 & v24_conj;
