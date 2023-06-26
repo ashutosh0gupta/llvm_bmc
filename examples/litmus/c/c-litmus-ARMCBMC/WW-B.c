@@ -30,7 +30,7 @@ int main(int argc, char *argv[]){
 
   pthread_join(thr0, NULL);
 
-  int v1 = atomic_load_explicit(&vars[0], memory_order_seq_cst);
+  int v1 = atomic_load_explicit(&vars[0], memory_order_relaxed);
   int v2 = (v1 == 2);
   if (v2 == 1) assert(0);
   return 0;

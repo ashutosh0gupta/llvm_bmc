@@ -1,14 +1,17 @@
+// Global variabls:
 // 0:vars:2
 // 2:atom_1_X0_2:1
 // 3:atom_1_X2_0:1
 // 4:atom_3_X0_2:1
 // 5:atom_3_X2_0:1
-// 6:thr0:1
-// 7:thr1:1
-// 8:thr2:1
-// 9:thr3:1
-#define ADDRSIZE 10
-#define NPROC 5
+// Local global variabls:
+// 0:thr0:1
+// 1:thr1:1
+// 2:thr2:1
+// 3:thr3:1
+#define ADDRSIZE 6
+#define LOCALADDRSIZE 4
+#define NTHREAD 5
 #define NCONTEXT 10
 
 #define ASSUME(stmt) __CPROVER_assume(stmt)
@@ -30,6 +33,20 @@ char get_rng_th( char from, char to ) {
 }
 
 int main(int argc, char **argv) {
+  // Declare arrays for intial value version in contexts
+  int local_mem[LOCALADDRSIZE];
+  // Dumping initializations
+  local_mem[0+0] = 0;
+  local_mem[1+0] = 0;
+  local_mem[2+0] = 0;
+  local_mem[3+0] = 0;
+  int cstart[NTHREAD];
+  int creturn[NTHREAD];
+
+  // declare arrays for contexts activity
+  int active[NCONTEXT];
+  int ctx_used[NCONTEXT];
+
   // declare arrays for intial value version in contexts
   int meminit_[ADDRSIZE*NCONTEXT];
   #define meminit(x,k) meminit_[(x)*NCONTEXT+k]
@@ -47,54 +64,51 @@ int main(int argc, char **argv) {
   #define delta(x,k) delta_[(x)*NCONTEXT+k]
 
   // declare arrays for local buffer and observed writes
-  int buff_[NPROC*ADDRSIZE];
+  int buff_[NTHREAD*ADDRSIZE];
   #define buff(x,k) buff_[(x)*ADDRSIZE+k]
-  int pw_[NPROC*ADDRSIZE];
+  int pw_[NTHREAD*ADDRSIZE];
   #define pw(x,k) pw_[(x)*ADDRSIZE+k]
 
   // declare arrays for context stamps
-  char cr_[NPROC*ADDRSIZE];
+  char cr_[NTHREAD*ADDRSIZE];
   #define cr(x,k) cr_[(x)*ADDRSIZE+k]
-  char iw_[NPROC*ADDRSIZE];
+  char iw_[NTHREAD*ADDRSIZE];
   #define iw(x,k) iw_[(x)*ADDRSIZE+k]
-  char cw_[NPROC*ADDRSIZE];
+  char cw_[NTHREAD*ADDRSIZE];
   #define cw(x,k) cw_[(x)*ADDRSIZE+k]
-  char cx_[NPROC*ADDRSIZE];
+  char cx_[NTHREAD*ADDRSIZE];
   #define cx(x,k) cx_[(x)*ADDRSIZE+k]
-  char is_[NPROC*ADDRSIZE];
+  char is_[NTHREAD*ADDRSIZE];
   #define is(x,k) is_[(x)*ADDRSIZE+k]
-  char cs_[NPROC*ADDRSIZE];
+  char cs_[NTHREAD*ADDRSIZE];
   #define cs(x,k) cs_[(x)*ADDRSIZE+k]
-  char crmax_[NPROC*ADDRSIZE];
+  char crmax_[NTHREAD*ADDRSIZE];
   #define crmax(x,k) crmax_[(x)*ADDRSIZE+k]
 
   char sforbid_[ADDRSIZE*NCONTEXT];
   #define sforbid(x,k) sforbid_[(x)*NCONTEXT+k]
 
   // declare arrays for synchronizations
-  int cl[NPROC];
-  int cdy[NPROC];
-  int cds[NPROC];
-  int cdl[NPROC];
-  int cisb[NPROC];
-  int caddr[NPROC];
-  int cctrl[NPROC];
-  int cstart[NPROC];
-  int creturn[NPROC];
-
-  // declare arrays for contexts activity
-  int active[NCONTEXT];
-  int ctx_used[NCONTEXT];
-
+  int cl[NTHREAD];
+  int cdy[NTHREAD];
+  int cds[NTHREAD];
+  int cdl[NTHREAD];
+  int cisb[NTHREAD];
+  int caddr[NTHREAD];
+  int cctrl[NTHREAD];
 
   int r0= 0;
   char creg_r0;
   int r1= 0;
   char creg_r1;
+  char creg__r0__2_;
+  char creg__r1__0_;
   int r2= 0;
   char creg_r2;
   int r3= 0;
   char creg_r3;
+  char creg__r2__2_;
+  char creg__r3__0_;
   int r4= 0;
   char creg_r4;
   int r5= 0;
@@ -107,8 +121,10 @@ int main(int argc, char **argv) {
   char creg_r8;
   int r9= 0;
   char creg_r9;
+  char creg__r9__2_;
   int r10= 0;
   char creg_r10;
+  char creg__r10__2_;
   int r11= 0;
   char creg_r11;
   int r12= 0;
@@ -127,6 +143,7 @@ int main(int argc, char **argv) {
   char creg_r18;
   int r19= 0;
   char creg_r19;
+  char creg__r19__1_;
   int r20= 0;
   char creg_r20;
   char old_cctrl= 0;
@@ -188,42 +205,6 @@ int main(int argc, char **argv) {
   is(0,5) = 0;
   cs(0,5) = 0;
   crmax(0,5) = 0;
-  buff(0,6) = 0;
-  pw(0,6) = 0;
-  cr(0,6) = 0;
-  iw(0,6) = 0;
-  cw(0,6) = 0;
-  cx(0,6) = 0;
-  is(0,6) = 0;
-  cs(0,6) = 0;
-  crmax(0,6) = 0;
-  buff(0,7) = 0;
-  pw(0,7) = 0;
-  cr(0,7) = 0;
-  iw(0,7) = 0;
-  cw(0,7) = 0;
-  cx(0,7) = 0;
-  is(0,7) = 0;
-  cs(0,7) = 0;
-  crmax(0,7) = 0;
-  buff(0,8) = 0;
-  pw(0,8) = 0;
-  cr(0,8) = 0;
-  iw(0,8) = 0;
-  cw(0,8) = 0;
-  cx(0,8) = 0;
-  is(0,8) = 0;
-  cs(0,8) = 0;
-  crmax(0,8) = 0;
-  buff(0,9) = 0;
-  pw(0,9) = 0;
-  cr(0,9) = 0;
-  iw(0,9) = 0;
-  cw(0,9) = 0;
-  cx(0,9) = 0;
-  is(0,9) = 0;
-  cs(0,9) = 0;
-  crmax(0,9) = 0;
   cl[0] = 0;
   cdy[0] = 0;
   cds[0] = 0;
@@ -287,42 +268,6 @@ int main(int argc, char **argv) {
   is(1,5) = 0;
   cs(1,5) = 0;
   crmax(1,5) = 0;
-  buff(1,6) = 0;
-  pw(1,6) = 0;
-  cr(1,6) = 0;
-  iw(1,6) = 0;
-  cw(1,6) = 0;
-  cx(1,6) = 0;
-  is(1,6) = 0;
-  cs(1,6) = 0;
-  crmax(1,6) = 0;
-  buff(1,7) = 0;
-  pw(1,7) = 0;
-  cr(1,7) = 0;
-  iw(1,7) = 0;
-  cw(1,7) = 0;
-  cx(1,7) = 0;
-  is(1,7) = 0;
-  cs(1,7) = 0;
-  crmax(1,7) = 0;
-  buff(1,8) = 0;
-  pw(1,8) = 0;
-  cr(1,8) = 0;
-  iw(1,8) = 0;
-  cw(1,8) = 0;
-  cx(1,8) = 0;
-  is(1,8) = 0;
-  cs(1,8) = 0;
-  crmax(1,8) = 0;
-  buff(1,9) = 0;
-  pw(1,9) = 0;
-  cr(1,9) = 0;
-  iw(1,9) = 0;
-  cw(1,9) = 0;
-  cx(1,9) = 0;
-  is(1,9) = 0;
-  cs(1,9) = 0;
-  crmax(1,9) = 0;
   cl[1] = 0;
   cdy[1] = 0;
   cds[1] = 0;
@@ -386,42 +331,6 @@ int main(int argc, char **argv) {
   is(2,5) = 0;
   cs(2,5) = 0;
   crmax(2,5) = 0;
-  buff(2,6) = 0;
-  pw(2,6) = 0;
-  cr(2,6) = 0;
-  iw(2,6) = 0;
-  cw(2,6) = 0;
-  cx(2,6) = 0;
-  is(2,6) = 0;
-  cs(2,6) = 0;
-  crmax(2,6) = 0;
-  buff(2,7) = 0;
-  pw(2,7) = 0;
-  cr(2,7) = 0;
-  iw(2,7) = 0;
-  cw(2,7) = 0;
-  cx(2,7) = 0;
-  is(2,7) = 0;
-  cs(2,7) = 0;
-  crmax(2,7) = 0;
-  buff(2,8) = 0;
-  pw(2,8) = 0;
-  cr(2,8) = 0;
-  iw(2,8) = 0;
-  cw(2,8) = 0;
-  cx(2,8) = 0;
-  is(2,8) = 0;
-  cs(2,8) = 0;
-  crmax(2,8) = 0;
-  buff(2,9) = 0;
-  pw(2,9) = 0;
-  cr(2,9) = 0;
-  iw(2,9) = 0;
-  cw(2,9) = 0;
-  cx(2,9) = 0;
-  is(2,9) = 0;
-  cs(2,9) = 0;
-  crmax(2,9) = 0;
   cl[2] = 0;
   cdy[2] = 0;
   cds[2] = 0;
@@ -485,42 +394,6 @@ int main(int argc, char **argv) {
   is(3,5) = 0;
   cs(3,5) = 0;
   crmax(3,5) = 0;
-  buff(3,6) = 0;
-  pw(3,6) = 0;
-  cr(3,6) = 0;
-  iw(3,6) = 0;
-  cw(3,6) = 0;
-  cx(3,6) = 0;
-  is(3,6) = 0;
-  cs(3,6) = 0;
-  crmax(3,6) = 0;
-  buff(3,7) = 0;
-  pw(3,7) = 0;
-  cr(3,7) = 0;
-  iw(3,7) = 0;
-  cw(3,7) = 0;
-  cx(3,7) = 0;
-  is(3,7) = 0;
-  cs(3,7) = 0;
-  crmax(3,7) = 0;
-  buff(3,8) = 0;
-  pw(3,8) = 0;
-  cr(3,8) = 0;
-  iw(3,8) = 0;
-  cw(3,8) = 0;
-  cx(3,8) = 0;
-  is(3,8) = 0;
-  cs(3,8) = 0;
-  crmax(3,8) = 0;
-  buff(3,9) = 0;
-  pw(3,9) = 0;
-  cr(3,9) = 0;
-  iw(3,9) = 0;
-  cw(3,9) = 0;
-  cx(3,9) = 0;
-  is(3,9) = 0;
-  cs(3,9) = 0;
-  crmax(3,9) = 0;
   cl[3] = 0;
   cdy[3] = 0;
   cds[3] = 0;
@@ -584,42 +457,6 @@ int main(int argc, char **argv) {
   is(4,5) = 0;
   cs(4,5) = 0;
   crmax(4,5) = 0;
-  buff(4,6) = 0;
-  pw(4,6) = 0;
-  cr(4,6) = 0;
-  iw(4,6) = 0;
-  cw(4,6) = 0;
-  cx(4,6) = 0;
-  is(4,6) = 0;
-  cs(4,6) = 0;
-  crmax(4,6) = 0;
-  buff(4,7) = 0;
-  pw(4,7) = 0;
-  cr(4,7) = 0;
-  iw(4,7) = 0;
-  cw(4,7) = 0;
-  cx(4,7) = 0;
-  is(4,7) = 0;
-  cs(4,7) = 0;
-  crmax(4,7) = 0;
-  buff(4,8) = 0;
-  pw(4,8) = 0;
-  cr(4,8) = 0;
-  iw(4,8) = 0;
-  cw(4,8) = 0;
-  cx(4,8) = 0;
-  is(4,8) = 0;
-  cs(4,8) = 0;
-  crmax(4,8) = 0;
-  buff(4,9) = 0;
-  pw(4,9) = 0;
-  cr(4,9) = 0;
-  iw(4,9) = 0;
-  cw(4,9) = 0;
-  cx(4,9) = 0;
-  is(4,9) = 0;
-  cs(4,9) = 0;
-  crmax(4,9) = 0;
   cl[4] = 0;
   cdy[4] = 0;
   cds[4] = 0;
@@ -636,10 +473,6 @@ int main(int argc, char **argv) {
   mem(3+0,0) = 0;
   mem(4+0,0) = 0;
   mem(5+0,0) = 0;
-  mem(6+0,0) = 0;
-  mem(7+0,0) = 0;
-  mem(8+0,0) = 0;
-  mem(9+0,0) = 0;
   // Dumping context matching equalities
   co(0,0) = 0;
   delta(0,0) = -1;
@@ -815,145 +648,29 @@ int main(int argc, char **argv) {
   mem(5,9) = meminit(5,9);
   co(5,9) = coinit(5,9);
   delta(5,9) = deltainit(5,9);
-  co(6,0) = 0;
-  delta(6,0) = -1;
-  mem(6,1) = meminit(6,1);
-  co(6,1) = coinit(6,1);
-  delta(6,1) = deltainit(6,1);
-  mem(6,2) = meminit(6,2);
-  co(6,2) = coinit(6,2);
-  delta(6,2) = deltainit(6,2);
-  mem(6,3) = meminit(6,3);
-  co(6,3) = coinit(6,3);
-  delta(6,3) = deltainit(6,3);
-  mem(6,4) = meminit(6,4);
-  co(6,4) = coinit(6,4);
-  delta(6,4) = deltainit(6,4);
-  mem(6,5) = meminit(6,5);
-  co(6,5) = coinit(6,5);
-  delta(6,5) = deltainit(6,5);
-  mem(6,6) = meminit(6,6);
-  co(6,6) = coinit(6,6);
-  delta(6,6) = deltainit(6,6);
-  mem(6,7) = meminit(6,7);
-  co(6,7) = coinit(6,7);
-  delta(6,7) = deltainit(6,7);
-  mem(6,8) = meminit(6,8);
-  co(6,8) = coinit(6,8);
-  delta(6,8) = deltainit(6,8);
-  mem(6,9) = meminit(6,9);
-  co(6,9) = coinit(6,9);
-  delta(6,9) = deltainit(6,9);
-  co(7,0) = 0;
-  delta(7,0) = -1;
-  mem(7,1) = meminit(7,1);
-  co(7,1) = coinit(7,1);
-  delta(7,1) = deltainit(7,1);
-  mem(7,2) = meminit(7,2);
-  co(7,2) = coinit(7,2);
-  delta(7,2) = deltainit(7,2);
-  mem(7,3) = meminit(7,3);
-  co(7,3) = coinit(7,3);
-  delta(7,3) = deltainit(7,3);
-  mem(7,4) = meminit(7,4);
-  co(7,4) = coinit(7,4);
-  delta(7,4) = deltainit(7,4);
-  mem(7,5) = meminit(7,5);
-  co(7,5) = coinit(7,5);
-  delta(7,5) = deltainit(7,5);
-  mem(7,6) = meminit(7,6);
-  co(7,6) = coinit(7,6);
-  delta(7,6) = deltainit(7,6);
-  mem(7,7) = meminit(7,7);
-  co(7,7) = coinit(7,7);
-  delta(7,7) = deltainit(7,7);
-  mem(7,8) = meminit(7,8);
-  co(7,8) = coinit(7,8);
-  delta(7,8) = deltainit(7,8);
-  mem(7,9) = meminit(7,9);
-  co(7,9) = coinit(7,9);
-  delta(7,9) = deltainit(7,9);
-  co(8,0) = 0;
-  delta(8,0) = -1;
-  mem(8,1) = meminit(8,1);
-  co(8,1) = coinit(8,1);
-  delta(8,1) = deltainit(8,1);
-  mem(8,2) = meminit(8,2);
-  co(8,2) = coinit(8,2);
-  delta(8,2) = deltainit(8,2);
-  mem(8,3) = meminit(8,3);
-  co(8,3) = coinit(8,3);
-  delta(8,3) = deltainit(8,3);
-  mem(8,4) = meminit(8,4);
-  co(8,4) = coinit(8,4);
-  delta(8,4) = deltainit(8,4);
-  mem(8,5) = meminit(8,5);
-  co(8,5) = coinit(8,5);
-  delta(8,5) = deltainit(8,5);
-  mem(8,6) = meminit(8,6);
-  co(8,6) = coinit(8,6);
-  delta(8,6) = deltainit(8,6);
-  mem(8,7) = meminit(8,7);
-  co(8,7) = coinit(8,7);
-  delta(8,7) = deltainit(8,7);
-  mem(8,8) = meminit(8,8);
-  co(8,8) = coinit(8,8);
-  delta(8,8) = deltainit(8,8);
-  mem(8,9) = meminit(8,9);
-  co(8,9) = coinit(8,9);
-  delta(8,9) = deltainit(8,9);
-  co(9,0) = 0;
-  delta(9,0) = -1;
-  mem(9,1) = meminit(9,1);
-  co(9,1) = coinit(9,1);
-  delta(9,1) = deltainit(9,1);
-  mem(9,2) = meminit(9,2);
-  co(9,2) = coinit(9,2);
-  delta(9,2) = deltainit(9,2);
-  mem(9,3) = meminit(9,3);
-  co(9,3) = coinit(9,3);
-  delta(9,3) = deltainit(9,3);
-  mem(9,4) = meminit(9,4);
-  co(9,4) = coinit(9,4);
-  delta(9,4) = deltainit(9,4);
-  mem(9,5) = meminit(9,5);
-  co(9,5) = coinit(9,5);
-  delta(9,5) = deltainit(9,5);
-  mem(9,6) = meminit(9,6);
-  co(9,6) = coinit(9,6);
-  delta(9,6) = deltainit(9,6);
-  mem(9,7) = meminit(9,7);
-  co(9,7) = coinit(9,7);
-  delta(9,7) = deltainit(9,7);
-  mem(9,8) = meminit(9,8);
-  co(9,8) = coinit(9,8);
-  delta(9,8) = deltainit(9,8);
-  mem(9,9) = meminit(9,9);
-  co(9,9) = coinit(9,9);
-  delta(9,9) = deltainit(9,9);
   // Dumping thread 1
   int ret_thread_1 = 0;
   cdy[1] = get_rng(0,NCONTEXT-1);
   ASSUME(cdy[1] >= cstart[1]);
 T1BLOCK0:
-  //   call void @llvm.dbg.value(metadata i8* %arg, metadata !39, metadata !DIExpression()), !dbg !48
+  //   call void @llvm.dbg.value(metadata i8* %arg, metadata !40, metadata !DIExpression()), !dbg !49
 
-  //   br label %label_1, !dbg !49
+  //   br label %label_1, !dbg !50
   goto T1BLOCK1;
 
 T1BLOCK1:
-  //   call void @llvm.dbg.label(metadata !47), !dbg !50
+  //   call void @llvm.dbg.label(metadata !48), !dbg !51
 
-  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0), metadata !40, metadata !DIExpression()), !dbg !51
+  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0), metadata !41, metadata !DIExpression()), !dbg !52
 
-  //   call void @llvm.dbg.value(metadata i64 1, metadata !43, metadata !DIExpression()), !dbg !51
+  //   call void @llvm.dbg.value(metadata i64 1, metadata !44, metadata !DIExpression()), !dbg !52
 
-  //   store atomic i64 1, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0) release, align 8, !dbg !52
+  //   store atomic i64 1, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0) release, align 8, !dbg !53
   // ST: Guess
   //   : Release
-  iw(1,0) = get_rng(0,NCONTEXT-1);// 1 ASSIGN STIW 
+  iw(1,0) = get_rng(0,NCONTEXT-1);// 1 ASSIGN STIW _l22_c3
   old_cw = cw(1,0);
-  cw(1,0) = get_rng(0,NCONTEXT-1);// 1 ASSIGN STCOM 
+  cw(1,0) = get_rng(0,NCONTEXT-1);// 1 ASSIGN STCOM _l22_c3
   // Check
   ASSUME(active[iw(1,0)] == 1);
   ASSUME(active[cw(1,0)] == 1);
@@ -976,20 +693,12 @@ T1BLOCK1:
   ASSUME(cw(1,0) >= cr(1,3+0));
   ASSUME(cw(1,0) >= cr(1,4+0));
   ASSUME(cw(1,0) >= cr(1,5+0));
-  ASSUME(cw(1,0) >= cr(1,6+0));
-  ASSUME(cw(1,0) >= cr(1,7+0));
-  ASSUME(cw(1,0) >= cr(1,8+0));
-  ASSUME(cw(1,0) >= cr(1,9+0));
   ASSUME(cw(1,0) >= cw(1,0+0));
   ASSUME(cw(1,0) >= cw(1,0+1));
   ASSUME(cw(1,0) >= cw(1,2+0));
   ASSUME(cw(1,0) >= cw(1,3+0));
   ASSUME(cw(1,0) >= cw(1,4+0));
   ASSUME(cw(1,0) >= cw(1,5+0));
-  ASSUME(cw(1,0) >= cw(1,6+0));
-  ASSUME(cw(1,0) >= cw(1,7+0));
-  ASSUME(cw(1,0) >= cw(1,8+0));
-  ASSUME(cw(1,0) >= cw(1,9+0));
   // Update
   caddr[1] = max(caddr[1],0);
   buff(1,0) = 1;
@@ -1000,15 +709,15 @@ T1BLOCK1:
   cs(1,0) = cw(1,0);
   ASSUME(creturn[1] >= cw(1,0));
 
-  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0), metadata !44, metadata !DIExpression()), !dbg !53
+  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0), metadata !45, metadata !DIExpression()), !dbg !54
 
-  //   call void @llvm.dbg.value(metadata i64 2, metadata !46, metadata !DIExpression()), !dbg !53
+  //   call void @llvm.dbg.value(metadata i64 2, metadata !47, metadata !DIExpression()), !dbg !54
 
-  //   store atomic i64 2, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0) monotonic, align 8, !dbg !54
+  //   store atomic i64 2, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0) monotonic, align 8, !dbg !55
   // ST: Guess
-  iw(1,0) = get_rng(0,NCONTEXT-1);// 1 ASSIGN STIW 
+  iw(1,0) = get_rng(0,NCONTEXT-1);// 1 ASSIGN STIW _l23_c3
   old_cw = cw(1,0);
-  cw(1,0) = get_rng(0,NCONTEXT-1);// 1 ASSIGN STCOM 
+  cw(1,0) = get_rng(0,NCONTEXT-1);// 1 ASSIGN STCOM _l23_c3
   // Check
   ASSUME(active[iw(1,0)] == 1);
   ASSUME(active[cw(1,0)] == 1);
@@ -1033,30 +742,32 @@ T1BLOCK1:
   delta(0,cw(1,0)) = -1;
   ASSUME(creturn[1] >= cw(1,0));
 
-  //   ret i8* null, !dbg !55
+  //   ret i8* null, !dbg !56
   ret_thread_1 = (- 1);
+  goto T1BLOCK_END;
 
+T1BLOCK_END:
 
   // Dumping thread 2
   int ret_thread_2 = 0;
   cdy[2] = get_rng(0,NCONTEXT-1);
   ASSUME(cdy[2] >= cstart[2]);
 T2BLOCK0:
-  //   call void @llvm.dbg.value(metadata i8* %arg, metadata !58, metadata !DIExpression()), !dbg !77
+  //   call void @llvm.dbg.value(metadata i8* %arg, metadata !59, metadata !DIExpression()), !dbg !71
 
-  //   br label %label_2, !dbg !60
+  //   br label %label_2, !dbg !54
   goto T2BLOCK1;
 
 T2BLOCK1:
-  //   call void @llvm.dbg.label(metadata !76), !dbg !79
+  //   call void @llvm.dbg.label(metadata !70), !dbg !73
 
-  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0), metadata !61, metadata !DIExpression()), !dbg !80
+  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0), metadata !61, metadata !DIExpression()), !dbg !74
 
-  //   %0 = load atomic i64, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0) acquire, align 8, !dbg !63
+  //   %0 = load atomic i64, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0) acquire, align 8, !dbg !57
   // LD: Guess
   //   : Acquire
   old_cr = cr(2,0);
-  cr(2,0) = get_rng(0,NCONTEXT-1);// 2 ASSIGN LDCOM 
+  cr(2,0) = get_rng(0,NCONTEXT-1);// 2 ASSIGN LDCOM _l29_c15
   // Check
   ASSUME(active[cr(2,0)] == 2);
   ASSUME(cr(2,0) >= iw(2,0));
@@ -1072,10 +783,6 @@ T2BLOCK1:
   ASSUME(cr(2,0) >= cs(2,3+0));
   ASSUME(cr(2,0) >= cs(2,4+0));
   ASSUME(cr(2,0) >= cs(2,5+0));
-  ASSUME(cr(2,0) >= cs(2,6+0));
-  ASSUME(cr(2,0) >= cs(2,7+0));
-  ASSUME(cr(2,0) >= cs(2,8+0));
-  ASSUME(cr(2,0) >= cs(2,9+0));
   // Update
   creg_r0 = cr(2,0);
   crmax(2,0) = max(crmax(2,0),cr(2,0));
@@ -1101,19 +808,19 @@ T2BLOCK1:
   cl[2] = max(cl[2],cr(2,0));
   ASSUME(creturn[2] >= cr(2,0));
 
-  //   call void @llvm.dbg.value(metadata i64 %0, metadata !63, metadata !DIExpression()), !dbg !80
+  //   call void @llvm.dbg.value(metadata i64 %0, metadata !63, metadata !DIExpression()), !dbg !74
 
-  //   %conv = trunc i64 %0 to i32, !dbg !64
+  //   %conv = trunc i64 %0 to i32, !dbg !58
 
-  //   call void @llvm.dbg.value(metadata i32 %conv, metadata !59, metadata !DIExpression()), !dbg !77
+  //   call void @llvm.dbg.value(metadata i32 %conv, metadata !60, metadata !DIExpression()), !dbg !71
 
-  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1), metadata !65, metadata !DIExpression()), !dbg !83
+  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1), metadata !65, metadata !DIExpression()), !dbg !77
 
-  //   %1 = load atomic i64, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1) acquire, align 8, !dbg !66
+  //   %1 = load atomic i64, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1) acquire, align 8, !dbg !60
   // LD: Guess
   //   : Acquire
   old_cr = cr(2,0+1*1);
-  cr(2,0+1*1) = get_rng(0,NCONTEXT-1);// 2 ASSIGN LDCOM 
+  cr(2,0+1*1) = get_rng(0,NCONTEXT-1);// 2 ASSIGN LDCOM _l30_c15
   // Check
   ASSUME(active[cr(2,0+1*1)] == 2);
   ASSUME(cr(2,0+1*1) >= iw(2,0+1*1));
@@ -1129,10 +836,6 @@ T2BLOCK1:
   ASSUME(cr(2,0+1*1) >= cs(2,3+0));
   ASSUME(cr(2,0+1*1) >= cs(2,4+0));
   ASSUME(cr(2,0+1*1) >= cs(2,5+0));
-  ASSUME(cr(2,0+1*1) >= cs(2,6+0));
-  ASSUME(cr(2,0+1*1) >= cs(2,7+0));
-  ASSUME(cr(2,0+1*1) >= cs(2,8+0));
-  ASSUME(cr(2,0+1*1) >= cs(2,9+0));
   // Update
   creg_r1 = cr(2,0+1*1);
   crmax(2,0+1*1) = max(crmax(2,0+1*1),cr(2,0+1*1));
@@ -1158,34 +861,29 @@ T2BLOCK1:
   cl[2] = max(cl[2],cr(2,0+1*1));
   ASSUME(creturn[2] >= cr(2,0+1*1));
 
-  //   call void @llvm.dbg.value(metadata i64 %1, metadata !67, metadata !DIExpression()), !dbg !83
+  //   call void @llvm.dbg.value(metadata i64 %1, metadata !67, metadata !DIExpression()), !dbg !77
 
-  //   %conv4 = trunc i64 %1 to i32, !dbg !67
+  //   %conv4 = trunc i64 %1 to i32, !dbg !61
 
-  //   call void @llvm.dbg.value(metadata i32 %conv4, metadata !64, metadata !DIExpression()), !dbg !77
+  //   call void @llvm.dbg.value(metadata i32 %conv4, metadata !64, metadata !DIExpression()), !dbg !71
 
-  //   %cmp = icmp eq i32 %conv, 2, !dbg !68
+  //   %cmp = icmp eq i32 %conv, 2, !dbg !62
+  creg__r0__2_ = max(0,creg_r0);
 
-  //   %conv5 = zext i1 %cmp to i32, !dbg !68
+  //   %conv5 = zext i1 %cmp to i32, !dbg !62
 
-  //   call void @llvm.dbg.value(metadata i32 %conv5, metadata !68, metadata !DIExpression()), !dbg !77
+  //   call void @llvm.dbg.value(metadata i32 %conv5, metadata !68, metadata !DIExpression()), !dbg !71
 
-  //   call void @llvm.dbg.value(metadata i64* @atom_1_X0_2, metadata !69, metadata !DIExpression()), !dbg !87
-
-  //   %2 = zext i32 %conv5 to i64
-
-  //   call void @llvm.dbg.value(metadata i64 %2, metadata !71, metadata !DIExpression()), !dbg !87
-
-  //   store atomic i64 %2, i64* @atom_1_X0_2 seq_cst, align 8, !dbg !70
+  //   store i32 %conv5, i32* @atom_1_X0_2, align 4, !dbg !63, !tbaa !64
   // ST: Guess
-  iw(2,2) = get_rng(0,NCONTEXT-1);// 2 ASSIGN STIW 
+  iw(2,2) = get_rng(0,NCONTEXT-1);// 2 ASSIGN STIW _l32_c15
   old_cw = cw(2,2);
-  cw(2,2) = get_rng(0,NCONTEXT-1);// 2 ASSIGN STCOM 
+  cw(2,2) = get_rng(0,NCONTEXT-1);// 2 ASSIGN STCOM _l32_c15
   // Check
   ASSUME(active[iw(2,2)] == 2);
   ASSUME(active[cw(2,2)] == 2);
   ASSUME(sforbid(2,cw(2,2))== 0);
-  ASSUME(iw(2,2) >= max(creg_r0,0));
+  ASSUME(iw(2,2) >= creg__r0__2_);
   ASSUME(iw(2,2) >= 0);
   ASSUME(cw(2,2) >= iw(2,2));
   ASSUME(cw(2,2) >= old_cw);
@@ -1205,28 +903,23 @@ T2BLOCK1:
   delta(2,cw(2,2)) = -1;
   ASSUME(creturn[2] >= cw(2,2));
 
-  //   %cmp7 = icmp eq i32 %conv4, 0, !dbg !71
+  //   %cmp6 = icmp eq i32 %conv4, 0, !dbg !68
+  creg__r1__0_ = max(0,creg_r1);
 
-  //   %conv8 = zext i1 %cmp7 to i32, !dbg !71
+  //   %conv7 = zext i1 %cmp6 to i32, !dbg !68
 
-  //   call void @llvm.dbg.value(metadata i32 %conv8, metadata !72, metadata !DIExpression()), !dbg !77
+  //   call void @llvm.dbg.value(metadata i32 %conv7, metadata !69, metadata !DIExpression()), !dbg !71
 
-  //   call void @llvm.dbg.value(metadata i64* @atom_1_X2_0, metadata !73, metadata !DIExpression()), !dbg !90
-
-  //   %3 = zext i32 %conv8 to i64
-
-  //   call void @llvm.dbg.value(metadata i64 %3, metadata !75, metadata !DIExpression()), !dbg !90
-
-  //   store atomic i64 %3, i64* @atom_1_X2_0 seq_cst, align 8, !dbg !73
+  //   store i32 %conv7, i32* @atom_1_X2_0, align 4, !dbg !69, !tbaa !64
   // ST: Guess
-  iw(2,3) = get_rng(0,NCONTEXT-1);// 2 ASSIGN STIW 
+  iw(2,3) = get_rng(0,NCONTEXT-1);// 2 ASSIGN STIW _l34_c15
   old_cw = cw(2,3);
-  cw(2,3) = get_rng(0,NCONTEXT-1);// 2 ASSIGN STCOM 
+  cw(2,3) = get_rng(0,NCONTEXT-1);// 2 ASSIGN STCOM _l34_c15
   // Check
   ASSUME(active[iw(2,3)] == 2);
   ASSUME(active[cw(2,3)] == 2);
   ASSUME(sforbid(3,cw(2,3))== 0);
-  ASSUME(iw(2,3) >= max(creg_r1,0));
+  ASSUME(iw(2,3) >= creg__r1__0_);
   ASSUME(iw(2,3) >= 0);
   ASSUME(cw(2,3) >= iw(2,3));
   ASSUME(cw(2,3) >= old_cw);
@@ -1246,33 +939,35 @@ T2BLOCK1:
   delta(3,cw(2,3)) = -1;
   ASSUME(creturn[2] >= cw(2,3));
 
-  //   ret i8* null, !dbg !74
+  //   ret i8* null, !dbg !70
   ret_thread_2 = (- 1);
+  goto T2BLOCK_END;
 
+T2BLOCK_END:
 
   // Dumping thread 3
   int ret_thread_3 = 0;
   cdy[3] = get_rng(0,NCONTEXT-1);
   ASSUME(cdy[3] >= cstart[3]);
 T3BLOCK0:
-  //   call void @llvm.dbg.value(metadata i8* %arg, metadata !95, metadata !DIExpression()), !dbg !103
+  //   call void @llvm.dbg.value(metadata i8* %arg, metadata !91, metadata !DIExpression()), !dbg !99
 
-  //   br label %label_3, !dbg !49
+  //   br label %label_3, !dbg !50
   goto T3BLOCK1;
 
 T3BLOCK1:
-  //   call void @llvm.dbg.label(metadata !102), !dbg !105
+  //   call void @llvm.dbg.label(metadata !98), !dbg !101
 
-  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1), metadata !96, metadata !DIExpression()), !dbg !106
+  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1), metadata !92, metadata !DIExpression()), !dbg !102
 
-  //   call void @llvm.dbg.value(metadata i64 1, metadata !98, metadata !DIExpression()), !dbg !106
+  //   call void @llvm.dbg.value(metadata i64 1, metadata !94, metadata !DIExpression()), !dbg !102
 
-  //   store atomic i64 1, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1) release, align 8, !dbg !52
+  //   store atomic i64 1, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1) release, align 8, !dbg !53
   // ST: Guess
   //   : Release
-  iw(3,0+1*1) = get_rng(0,NCONTEXT-1);// 3 ASSIGN STIW 
+  iw(3,0+1*1) = get_rng(0,NCONTEXT-1);// 3 ASSIGN STIW _l40_c3
   old_cw = cw(3,0+1*1);
-  cw(3,0+1*1) = get_rng(0,NCONTEXT-1);// 3 ASSIGN STCOM 
+  cw(3,0+1*1) = get_rng(0,NCONTEXT-1);// 3 ASSIGN STCOM _l40_c3
   // Check
   ASSUME(active[iw(3,0+1*1)] == 3);
   ASSUME(active[cw(3,0+1*1)] == 3);
@@ -1295,20 +990,12 @@ T3BLOCK1:
   ASSUME(cw(3,0+1*1) >= cr(3,3+0));
   ASSUME(cw(3,0+1*1) >= cr(3,4+0));
   ASSUME(cw(3,0+1*1) >= cr(3,5+0));
-  ASSUME(cw(3,0+1*1) >= cr(3,6+0));
-  ASSUME(cw(3,0+1*1) >= cr(3,7+0));
-  ASSUME(cw(3,0+1*1) >= cr(3,8+0));
-  ASSUME(cw(3,0+1*1) >= cr(3,9+0));
   ASSUME(cw(3,0+1*1) >= cw(3,0+0));
   ASSUME(cw(3,0+1*1) >= cw(3,0+1));
   ASSUME(cw(3,0+1*1) >= cw(3,2+0));
   ASSUME(cw(3,0+1*1) >= cw(3,3+0));
   ASSUME(cw(3,0+1*1) >= cw(3,4+0));
   ASSUME(cw(3,0+1*1) >= cw(3,5+0));
-  ASSUME(cw(3,0+1*1) >= cw(3,6+0));
-  ASSUME(cw(3,0+1*1) >= cw(3,7+0));
-  ASSUME(cw(3,0+1*1) >= cw(3,8+0));
-  ASSUME(cw(3,0+1*1) >= cw(3,9+0));
   // Update
   caddr[3] = max(caddr[3],0);
   buff(3,0+1*1) = 1;
@@ -1319,15 +1006,15 @@ T3BLOCK1:
   cs(3,0+1*1) = cw(3,0+1*1);
   ASSUME(creturn[3] >= cw(3,0+1*1));
 
-  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1), metadata !99, metadata !DIExpression()), !dbg !108
+  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1), metadata !95, metadata !DIExpression()), !dbg !104
 
-  //   call void @llvm.dbg.value(metadata i64 2, metadata !101, metadata !DIExpression()), !dbg !108
+  //   call void @llvm.dbg.value(metadata i64 2, metadata !97, metadata !DIExpression()), !dbg !104
 
-  //   store atomic i64 2, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1) monotonic, align 8, !dbg !54
+  //   store atomic i64 2, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1) monotonic, align 8, !dbg !55
   // ST: Guess
-  iw(3,0+1*1) = get_rng(0,NCONTEXT-1);// 3 ASSIGN STIW 
+  iw(3,0+1*1) = get_rng(0,NCONTEXT-1);// 3 ASSIGN STIW _l41_c3
   old_cw = cw(3,0+1*1);
-  cw(3,0+1*1) = get_rng(0,NCONTEXT-1);// 3 ASSIGN STCOM 
+  cw(3,0+1*1) = get_rng(0,NCONTEXT-1);// 3 ASSIGN STCOM _l41_c3
   // Check
   ASSUME(active[iw(3,0+1*1)] == 3);
   ASSUME(active[cw(3,0+1*1)] == 3);
@@ -1352,30 +1039,32 @@ T3BLOCK1:
   delta(0+1*1,cw(3,0+1*1)) = -1;
   ASSUME(creturn[3] >= cw(3,0+1*1));
 
-  //   ret i8* null, !dbg !55
+  //   ret i8* null, !dbg !56
   ret_thread_3 = (- 1);
+  goto T3BLOCK_END;
 
+T3BLOCK_END:
 
   // Dumping thread 4
   int ret_thread_4 = 0;
   cdy[4] = get_rng(0,NCONTEXT-1);
   ASSUME(cdy[4] >= cstart[4]);
 T4BLOCK0:
-  //   call void @llvm.dbg.value(metadata i8* %arg, metadata !113, metadata !DIExpression()), !dbg !131
+  //   call void @llvm.dbg.value(metadata i8* %arg, metadata !109, metadata !DIExpression()), !dbg !121
 
-  //   br label %label_4, !dbg !60
+  //   br label %label_4, !dbg !54
   goto T4BLOCK1;
 
 T4BLOCK1:
-  //   call void @llvm.dbg.label(metadata !130), !dbg !133
+  //   call void @llvm.dbg.label(metadata !120), !dbg !123
 
-  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1), metadata !115, metadata !DIExpression()), !dbg !134
+  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1), metadata !111, metadata !DIExpression()), !dbg !124
 
-  //   %0 = load atomic i64, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1) acquire, align 8, !dbg !63
+  //   %0 = load atomic i64, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1) acquire, align 8, !dbg !57
   // LD: Guess
   //   : Acquire
   old_cr = cr(4,0+1*1);
-  cr(4,0+1*1) = get_rng(0,NCONTEXT-1);// 4 ASSIGN LDCOM 
+  cr(4,0+1*1) = get_rng(0,NCONTEXT-1);// 4 ASSIGN LDCOM _l47_c15
   // Check
   ASSUME(active[cr(4,0+1*1)] == 4);
   ASSUME(cr(4,0+1*1) >= iw(4,0+1*1));
@@ -1391,10 +1080,6 @@ T4BLOCK1:
   ASSUME(cr(4,0+1*1) >= cs(4,3+0));
   ASSUME(cr(4,0+1*1) >= cs(4,4+0));
   ASSUME(cr(4,0+1*1) >= cs(4,5+0));
-  ASSUME(cr(4,0+1*1) >= cs(4,6+0));
-  ASSUME(cr(4,0+1*1) >= cs(4,7+0));
-  ASSUME(cr(4,0+1*1) >= cs(4,8+0));
-  ASSUME(cr(4,0+1*1) >= cs(4,9+0));
   // Update
   creg_r2 = cr(4,0+1*1);
   crmax(4,0+1*1) = max(crmax(4,0+1*1),cr(4,0+1*1));
@@ -1420,19 +1105,19 @@ T4BLOCK1:
   cl[4] = max(cl[4],cr(4,0+1*1));
   ASSUME(creturn[4] >= cr(4,0+1*1));
 
-  //   call void @llvm.dbg.value(metadata i64 %0, metadata !117, metadata !DIExpression()), !dbg !134
+  //   call void @llvm.dbg.value(metadata i64 %0, metadata !113, metadata !DIExpression()), !dbg !124
 
-  //   %conv = trunc i64 %0 to i32, !dbg !64
+  //   %conv = trunc i64 %0 to i32, !dbg !58
 
-  //   call void @llvm.dbg.value(metadata i32 %conv, metadata !114, metadata !DIExpression()), !dbg !131
+  //   call void @llvm.dbg.value(metadata i32 %conv, metadata !110, metadata !DIExpression()), !dbg !121
 
-  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0), metadata !119, metadata !DIExpression()), !dbg !137
+  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0), metadata !115, metadata !DIExpression()), !dbg !127
 
-  //   %1 = load atomic i64, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0) acquire, align 8, !dbg !66
+  //   %1 = load atomic i64, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0) acquire, align 8, !dbg !60
   // LD: Guess
   //   : Acquire
   old_cr = cr(4,0);
-  cr(4,0) = get_rng(0,NCONTEXT-1);// 4 ASSIGN LDCOM 
+  cr(4,0) = get_rng(0,NCONTEXT-1);// 4 ASSIGN LDCOM _l48_c16
   // Check
   ASSUME(active[cr(4,0)] == 4);
   ASSUME(cr(4,0) >= iw(4,0));
@@ -1448,10 +1133,6 @@ T4BLOCK1:
   ASSUME(cr(4,0) >= cs(4,3+0));
   ASSUME(cr(4,0) >= cs(4,4+0));
   ASSUME(cr(4,0) >= cs(4,5+0));
-  ASSUME(cr(4,0) >= cs(4,6+0));
-  ASSUME(cr(4,0) >= cs(4,7+0));
-  ASSUME(cr(4,0) >= cs(4,8+0));
-  ASSUME(cr(4,0) >= cs(4,9+0));
   // Update
   creg_r3 = cr(4,0);
   crmax(4,0) = max(crmax(4,0),cr(4,0));
@@ -1477,34 +1158,29 @@ T4BLOCK1:
   cl[4] = max(cl[4],cr(4,0));
   ASSUME(creturn[4] >= cr(4,0));
 
-  //   call void @llvm.dbg.value(metadata i64 %1, metadata !121, metadata !DIExpression()), !dbg !137
+  //   call void @llvm.dbg.value(metadata i64 %1, metadata !117, metadata !DIExpression()), !dbg !127
 
-  //   %conv4 = trunc i64 %1 to i32, !dbg !67
+  //   %conv4 = trunc i64 %1 to i32, !dbg !61
 
-  //   call void @llvm.dbg.value(metadata i32 %conv4, metadata !118, metadata !DIExpression()), !dbg !131
+  //   call void @llvm.dbg.value(metadata i32 %conv4, metadata !114, metadata !DIExpression()), !dbg !121
 
-  //   %cmp = icmp eq i32 %conv, 2, !dbg !68
+  //   %cmp = icmp eq i32 %conv, 2, !dbg !62
+  creg__r2__2_ = max(0,creg_r2);
 
-  //   %conv5 = zext i1 %cmp to i32, !dbg !68
+  //   %conv5 = zext i1 %cmp to i32, !dbg !62
 
-  //   call void @llvm.dbg.value(metadata i32 %conv5, metadata !122, metadata !DIExpression()), !dbg !131
+  //   call void @llvm.dbg.value(metadata i32 %conv5, metadata !118, metadata !DIExpression()), !dbg !121
 
-  //   call void @llvm.dbg.value(metadata i64* @atom_3_X0_2, metadata !123, metadata !DIExpression()), !dbg !141
-
-  //   %2 = zext i32 %conv5 to i64
-
-  //   call void @llvm.dbg.value(metadata i64 %2, metadata !125, metadata !DIExpression()), !dbg !141
-
-  //   store atomic i64 %2, i64* @atom_3_X0_2 seq_cst, align 8, !dbg !70
+  //   store i32 %conv5, i32* @atom_3_X0_2, align 4, !dbg !63, !tbaa !64
   // ST: Guess
-  iw(4,4) = get_rng(0,NCONTEXT-1);// 4 ASSIGN STIW 
+  iw(4,4) = get_rng(0,NCONTEXT-1);// 4 ASSIGN STIW _l50_c15
   old_cw = cw(4,4);
-  cw(4,4) = get_rng(0,NCONTEXT-1);// 4 ASSIGN STCOM 
+  cw(4,4) = get_rng(0,NCONTEXT-1);// 4 ASSIGN STCOM _l50_c15
   // Check
   ASSUME(active[iw(4,4)] == 4);
   ASSUME(active[cw(4,4)] == 4);
   ASSUME(sforbid(4,cw(4,4))== 0);
-  ASSUME(iw(4,4) >= max(creg_r2,0));
+  ASSUME(iw(4,4) >= creg__r2__2_);
   ASSUME(iw(4,4) >= 0);
   ASSUME(cw(4,4) >= iw(4,4));
   ASSUME(cw(4,4) >= old_cw);
@@ -1524,28 +1200,23 @@ T4BLOCK1:
   delta(4,cw(4,4)) = -1;
   ASSUME(creturn[4] >= cw(4,4));
 
-  //   %cmp7 = icmp eq i32 %conv4, 0, !dbg !71
+  //   %cmp6 = icmp eq i32 %conv4, 0, !dbg !68
+  creg__r3__0_ = max(0,creg_r3);
 
-  //   %conv8 = zext i1 %cmp7 to i32, !dbg !71
+  //   %conv7 = zext i1 %cmp6 to i32, !dbg !68
 
-  //   call void @llvm.dbg.value(metadata i32 %conv8, metadata !126, metadata !DIExpression()), !dbg !131
+  //   call void @llvm.dbg.value(metadata i32 %conv7, metadata !119, metadata !DIExpression()), !dbg !121
 
-  //   call void @llvm.dbg.value(metadata i64* @atom_3_X2_0, metadata !127, metadata !DIExpression()), !dbg !144
-
-  //   %3 = zext i32 %conv8 to i64
-
-  //   call void @llvm.dbg.value(metadata i64 %3, metadata !129, metadata !DIExpression()), !dbg !144
-
-  //   store atomic i64 %3, i64* @atom_3_X2_0 seq_cst, align 8, !dbg !73
+  //   store i32 %conv7, i32* @atom_3_X2_0, align 4, !dbg !69, !tbaa !64
   // ST: Guess
-  iw(4,5) = get_rng(0,NCONTEXT-1);// 4 ASSIGN STIW 
+  iw(4,5) = get_rng(0,NCONTEXT-1);// 4 ASSIGN STIW _l52_c15
   old_cw = cw(4,5);
-  cw(4,5) = get_rng(0,NCONTEXT-1);// 4 ASSIGN STCOM 
+  cw(4,5) = get_rng(0,NCONTEXT-1);// 4 ASSIGN STCOM _l52_c15
   // Check
   ASSUME(active[iw(4,5)] == 4);
   ASSUME(active[cw(4,5)] == 4);
   ASSUME(sforbid(5,cw(4,5))== 0);
-  ASSUME(iw(4,5) >= max(creg_r3,0));
+  ASSUME(iw(4,5) >= creg__r3__0_);
   ASSUME(iw(4,5) >= 0);
   ASSUME(cw(4,5) >= iw(4,5));
   ASSUME(cw(4,5) >= old_cw);
@@ -1565,9 +1236,11 @@ T4BLOCK1:
   delta(5,cw(4,5)) = -1;
   ASSUME(creturn[4] >= cw(4,5));
 
-  //   ret i8* null, !dbg !74
+  //   ret i8* null, !dbg !70
   ret_thread_4 = (- 1);
+  goto T4BLOCK_END;
 
+T4BLOCK_END:
 
   // Dumping thread 0
   int ret_thread_0 = 0;
@@ -1582,43 +1255,43 @@ T0BLOCK0:
 
   //   %thr3 = alloca i64, align 8
 
-  //   call void @llvm.dbg.value(metadata i32 %argc, metadata !154, metadata !DIExpression()), !dbg !212
+  //   call void @llvm.dbg.value(metadata i32 %argc, metadata !142, metadata !DIExpression()), !dbg !189
 
-  //   call void @llvm.dbg.value(metadata i8** %argv, metadata !155, metadata !DIExpression()), !dbg !212
+  //   call void @llvm.dbg.value(metadata i8** %argv, metadata !143, metadata !DIExpression()), !dbg !189
 
-  //   %0 = bitcast i64* %thr0 to i8*, !dbg !103
+  //   %0 = bitcast i64* %thr0 to i8*, !dbg !92
 
-  //   call void @llvm.lifetime.start.p0i8(i64 8, i8* %0) #7, !dbg !103
+  //   call void @llvm.lifetime.start.p0i8(i64 8, i8* %0) #7, !dbg !92
 
-  //   call void @llvm.dbg.declare(metadata i64* %thr0, metadata !156, metadata !DIExpression()), !dbg !214
+  //   call void @llvm.dbg.declare(metadata i64* %thr0, metadata !144, metadata !DIExpression()), !dbg !191
 
-  //   %1 = bitcast i64* %thr1 to i8*, !dbg !105
+  //   %1 = bitcast i64* %thr1 to i8*, !dbg !94
 
-  //   call void @llvm.lifetime.start.p0i8(i64 8, i8* %1) #7, !dbg !105
+  //   call void @llvm.lifetime.start.p0i8(i64 8, i8* %1) #7, !dbg !94
 
-  //   call void @llvm.dbg.declare(metadata i64* %thr1, metadata !160, metadata !DIExpression()), !dbg !216
+  //   call void @llvm.dbg.declare(metadata i64* %thr1, metadata !148, metadata !DIExpression()), !dbg !193
 
-  //   %2 = bitcast i64* %thr2 to i8*, !dbg !107
+  //   %2 = bitcast i64* %thr2 to i8*, !dbg !96
 
-  //   call void @llvm.lifetime.start.p0i8(i64 8, i8* %2) #7, !dbg !107
+  //   call void @llvm.lifetime.start.p0i8(i64 8, i8* %2) #7, !dbg !96
 
-  //   call void @llvm.dbg.declare(metadata i64* %thr2, metadata !161, metadata !DIExpression()), !dbg !218
+  //   call void @llvm.dbg.declare(metadata i64* %thr2, metadata !149, metadata !DIExpression()), !dbg !195
 
-  //   %3 = bitcast i64* %thr3 to i8*, !dbg !109
+  //   %3 = bitcast i64* %thr3 to i8*, !dbg !98
 
-  //   call void @llvm.lifetime.start.p0i8(i64 8, i8* %3) #7, !dbg !109
+  //   call void @llvm.lifetime.start.p0i8(i64 8, i8* %3) #7, !dbg !98
 
-  //   call void @llvm.dbg.declare(metadata i64* %thr3, metadata !162, metadata !DIExpression()), !dbg !220
+  //   call void @llvm.dbg.declare(metadata i64* %thr3, metadata !150, metadata !DIExpression()), !dbg !197
 
-  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1), metadata !163, metadata !DIExpression()), !dbg !221
+  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1), metadata !151, metadata !DIExpression()), !dbg !198
 
-  //   call void @llvm.dbg.value(metadata i64 0, metadata !165, metadata !DIExpression()), !dbg !221
+  //   call void @llvm.dbg.value(metadata i64 0, metadata !153, metadata !DIExpression()), !dbg !198
 
-  //   store atomic i64 0, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1) monotonic, align 8, !dbg !112
+  //   store atomic i64 0, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1) monotonic, align 8, !dbg !101
   // ST: Guess
-  iw(0,0+1*1) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STIW 
+  iw(0,0+1*1) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STIW _l62_c3
   old_cw = cw(0,0+1*1);
-  cw(0,0+1*1) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STCOM 
+  cw(0,0+1*1) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STCOM _l62_c3
   // Check
   ASSUME(active[iw(0,0+1*1)] == 0);
   ASSUME(active[cw(0,0+1*1)] == 0);
@@ -1643,15 +1316,15 @@ T0BLOCK0:
   delta(0+1*1,cw(0,0+1*1)) = -1;
   ASSUME(creturn[0] >= cw(0,0+1*1));
 
-  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0), metadata !166, metadata !DIExpression()), !dbg !223
+  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0), metadata !154, metadata !DIExpression()), !dbg !200
 
-  //   call void @llvm.dbg.value(metadata i64 0, metadata !168, metadata !DIExpression()), !dbg !223
+  //   call void @llvm.dbg.value(metadata i64 0, metadata !156, metadata !DIExpression()), !dbg !200
 
-  //   store atomic i64 0, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0) monotonic, align 8, !dbg !114
+  //   store atomic i64 0, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0) monotonic, align 8, !dbg !103
   // ST: Guess
-  iw(0,0) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STIW 
+  iw(0,0) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STIW _l63_c3
   old_cw = cw(0,0);
-  cw(0,0) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STCOM 
+  cw(0,0) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STCOM _l63_c3
   // Check
   ASSUME(active[iw(0,0)] == 0);
   ASSUME(active[cw(0,0)] == 0);
@@ -1676,15 +1349,15 @@ T0BLOCK0:
   delta(0,cw(0,0)) = -1;
   ASSUME(creturn[0] >= cw(0,0));
 
-  //   call void @llvm.dbg.value(metadata i64* @atom_1_X0_2, metadata !169, metadata !DIExpression()), !dbg !225
+  //   call void @llvm.dbg.value(metadata i32* @atom_1_X0_2, metadata !157, metadata !DIExpression()), !dbg !202
 
-  //   call void @llvm.dbg.value(metadata i64 0, metadata !171, metadata !DIExpression()), !dbg !225
+  //   call void @llvm.dbg.value(metadata i32 0, metadata !160, metadata !DIExpression()), !dbg !202
 
-  //   store atomic i64 0, i64* @atom_1_X0_2 monotonic, align 8, !dbg !116
+  //   store atomic i32 0, i32* @atom_1_X0_2 monotonic, align 4, !dbg !105
   // ST: Guess
-  iw(0,2) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STIW 
+  iw(0,2) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STIW _l64_c3
   old_cw = cw(0,2);
-  cw(0,2) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STCOM 
+  cw(0,2) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STCOM _l64_c3
   // Check
   ASSUME(active[iw(0,2)] == 0);
   ASSUME(active[cw(0,2)] == 0);
@@ -1709,15 +1382,15 @@ T0BLOCK0:
   delta(2,cw(0,2)) = -1;
   ASSUME(creturn[0] >= cw(0,2));
 
-  //   call void @llvm.dbg.value(metadata i64* @atom_1_X2_0, metadata !172, metadata !DIExpression()), !dbg !227
+  //   call void @llvm.dbg.value(metadata i32* @atom_1_X2_0, metadata !161, metadata !DIExpression()), !dbg !204
 
-  //   call void @llvm.dbg.value(metadata i64 0, metadata !174, metadata !DIExpression()), !dbg !227
+  //   call void @llvm.dbg.value(metadata i32 0, metadata !163, metadata !DIExpression()), !dbg !204
 
-  //   store atomic i64 0, i64* @atom_1_X2_0 monotonic, align 8, !dbg !118
+  //   store atomic i32 0, i32* @atom_1_X2_0 monotonic, align 4, !dbg !107
   // ST: Guess
-  iw(0,3) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STIW 
+  iw(0,3) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STIW _l65_c3
   old_cw = cw(0,3);
-  cw(0,3) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STCOM 
+  cw(0,3) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STCOM _l65_c3
   // Check
   ASSUME(active[iw(0,3)] == 0);
   ASSUME(active[cw(0,3)] == 0);
@@ -1742,15 +1415,15 @@ T0BLOCK0:
   delta(3,cw(0,3)) = -1;
   ASSUME(creturn[0] >= cw(0,3));
 
-  //   call void @llvm.dbg.value(metadata i64* @atom_3_X0_2, metadata !175, metadata !DIExpression()), !dbg !229
+  //   call void @llvm.dbg.value(metadata i32* @atom_3_X0_2, metadata !164, metadata !DIExpression()), !dbg !206
 
-  //   call void @llvm.dbg.value(metadata i64 0, metadata !177, metadata !DIExpression()), !dbg !229
+  //   call void @llvm.dbg.value(metadata i32 0, metadata !166, metadata !DIExpression()), !dbg !206
 
-  //   store atomic i64 0, i64* @atom_3_X0_2 monotonic, align 8, !dbg !120
+  //   store atomic i32 0, i32* @atom_3_X0_2 monotonic, align 4, !dbg !109
   // ST: Guess
-  iw(0,4) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STIW 
+  iw(0,4) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STIW _l66_c3
   old_cw = cw(0,4);
-  cw(0,4) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STCOM 
+  cw(0,4) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STCOM _l66_c3
   // Check
   ASSUME(active[iw(0,4)] == 0);
   ASSUME(active[cw(0,4)] == 0);
@@ -1775,15 +1448,15 @@ T0BLOCK0:
   delta(4,cw(0,4)) = -1;
   ASSUME(creturn[0] >= cw(0,4));
 
-  //   call void @llvm.dbg.value(metadata i64* @atom_3_X2_0, metadata !178, metadata !DIExpression()), !dbg !231
+  //   call void @llvm.dbg.value(metadata i32* @atom_3_X2_0, metadata !167, metadata !DIExpression()), !dbg !208
 
-  //   call void @llvm.dbg.value(metadata i64 0, metadata !180, metadata !DIExpression()), !dbg !231
+  //   call void @llvm.dbg.value(metadata i32 0, metadata !169, metadata !DIExpression()), !dbg !208
 
-  //   store atomic i64 0, i64* @atom_3_X2_0 monotonic, align 8, !dbg !122
+  //   store atomic i32 0, i32* @atom_3_X2_0 monotonic, align 4, !dbg !111
   // ST: Guess
-  iw(0,5) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STIW 
+  iw(0,5) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STIW _l67_c3
   old_cw = cw(0,5);
-  cw(0,5) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STCOM 
+  cw(0,5) = get_rng(0,NCONTEXT-1);// 0 ASSIGN STCOM _l67_c3
   // Check
   ASSUME(active[iw(0,5)] == 0);
   ASSUME(active[cw(0,5)] == 0);
@@ -1808,7 +1481,7 @@ T0BLOCK0:
   delta(5,cw(0,5)) = -1;
   ASSUME(creturn[0] >= cw(0,5));
 
-  //   %call = call i32 @pthread_create(i64* noundef %thr0, %union.pthread_attr_t* noundef null, i8* (i8*)* noundef @t0, i8* noundef null) #7, !dbg !123
+  //   %call = call i32 @pthread_create(i64* noundef %thr0, %union.pthread_attr_t* noundef null, i8* (i8*)* noundef @t0, i8* noundef null) #7, !dbg !112
   // dumbsy: Guess
   old_cdy = cdy[0];
   cdy[0] = get_rng(0,NCONTEXT-1);
@@ -1824,24 +1497,16 @@ T0BLOCK0:
   ASSUME(cdy[0] >= cw(0,3+0));
   ASSUME(cdy[0] >= cw(0,4+0));
   ASSUME(cdy[0] >= cw(0,5+0));
-  ASSUME(cdy[0] >= cw(0,6+0));
-  ASSUME(cdy[0] >= cw(0,7+0));
-  ASSUME(cdy[0] >= cw(0,8+0));
-  ASSUME(cdy[0] >= cw(0,9+0));
   ASSUME(cdy[0] >= cr(0,0+0));
   ASSUME(cdy[0] >= cr(0,0+1));
   ASSUME(cdy[0] >= cr(0,2+0));
   ASSUME(cdy[0] >= cr(0,3+0));
   ASSUME(cdy[0] >= cr(0,4+0));
   ASSUME(cdy[0] >= cr(0,5+0));
-  ASSUME(cdy[0] >= cr(0,6+0));
-  ASSUME(cdy[0] >= cr(0,7+0));
-  ASSUME(cdy[0] >= cr(0,8+0));
-  ASSUME(cdy[0] >= cr(0,9+0));
   ASSUME(creturn[0] >= cdy[0]);
   ASSUME(cstart[1] >= cdy[0]);
 
-  //   %call11 = call i32 @pthread_create(i64* noundef %thr1, %union.pthread_attr_t* noundef null, i8* (i8*)* noundef @t1, i8* noundef null) #7, !dbg !124
+  //   %call11 = call i32 @pthread_create(i64* noundef %thr1, %union.pthread_attr_t* noundef null, i8* (i8*)* noundef @t1, i8* noundef null) #7, !dbg !113
   // dumbsy: Guess
   old_cdy = cdy[0];
   cdy[0] = get_rng(0,NCONTEXT-1);
@@ -1857,24 +1522,16 @@ T0BLOCK0:
   ASSUME(cdy[0] >= cw(0,3+0));
   ASSUME(cdy[0] >= cw(0,4+0));
   ASSUME(cdy[0] >= cw(0,5+0));
-  ASSUME(cdy[0] >= cw(0,6+0));
-  ASSUME(cdy[0] >= cw(0,7+0));
-  ASSUME(cdy[0] >= cw(0,8+0));
-  ASSUME(cdy[0] >= cw(0,9+0));
   ASSUME(cdy[0] >= cr(0,0+0));
   ASSUME(cdy[0] >= cr(0,0+1));
   ASSUME(cdy[0] >= cr(0,2+0));
   ASSUME(cdy[0] >= cr(0,3+0));
   ASSUME(cdy[0] >= cr(0,4+0));
   ASSUME(cdy[0] >= cr(0,5+0));
-  ASSUME(cdy[0] >= cr(0,6+0));
-  ASSUME(cdy[0] >= cr(0,7+0));
-  ASSUME(cdy[0] >= cr(0,8+0));
-  ASSUME(cdy[0] >= cr(0,9+0));
   ASSUME(creturn[0] >= cdy[0]);
   ASSUME(cstart[2] >= cdy[0]);
 
-  //   %call12 = call i32 @pthread_create(i64* noundef %thr2, %union.pthread_attr_t* noundef null, i8* (i8*)* noundef @t2, i8* noundef null) #7, !dbg !125
+  //   %call12 = call i32 @pthread_create(i64* noundef %thr2, %union.pthread_attr_t* noundef null, i8* (i8*)* noundef @t2, i8* noundef null) #7, !dbg !114
   // dumbsy: Guess
   old_cdy = cdy[0];
   cdy[0] = get_rng(0,NCONTEXT-1);
@@ -1890,24 +1547,16 @@ T0BLOCK0:
   ASSUME(cdy[0] >= cw(0,3+0));
   ASSUME(cdy[0] >= cw(0,4+0));
   ASSUME(cdy[0] >= cw(0,5+0));
-  ASSUME(cdy[0] >= cw(0,6+0));
-  ASSUME(cdy[0] >= cw(0,7+0));
-  ASSUME(cdy[0] >= cw(0,8+0));
-  ASSUME(cdy[0] >= cw(0,9+0));
   ASSUME(cdy[0] >= cr(0,0+0));
   ASSUME(cdy[0] >= cr(0,0+1));
   ASSUME(cdy[0] >= cr(0,2+0));
   ASSUME(cdy[0] >= cr(0,3+0));
   ASSUME(cdy[0] >= cr(0,4+0));
   ASSUME(cdy[0] >= cr(0,5+0));
-  ASSUME(cdy[0] >= cr(0,6+0));
-  ASSUME(cdy[0] >= cr(0,7+0));
-  ASSUME(cdy[0] >= cr(0,8+0));
-  ASSUME(cdy[0] >= cr(0,9+0));
   ASSUME(creturn[0] >= cdy[0]);
   ASSUME(cstart[3] >= cdy[0]);
 
-  //   %call13 = call i32 @pthread_create(i64* noundef %thr3, %union.pthread_attr_t* noundef null, i8* (i8*)* noundef @t3, i8* noundef null) #7, !dbg !126
+  //   %call13 = call i32 @pthread_create(i64* noundef %thr3, %union.pthread_attr_t* noundef null, i8* (i8*)* noundef @t3, i8* noundef null) #7, !dbg !115
   // dumbsy: Guess
   old_cdy = cdy[0];
   cdy[0] = get_rng(0,NCONTEXT-1);
@@ -1923,60 +1572,19 @@ T0BLOCK0:
   ASSUME(cdy[0] >= cw(0,3+0));
   ASSUME(cdy[0] >= cw(0,4+0));
   ASSUME(cdy[0] >= cw(0,5+0));
-  ASSUME(cdy[0] >= cw(0,6+0));
-  ASSUME(cdy[0] >= cw(0,7+0));
-  ASSUME(cdy[0] >= cw(0,8+0));
-  ASSUME(cdy[0] >= cw(0,9+0));
   ASSUME(cdy[0] >= cr(0,0+0));
   ASSUME(cdy[0] >= cr(0,0+1));
   ASSUME(cdy[0] >= cr(0,2+0));
   ASSUME(cdy[0] >= cr(0,3+0));
   ASSUME(cdy[0] >= cr(0,4+0));
   ASSUME(cdy[0] >= cr(0,5+0));
-  ASSUME(cdy[0] >= cr(0,6+0));
-  ASSUME(cdy[0] >= cr(0,7+0));
-  ASSUME(cdy[0] >= cr(0,8+0));
-  ASSUME(cdy[0] >= cr(0,9+0));
   ASSUME(creturn[0] >= cdy[0]);
   ASSUME(cstart[4] >= cdy[0]);
 
-  //   %4 = load i64, i64* %thr0, align 8, !dbg !127, !tbaa !128
-  // LD: Guess
-  old_cr = cr(0,6);
-  cr(0,6) = get_rng(0,NCONTEXT-1);// 0 ASSIGN LDCOM 
-  // Check
-  ASSUME(active[cr(0,6)] == 0);
-  ASSUME(cr(0,6) >= iw(0,6));
-  ASSUME(cr(0,6) >= 0);
-  ASSUME(cr(0,6) >= cdy[0]);
-  ASSUME(cr(0,6) >= cisb[0]);
-  ASSUME(cr(0,6) >= cdl[0]);
-  ASSUME(cr(0,6) >= cl[0]);
-  // Update
-  creg_r5 = cr(0,6);
-  crmax(0,6) = max(crmax(0,6),cr(0,6));
-  caddr[0] = max(caddr[0],0);
-  if(cr(0,6) < cw(0,6)) {
-    r5 = buff(0,6);
-    ASSUME((!(( (cw(0,6) < 1) && (1 < crmax(0,6)) )))||(sforbid(6,1)> 0));
-    ASSUME((!(( (cw(0,6) < 2) && (2 < crmax(0,6)) )))||(sforbid(6,2)> 0));
-    ASSUME((!(( (cw(0,6) < 3) && (3 < crmax(0,6)) )))||(sforbid(6,3)> 0));
-    ASSUME((!(( (cw(0,6) < 4) && (4 < crmax(0,6)) )))||(sforbid(6,4)> 0));
-    ASSUME((!(( (cw(0,6) < 5) && (5 < crmax(0,6)) )))||(sforbid(6,5)> 0));
-    ASSUME((!(( (cw(0,6) < 6) && (6 < crmax(0,6)) )))||(sforbid(6,6)> 0));
-    ASSUME((!(( (cw(0,6) < 7) && (7 < crmax(0,6)) )))||(sforbid(6,7)> 0));
-    ASSUME((!(( (cw(0,6) < 8) && (8 < crmax(0,6)) )))||(sforbid(6,8)> 0));
-    ASSUME((!(( (cw(0,6) < 9) && (9 < crmax(0,6)) )))||(sforbid(6,9)> 0));
-  } else {
-    if(pw(0,6) != co(6,cr(0,6))) {
-      ASSUME(cr(0,6) >= old_cr);
-    }
-    pw(0,6) = co(6,cr(0,6));
-    r5 = mem(6,cr(0,6));
-  }
-  ASSUME(creturn[0] >= cr(0,6));
+  //   %4 = load i64, i64* %thr0, align 8, !dbg !116, !tbaa !117
+  r5 = local_mem[0];
 
-  //   %call14 = call i32 @pthread_join(i64 noundef %4, i8** noundef null), !dbg !132
+  //   %call14 = call i32 @pthread_join(i64 noundef %4, i8** noundef null), !dbg !121
   // dumbsy: Guess
   old_cdy = cdy[0];
   cdy[0] = get_rng(0,NCONTEXT-1);
@@ -1992,60 +1600,19 @@ T0BLOCK0:
   ASSUME(cdy[0] >= cw(0,3+0));
   ASSUME(cdy[0] >= cw(0,4+0));
   ASSUME(cdy[0] >= cw(0,5+0));
-  ASSUME(cdy[0] >= cw(0,6+0));
-  ASSUME(cdy[0] >= cw(0,7+0));
-  ASSUME(cdy[0] >= cw(0,8+0));
-  ASSUME(cdy[0] >= cw(0,9+0));
   ASSUME(cdy[0] >= cr(0,0+0));
   ASSUME(cdy[0] >= cr(0,0+1));
   ASSUME(cdy[0] >= cr(0,2+0));
   ASSUME(cdy[0] >= cr(0,3+0));
   ASSUME(cdy[0] >= cr(0,4+0));
   ASSUME(cdy[0] >= cr(0,5+0));
-  ASSUME(cdy[0] >= cr(0,6+0));
-  ASSUME(cdy[0] >= cr(0,7+0));
-  ASSUME(cdy[0] >= cr(0,8+0));
-  ASSUME(cdy[0] >= cr(0,9+0));
   ASSUME(creturn[0] >= cdy[0]);
   ASSUME(cdy[0] >= creturn[1]);
 
-  //   %5 = load i64, i64* %thr1, align 8, !dbg !133, !tbaa !128
-  // LD: Guess
-  old_cr = cr(0,7);
-  cr(0,7) = get_rng(0,NCONTEXT-1);// 0 ASSIGN LDCOM 
-  // Check
-  ASSUME(active[cr(0,7)] == 0);
-  ASSUME(cr(0,7) >= iw(0,7));
-  ASSUME(cr(0,7) >= 0);
-  ASSUME(cr(0,7) >= cdy[0]);
-  ASSUME(cr(0,7) >= cisb[0]);
-  ASSUME(cr(0,7) >= cdl[0]);
-  ASSUME(cr(0,7) >= cl[0]);
-  // Update
-  creg_r6 = cr(0,7);
-  crmax(0,7) = max(crmax(0,7),cr(0,7));
-  caddr[0] = max(caddr[0],0);
-  if(cr(0,7) < cw(0,7)) {
-    r6 = buff(0,7);
-    ASSUME((!(( (cw(0,7) < 1) && (1 < crmax(0,7)) )))||(sforbid(7,1)> 0));
-    ASSUME((!(( (cw(0,7) < 2) && (2 < crmax(0,7)) )))||(sforbid(7,2)> 0));
-    ASSUME((!(( (cw(0,7) < 3) && (3 < crmax(0,7)) )))||(sforbid(7,3)> 0));
-    ASSUME((!(( (cw(0,7) < 4) && (4 < crmax(0,7)) )))||(sforbid(7,4)> 0));
-    ASSUME((!(( (cw(0,7) < 5) && (5 < crmax(0,7)) )))||(sforbid(7,5)> 0));
-    ASSUME((!(( (cw(0,7) < 6) && (6 < crmax(0,7)) )))||(sforbid(7,6)> 0));
-    ASSUME((!(( (cw(0,7) < 7) && (7 < crmax(0,7)) )))||(sforbid(7,7)> 0));
-    ASSUME((!(( (cw(0,7) < 8) && (8 < crmax(0,7)) )))||(sforbid(7,8)> 0));
-    ASSUME((!(( (cw(0,7) < 9) && (9 < crmax(0,7)) )))||(sforbid(7,9)> 0));
-  } else {
-    if(pw(0,7) != co(7,cr(0,7))) {
-      ASSUME(cr(0,7) >= old_cr);
-    }
-    pw(0,7) = co(7,cr(0,7));
-    r6 = mem(7,cr(0,7));
-  }
-  ASSUME(creturn[0] >= cr(0,7));
+  //   %5 = load i64, i64* %thr1, align 8, !dbg !122, !tbaa !117
+  r6 = local_mem[1];
 
-  //   %call15 = call i32 @pthread_join(i64 noundef %5, i8** noundef null), !dbg !134
+  //   %call15 = call i32 @pthread_join(i64 noundef %5, i8** noundef null), !dbg !123
   // dumbsy: Guess
   old_cdy = cdy[0];
   cdy[0] = get_rng(0,NCONTEXT-1);
@@ -2061,60 +1628,19 @@ T0BLOCK0:
   ASSUME(cdy[0] >= cw(0,3+0));
   ASSUME(cdy[0] >= cw(0,4+0));
   ASSUME(cdy[0] >= cw(0,5+0));
-  ASSUME(cdy[0] >= cw(0,6+0));
-  ASSUME(cdy[0] >= cw(0,7+0));
-  ASSUME(cdy[0] >= cw(0,8+0));
-  ASSUME(cdy[0] >= cw(0,9+0));
   ASSUME(cdy[0] >= cr(0,0+0));
   ASSUME(cdy[0] >= cr(0,0+1));
   ASSUME(cdy[0] >= cr(0,2+0));
   ASSUME(cdy[0] >= cr(0,3+0));
   ASSUME(cdy[0] >= cr(0,4+0));
   ASSUME(cdy[0] >= cr(0,5+0));
-  ASSUME(cdy[0] >= cr(0,6+0));
-  ASSUME(cdy[0] >= cr(0,7+0));
-  ASSUME(cdy[0] >= cr(0,8+0));
-  ASSUME(cdy[0] >= cr(0,9+0));
   ASSUME(creturn[0] >= cdy[0]);
   ASSUME(cdy[0] >= creturn[2]);
 
-  //   %6 = load i64, i64* %thr2, align 8, !dbg !135, !tbaa !128
-  // LD: Guess
-  old_cr = cr(0,8);
-  cr(0,8) = get_rng(0,NCONTEXT-1);// 0 ASSIGN LDCOM 
-  // Check
-  ASSUME(active[cr(0,8)] == 0);
-  ASSUME(cr(0,8) >= iw(0,8));
-  ASSUME(cr(0,8) >= 0);
-  ASSUME(cr(0,8) >= cdy[0]);
-  ASSUME(cr(0,8) >= cisb[0]);
-  ASSUME(cr(0,8) >= cdl[0]);
-  ASSUME(cr(0,8) >= cl[0]);
-  // Update
-  creg_r7 = cr(0,8);
-  crmax(0,8) = max(crmax(0,8),cr(0,8));
-  caddr[0] = max(caddr[0],0);
-  if(cr(0,8) < cw(0,8)) {
-    r7 = buff(0,8);
-    ASSUME((!(( (cw(0,8) < 1) && (1 < crmax(0,8)) )))||(sforbid(8,1)> 0));
-    ASSUME((!(( (cw(0,8) < 2) && (2 < crmax(0,8)) )))||(sforbid(8,2)> 0));
-    ASSUME((!(( (cw(0,8) < 3) && (3 < crmax(0,8)) )))||(sforbid(8,3)> 0));
-    ASSUME((!(( (cw(0,8) < 4) && (4 < crmax(0,8)) )))||(sforbid(8,4)> 0));
-    ASSUME((!(( (cw(0,8) < 5) && (5 < crmax(0,8)) )))||(sforbid(8,5)> 0));
-    ASSUME((!(( (cw(0,8) < 6) && (6 < crmax(0,8)) )))||(sforbid(8,6)> 0));
-    ASSUME((!(( (cw(0,8) < 7) && (7 < crmax(0,8)) )))||(sforbid(8,7)> 0));
-    ASSUME((!(( (cw(0,8) < 8) && (8 < crmax(0,8)) )))||(sforbid(8,8)> 0));
-    ASSUME((!(( (cw(0,8) < 9) && (9 < crmax(0,8)) )))||(sforbid(8,9)> 0));
-  } else {
-    if(pw(0,8) != co(8,cr(0,8))) {
-      ASSUME(cr(0,8) >= old_cr);
-    }
-    pw(0,8) = co(8,cr(0,8));
-    r7 = mem(8,cr(0,8));
-  }
-  ASSUME(creturn[0] >= cr(0,8));
+  //   %6 = load i64, i64* %thr2, align 8, !dbg !124, !tbaa !117
+  r7 = local_mem[2];
 
-  //   %call16 = call i32 @pthread_join(i64 noundef %6, i8** noundef null), !dbg !136
+  //   %call16 = call i32 @pthread_join(i64 noundef %6, i8** noundef null), !dbg !125
   // dumbsy: Guess
   old_cdy = cdy[0];
   cdy[0] = get_rng(0,NCONTEXT-1);
@@ -2130,60 +1656,19 @@ T0BLOCK0:
   ASSUME(cdy[0] >= cw(0,3+0));
   ASSUME(cdy[0] >= cw(0,4+0));
   ASSUME(cdy[0] >= cw(0,5+0));
-  ASSUME(cdy[0] >= cw(0,6+0));
-  ASSUME(cdy[0] >= cw(0,7+0));
-  ASSUME(cdy[0] >= cw(0,8+0));
-  ASSUME(cdy[0] >= cw(0,9+0));
   ASSUME(cdy[0] >= cr(0,0+0));
   ASSUME(cdy[0] >= cr(0,0+1));
   ASSUME(cdy[0] >= cr(0,2+0));
   ASSUME(cdy[0] >= cr(0,3+0));
   ASSUME(cdy[0] >= cr(0,4+0));
   ASSUME(cdy[0] >= cr(0,5+0));
-  ASSUME(cdy[0] >= cr(0,6+0));
-  ASSUME(cdy[0] >= cr(0,7+0));
-  ASSUME(cdy[0] >= cr(0,8+0));
-  ASSUME(cdy[0] >= cr(0,9+0));
   ASSUME(creturn[0] >= cdy[0]);
   ASSUME(cdy[0] >= creturn[3]);
 
-  //   %7 = load i64, i64* %thr3, align 8, !dbg !137, !tbaa !128
-  // LD: Guess
-  old_cr = cr(0,9);
-  cr(0,9) = get_rng(0,NCONTEXT-1);// 0 ASSIGN LDCOM 
-  // Check
-  ASSUME(active[cr(0,9)] == 0);
-  ASSUME(cr(0,9) >= iw(0,9));
-  ASSUME(cr(0,9) >= 0);
-  ASSUME(cr(0,9) >= cdy[0]);
-  ASSUME(cr(0,9) >= cisb[0]);
-  ASSUME(cr(0,9) >= cdl[0]);
-  ASSUME(cr(0,9) >= cl[0]);
-  // Update
-  creg_r8 = cr(0,9);
-  crmax(0,9) = max(crmax(0,9),cr(0,9));
-  caddr[0] = max(caddr[0],0);
-  if(cr(0,9) < cw(0,9)) {
-    r8 = buff(0,9);
-    ASSUME((!(( (cw(0,9) < 1) && (1 < crmax(0,9)) )))||(sforbid(9,1)> 0));
-    ASSUME((!(( (cw(0,9) < 2) && (2 < crmax(0,9)) )))||(sforbid(9,2)> 0));
-    ASSUME((!(( (cw(0,9) < 3) && (3 < crmax(0,9)) )))||(sforbid(9,3)> 0));
-    ASSUME((!(( (cw(0,9) < 4) && (4 < crmax(0,9)) )))||(sforbid(9,4)> 0));
-    ASSUME((!(( (cw(0,9) < 5) && (5 < crmax(0,9)) )))||(sforbid(9,5)> 0));
-    ASSUME((!(( (cw(0,9) < 6) && (6 < crmax(0,9)) )))||(sforbid(9,6)> 0));
-    ASSUME((!(( (cw(0,9) < 7) && (7 < crmax(0,9)) )))||(sforbid(9,7)> 0));
-    ASSUME((!(( (cw(0,9) < 8) && (8 < crmax(0,9)) )))||(sforbid(9,8)> 0));
-    ASSUME((!(( (cw(0,9) < 9) && (9 < crmax(0,9)) )))||(sforbid(9,9)> 0));
-  } else {
-    if(pw(0,9) != co(9,cr(0,9))) {
-      ASSUME(cr(0,9) >= old_cr);
-    }
-    pw(0,9) = co(9,cr(0,9));
-    r8 = mem(9,cr(0,9));
-  }
-  ASSUME(creturn[0] >= cr(0,9));
+  //   %7 = load i64, i64* %thr3, align 8, !dbg !126, !tbaa !117
+  r8 = local_mem[3];
 
-  //   %call17 = call i32 @pthread_join(i64 noundef %7, i8** noundef null), !dbg !138
+  //   %call17 = call i32 @pthread_join(i64 noundef %7, i8** noundef null), !dbg !127
   // dumbsy: Guess
   old_cdy = cdy[0];
   cdy[0] = get_rng(0,NCONTEXT-1);
@@ -2199,29 +1684,21 @@ T0BLOCK0:
   ASSUME(cdy[0] >= cw(0,3+0));
   ASSUME(cdy[0] >= cw(0,4+0));
   ASSUME(cdy[0] >= cw(0,5+0));
-  ASSUME(cdy[0] >= cw(0,6+0));
-  ASSUME(cdy[0] >= cw(0,7+0));
-  ASSUME(cdy[0] >= cw(0,8+0));
-  ASSUME(cdy[0] >= cw(0,9+0));
   ASSUME(cdy[0] >= cr(0,0+0));
   ASSUME(cdy[0] >= cr(0,0+1));
   ASSUME(cdy[0] >= cr(0,2+0));
   ASSUME(cdy[0] >= cr(0,3+0));
   ASSUME(cdy[0] >= cr(0,4+0));
   ASSUME(cdy[0] >= cr(0,5+0));
-  ASSUME(cdy[0] >= cr(0,6+0));
-  ASSUME(cdy[0] >= cr(0,7+0));
-  ASSUME(cdy[0] >= cr(0,8+0));
-  ASSUME(cdy[0] >= cr(0,9+0));
   ASSUME(creturn[0] >= cdy[0]);
   ASSUME(cdy[0] >= creturn[4]);
 
-  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0), metadata !182, metadata !DIExpression()), !dbg !249
+  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0), metadata !171, metadata !DIExpression()), !dbg !224
 
-  //   %8 = load atomic i64, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0) seq_cst, align 8, !dbg !140
+  //   %8 = load atomic i64, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 0) monotonic, align 8, !dbg !129
   // LD: Guess
   old_cr = cr(0,0);
-  cr(0,0) = get_rng(0,NCONTEXT-1);// 0 ASSIGN LDCOM 
+  cr(0,0) = get_rng(0,NCONTEXT-1);// 0 ASSIGN LDCOM _l79_c13
   // Check
   ASSUME(active[cr(0,0)] == 0);
   ASSUME(cr(0,0) >= iw(0,0));
@@ -2254,24 +1731,25 @@ T0BLOCK0:
   }
   ASSUME(creturn[0] >= cr(0,0));
 
-  //   call void @llvm.dbg.value(metadata i64 %8, metadata !184, metadata !DIExpression()), !dbg !249
+  //   call void @llvm.dbg.value(metadata i64 %8, metadata !173, metadata !DIExpression()), !dbg !224
 
-  //   %conv = trunc i64 %8 to i32, !dbg !141
+  //   %conv = trunc i64 %8 to i32, !dbg !130
 
-  //   call void @llvm.dbg.value(metadata i32 %conv, metadata !181, metadata !DIExpression()), !dbg !212
+  //   call void @llvm.dbg.value(metadata i32 %conv, metadata !170, metadata !DIExpression()), !dbg !189
 
-  //   %cmp = icmp eq i32 %conv, 2, !dbg !142
+  //   %cmp = icmp eq i32 %conv, 2, !dbg !131
+  creg__r9__2_ = max(0,creg_r9);
 
-  //   %conv18 = zext i1 %cmp to i32, !dbg !142
+  //   %conv18 = zext i1 %cmp to i32, !dbg !131
 
-  //   call void @llvm.dbg.value(metadata i32 %conv18, metadata !185, metadata !DIExpression()), !dbg !212
+  //   call void @llvm.dbg.value(metadata i32 %conv18, metadata !174, metadata !DIExpression()), !dbg !189
 
-  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1), metadata !187, metadata !DIExpression()), !dbg !253
+  //   call void @llvm.dbg.value(metadata i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1), metadata !176, metadata !DIExpression()), !dbg !228
 
-  //   %9 = load atomic i64, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1) seq_cst, align 8, !dbg !144
+  //   %9 = load atomic i64, i64* getelementptr inbounds ([2 x i64], [2 x i64]* @vars, i64 0, i64 1) monotonic, align 8, !dbg !133
   // LD: Guess
   old_cr = cr(0,0+1*1);
-  cr(0,0+1*1) = get_rng(0,NCONTEXT-1);// 0 ASSIGN LDCOM 
+  cr(0,0+1*1) = get_rng(0,NCONTEXT-1);// 0 ASSIGN LDCOM _l81_c13
   // Check
   ASSUME(active[cr(0,0+1*1)] == 0);
   ASSUME(cr(0,0+1*1) >= iw(0,0+1*1));
@@ -2304,24 +1782,23 @@ T0BLOCK0:
   }
   ASSUME(creturn[0] >= cr(0,0+1*1));
 
-  //   call void @llvm.dbg.value(metadata i64 %9, metadata !189, metadata !DIExpression()), !dbg !253
+  //   call void @llvm.dbg.value(metadata i64 %9, metadata !178, metadata !DIExpression()), !dbg !228
 
-  //   %conv22 = trunc i64 %9 to i32, !dbg !145
+  //   %conv22 = trunc i64 %9 to i32, !dbg !134
 
-  //   call void @llvm.dbg.value(metadata i32 %conv22, metadata !186, metadata !DIExpression()), !dbg !212
+  //   call void @llvm.dbg.value(metadata i32 %conv22, metadata !175, metadata !DIExpression()), !dbg !189
 
-  //   %cmp23 = icmp eq i32 %conv22, 2, !dbg !146
+  //   %cmp23 = icmp eq i32 %conv22, 2, !dbg !135
+  creg__r10__2_ = max(0,creg_r10);
 
-  //   %conv24 = zext i1 %cmp23 to i32, !dbg !146
+  //   %conv24 = zext i1 %cmp23 to i32, !dbg !135
 
-  //   call void @llvm.dbg.value(metadata i32 %conv24, metadata !190, metadata !DIExpression()), !dbg !212
+  //   call void @llvm.dbg.value(metadata i32 %conv24, metadata !179, metadata !DIExpression()), !dbg !189
 
-  //   call void @llvm.dbg.value(metadata i64* @atom_1_X0_2, metadata !192, metadata !DIExpression()), !dbg !257
-
-  //   %10 = load atomic i64, i64* @atom_1_X0_2 seq_cst, align 8, !dbg !148
+  //   %10 = load i32, i32* @atom_1_X0_2, align 4, !dbg !136, !tbaa !137
   // LD: Guess
   old_cr = cr(0,2);
-  cr(0,2) = get_rng(0,NCONTEXT-1);// 0 ASSIGN LDCOM 
+  cr(0,2) = get_rng(0,NCONTEXT-1);// 0 ASSIGN LDCOM _l83_c13
   // Check
   ASSUME(active[cr(0,2)] == 0);
   ASSUME(cr(0,2) >= iw(0,2));
@@ -2354,18 +1831,12 @@ T0BLOCK0:
   }
   ASSUME(creturn[0] >= cr(0,2));
 
-  //   call void @llvm.dbg.value(metadata i64 %10, metadata !194, metadata !DIExpression()), !dbg !257
+  //   call void @llvm.dbg.value(metadata i32 %10, metadata !180, metadata !DIExpression()), !dbg !189
 
-  //   %conv28 = trunc i64 %10 to i32, !dbg !149
-
-  //   call void @llvm.dbg.value(metadata i32 %conv28, metadata !191, metadata !DIExpression()), !dbg !212
-
-  //   call void @llvm.dbg.value(metadata i64* @atom_1_X2_0, metadata !196, metadata !DIExpression()), !dbg !260
-
-  //   %11 = load atomic i64, i64* @atom_1_X2_0 seq_cst, align 8, !dbg !151
+  //   %11 = load i32, i32* @atom_1_X2_0, align 4, !dbg !139, !tbaa !137
   // LD: Guess
   old_cr = cr(0,3);
-  cr(0,3) = get_rng(0,NCONTEXT-1);// 0 ASSIGN LDCOM 
+  cr(0,3) = get_rng(0,NCONTEXT-1);// 0 ASSIGN LDCOM _l84_c13
   // Check
   ASSUME(active[cr(0,3)] == 0);
   ASSUME(cr(0,3) >= iw(0,3));
@@ -2398,18 +1869,12 @@ T0BLOCK0:
   }
   ASSUME(creturn[0] >= cr(0,3));
 
-  //   call void @llvm.dbg.value(metadata i64 %11, metadata !198, metadata !DIExpression()), !dbg !260
+  //   call void @llvm.dbg.value(metadata i32 %11, metadata !181, metadata !DIExpression()), !dbg !189
 
-  //   %conv32 = trunc i64 %11 to i32, !dbg !152
-
-  //   call void @llvm.dbg.value(metadata i32 %conv32, metadata !195, metadata !DIExpression()), !dbg !212
-
-  //   call void @llvm.dbg.value(metadata i64* @atom_3_X0_2, metadata !200, metadata !DIExpression()), !dbg !263
-
-  //   %12 = load atomic i64, i64* @atom_3_X0_2 seq_cst, align 8, !dbg !154
+  //   %12 = load i32, i32* @atom_3_X0_2, align 4, !dbg !140, !tbaa !137
   // LD: Guess
   old_cr = cr(0,4);
-  cr(0,4) = get_rng(0,NCONTEXT-1);// 0 ASSIGN LDCOM 
+  cr(0,4) = get_rng(0,NCONTEXT-1);// 0 ASSIGN LDCOM _l85_c13
   // Check
   ASSUME(active[cr(0,4)] == 0);
   ASSUME(cr(0,4) >= iw(0,4));
@@ -2442,18 +1907,12 @@ T0BLOCK0:
   }
   ASSUME(creturn[0] >= cr(0,4));
 
-  //   call void @llvm.dbg.value(metadata i64 %12, metadata !202, metadata !DIExpression()), !dbg !263
+  //   call void @llvm.dbg.value(metadata i32 %12, metadata !182, metadata !DIExpression()), !dbg !189
 
-  //   %conv36 = trunc i64 %12 to i32, !dbg !155
-
-  //   call void @llvm.dbg.value(metadata i32 %conv36, metadata !199, metadata !DIExpression()), !dbg !212
-
-  //   call void @llvm.dbg.value(metadata i64* @atom_3_X2_0, metadata !204, metadata !DIExpression()), !dbg !266
-
-  //   %13 = load atomic i64, i64* @atom_3_X2_0 seq_cst, align 8, !dbg !157
+  //   %13 = load i32, i32* @atom_3_X2_0, align 4, !dbg !141, !tbaa !137
   // LD: Guess
   old_cr = cr(0,5);
-  cr(0,5) = get_rng(0,NCONTEXT-1);// 0 ASSIGN LDCOM 
+  cr(0,5) = get_rng(0,NCONTEXT-1);// 0 ASSIGN LDCOM _l86_c13
   // Check
   ASSUME(active[cr(0,5)] == 0);
   ASSUME(cr(0,5) >= iw(0,5));
@@ -2486,55 +1945,46 @@ T0BLOCK0:
   }
   ASSUME(creturn[0] >= cr(0,5));
 
-  //   call void @llvm.dbg.value(metadata i64 %13, metadata !206, metadata !DIExpression()), !dbg !266
+  //   call void @llvm.dbg.value(metadata i32 %13, metadata !183, metadata !DIExpression()), !dbg !189
 
-  //   %conv40 = trunc i64 %13 to i32, !dbg !158
-
-  //   call void @llvm.dbg.value(metadata i32 %conv40, metadata !203, metadata !DIExpression()), !dbg !212
-
-  //   %and = and i32 %conv36, %conv40, !dbg !159
+  //   %and = and i32 %12, %13, !dbg !142
   creg_r15 = max(creg_r13,creg_r14);
-  ASSUME(active[creg_r15] == 0);
   r15 = r13 & r14;
 
-  //   call void @llvm.dbg.value(metadata i32 %and, metadata !207, metadata !DIExpression()), !dbg !212
+  //   call void @llvm.dbg.value(metadata i32 %and, metadata !184, metadata !DIExpression()), !dbg !189
 
-  //   %and41 = and i32 %conv32, %and, !dbg !160
+  //   %and25 = and i32 %11, %and, !dbg !143
   creg_r16 = max(creg_r12,creg_r15);
-  ASSUME(active[creg_r16] == 0);
   r16 = r12 & r15;
 
-  //   call void @llvm.dbg.value(metadata i32 %and41, metadata !208, metadata !DIExpression()), !dbg !212
+  //   call void @llvm.dbg.value(metadata i32 %and25, metadata !185, metadata !DIExpression()), !dbg !189
 
-  //   %and42 = and i32 %conv28, %and41, !dbg !161
+  //   %and26 = and i32 %10, %and25, !dbg !144
   creg_r17 = max(creg_r11,creg_r16);
-  ASSUME(active[creg_r17] == 0);
   r17 = r11 & r16;
 
-  //   call void @llvm.dbg.value(metadata i32 %and42, metadata !209, metadata !DIExpression()), !dbg !212
+  //   call void @llvm.dbg.value(metadata i32 %and26, metadata !186, metadata !DIExpression()), !dbg !189
 
-  //   %and43 = and i32 %conv24, %and42, !dbg !162
-  creg_r18 = max(max(creg_r10,0),creg_r17);
-  ASSUME(active[creg_r18] == 0);
+  //   %and27 = and i32 %conv24, %and26, !dbg !145
+  creg_r18 = max(creg__r10__2_,creg_r17);
   r18 = (r10==2) & r17;
 
-  //   call void @llvm.dbg.value(metadata i32 %and43, metadata !210, metadata !DIExpression()), !dbg !212
+  //   call void @llvm.dbg.value(metadata i32 %and27, metadata !187, metadata !DIExpression()), !dbg !189
 
-  //   %and44 = and i32 %conv18, %and43, !dbg !163
-  creg_r19 = max(max(creg_r9,0),creg_r18);
-  ASSUME(active[creg_r19] == 0);
+  //   %and28 = and i32 %conv18, %and27, !dbg !146
+  creg_r19 = max(creg__r9__2_,creg_r18);
   r19 = (r9==2) & r18;
 
-  //   call void @llvm.dbg.value(metadata i32 %and44, metadata !211, metadata !DIExpression()), !dbg !212
+  //   call void @llvm.dbg.value(metadata i32 %and28, metadata !188, metadata !DIExpression()), !dbg !189
 
-  //   %cmp45 = icmp eq i32 %and44, 1, !dbg !164
+  //   %cmp29 = icmp eq i32 %and28, 1, !dbg !147
+  creg__r19__1_ = max(0,creg_r19);
 
-  //   br i1 %cmp45, label %if.then, label %if.end, !dbg !166
+  //   br i1 %cmp29, label %if.then, label %if.end, !dbg !149
   old_cctrl = cctrl[0];
   cctrl[0] = get_rng(0,NCONTEXT-1);
   ASSUME(cctrl[0] >= old_cctrl);
-  ASSUME(cctrl[0] >= creg_r19);
-  ASSUME(cctrl[0] >= 0);
+  ASSUME(cctrl[0] >= creg__r19__1_);
   if((r19==1)) {
     goto T0BLOCK1;
   } else {
@@ -2542,31 +1992,34 @@ T0BLOCK0:
   }
 
 T0BLOCK1:
-  //   call void @__assert_fail(i8* noundef getelementptr inbounds ([2 x i8], [2 x i8]* @.str, i64 0, i64 0), i8* noundef getelementptr inbounds ([118 x i8], [118 x i8]* @.str.1, i64 0, i64 0), i32 noundef 92, i8* noundef getelementptr inbounds ([23 x i8], [23 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #8, !dbg !167
+  //   call void @__assert_fail(i8* noundef getelementptr inbounds ([2 x i8], [2 x i8]* @.str, i64 0, i64 0), i8* noundef getelementptr inbounds ([118 x i8], [118 x i8]* @.str.1, i64 0, i64 0), i32 noundef 92, i8* noundef getelementptr inbounds ([23 x i8], [23 x i8]* @__PRETTY_FUNCTION__.main, i64 0, i64 0)) #8, !dbg !150
 
-  //   unreachable, !dbg !167
+  //   unreachable, !dbg !150
   r20 = 1;
+  goto T0BLOCK_END;
 
 T0BLOCK2:
-  //   %14 = bitcast i64* %thr3 to i8*, !dbg !170
+  //   %14 = bitcast i64* %thr3 to i8*, !dbg !153
 
-  //   call void @llvm.lifetime.end.p0i8(i64 8, i8* %14) #7, !dbg !170
+  //   call void @llvm.lifetime.end.p0i8(i64 8, i8* %14) #7, !dbg !153
 
-  //   %15 = bitcast i64* %thr2 to i8*, !dbg !170
+  //   %15 = bitcast i64* %thr2 to i8*, !dbg !153
 
-  //   call void @llvm.lifetime.end.p0i8(i64 8, i8* %15) #7, !dbg !170
+  //   call void @llvm.lifetime.end.p0i8(i64 8, i8* %15) #7, !dbg !153
 
-  //   %16 = bitcast i64* %thr1 to i8*, !dbg !170
+  //   %16 = bitcast i64* %thr1 to i8*, !dbg !153
 
-  //   call void @llvm.lifetime.end.p0i8(i64 8, i8* %16) #7, !dbg !170
+  //   call void @llvm.lifetime.end.p0i8(i64 8, i8* %16) #7, !dbg !153
 
-  //   %17 = bitcast i64* %thr0 to i8*, !dbg !170
+  //   %17 = bitcast i64* %thr0 to i8*, !dbg !153
 
-  //   call void @llvm.lifetime.end.p0i8(i64 8, i8* %17) #7, !dbg !170
+  //   call void @llvm.lifetime.end.p0i8(i64 8, i8* %17) #7, !dbg !153
 
-  //   ret i32 0, !dbg !171
+  //   ret i32 0, !dbg !154
   ret_thread_0 = 0;
+  goto T0BLOCK_END;
 
+T0BLOCK_END:
 
   ASSUME(meminit(0,1) == mem(0,0));
   ASSUME(coinit(0,1) == co(0,0));
@@ -2730,114 +2183,6 @@ T0BLOCK2:
   ASSUME(meminit(5,9) == mem(5,8));
   ASSUME(coinit(5,9) == co(5,8));
   ASSUME(deltainit(5,9) == delta(5,8));
-  ASSUME(meminit(6,1) == mem(6,0));
-  ASSUME(coinit(6,1) == co(6,0));
-  ASSUME(deltainit(6,1) == delta(6,0));
-  ASSUME(meminit(6,2) == mem(6,1));
-  ASSUME(coinit(6,2) == co(6,1));
-  ASSUME(deltainit(6,2) == delta(6,1));
-  ASSUME(meminit(6,3) == mem(6,2));
-  ASSUME(coinit(6,3) == co(6,2));
-  ASSUME(deltainit(6,3) == delta(6,2));
-  ASSUME(meminit(6,4) == mem(6,3));
-  ASSUME(coinit(6,4) == co(6,3));
-  ASSUME(deltainit(6,4) == delta(6,3));
-  ASSUME(meminit(6,5) == mem(6,4));
-  ASSUME(coinit(6,5) == co(6,4));
-  ASSUME(deltainit(6,5) == delta(6,4));
-  ASSUME(meminit(6,6) == mem(6,5));
-  ASSUME(coinit(6,6) == co(6,5));
-  ASSUME(deltainit(6,6) == delta(6,5));
-  ASSUME(meminit(6,7) == mem(6,6));
-  ASSUME(coinit(6,7) == co(6,6));
-  ASSUME(deltainit(6,7) == delta(6,6));
-  ASSUME(meminit(6,8) == mem(6,7));
-  ASSUME(coinit(6,8) == co(6,7));
-  ASSUME(deltainit(6,8) == delta(6,7));
-  ASSUME(meminit(6,9) == mem(6,8));
-  ASSUME(coinit(6,9) == co(6,8));
-  ASSUME(deltainit(6,9) == delta(6,8));
-  ASSUME(meminit(7,1) == mem(7,0));
-  ASSUME(coinit(7,1) == co(7,0));
-  ASSUME(deltainit(7,1) == delta(7,0));
-  ASSUME(meminit(7,2) == mem(7,1));
-  ASSUME(coinit(7,2) == co(7,1));
-  ASSUME(deltainit(7,2) == delta(7,1));
-  ASSUME(meminit(7,3) == mem(7,2));
-  ASSUME(coinit(7,3) == co(7,2));
-  ASSUME(deltainit(7,3) == delta(7,2));
-  ASSUME(meminit(7,4) == mem(7,3));
-  ASSUME(coinit(7,4) == co(7,3));
-  ASSUME(deltainit(7,4) == delta(7,3));
-  ASSUME(meminit(7,5) == mem(7,4));
-  ASSUME(coinit(7,5) == co(7,4));
-  ASSUME(deltainit(7,5) == delta(7,4));
-  ASSUME(meminit(7,6) == mem(7,5));
-  ASSUME(coinit(7,6) == co(7,5));
-  ASSUME(deltainit(7,6) == delta(7,5));
-  ASSUME(meminit(7,7) == mem(7,6));
-  ASSUME(coinit(7,7) == co(7,6));
-  ASSUME(deltainit(7,7) == delta(7,6));
-  ASSUME(meminit(7,8) == mem(7,7));
-  ASSUME(coinit(7,8) == co(7,7));
-  ASSUME(deltainit(7,8) == delta(7,7));
-  ASSUME(meminit(7,9) == mem(7,8));
-  ASSUME(coinit(7,9) == co(7,8));
-  ASSUME(deltainit(7,9) == delta(7,8));
-  ASSUME(meminit(8,1) == mem(8,0));
-  ASSUME(coinit(8,1) == co(8,0));
-  ASSUME(deltainit(8,1) == delta(8,0));
-  ASSUME(meminit(8,2) == mem(8,1));
-  ASSUME(coinit(8,2) == co(8,1));
-  ASSUME(deltainit(8,2) == delta(8,1));
-  ASSUME(meminit(8,3) == mem(8,2));
-  ASSUME(coinit(8,3) == co(8,2));
-  ASSUME(deltainit(8,3) == delta(8,2));
-  ASSUME(meminit(8,4) == mem(8,3));
-  ASSUME(coinit(8,4) == co(8,3));
-  ASSUME(deltainit(8,4) == delta(8,3));
-  ASSUME(meminit(8,5) == mem(8,4));
-  ASSUME(coinit(8,5) == co(8,4));
-  ASSUME(deltainit(8,5) == delta(8,4));
-  ASSUME(meminit(8,6) == mem(8,5));
-  ASSUME(coinit(8,6) == co(8,5));
-  ASSUME(deltainit(8,6) == delta(8,5));
-  ASSUME(meminit(8,7) == mem(8,6));
-  ASSUME(coinit(8,7) == co(8,6));
-  ASSUME(deltainit(8,7) == delta(8,6));
-  ASSUME(meminit(8,8) == mem(8,7));
-  ASSUME(coinit(8,8) == co(8,7));
-  ASSUME(deltainit(8,8) == delta(8,7));
-  ASSUME(meminit(8,9) == mem(8,8));
-  ASSUME(coinit(8,9) == co(8,8));
-  ASSUME(deltainit(8,9) == delta(8,8));
-  ASSUME(meminit(9,1) == mem(9,0));
-  ASSUME(coinit(9,1) == co(9,0));
-  ASSUME(deltainit(9,1) == delta(9,0));
-  ASSUME(meminit(9,2) == mem(9,1));
-  ASSUME(coinit(9,2) == co(9,1));
-  ASSUME(deltainit(9,2) == delta(9,1));
-  ASSUME(meminit(9,3) == mem(9,2));
-  ASSUME(coinit(9,3) == co(9,2));
-  ASSUME(deltainit(9,3) == delta(9,2));
-  ASSUME(meminit(9,4) == mem(9,3));
-  ASSUME(coinit(9,4) == co(9,3));
-  ASSUME(deltainit(9,4) == delta(9,3));
-  ASSUME(meminit(9,5) == mem(9,4));
-  ASSUME(coinit(9,5) == co(9,4));
-  ASSUME(deltainit(9,5) == delta(9,4));
-  ASSUME(meminit(9,6) == mem(9,5));
-  ASSUME(coinit(9,6) == co(9,5));
-  ASSUME(deltainit(9,6) == delta(9,5));
-  ASSUME(meminit(9,7) == mem(9,6));
-  ASSUME(coinit(9,7) == co(9,6));
-  ASSUME(deltainit(9,7) == delta(9,6));
-  ASSUME(meminit(9,8) == mem(9,7));
-  ASSUME(coinit(9,8) == co(9,7));
-  ASSUME(deltainit(9,8) == delta(9,7));
-  ASSUME(meminit(9,9) == mem(9,8));
-  ASSUME(coinit(9,9) == co(9,8));
-  ASSUME(deltainit(9,9) == delta(9,8));
 
   ASSERT(r20== 0);
 

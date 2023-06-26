@@ -53,11 +53,11 @@ int main(int argc, char *argv[]){
   pthread_join(thr1, NULL);
   pthread_join(thr2, NULL);
 
-  int v1 = atomic_load_explicit(&vars[0], memory_order_seq_cst);
+  int v1 = atomic_load_explicit(&vars[0], memory_order_relaxed);
   int v2 = (v1 == 2);
-  int v3 = atomic_load_explicit(&vars[1], memory_order_seq_cst);
+  int v3 = atomic_load_explicit(&vars[1], memory_order_relaxed);
   int v4 = (v3 == 2);
-  int v5 = atomic_load_explicit(&vars[2], memory_order_seq_cst);
+  int v5 = atomic_load_explicit(&vars[2], memory_order_relaxed);
   int v6 = (v5 == 2);
   int v7_conj = v4 & v6;
   int v8_conj = v2 & v7_conj;

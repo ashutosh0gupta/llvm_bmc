@@ -12,10 +12,10 @@ void dmbsy();
 void isb();
 
 long vars[7]; 
-long atom_0_X0_1; 
-long atom_0_X3_1; 
-long atom_1_X0_1; 
-long atom_2_X1_0; 
+int atom_0_X0_1; 
+int atom_0_X3_1; 
+int atom_1_X0_1; 
+int atom_2_X1_0; 
 
 void *t0(void *arg){
 label_1:;
@@ -24,9 +24,9 @@ label_1:;
   int v6_W3 = atomic_load_explicit(&vars[1], memory_order_relaxed);
   atomic_store_explicit(&vars[0], v6_W3, memory_order_relaxed);
   int v29 = (v3_W0 == 1);
-  atomic_store_explicit(&atom_0_X0_1, v29, memory_order_seq_cst);
+  atom_0_X0_1 = v29;
   int v30 = (v6_W3 == 1);
-  atomic_store_explicit(&atom_0_X3_1, v30, memory_order_seq_cst);
+  atom_0_X3_1 = v30;
   return NULL;
 }
 
@@ -36,7 +36,7 @@ label_2:;
   dmbsy();
   atomic_store_explicit(&vars[4], 1, memory_order_relaxed);
   int v31 = (v9_W0 == 1);
-  atomic_store_explicit(&atom_1_X0_1, v31, memory_order_seq_cst);
+  atom_1_X0_1 = v31;
   return NULL;
 }
 
@@ -46,7 +46,7 @@ label_3:;
   dmbsy();
   int v12_W1 = atomic_load_explicit(&vars[5], memory_order_relaxed);
   int v32 = (v12_W1 == 0);
-  atomic_store_explicit(&atom_2_X1_0, v32, memory_order_seq_cst);
+  atom_2_X1_0 = v32;
   return NULL;
 }
 
@@ -89,10 +89,10 @@ int main(int argc, char *argv[]){
   atomic_init(&vars[2], 0);
   atomic_init(&vars[1], 0);
   atomic_init(&vars[0], 0);
-  atomic_init(&atom_0_X0_1, 0); 
-  atomic_init(&atom_0_X3_1, 0); 
-  atomic_init(&atom_1_X0_1, 0); 
-  atomic_init(&atom_2_X1_0, 0); 
+  atom_0_X0_1 = 0; 
+  atom_0_X3_1 = 0; 
+  atom_1_X0_1 = 0; 
+  atom_2_X1_0 = 0; 
 
   pthread_create(&thr0, NULL, t0, NULL);
   pthread_create(&thr1, NULL, t1, NULL);
@@ -108,15 +108,15 @@ int main(int argc, char *argv[]){
   pthread_join(thr4, NULL);
   pthread_join(thr5, NULL);
 
-  int v13 = atomic_load_explicit(&atom_0_X0_1, memory_order_seq_cst);
-  int v14 = atomic_load_explicit(&atom_0_X3_1, memory_order_seq_cst);
-  int v15 = atomic_load_explicit(&atom_1_X0_1, memory_order_seq_cst);
-  int v16 = atomic_load_explicit(&vars[4], memory_order_seq_cst);
+  int v13 = atom_0_X0_1;
+  int v14 = atom_0_X3_1;
+  int v15 = atom_1_X0_1;
+  int v16 = atomic_load_explicit(&vars[4], memory_order_relaxed);
   int v17 = (v16 == 2);
-  int v18 = atomic_load_explicit(&atom_2_X1_0, memory_order_seq_cst);
-  int v19 = atomic_load_explicit(&vars[0], memory_order_seq_cst);
+  int v18 = atom_2_X1_0;
+  int v19 = atomic_load_explicit(&vars[0], memory_order_relaxed);
   int v20 = (v19 == 2);
-  int v21 = atomic_load_explicit(&vars[6], memory_order_seq_cst);
+  int v21 = atomic_load_explicit(&vars[6], memory_order_relaxed);
   int v22 = (v21 == 2);
   int v23_conj = v20 & v22;
   int v24_conj = v18 & v23_conj;

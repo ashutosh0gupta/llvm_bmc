@@ -12,14 +12,14 @@ void dmbsy();
 void isb();
 
 long vars[1]; 
-long atom_0_X0_1; 
+int atom_0_X0_1; 
 
 void *t0(void *arg){
 label_1:;
   int v3_W0 = atomic_load_explicit(&vars[0], memory_order_relaxed);
   atomic_store_explicit(&vars[0], 1, memory_order_relaxed);
   int v5 = (v3_W0 == 1);
-  atomic_store_explicit(&atom_0_X0_1, v5, memory_order_seq_cst);
+  atom_0_X0_1 = v5;
   return NULL;
 }
 
@@ -27,13 +27,13 @@ int main(int argc, char *argv[]){
   pthread_t thr0; 
 
   atomic_init(&vars[0], 0);
-  atomic_init(&atom_0_X0_1, 0); 
+  atom_0_X0_1 = 0; 
 
   pthread_create(&thr0, NULL, t0, NULL);
 
   pthread_join(thr0, NULL);
 
-  int v4 = atomic_load_explicit(&atom_0_X0_1, memory_order_seq_cst);
+  int v4 = atom_0_X0_1;
   if (v4 == 1) assert(0);
   return 0;
 }

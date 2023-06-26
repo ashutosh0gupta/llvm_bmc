@@ -59,6 +59,26 @@ std::string psystems::getBasicBlockString(const llvm::BasicBlock &bb)
     return StringStream.str();
 }
 
+std::unique_ptr<std::set<psystems::state_t> > psystems::forall_neq_check(const llvm::Loop *loop)
+{
+    std::unique_ptr<std::set<state_t> > p;
+    if(loop)
+    {
+        const llvm::BasicBlock *header_block = loop->getHeader();
+        if(header_block)
+        {
+            std::string s = getBasicBlockString(*header_block);
+            if(s[1] == 'L')
+            {
+                state_t header_num = std::stoi(s.c_str() + 2);
+                const auto &v = loop->getSubLoops();
+                if(v.size() != 1);
+            }
+        }
+    }
+    return p;
+}
+
 bool psystems::runOnFunction(llvm::Function &f)
 {
     EntryFn = demangle(f.getName().str());
@@ -84,18 +104,61 @@ bool psystems::runOnFunction(llvm::Function &f)
     // Assume L0, L1, L2, L3, L4, L5 are the main checkpoints
     // Flag changes on passing these checkpoints
     // We have to figure out how the flag changes and what are the conditions of passing the checkpoint
-    if(EntryFn == "szymanski")
+    if(EntryFn == "function")
     {
+        // state_t l_count = 0;
+        std::vector<const llvm::BasicBlock *> labelled_blocks;
+        for(const auto& BB: f)
+        {
+            std::string s = getBasicBlockString(BB);
+            // Assume labels are L0, L1, etc
+            if(s[1] == 'L')
+            {
+                labelled_blocks.push_back(&BB);
+                if(auto pptr = BB.getUniqueSuccessor())
+                {
+                    std::string ss = getBasicBlockString(*pptr);
+                    if(ss[1] == 'L')
+                    {
+                        rules.local_rules.push_back(transition(std::stoi(s.c_str() + 2), std::stoi(ss.c_str() + 2))); // getting all local transitions
+                    }
+                }
+            }
+        }
+        // getting all global transitions
+        // need to search for 
         auto &LIWP = getAnalysis<llvm::LoopInfoWrapperPass>();
         auto &LI = LIWP.getLoopInfo();
-        state_t count;
-        for(auto &I: LI)
+        for(auto I : LI)
         {
-            I->dump();
-            count++;
+            for(auto II: I->getSubLoops())
+            {
+                std::cout << "A" << std::endl;
+                II->dump();
+                std::cout << "B" << std::endl;
+            }
         }
-        std::cout << "COUNT: " << count << std::endl;
-        std::cout << "System is" << (verify() ? " safe." : " unsafe.") << std::endl;
+        // for(auto I: LI)
+        // {
+        //     for(auto II: I->getSubLoops())
+        //     {
+        //         std::cout << "A" << count++ << std::endl;
+        //         llvm::BasicBlock* latchBlock = II->getLoopLatch();
+        //         std::cout << "B" << count++ << std::endl;
+        //         llvm::BranchInst* branchInst = llvm::dyn_cast<llvm::BranchInst>(latchBlock->getTerminator());
+        //         std::cout << "C" << count++ << std::endl;
+        //         llvm::Value* condition = branchInst->getCondition();
+        //         std::cout << "D" << count++ << std::endl;
+        //         llvm::ConstantInt* constantInt = llvm::dyn_cast<llvm::ConstantInt>(condition);
+        //         std::cout << "E" << count++ << std::endl;
+        //         llvm::APInt apInt = constantInt->getValue();
+        //         std::cout << "F" << count++ << std::endl;
+        //         uint64_t value = apInt.getZExtValue();
+        //         std::cout << "VALUE: " << value << ' ' << count++ << std::endl;
+        //     }
+        // }
+        // std::cout << "COUNT: " << count << std::endl;
+        // std::cout << "System is" << (verify() ? " safe." : " unsafe.") << std::endl;
     }
     return false;
 }

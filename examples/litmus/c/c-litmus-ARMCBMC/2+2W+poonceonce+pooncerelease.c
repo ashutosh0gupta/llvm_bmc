@@ -40,9 +40,9 @@ int main(int argc, char *argv[]){
   pthread_join(thr0, NULL);
   pthread_join(thr1, NULL);
 
-  int v1 = atomic_load_explicit(&vars[1], memory_order_seq_cst);
+  int v1 = atomic_load_explicit(&vars[1], memory_order_relaxed);
   int v2 = (v1 == 2);
-  int v3 = atomic_load_explicit(&vars[0], memory_order_seq_cst);
+  int v3 = atomic_load_explicit(&vars[0], memory_order_relaxed);
   int v4 = (v3 == 2);
   int v5_conj = v2 & v4;
   if (v5_conj == 1) assert(0);
