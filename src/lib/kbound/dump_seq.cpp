@@ -49,14 +49,25 @@ std::string kbound::fresh_name() {
 std::string expr_to_name( std::string name ) {
   if(name[0] == 'r') return name;
   //improve this translation; make it unqiue
-  std::replace( name.begin(), name.end(), ',', '_');
-  std::replace( name.begin(), name.end(), '(', '_');
-  std::replace( name.begin(), name.end(), ')', '_');
-  std::replace( name.begin(), name.end(), '=', '_');
-  std::replace( name.begin(), name.end(), '!', '_');
-  std::replace( name.begin(), name.end(), '<', '_');
-  std::replace( name.begin(), name.end(), '>', '_');
-  std::replace( name.begin(), name.end(), ' ', '_');
+  boost::replace_all( name, ",", "_COMMA_" );
+  boost::replace_all( name, "-", "_MINUS_" );
+  boost::replace_all( name, "(", "_OB_"    );
+  boost::replace_all( name, ")", "_CB_"    );
+  boost::replace_all( name, "=", "_EQ_"    );
+  boost::replace_all( name, "!", "_NOT_"   );
+  boost::replace_all( name, "<", "_LT_"    );
+  boost::replace_all( name, ">", "_GT_"    );
+  boost::replace_all( name, " ", "_SPACE_" );
+
+  // std::replace( name.begin(), name.end(), ',', '_');
+  // std::replace( name.begin(), name.end(), '(', '_');
+  // std::replace( name.begin(), name.end(), ')', '_');
+  // std::replace( name.begin(), name.end(), '=', '_');
+  // std::replace( name.begin(), name.end(), '!', '_');
+  // std::replace( name.begin(), name.end(), '<', '_');
+  // std::replace( name.begin(), name.end(), '>', '_');
+  // std::replace( name.begin(), name.end(), ' ', '_');
+  // std::replace( name.begin(), name.end(), "-", "_MIN_");
   return name;
 }
 
