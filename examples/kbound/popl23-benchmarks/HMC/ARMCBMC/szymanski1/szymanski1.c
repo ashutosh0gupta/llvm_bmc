@@ -1,0 +1,94 @@
+#include <stdlib.h>
+#include <pthread.h>
+#include <assert.h>
+#include <stdatomic.h>
+
+
+# define N 1
+#
+
+long x;
+long flag1;
+long flag2;
+
+
+void *thread_1(void *unused)
+{
+	for (int i = 0u; i < N; i++ ) {
+		atomic_store_explicit(&flag1, 1, memory_order_relaxed);
+		if(atomic_load_explicit(&flag2, memory_order_relaxed) >=3)
+			return NULL;
+		atomic_store_explicit(&flag1, 3, memory_order_relaxed);
+
+		if (atomic_load_explicit(&flag2, memory_order_relaxed) == 1) {
+			atomic_store_explicit(&flag1, 2, memory_order_relaxed);
+			if(atomic_load_explicit(&flag2, memory_order_relaxed) != 4)
+				return NULL;
+		}
+
+		atomic_store_explicit(&flag1, 4, memory_order_relaxed);
+
+		if(atomic_load_explicit(&flag2, memory_order_relaxed) >= 2)
+			return NULL;
+
+		/* Critical section start */
+		atomic_store_explicit(&x, 1, memory_order_relaxed);
+		/* atomic_load_explicit(&x, memory_order_relaxed); */
+		assert(atomic_load_explicit(&x, memory_order_relaxed) == 1);
+
+		/* Critical section end */
+
+		if(   2 <= atomic_load_explicit(&flag2, memory_order_relaxed)
+		      && atomic_load_explicit(&flag2, memory_order_relaxed) <= 3)
+		      return NULL;
+		atomic_store_explicit(&flag1, 0, memory_order_relaxed);
+	}
+	return NULL;
+}
+
+void *thread_2(void *unused)
+{
+	for (int i = 0u; i < N; i++) {
+		atomic_store_explicit(&flag2, 1, memory_order_relaxed);
+		if(atomic_load_explicit(&flag1, memory_order_relaxed) >= 3)
+			return NULL;
+		atomic_store_explicit(&flag2, 3, memory_order_relaxed);
+		
+		if (atomic_load_explicit(&flag1, memory_order_relaxed) == 1) {
+			atomic_store_explicit(&flag2, 2, memory_order_relaxed);
+			if(atomic_load_explicit(&flag1, memory_order_relaxed) != 4)
+				return NULL;
+		}
+
+		atomic_store_explicit(&flag2, 4, memory_order_relaxed);
+		if(atomic_load_explicit(&flag1, memory_order_relaxed) >= 2)
+			return NULL;
+
+		/* Critical section start */
+		atomic_store_explicit(&x, 2, memory_order_relaxed);
+		/* atomic_load_explicit(&x, memory_order_relaxed); */
+		assert(atomic_load_explicit(&x, memory_order_relaxed) == 2);
+		/* Critical section end */
+
+		if(   2 <= atomic_load_explicit(&flag1, memory_order_relaxed) 
+		      && atomic_load_explicit(&flag1, memory_order_relaxed) <= 3)
+		      return NULL;
+		atomic_store_explicit(&flag2, 0, memory_order_relaxed);
+	}
+	return NULL;
+}
+
+
+int main()
+{
+	pthread_t t1, t2;
+
+	pthread_create(&t1, NULL, thread_1, NULL);
+	pthread_create(&t2, NULL, thread_2, NULL);
+
+	pthread_join(t1, NULL);
+	pthread_join(t2, NULL);
+
+	return 0;
+}
+

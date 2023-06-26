@@ -6,422 +6,422 @@
 # Otherwise, they are marked "Allow".
 # 
 # The tests where executed using runall-ARMCBMC.py.
-# Date: 230624-10:49
+# Date: 230625-09:15
 
-R OK: Allow
-R+po+polp OK: Allow
-R+popl+po OK: Allow
-R+popl+polp OK: Allow
-MP OK: Allow
-MP+po+poap OK: Allow
-MP+popl+po OK: Allow
+R FAILURE: Unexpected result Forbid
+R+po+polp FAILURE: Unexpected result Forbid
+R+popl+po FAILURE: Unexpected result Forbid
+R+popl+polp FAILURE: Unexpected result Forbid
+MP FAILURE: Unexpected result Forbid
+MP+po+poap FAILURE: Unexpected result Forbid
+MP+popl+po FAILURE: Unexpected result Forbid
 MP+popl+poap OK: Forbid
-R+po+dmb.sy OK: Allow
-R+po+dmb.sylp OK: Allow
+R+po+dmb.sy FAILURE: Unexpected result Forbid
+R+po+dmb.sylp FAILURE: Unexpected result Forbid
 R+popl+dmb.sy OK: Forbid
 R+popl+dmb.sylp OK: Forbid
-MP+po+dmb.sy OK: Allow
-MP+po+dmb.syap OK: Allow
+MP+po+dmb.sy FAILURE: Unexpected result Forbid
+MP+po+dmb.syap FAILURE: Unexpected result Forbid
 MP+popl+dmb.sy OK: Forbid
 MP+popl+dmb.syap OK: Forbid
-R+po+dmb.st OK: Allow
-R+po+dmb.stlp OK: Allow
-R+popl+dmb.st OK: Allow
-R+popl+dmb.stlp OK: Allow
-MP+po+dmb.st OK: Allow
-MP+po+dmb.stap OK: Allow
-MP+popl+dmb.st OK: Allow
+R+po+dmb.st FAILURE: Unexpected result Forbid
+R+po+dmb.stlp FAILURE: Unexpected result Forbid
+R+popl+dmb.st FAILURE: Unexpected result Forbid
+R+popl+dmb.stlp FAILURE: Unexpected result Forbid
+MP+po+dmb.st FAILURE: Unexpected result Forbid
+MP+po+dmb.stap FAILURE: Unexpected result Forbid
+MP+popl+dmb.st FAILURE: Unexpected result Forbid
 MP+popl+dmb.stap OK: Forbid
-R+po+dmb.ld OK: Allow
-R+po+dmb.ldlp OK: Allow
-R+popl+dmb.ld OK: Allow
-R+popl+dmb.ldlp OK: Allow
-MP+po+dmb.ld OK: Allow
-MP+po+dmb.ldap OK: Allow
+R+po+dmb.ld FAILURE: Unexpected result Forbid
+R+po+dmb.ldlp FAILURE: Unexpected result Forbid
+R+popl+dmb.ld FAILURE: Unexpected result Forbid
+R+popl+dmb.ldlp FAILURE: Unexpected result Forbid
+MP+po+dmb.ld FAILURE: Unexpected result Forbid
+MP+po+dmb.ldap FAILURE: Unexpected result Forbid
 MP+popl+dmb.ld OK: Forbid
 MP+popl+dmb.ldap OK: Forbid
-MP+po+addr OK: Allow
-MP+po+addrap OK: Allow
+MP+po+addr FAILURE: Unexpected result Forbid
+MP+po+addrap FAILURE: Unexpected result Forbid
 MP+popl+addr OK: Forbid
 MP+popl+addrap OK: Forbid
-2+2W OK: Allow
-2+2W+po+polp OK: Allow
-2+2W+po+popl OK: Allow
-2+2W+popl+polp OK: Allow
-S OK: Allow
-S+po+poap OK: Allow
-S+popl+po OK: Allow
+2+2W FAILURE: Unexpected result Forbid
+2+2W+po+polp FAILURE: Unexpected result Forbid
+2+2W+po+popl FAILURE: Unexpected result Forbid
+2+2W+popl+polp FAILURE: Unexpected result Forbid
+S FAILURE: Unexpected result Forbid
+S+po+poap FAILURE: Unexpected result Forbid
+S+popl+po FAILURE: Unexpected result Forbid
 S+popl+poap OK: Forbid
-2+2W+dmb.sy+po OK: Allow
-2+2W+dmb.sylp+po OK: Allow
+2+2W+dmb.sy+po FAILURE: Unexpected result Forbid
+2+2W+dmb.sylp+po FAILURE: Unexpected result Forbid
 2+2W+dmb.sy+popl OK: Forbid
 2+2W+dmb.sylp+popl OK: Forbid
-S+po+dmb.sy OK: Allow
-S+po+dmb.syap OK: Allow
+S+po+dmb.sy FAILURE: Unexpected result Forbid
+S+po+dmb.syap FAILURE: Unexpected result Forbid
 S+popl+dmb.sy OK: Forbid
 S+popl+dmb.syap OK: Forbid
-2+2W+dmb.st+po OK: Allow
-2+2W+dmb.stlp+po OK: Allow
+2+2W+dmb.st+po FAILURE: Unexpected result Forbid
+2+2W+dmb.stlp+po FAILURE: Unexpected result Forbid
 2+2W+dmb.st+popl OK: Forbid
 2+2W+dmb.stlp+popl OK: Forbid
-S+po+dmb.st OK: Allow
-S+po+dmb.stap OK: Allow
-S+popl+dmb.st OK: Allow
+S+po+dmb.st FAILURE: Unexpected result Forbid
+S+po+dmb.stap FAILURE: Unexpected result Forbid
+S+popl+dmb.st FAILURE: Unexpected result Forbid
 S+popl+dmb.stap OK: Forbid
-2+2W+dmb.ld+po OK: Allow
-2+2W+dmb.ldlp+po OK: Allow
-2+2W+dmb.ld+popl OK: Allow
-2+2W+dmb.ldlp+popl OK: Allow
-S+po+dmb.ld OK: Allow
-S+po+dmb.ldap OK: Allow
+2+2W+dmb.ld+po FAILURE: Unexpected result Forbid
+2+2W+dmb.ldlp+po FAILURE: Unexpected result Forbid
+2+2W+dmb.ld+popl FAILURE: Unexpected result Forbid
+2+2W+dmb.ldlp+popl FAILURE: Unexpected result Forbid
+S+po+dmb.ld FAILURE: Unexpected result Forbid
+S+po+dmb.ldap FAILURE: Unexpected result Forbid
 S+popl+dmb.ld OK: Forbid
 S+popl+dmb.ldap OK: Forbid
-S+po+data OK: Allow
-S+po+dataap OK: Allow
+S+po+data FAILURE: Unexpected result Forbid
+S+po+dataap FAILURE: Unexpected result Forbid
 S+popl+data OK: Forbid
 S+popl+dataap OK: Forbid
-R+polp+po OK: Allow
-R+polps OK: Allow
-R+poll+po OK: Allow
-R+poll+polp OK: Allow
-MP+polp+po OK: Allow
-MP+polp+poap OK: Allow
-MP+poll+po OK: Allow
+R+polp+po FAILURE: Unexpected result Forbid
+R+polps FAILURE: Unexpected result Forbid
+R+poll+po FAILURE: Unexpected result Forbid
+R+poll+polp FAILURE: Unexpected result Forbid
+MP+polp+po FAILURE: Unexpected result Forbid
+MP+polp+poap FAILURE: Unexpected result Forbid
+MP+poll+po FAILURE: Unexpected result Forbid
 MP+poll+poap OK: Forbid
-R+polp+dmb.sy OK: Allow
-R+polp+dmb.sylp OK: Allow
+R+polp+dmb.sy FAILURE: Unexpected result Forbid
+R+polp+dmb.sylp FAILURE: Unexpected result Forbid
 R+poll+dmb.sy OK: Forbid
 R+poll+dmb.sylp OK: Forbid
-MP+polp+dmb.sy OK: Allow
-MP+polp+dmb.syap OK: Allow
+MP+polp+dmb.sy FAILURE: Unexpected result Forbid
+MP+polp+dmb.syap FAILURE: Unexpected result Forbid
 MP+poll+dmb.sy OK: Forbid
 MP+poll+dmb.syap OK: Forbid
-R+polp+dmb.st OK: Allow
-R+polp+dmb.stlp OK: Allow
-R+poll+dmb.st OK: Allow
-R+poll+dmb.stlp OK: Allow
-MP+polp+dmb.st OK: Allow
-MP+polp+dmb.stap OK: Allow
-MP+poll+dmb.st OK: Allow
+R+polp+dmb.st FAILURE: Unexpected result Forbid
+R+polp+dmb.stlp FAILURE: Unexpected result Forbid
+R+poll+dmb.st FAILURE: Unexpected result Forbid
+R+poll+dmb.stlp FAILURE: Unexpected result Forbid
+MP+polp+dmb.st FAILURE: Unexpected result Forbid
+MP+polp+dmb.stap FAILURE: Unexpected result Forbid
+MP+poll+dmb.st FAILURE: Unexpected result Forbid
 MP+poll+dmb.stap OK: Forbid
-R+polp+dmb.ld OK: Allow
-R+polp+dmb.ldlp OK: Allow
-R+poll+dmb.ld OK: Allow
-R+poll+dmb.ldlp OK: Allow
-MP+polp+dmb.ld OK: Allow
-MP+polp+dmb.ldap OK: Allow
+R+polp+dmb.ld FAILURE: Unexpected result Forbid
+R+polp+dmb.ldlp FAILURE: Unexpected result Forbid
+R+poll+dmb.ld FAILURE: Unexpected result Forbid
+R+poll+dmb.ldlp FAILURE: Unexpected result Forbid
+MP+polp+dmb.ld FAILURE: Unexpected result Forbid
+MP+polp+dmb.ldap FAILURE: Unexpected result Forbid
 MP+poll+dmb.ld OK: Forbid
 MP+poll+dmb.ldap OK: Forbid
-MP+polp+addr OK: Allow
-MP+polp+addrap OK: Allow
+MP+polp+addr FAILURE: Unexpected result Forbid
+MP+polp+addrap FAILURE: Unexpected result Forbid
 MP+poll+addr OK: Forbid
 MP+poll+addrap OK: Forbid
-R+po+popa OK: Allow
-R+po+pola OK: Allow
-R+popl+popa OK: Allow
+R+po+popa FAILURE: Unexpected result Forbid
+R+po+pola FAILURE: Unexpected result Forbid
+R+popl+popa FAILURE: Unexpected result Forbid
 R+popl+pola OK: Forbid
-MP+po+popa OK: Allow
-MP+po+poaa OK: Allow
-MP+popl+popa OK: Allow
+MP+po+popa FAILURE: Unexpected result Forbid
+MP+po+poaa FAILURE: Unexpected result Forbid
+MP+popl+popa FAILURE: Unexpected result Forbid
 MP+popl+poaa OK: Forbid
-R+po+dmb.sypa OK: Allow
-R+po+dmb.syla OK: Allow
+R+po+dmb.sypa FAILURE: Unexpected result Forbid
+R+po+dmb.syla FAILURE: Unexpected result Forbid
 R+popl+dmb.sypa OK: Forbid
 R+popl+dmb.syla OK: Forbid
-MP+po+dmb.sypa OK: Allow
-MP+po+dmb.syaa OK: Allow
+MP+po+dmb.sypa FAILURE: Unexpected result Forbid
+MP+po+dmb.syaa FAILURE: Unexpected result Forbid
 MP+popl+dmb.sypa OK: Forbid
 MP+popl+dmb.syaa OK: Forbid
-R+po+dmb.stpa OK: Allow
-R+po+dmb.stla OK: Allow
-R+popl+dmb.stpa OK: Allow
+R+po+dmb.stpa FAILURE: Unexpected result Forbid
+R+po+dmb.stla FAILURE: Unexpected result Forbid
+R+popl+dmb.stpa FAILURE: Unexpected result Forbid
 R+popl+dmb.stla OK: Forbid
-MP+po+dmb.stpa OK: Allow
-MP+po+dmb.staa OK: Allow
-MP+popl+dmb.stpa OK: Allow
+MP+po+dmb.stpa FAILURE: Unexpected result Forbid
+MP+po+dmb.staa FAILURE: Unexpected result Forbid
+MP+popl+dmb.stpa FAILURE: Unexpected result Forbid
 MP+popl+dmb.staa OK: Forbid
-R+po+dmb.ldpa OK: Allow
-R+po+dmb.ldla OK: Allow
-R+popl+dmb.ldpa OK: Allow
+R+po+dmb.ldpa FAILURE: Unexpected result Forbid
+R+po+dmb.ldla FAILURE: Unexpected result Forbid
+R+popl+dmb.ldpa FAILURE: Unexpected result Forbid
 R+popl+dmb.ldla OK: Forbid
-MP+po+dmb.ldpa OK: Allow
-MP+po+dmb.ldaa OK: Allow
+MP+po+dmb.ldpa FAILURE: Unexpected result Forbid
+MP+po+dmb.ldaa FAILURE: Unexpected result Forbid
 MP+popl+dmb.ldpa OK: Forbid
 MP+popl+dmb.ldaa OK: Forbid
-R+polp+popa OK: Allow
-R+polp+pola OK: Allow
-R+poll+popa OK: Allow
+R+polp+popa FAILURE: Unexpected result Forbid
+R+polp+pola FAILURE: Unexpected result Forbid
+R+poll+popa FAILURE: Unexpected result Forbid
 R+poll+pola OK: Forbid
-MP+polp+popa OK: Allow
-MP+polp+poaa OK: Allow
-MP+poll+popa OK: Allow
+MP+polp+popa FAILURE: Unexpected result Forbid
+MP+polp+poaa FAILURE: Unexpected result Forbid
+MP+poll+popa FAILURE: Unexpected result Forbid
 MP+poll+poaa OK: Forbid
-R+polp+dmb.sypa OK: Allow
-R+polp+dmb.syla OK: Allow
+R+polp+dmb.sypa FAILURE: Unexpected result Forbid
+R+polp+dmb.syla FAILURE: Unexpected result Forbid
 R+poll+dmb.sypa OK: Forbid
 R+poll+dmb.syla OK: Forbid
-MP+polp+dmb.sypa OK: Allow
-MP+polp+dmb.syaa OK: Allow
+MP+polp+dmb.sypa FAILURE: Unexpected result Forbid
+MP+polp+dmb.syaa FAILURE: Unexpected result Forbid
 MP+poll+dmb.sypa OK: Forbid
 MP+poll+dmb.syaa OK: Forbid
-R+polp+dmb.stpa OK: Allow
-R+polp+dmb.stla OK: Allow
-R+poll+dmb.stpa OK: Allow
+R+polp+dmb.stpa FAILURE: Unexpected result Forbid
+R+polp+dmb.stla FAILURE: Unexpected result Forbid
+R+poll+dmb.stpa FAILURE: Unexpected result Forbid
 R+poll+dmb.stla OK: Forbid
-MP+polp+dmb.stpa OK: Allow
-MP+polp+dmb.staa OK: Allow
-MP+poll+dmb.stpa OK: Allow
+MP+polp+dmb.stpa FAILURE: Unexpected result Forbid
+MP+polp+dmb.staa FAILURE: Unexpected result Forbid
+MP+poll+dmb.stpa FAILURE: Unexpected result Forbid
 MP+poll+dmb.staa OK: Forbid
-R+polp+dmb.ldpa OK: Allow
-R+polp+dmb.ldla OK: Allow
-R+poll+dmb.ldpa OK: Allow
+R+polp+dmb.ldpa FAILURE: Unexpected result Forbid
+R+polp+dmb.ldla FAILURE: Unexpected result Forbid
+R+poll+dmb.ldpa FAILURE: Unexpected result Forbid
 R+poll+dmb.ldla OK: Forbid
-MP+polp+dmb.ldpa OK: Allow
-MP+polp+dmb.ldaa OK: Allow
+MP+polp+dmb.ldpa FAILURE: Unexpected result Forbid
+MP+polp+dmb.ldaa FAILURE: Unexpected result Forbid
 MP+poll+dmb.ldpa OK: Forbid
 MP+poll+dmb.ldaa OK: Forbid
-2+2W+polps OK: Allow
-2+2W+po+poll OK: Allow
-2+2W+polp+poll OK: Allow
-S+polp+po OK: Allow
-S+polp+poap OK: Allow
-S+poll+po OK: Allow
+2+2W+polps FAILURE: Unexpected result Forbid
+2+2W+po+poll FAILURE: Unexpected result Forbid
+2+2W+polp+poll FAILURE: Unexpected result Forbid
+S+polp+po FAILURE: Unexpected result Forbid
+S+polp+poap FAILURE: Unexpected result Forbid
+S+poll+po FAILURE: Unexpected result Forbid
 S+poll+poap OK: Forbid
-2+2W+dmb.sy+polp OK: Allow
-2+2W+dmb.sylp+polp OK: Allow
+2+2W+dmb.sy+polp FAILURE: Unexpected result Forbid
+2+2W+dmb.sylp+polp FAILURE: Unexpected result Forbid
 2+2W+dmb.sy+poll OK: Forbid
 2+2W+dmb.sylp+poll OK: Forbid
-S+polp+dmb.sy OK: Allow
-S+polp+dmb.syap OK: Allow
+S+polp+dmb.sy FAILURE: Unexpected result Forbid
+S+polp+dmb.syap FAILURE: Unexpected result Forbid
 S+poll+dmb.sy OK: Forbid
 S+poll+dmb.syap OK: Forbid
-2+2W+dmb.st+polp OK: Allow
-2+2W+dmb.stlp+polp OK: Allow
+2+2W+dmb.st+polp FAILURE: Unexpected result Forbid
+2+2W+dmb.stlp+polp FAILURE: Unexpected result Forbid
 2+2W+dmb.st+poll OK: Forbid
 2+2W+dmb.stlp+poll OK: Forbid
-S+polp+dmb.st OK: Allow
-S+polp+dmb.stap OK: Allow
-S+poll+dmb.st OK: Allow
+S+polp+dmb.st FAILURE: Unexpected result Forbid
+S+polp+dmb.stap FAILURE: Unexpected result Forbid
+S+poll+dmb.st FAILURE: Unexpected result Forbid
 S+poll+dmb.stap OK: Forbid
-2+2W+dmb.ld+polp OK: Allow
-2+2W+dmb.ldlp+polp OK: Allow
-2+2W+dmb.ld+poll OK: Allow
-2+2W+dmb.ldlp+poll OK: Allow
-S+polp+dmb.ld OK: Allow
-S+polp+dmb.ldap OK: Allow
+2+2W+dmb.ld+polp FAILURE: Unexpected result Forbid
+2+2W+dmb.ldlp+polp FAILURE: Unexpected result Forbid
+2+2W+dmb.ld+poll FAILURE: Unexpected result Forbid
+2+2W+dmb.ldlp+poll FAILURE: Unexpected result Forbid
+S+polp+dmb.ld FAILURE: Unexpected result Forbid
+S+polp+dmb.ldap FAILURE: Unexpected result Forbid
 S+poll+dmb.ld OK: Forbid
 S+poll+dmb.ldap OK: Forbid
-S+polp+data OK: Allow
-S+polp+dataap OK: Allow
+S+polp+data FAILURE: Unexpected result Forbid
+S+polp+dataap FAILURE: Unexpected result Forbid
 S+poll+data OK: Forbid
 S+poll+dataap OK: Forbid
 2+2W+popls OK: Forbid
 2+2W+popl+poll OK: Forbid
-S+po+popl OK: Allow
-S+po+poal OK: Allow
+S+po+popl FAILURE: Unexpected result Forbid
+S+po+poal FAILURE: Unexpected result Forbid
 S+popls OK: Forbid
 S+popl+poal OK: Forbid
-2+2W+dmb.sypl+po OK: Allow
-2+2W+dmb.syll+po OK: Allow
+2+2W+dmb.sypl+po FAILURE: Unexpected result Forbid
+2+2W+dmb.syll+po FAILURE: Unexpected result Forbid
 2+2W+dmb.sypl+popl OK: Forbid
 2+2W+dmb.syll+popl OK: Forbid
-S+po+dmb.sypl OK: Allow
-S+po+dmb.syal OK: Allow
+S+po+dmb.sypl FAILURE: Unexpected result Forbid
+S+po+dmb.syal FAILURE: Unexpected result Forbid
 S+popl+dmb.sypl OK: Forbid
 S+popl+dmb.syal OK: Forbid
-2+2W+dmb.stpl+po OK: Allow
-2+2W+dmb.stll+po OK: Allow
+2+2W+dmb.stpl+po FAILURE: Unexpected result Forbid
+2+2W+dmb.stll+po FAILURE: Unexpected result Forbid
 2+2W+dmb.stpl+popl OK: Forbid
 2+2W+dmb.stll+popl OK: Forbid
-S+po+dmb.stpl OK: Allow
-S+po+dmb.stal OK: Allow
+S+po+dmb.stpl FAILURE: Unexpected result Forbid
+S+po+dmb.stal FAILURE: Unexpected result Forbid
 S+popl+dmb.stpl OK: Forbid
 S+popl+dmb.stal OK: Forbid
-2+2W+dmb.ldpl+po OK: Allow
-2+2W+dmb.ldll+po OK: Allow
+2+2W+dmb.ldpl+po FAILURE: Unexpected result Forbid
+2+2W+dmb.ldll+po FAILURE: Unexpected result Forbid
 2+2W+dmb.ldpl+popl OK: Forbid
 2+2W+dmb.ldll+popl OK: Forbid
-S+po+dmb.ldpl OK: Allow
-S+po+dmb.ldal OK: Allow
+S+po+dmb.ldpl FAILURE: Unexpected result Forbid
+S+po+dmb.ldal FAILURE: Unexpected result Forbid
 S+popl+dmb.ldpl OK: Forbid
 S+popl+dmb.ldal OK: Forbid
-S+po+datapl OK: Allow
-S+po+dataal OK: Allow
+S+po+datapl FAILURE: Unexpected result Forbid
+S+po+dataal FAILURE: Unexpected result Forbid
 S+popl+datapl OK: Forbid
 S+popl+dataal OK: Forbid
 2+2W+polls OK: Forbid
-S+polp+popl OK: Allow
-S+polp+poal OK: Allow
+S+polp+popl FAILURE: Unexpected result Forbid
+S+polp+poal FAILURE: Unexpected result Forbid
 S+poll+popl OK: Forbid
 S+poll+poal OK: Forbid
-2+2W+dmb.sypl+polp OK: Allow
-2+2W+dmb.syll+polp OK: Allow
+2+2W+dmb.sypl+polp FAILURE: Unexpected result Forbid
+2+2W+dmb.syll+polp FAILURE: Unexpected result Forbid
 2+2W+dmb.sypl+poll OK: Forbid
 2+2W+dmb.syll+poll OK: Forbid
-S+polp+dmb.sypl OK: Allow
-S+polp+dmb.syal OK: Allow
+S+polp+dmb.sypl FAILURE: Unexpected result Forbid
+S+polp+dmb.syal FAILURE: Unexpected result Forbid
 S+poll+dmb.sypl OK: Forbid
 S+poll+dmb.syal OK: Forbid
-2+2W+dmb.stpl+polp OK: Allow
-2+2W+dmb.stll+polp OK: Allow
+2+2W+dmb.stpl+polp FAILURE: Unexpected result Forbid
+2+2W+dmb.stll+polp FAILURE: Unexpected result Forbid
 2+2W+dmb.stpl+poll OK: Forbid
 2+2W+dmb.stll+poll OK: Forbid
-S+polp+dmb.stpl OK: Allow
-S+polp+dmb.stal OK: Allow
+S+polp+dmb.stpl FAILURE: Unexpected result Forbid
+S+polp+dmb.stal FAILURE: Unexpected result Forbid
 S+poll+dmb.stpl OK: Forbid
 S+poll+dmb.stal OK: Forbid
-2+2W+dmb.ldpl+polp OK: Allow
-2+2W+dmb.ldll+polp OK: Allow
+2+2W+dmb.ldpl+polp FAILURE: Unexpected result Forbid
+2+2W+dmb.ldll+polp FAILURE: Unexpected result Forbid
 2+2W+dmb.ldpl+poll OK: Forbid
 2+2W+dmb.ldll+poll OK: Forbid
-S+polp+dmb.ldpl OK: Allow
-S+polp+dmb.ldal OK: Allow
+S+polp+dmb.ldpl FAILURE: Unexpected result Forbid
+S+polp+dmb.ldal FAILURE: Unexpected result Forbid
 S+poll+dmb.ldpl OK: Forbid
 S+poll+dmb.ldal OK: Forbid
-S+polp+datapl OK: Allow
-S+polp+dataal OK: Allow
+S+polp+datapl FAILURE: Unexpected result Forbid
+S+polp+dataal FAILURE: Unexpected result Forbid
 S+poll+datapl OK: Forbid
 S+poll+dataal OK: Forbid
-SB OK: Allow
-SB+po+polp OK: Allow
-SB+po+popa OK: Allow
-SB+popa+polp OK: Allow
-SB+dmb.sy+po OK: Allow
-SB+dmb.sylp+po OK: Allow
-SB+dmb.sy+popa OK: Allow
-SB+dmb.sylp+popa OK: Allow
-SB+dmb.st+po OK: Allow
-SB+dmb.stlp+po OK: Allow
-SB+dmb.st+popa OK: Allow
-SB+dmb.stlp+popa OK: Allow
-SB+dmb.ld+po OK: Allow
-SB+dmb.ldlp+po OK: Allow
-SB+dmb.ld+popa OK: Allow
-SB+dmb.ldlp+popa OK: Allow
-R+dmb.sy+po OK: Allow
-R+dmb.sylp+po OK: Allow
-R+dmb.sy+popa OK: Allow
-R+dmb.sylp+popa OK: Allow
-R+dmb.st+po OK: Allow
-R+dmb.stlp+po OK: Allow
-R+dmb.st+popa OK: Allow
-R+dmb.stlp+popa OK: Allow
-R+dmb.ld+po OK: Allow
-R+dmb.ldlp+po OK: Allow
-R+dmb.ld+popa OK: Allow
-R+dmb.ldlp+popa OK: Allow
-SB+polps OK: Allow
-SB+po+pola OK: Allow
-SB+polp+pola OK: Allow
-SB+dmb.sy+polp OK: Allow
-SB+dmb.sylp+polp OK: Allow
+SB FAILURE: Unexpected result Forbid
+SB+po+polp FAILURE: Unexpected result Forbid
+SB+po+popa FAILURE: Unexpected result Forbid
+SB+popa+polp FAILURE: Unexpected result Forbid
+SB+dmb.sy+po FAILURE: Unexpected result Forbid
+SB+dmb.sylp+po FAILURE: Unexpected result Forbid
+SB+dmb.sy+popa FAILURE: Unexpected result Forbid
+SB+dmb.sylp+popa FAILURE: Unexpected result Forbid
+SB+dmb.st+po FAILURE: Unexpected result Forbid
+SB+dmb.stlp+po FAILURE: Unexpected result Forbid
+SB+dmb.st+popa FAILURE: Unexpected result Forbid
+SB+dmb.stlp+popa FAILURE: Unexpected result Forbid
+SB+dmb.ld+po FAILURE: Unexpected result Forbid
+SB+dmb.ldlp+po FAILURE: Unexpected result Forbid
+SB+dmb.ld+popa FAILURE: Unexpected result Forbid
+SB+dmb.ldlp+popa FAILURE: Unexpected result Forbid
+R+dmb.sy+po FAILURE: Unexpected result Forbid
+R+dmb.sylp+po FAILURE: Unexpected result Forbid
+R+dmb.sy+popa FAILURE: Unexpected result Forbid
+R+dmb.sylp+popa FAILURE: Unexpected result Forbid
+R+dmb.st+po FAILURE: Unexpected result Forbid
+R+dmb.stlp+po FAILURE: Unexpected result Forbid
+R+dmb.st+popa FAILURE: Unexpected result Forbid
+R+dmb.stlp+popa FAILURE: Unexpected result Forbid
+R+dmb.ld+po FAILURE: Unexpected result Forbid
+R+dmb.ldlp+po FAILURE: Unexpected result Forbid
+R+dmb.ld+popa FAILURE: Unexpected result Forbid
+R+dmb.ldlp+popa FAILURE: Unexpected result Forbid
+SB+polps FAILURE: Unexpected result Forbid
+SB+po+pola FAILURE: Unexpected result Forbid
+SB+polp+pola FAILURE: Unexpected result Forbid
+SB+dmb.sy+polp FAILURE: Unexpected result Forbid
+SB+dmb.sylp+polp FAILURE: Unexpected result Forbid
 SB+dmb.sy+pola OK: Forbid
 SB+dmb.sylp+pola OK: Forbid
-SB+dmb.st+polp OK: Allow
-SB+dmb.stlp+polp OK: Allow
-SB+dmb.st+pola OK: Allow
-SB+dmb.stlp+pola OK: Allow
-SB+dmb.ld+polp OK: Allow
-SB+dmb.ldlp+polp OK: Allow
-SB+dmb.ld+pola OK: Allow
-SB+dmb.ldlp+pola OK: Allow
-SB+popas OK: Allow
-SB+popa+pola OK: Allow
-SB+dmb.sypa+po OK: Allow
-SB+dmb.syla+po OK: Allow
-SB+dmb.sypa+popa OK: Allow
-SB+dmb.syla+popa OK: Allow
-SB+dmb.stpa+po OK: Allow
-SB+dmb.stla+po OK: Allow
-SB+dmb.stpa+popa OK: Allow
-SB+dmb.stla+popa OK: Allow
-SB+dmb.ldpa+po OK: Allow
-SB+dmb.ldla+po OK: Allow
-SB+dmb.ldpa+popa OK: Allow
-SB+dmb.ldla+popa OK: Allow
+SB+dmb.st+polp FAILURE: Unexpected result Forbid
+SB+dmb.stlp+polp FAILURE: Unexpected result Forbid
+SB+dmb.st+pola FAILURE: Unexpected result Forbid
+SB+dmb.stlp+pola FAILURE: Unexpected result Forbid
+SB+dmb.ld+polp FAILURE: Unexpected result Forbid
+SB+dmb.ldlp+polp FAILURE: Unexpected result Forbid
+SB+dmb.ld+pola FAILURE: Unexpected result Forbid
+SB+dmb.ldlp+pola FAILURE: Unexpected result Forbid
+SB+popas FAILURE: Unexpected result Forbid
+SB+popa+pola FAILURE: Unexpected result Forbid
+SB+dmb.sypa+po FAILURE: Unexpected result Forbid
+SB+dmb.syla+po FAILURE: Unexpected result Forbid
+SB+dmb.sypa+popa FAILURE: Unexpected result Forbid
+SB+dmb.syla+popa FAILURE: Unexpected result Forbid
+SB+dmb.stpa+po FAILURE: Unexpected result Forbid
+SB+dmb.stla+po FAILURE: Unexpected result Forbid
+SB+dmb.stpa+popa FAILURE: Unexpected result Forbid
+SB+dmb.stla+popa FAILURE: Unexpected result Forbid
+SB+dmb.ldpa+po FAILURE: Unexpected result Forbid
+SB+dmb.ldla+po FAILURE: Unexpected result Forbid
+SB+dmb.ldpa+popa FAILURE: Unexpected result Forbid
+SB+dmb.ldla+popa FAILURE: Unexpected result Forbid
 SB+polas OK: Forbid
-SB+dmb.sypa+polp OK: Allow
-SB+dmb.syla+polp OK: Allow
+SB+dmb.sypa+polp FAILURE: Unexpected result Forbid
+SB+dmb.syla+polp FAILURE: Unexpected result Forbid
 SB+dmb.sypa+pola OK: Forbid
 SB+dmb.syla+pola OK: Forbid
-SB+dmb.stpa+polp OK: Allow
-SB+dmb.stla+polp OK: Allow
-SB+dmb.stpa+pola OK: Allow
+SB+dmb.stpa+polp FAILURE: Unexpected result Forbid
+SB+dmb.stla+polp FAILURE: Unexpected result Forbid
+SB+dmb.stpa+pola FAILURE: Unexpected result Forbid
 SB+dmb.stla+pola OK: Forbid
-SB+dmb.ldpa+polp OK: Allow
-SB+dmb.ldla+polp OK: Allow
-SB+dmb.ldpa+pola OK: Allow
+SB+dmb.ldpa+polp FAILURE: Unexpected result Forbid
+SB+dmb.ldla+polp FAILURE: Unexpected result Forbid
+SB+dmb.ldpa+pola FAILURE: Unexpected result Forbid
 SB+dmb.ldla+pola OK: Forbid
-R+dmb.sy+polp OK: Allow
-R+dmb.sylp+polp OK: Allow
+R+dmb.sy+polp FAILURE: Unexpected result Forbid
+R+dmb.sylp+polp FAILURE: Unexpected result Forbid
 R+dmb.sy+pola OK: Forbid
 R+dmb.sylp+pola OK: Forbid
-R+dmb.st+polp OK: Allow
-R+dmb.stlp+polp OK: Allow
+R+dmb.st+polp FAILURE: Unexpected result Forbid
+R+dmb.stlp+polp FAILURE: Unexpected result Forbid
 R+dmb.st+pola OK: Forbid
 R+dmb.stlp+pola OK: Forbid
-R+dmb.ld+polp OK: Allow
-R+dmb.ldlp+polp OK: Allow
-R+dmb.ld+pola OK: Allow
-R+dmb.ldlp+pola OK: Allow
-R+dmb.sypl+po OK: Allow
-R+dmb.syll+po OK: Allow
-R+dmb.sypl+popa OK: Allow
-R+dmb.syll+popa OK: Allow
-R+dmb.stpl+po OK: Allow
-R+dmb.stll+po OK: Allow
-R+dmb.stpl+popa OK: Allow
-R+dmb.stll+popa OK: Allow
-R+dmb.ldpl+po OK: Allow
-R+dmb.ldll+po OK: Allow
-R+dmb.ldpl+popa OK: Allow
-R+dmb.ldll+popa OK: Allow
-R+dmb.sypl+polp OK: Allow
-R+dmb.syll+polp OK: Allow
+R+dmb.ld+polp FAILURE: Unexpected result Forbid
+R+dmb.ldlp+polp FAILURE: Unexpected result Forbid
+R+dmb.ld+pola FAILURE: Unexpected result Forbid
+R+dmb.ldlp+pola FAILURE: Unexpected result Forbid
+R+dmb.sypl+po FAILURE: Unexpected result Forbid
+R+dmb.syll+po FAILURE: Unexpected result Forbid
+R+dmb.sypl+popa FAILURE: Unexpected result Forbid
+R+dmb.syll+popa FAILURE: Unexpected result Forbid
+R+dmb.stpl+po FAILURE: Unexpected result Forbid
+R+dmb.stll+po FAILURE: Unexpected result Forbid
+R+dmb.stpl+popa FAILURE: Unexpected result Forbid
+R+dmb.stll+popa FAILURE: Unexpected result Forbid
+R+dmb.ldpl+po FAILURE: Unexpected result Forbid
+R+dmb.ldll+po FAILURE: Unexpected result Forbid
+R+dmb.ldpl+popa FAILURE: Unexpected result Forbid
+R+dmb.ldll+popa FAILURE: Unexpected result Forbid
+R+dmb.sypl+polp FAILURE: Unexpected result Forbid
+R+dmb.syll+polp FAILURE: Unexpected result Forbid
 R+dmb.sypl+pola OK: Forbid
 R+dmb.syll+pola OK: Forbid
-R+dmb.stpl+polp OK: Allow
-R+dmb.stll+polp OK: Allow
+R+dmb.stpl+polp FAILURE: Unexpected result Forbid
+R+dmb.stll+polp FAILURE: Unexpected result Forbid
 R+dmb.stpl+pola OK: Forbid
 R+dmb.stll+pola OK: Forbid
-R+dmb.ldpl+polp OK: Allow
-R+dmb.ldll+polp OK: Allow
+R+dmb.ldpl+polp FAILURE: Unexpected result Forbid
+R+dmb.ldll+polp FAILURE: Unexpected result Forbid
 R+dmb.ldpl+pola OK: Forbid
 R+dmb.ldll+pola OK: Forbid
-LB OK: Allow
-LB+po+poap OK: Allow
-LB+po+popl OK: Allow
+LB FAILURE: Unexpected result Forbid
+LB+po+poap FAILURE: Unexpected result Forbid
+LB+po+popl FAILURE: Unexpected result Forbid
 LB+popl+poap OK: Forbid
-S+dmb.sy+po OK: Allow
-S+dmb.sylp+po OK: Allow
+S+dmb.sy+po FAILURE: Unexpected result Forbid
+S+dmb.sylp+po FAILURE: Unexpected result Forbid
 S+dmb.sy+popl OK: Forbid
 S+dmb.sylp+popl OK: Forbid
-LB+dmb.sy+po OK: Allow
-LB+dmb.syap+po OK: Allow
+LB+dmb.sy+po FAILURE: Unexpected result Forbid
+LB+dmb.syap+po FAILURE: Unexpected result Forbid
 LB+dmb.sy+popl OK: Forbid
 LB+dmb.syap+popl OK: Forbid
-S+dmb.st+po OK: Allow
-S+dmb.stlp+po OK: Allow
+S+dmb.st+po FAILURE: Unexpected result Forbid
+S+dmb.stlp+po FAILURE: Unexpected result Forbid
 S+dmb.st+popl OK: Forbid
 S+dmb.stlp+popl OK: Forbid
-LB+dmb.st+po OK: Allow
-LB+dmb.stap+po OK: Allow
-LB+dmb.st+popl OK: Allow
+LB+dmb.st+po FAILURE: Unexpected result Forbid
+LB+dmb.stap+po FAILURE: Unexpected result Forbid
+LB+dmb.st+popl FAILURE: Unexpected result Forbid
 LB+dmb.stap+popl OK: Forbid
-S+dmb.ld+po OK: Allow
-S+dmb.ldlp+po OK: Allow
-S+dmb.ld+popl OK: Allow
-S+dmb.ldlp+popl OK: Allow
-LB+dmb.ld+po OK: Allow
-LB+dmb.ldap+po OK: Allow
+S+dmb.ld+po FAILURE: Unexpected result Forbid
+S+dmb.ldlp+po FAILURE: Unexpected result Forbid
+S+dmb.ld+popl FAILURE: Unexpected result Forbid
+S+dmb.ldlp+popl FAILURE: Unexpected result Forbid
+LB+dmb.ld+po FAILURE: Unexpected result Forbid
+LB+dmb.ldap+po FAILURE: Unexpected result Forbid
 LB+dmb.ld+popl OK: Forbid
 LB+dmb.ldap+popl OK: Forbid
-LB+data+po OK: Allow
-LB+dataap+po OK: Allow
+LB+data+po FAILURE: Unexpected result Forbid
+LB+dataap+po FAILURE: Unexpected result Forbid
 LB+data+popl OK: Forbid
 LB+dataap+popl OK: Forbid
 LB+poaps OK: Forbid
-LB+po+poal OK: Allow
+LB+po+poal FAILURE: Unexpected result Forbid
 LB+poap+poal OK: Forbid
 S+dmb.sy+poap OK: Forbid
 S+dmb.sylp+poap OK: Forbid
@@ -435,14 +435,14 @@ S+dmb.st+poap OK: Forbid
 S+dmb.stlp+poap OK: Forbid
 S+dmb.st+poal OK: Forbid
 S+dmb.stlp+poal OK: Forbid
-LB+dmb.st+poap OK: Allow
+LB+dmb.st+poap FAILURE: Unexpected result Forbid
 LB+dmb.stap+poap OK: Forbid
-LB+dmb.st+poal OK: Allow
+LB+dmb.st+poal FAILURE: Unexpected result Forbid
 LB+dmb.stap+poal OK: Forbid
-S+dmb.ld+poap OK: Allow
-S+dmb.ldlp+poap OK: Allow
-S+dmb.ld+poal OK: Allow
-S+dmb.ldlp+poal OK: Allow
+S+dmb.ld+poap FAILURE: Unexpected result Forbid
+S+dmb.ldlp+poap FAILURE: Unexpected result Forbid
+S+dmb.ld+poal FAILURE: Unexpected result Forbid
+S+dmb.ldlp+poal FAILURE: Unexpected result Forbid
 LB+dmb.ld+poap OK: Forbid
 LB+dmb.ldap+poap OK: Forbid
 LB+dmb.ld+poal OK: Forbid
@@ -453,32 +453,32 @@ LB+data+poal OK: Forbid
 LB+dataap+poal OK: Forbid
 LB+popls OK: Forbid
 LB+popl+poal OK: Forbid
-S+dmb.sypl+po OK: Allow
-S+dmb.syll+po OK: Allow
+S+dmb.sypl+po FAILURE: Unexpected result Forbid
+S+dmb.syll+po FAILURE: Unexpected result Forbid
 S+dmb.sypl+popl OK: Forbid
 S+dmb.syll+popl OK: Forbid
-LB+dmb.sypl+po OK: Allow
-LB+dmb.syal+po OK: Allow
+LB+dmb.sypl+po FAILURE: Unexpected result Forbid
+LB+dmb.syal+po FAILURE: Unexpected result Forbid
 LB+dmb.sypl+popl OK: Forbid
 LB+dmb.syal+popl OK: Forbid
-S+dmb.stpl+po OK: Allow
-S+dmb.stll+po OK: Allow
+S+dmb.stpl+po FAILURE: Unexpected result Forbid
+S+dmb.stll+po FAILURE: Unexpected result Forbid
 S+dmb.stpl+popl OK: Forbid
 S+dmb.stll+popl OK: Forbid
-LB+dmb.stpl+po OK: Allow
-LB+dmb.stal+po OK: Allow
+LB+dmb.stpl+po FAILURE: Unexpected result Forbid
+LB+dmb.stal+po FAILURE: Unexpected result Forbid
 LB+dmb.stpl+popl OK: Forbid
 LB+dmb.stal+popl OK: Forbid
-S+dmb.ldpl+po OK: Allow
-S+dmb.ldll+po OK: Allow
+S+dmb.ldpl+po FAILURE: Unexpected result Forbid
+S+dmb.ldll+po FAILURE: Unexpected result Forbid
 S+dmb.ldpl+popl OK: Forbid
 S+dmb.ldll+popl OK: Forbid
-LB+dmb.ldpl+po OK: Allow
-LB+dmb.ldal+po OK: Allow
+LB+dmb.ldpl+po FAILURE: Unexpected result Forbid
+LB+dmb.ldal+po FAILURE: Unexpected result Forbid
 LB+dmb.ldpl+popl OK: Forbid
 LB+dmb.ldal+popl OK: Forbid
-LB+datapl+po OK: Allow
-LB+dataal+po OK: Allow
+LB+datapl+po FAILURE: Unexpected result Forbid
+LB+dataal+po FAILURE: Unexpected result Forbid
 LB+datapl+popl OK: Forbid
 LB+dataal+popl OK: Forbid
 LB+poals OK: Forbid
@@ -510,18 +510,18 @@ LB+datapl+poap OK: Forbid
 LB+dataal+poap OK: Forbid
 LB+datapl+poal OK: Forbid
 LB+dataal+poal OK: Forbid
-MP+dmb.sy+po OK: Allow
-MP+dmb.sylp+po OK: Allow
-MP+dmb.sy+popa OK: Allow
-MP+dmb.sylp+popa OK: Allow
-MP+dmb.st+po OK: Allow
-MP+dmb.stlp+po OK: Allow
-MP+dmb.st+popa OK: Allow
-MP+dmb.stlp+popa OK: Allow
-MP+dmb.ld+po OK: Allow
-MP+dmb.ldlp+po OK: Allow
-MP+dmb.ld+popa OK: Allow
-MP+dmb.ldlp+popa OK: Allow
+MP+dmb.sy+po FAILURE: Unexpected result Forbid
+MP+dmb.sylp+po FAILURE: Unexpected result Forbid
+MP+dmb.sy+popa FAILURE: Unexpected result Forbid
+MP+dmb.sylp+popa FAILURE: Unexpected result Forbid
+MP+dmb.st+po FAILURE: Unexpected result Forbid
+MP+dmb.stlp+po FAILURE: Unexpected result Forbid
+MP+dmb.st+popa FAILURE: Unexpected result Forbid
+MP+dmb.stlp+popa FAILURE: Unexpected result Forbid
+MP+dmb.ld+po FAILURE: Unexpected result Forbid
+MP+dmb.ldlp+po FAILURE: Unexpected result Forbid
+MP+dmb.ld+popa FAILURE: Unexpected result Forbid
+MP+dmb.ldlp+popa FAILURE: Unexpected result Forbid
 MP+dmb.sy+poap OK: Forbid
 MP+dmb.sylp+poap OK: Forbid
 MP+dmb.sy+poaa OK: Forbid
@@ -530,22 +530,22 @@ MP+dmb.st+poap OK: Forbid
 MP+dmb.stlp+poap OK: Forbid
 MP+dmb.st+poaa OK: Forbid
 MP+dmb.stlp+poaa OK: Forbid
-MP+dmb.ld+poap OK: Allow
-MP+dmb.ldlp+poap OK: Allow
-MP+dmb.ld+poaa OK: Allow
-MP+dmb.ldlp+poaa OK: Allow
-MP+dmb.sypl+po OK: Allow
-MP+dmb.syll+po OK: Allow
-MP+dmb.sypl+popa OK: Allow
-MP+dmb.syll+popa OK: Allow
-MP+dmb.stpl+po OK: Allow
-MP+dmb.stll+po OK: Allow
-MP+dmb.stpl+popa OK: Allow
-MP+dmb.stll+popa OK: Allow
-MP+dmb.ldpl+po OK: Allow
-MP+dmb.ldll+po OK: Allow
-MP+dmb.ldpl+popa OK: Allow
-MP+dmb.ldll+popa OK: Allow
+MP+dmb.ld+poap FAILURE: Unexpected result Forbid
+MP+dmb.ldlp+poap FAILURE: Unexpected result Forbid
+MP+dmb.ld+poaa FAILURE: Unexpected result Forbid
+MP+dmb.ldlp+poaa FAILURE: Unexpected result Forbid
+MP+dmb.sypl+po FAILURE: Unexpected result Forbid
+MP+dmb.syll+po FAILURE: Unexpected result Forbid
+MP+dmb.sypl+popa FAILURE: Unexpected result Forbid
+MP+dmb.syll+popa FAILURE: Unexpected result Forbid
+MP+dmb.stpl+po FAILURE: Unexpected result Forbid
+MP+dmb.stll+po FAILURE: Unexpected result Forbid
+MP+dmb.stpl+popa FAILURE: Unexpected result Forbid
+MP+dmb.stll+popa FAILURE: Unexpected result Forbid
+MP+dmb.ldpl+po FAILURE: Unexpected result Forbid
+MP+dmb.ldll+po FAILURE: Unexpected result Forbid
+MP+dmb.ldpl+popa FAILURE: Unexpected result Forbid
+MP+dmb.ldll+popa FAILURE: Unexpected result Forbid
 MP+dmb.sypl+poap OK: Forbid
 MP+dmb.syll+poap OK: Forbid
 MP+dmb.sypl+poaa OK: Forbid
@@ -566,18 +566,18 @@ MP+dmb.sys OK: Forbid
 MP+dmb.sy+dmb.syap OK: Forbid
 MP+dmb.sypl+dmb.sy OK: Forbid
 MP+dmb.sypl+dmb.syap OK: Forbid
-R+dmb.sy+dmb.st OK: Allow
-R+dmb.sy+dmb.stlp OK: Allow
-R+dmb.sypl+dmb.st OK: Allow
-R+dmb.sypl+dmb.stlp OK: Allow
-MP+dmb.sy+dmb.st OK: Allow
+R+dmb.sy+dmb.st FAILURE: Unexpected result Forbid
+R+dmb.sy+dmb.stlp FAILURE: Unexpected result Forbid
+R+dmb.sypl+dmb.st FAILURE: Unexpected result Forbid
+R+dmb.sypl+dmb.stlp FAILURE: Unexpected result Forbid
+MP+dmb.sy+dmb.st FAILURE: Unexpected result Forbid
 MP+dmb.sy+dmb.stap OK: Forbid
-MP+dmb.sypl+dmb.st OK: Allow
+MP+dmb.sypl+dmb.st FAILURE: Unexpected result Forbid
 MP+dmb.sypl+dmb.stap OK: Forbid
-R+dmb.sy+dmb.ld OK: Allow
-R+dmb.sy+dmb.ldlp OK: Allow
-R+dmb.sypl+dmb.ld OK: Allow
-R+dmb.sypl+dmb.ldlp OK: Allow
+R+dmb.sy+dmb.ld FAILURE: Unexpected result Forbid
+R+dmb.sy+dmb.ldlp FAILURE: Unexpected result Forbid
+R+dmb.sypl+dmb.ld FAILURE: Unexpected result Forbid
+R+dmb.sypl+dmb.ldlp FAILURE: Unexpected result Forbid
 MP+dmb.sy+dmb.ld OK: Forbid
 MP+dmb.sy+dmb.ldap OK: Forbid
 MP+dmb.sypl+dmb.ld OK: Forbid
@@ -597,14 +597,14 @@ S+dmb.sypl+dmb.syap OK: Forbid
 2+2W+dmb.stlp+dmb.sy OK: Forbid
 2+2W+dmb.st+dmb.sypl OK: Forbid
 2+2W+dmb.stlp+dmb.sypl OK: Forbid
-S+dmb.sy+dmb.st OK: Allow
+S+dmb.sy+dmb.st FAILURE: Unexpected result Forbid
 S+dmb.sy+dmb.stap OK: Forbid
-S+dmb.sypl+dmb.st OK: Allow
+S+dmb.sypl+dmb.st FAILURE: Unexpected result Forbid
 S+dmb.sypl+dmb.stap OK: Forbid
-2+2W+dmb.ld+dmb.sy OK: Allow
-2+2W+dmb.ldlp+dmb.sy OK: Allow
-2+2W+dmb.ld+dmb.sypl OK: Allow
-2+2W+dmb.ldlp+dmb.sypl OK: Allow
+2+2W+dmb.ld+dmb.sy FAILURE: Unexpected result Forbid
+2+2W+dmb.ldlp+dmb.sy FAILURE: Unexpected result Forbid
+2+2W+dmb.ld+dmb.sypl FAILURE: Unexpected result Forbid
+2+2W+dmb.ldlp+dmb.sypl FAILURE: Unexpected result Forbid
 S+dmb.sy+dmb.ld OK: Forbid
 S+dmb.sy+dmb.ldap OK: Forbid
 S+dmb.sypl+dmb.ld OK: Forbid
@@ -621,18 +621,18 @@ MP+dmb.sylp+dmb.sy OK: Forbid
 MP+dmb.sylp+dmb.syap OK: Forbid
 MP+dmb.syll+dmb.sy OK: Forbid
 MP+dmb.syll+dmb.syap OK: Forbid
-R+dmb.sylp+dmb.st OK: Allow
-R+dmb.sylp+dmb.stlp OK: Allow
-R+dmb.syll+dmb.st OK: Allow
-R+dmb.syll+dmb.stlp OK: Allow
-MP+dmb.sylp+dmb.st OK: Allow
+R+dmb.sylp+dmb.st FAILURE: Unexpected result Forbid
+R+dmb.sylp+dmb.stlp FAILURE: Unexpected result Forbid
+R+dmb.syll+dmb.st FAILURE: Unexpected result Forbid
+R+dmb.syll+dmb.stlp FAILURE: Unexpected result Forbid
+MP+dmb.sylp+dmb.st FAILURE: Unexpected result Forbid
 MP+dmb.sylp+dmb.stap OK: Forbid
-MP+dmb.syll+dmb.st OK: Allow
+MP+dmb.syll+dmb.st FAILURE: Unexpected result Forbid
 MP+dmb.syll+dmb.stap OK: Forbid
-R+dmb.sylp+dmb.ld OK: Allow
-R+dmb.sylp+dmb.ldlp OK: Allow
-R+dmb.syll+dmb.ld OK: Allow
-R+dmb.syll+dmb.ldlp OK: Allow
+R+dmb.sylp+dmb.ld FAILURE: Unexpected result Forbid
+R+dmb.sylp+dmb.ldlp FAILURE: Unexpected result Forbid
+R+dmb.syll+dmb.ld FAILURE: Unexpected result Forbid
+R+dmb.syll+dmb.ldlp FAILURE: Unexpected result Forbid
 MP+dmb.sylp+dmb.ld OK: Forbid
 MP+dmb.sylp+dmb.ldap OK: Forbid
 MP+dmb.syll+dmb.ld OK: Forbid
@@ -649,17 +649,17 @@ MP+dmb.sy+dmb.sypa OK: Forbid
 MP+dmb.sy+dmb.syaa OK: Forbid
 MP+dmb.sypl+dmb.sypa OK: Forbid
 MP+dmb.sypl+dmb.syaa OK: Forbid
-R+dmb.sy+dmb.stpa OK: Allow
+R+dmb.sy+dmb.stpa FAILURE: Unexpected result Forbid
 R+dmb.sy+dmb.stla OK: Forbid
-R+dmb.sypl+dmb.stpa OK: Allow
+R+dmb.sypl+dmb.stpa FAILURE: Unexpected result Forbid
 R+dmb.sypl+dmb.stla OK: Forbid
-MP+dmb.sy+dmb.stpa OK: Allow
+MP+dmb.sy+dmb.stpa FAILURE: Unexpected result Forbid
 MP+dmb.sy+dmb.staa OK: Forbid
-MP+dmb.sypl+dmb.stpa OK: Allow
+MP+dmb.sypl+dmb.stpa FAILURE: Unexpected result Forbid
 MP+dmb.sypl+dmb.staa OK: Forbid
-R+dmb.sy+dmb.ldpa OK: Allow
+R+dmb.sy+dmb.ldpa FAILURE: Unexpected result Forbid
 R+dmb.sy+dmb.ldla OK: Forbid
-R+dmb.sypl+dmb.ldpa OK: Allow
+R+dmb.sypl+dmb.ldpa FAILURE: Unexpected result Forbid
 R+dmb.sypl+dmb.ldla OK: Forbid
 MP+dmb.sy+dmb.ldpa OK: Forbid
 MP+dmb.sy+dmb.ldaa OK: Forbid
@@ -673,17 +673,17 @@ MP+dmb.sylp+dmb.sypa OK: Forbid
 MP+dmb.sylp+dmb.syaa OK: Forbid
 MP+dmb.syll+dmb.sypa OK: Forbid
 MP+dmb.syll+dmb.syaa OK: Forbid
-R+dmb.sylp+dmb.stpa OK: Allow
+R+dmb.sylp+dmb.stpa FAILURE: Unexpected result Forbid
 R+dmb.sylp+dmb.stla OK: Forbid
-R+dmb.syll+dmb.stpa OK: Allow
+R+dmb.syll+dmb.stpa FAILURE: Unexpected result Forbid
 R+dmb.syll+dmb.stla OK: Forbid
-MP+dmb.sylp+dmb.stpa OK: Allow
+MP+dmb.sylp+dmb.stpa FAILURE: Unexpected result Forbid
 MP+dmb.sylp+dmb.staa OK: Forbid
-MP+dmb.syll+dmb.stpa OK: Allow
+MP+dmb.syll+dmb.stpa FAILURE: Unexpected result Forbid
 MP+dmb.syll+dmb.staa OK: Forbid
-R+dmb.sylp+dmb.ldpa OK: Allow
+R+dmb.sylp+dmb.ldpa FAILURE: Unexpected result Forbid
 R+dmb.sylp+dmb.ldla OK: Forbid
-R+dmb.syll+dmb.ldpa OK: Allow
+R+dmb.syll+dmb.ldpa FAILURE: Unexpected result Forbid
 R+dmb.syll+dmb.ldla OK: Forbid
 MP+dmb.sylp+dmb.ldpa OK: Forbid
 MP+dmb.sylp+dmb.ldaa OK: Forbid
@@ -700,14 +700,14 @@ S+dmb.syll+dmb.syap OK: Forbid
 2+2W+dmb.stlp+dmb.sylp OK: Forbid
 2+2W+dmb.st+dmb.syll OK: Forbid
 2+2W+dmb.stlp+dmb.syll OK: Forbid
-S+dmb.sylp+dmb.st OK: Allow
+S+dmb.sylp+dmb.st FAILURE: Unexpected result Forbid
 S+dmb.sylp+dmb.stap OK: Forbid
-S+dmb.syll+dmb.st OK: Allow
+S+dmb.syll+dmb.st FAILURE: Unexpected result Forbid
 S+dmb.syll+dmb.stap OK: Forbid
-2+2W+dmb.ld+dmb.sylp OK: Allow
-2+2W+dmb.ldlp+dmb.sylp OK: Allow
-2+2W+dmb.ld+dmb.syll OK: Allow
-2+2W+dmb.ldlp+dmb.syll OK: Allow
+2+2W+dmb.ld+dmb.sylp FAILURE: Unexpected result Forbid
+2+2W+dmb.ldlp+dmb.sylp FAILURE: Unexpected result Forbid
+2+2W+dmb.ld+dmb.syll FAILURE: Unexpected result Forbid
+2+2W+dmb.ldlp+dmb.syll FAILURE: Unexpected result Forbid
 S+dmb.sylp+dmb.ld OK: Forbid
 S+dmb.sylp+dmb.ldap OK: Forbid
 S+dmb.syll+dmb.ld OK: Forbid
@@ -771,60 +771,60 @@ SB+dmb.sys OK: Forbid
 SB+dmb.sy+dmb.sylp OK: Forbid
 SB+dmb.sy+dmb.sypa OK: Forbid
 SB+dmb.sypa+dmb.sylp OK: Forbid
-SB+dmb.st+dmb.sy OK: Allow
-SB+dmb.stlp+dmb.sy OK: Allow
-SB+dmb.st+dmb.sypa OK: Allow
-SB+dmb.stlp+dmb.sypa OK: Allow
-SB+dmb.ld+dmb.sy OK: Allow
-SB+dmb.ldlp+dmb.sy OK: Allow
-SB+dmb.ld+dmb.sypa OK: Allow
-SB+dmb.ldlp+dmb.sypa OK: Allow
+SB+dmb.st+dmb.sy FAILURE: Unexpected result Forbid
+SB+dmb.stlp+dmb.sy FAILURE: Unexpected result Forbid
+SB+dmb.st+dmb.sypa FAILURE: Unexpected result Forbid
+SB+dmb.stlp+dmb.sypa FAILURE: Unexpected result Forbid
+SB+dmb.ld+dmb.sy FAILURE: Unexpected result Forbid
+SB+dmb.ldlp+dmb.sy FAILURE: Unexpected result Forbid
+SB+dmb.ld+dmb.sypa FAILURE: Unexpected result Forbid
+SB+dmb.ldlp+dmb.sypa FAILURE: Unexpected result Forbid
 R+dmb.st+dmb.sy OK: Forbid
 R+dmb.stlp+dmb.sy OK: Forbid
 R+dmb.st+dmb.sypa OK: Forbid
 R+dmb.stlp+dmb.sypa OK: Forbid
-R+dmb.ld+dmb.sy OK: Allow
-R+dmb.ldlp+dmb.sy OK: Allow
-R+dmb.ld+dmb.sypa OK: Allow
-R+dmb.ldlp+dmb.sypa OK: Allow
+R+dmb.ld+dmb.sy FAILURE: Unexpected result Forbid
+R+dmb.ldlp+dmb.sy FAILURE: Unexpected result Forbid
+R+dmb.ld+dmb.sypa FAILURE: Unexpected result Forbid
+R+dmb.ldlp+dmb.sypa FAILURE: Unexpected result Forbid
 SB+dmb.sylps OK: Forbid
 SB+dmb.sy+dmb.syla OK: Forbid
 SB+dmb.sylp+dmb.syla OK: Forbid
-SB+dmb.st+dmb.sylp OK: Allow
-SB+dmb.stlp+dmb.sylp OK: Allow
-SB+dmb.st+dmb.syla OK: Allow
-SB+dmb.stlp+dmb.syla OK: Allow
-SB+dmb.ld+dmb.sylp OK: Allow
-SB+dmb.ldlp+dmb.sylp OK: Allow
-SB+dmb.ld+dmb.syla OK: Allow
-SB+dmb.ldlp+dmb.syla OK: Allow
+SB+dmb.st+dmb.sylp FAILURE: Unexpected result Forbid
+SB+dmb.stlp+dmb.sylp FAILURE: Unexpected result Forbid
+SB+dmb.st+dmb.syla FAILURE: Unexpected result Forbid
+SB+dmb.stlp+dmb.syla FAILURE: Unexpected result Forbid
+SB+dmb.ld+dmb.sylp FAILURE: Unexpected result Forbid
+SB+dmb.ldlp+dmb.sylp FAILURE: Unexpected result Forbid
+SB+dmb.ld+dmb.syla FAILURE: Unexpected result Forbid
+SB+dmb.ldlp+dmb.syla FAILURE: Unexpected result Forbid
 SB+dmb.sypas OK: Forbid
 SB+dmb.sypa+dmb.syla OK: Forbid
-SB+dmb.stpa+dmb.sy OK: Allow
+SB+dmb.stpa+dmb.sy FAILURE: Unexpected result Forbid
 SB+dmb.stla+dmb.sy OK: Forbid
-SB+dmb.stpa+dmb.sypa OK: Allow
+SB+dmb.stpa+dmb.sypa FAILURE: Unexpected result Forbid
 SB+dmb.stla+dmb.sypa OK: Forbid
-SB+dmb.ldpa+dmb.sy OK: Allow
+SB+dmb.ldpa+dmb.sy FAILURE: Unexpected result Forbid
 SB+dmb.ldla+dmb.sy OK: Forbid
-SB+dmb.ldpa+dmb.sypa OK: Allow
+SB+dmb.ldpa+dmb.sypa FAILURE: Unexpected result Forbid
 SB+dmb.ldla+dmb.sypa OK: Forbid
 SB+dmb.sylas OK: Forbid
-SB+dmb.stpa+dmb.sylp OK: Allow
+SB+dmb.stpa+dmb.sylp FAILURE: Unexpected result Forbid
 SB+dmb.stla+dmb.sylp OK: Forbid
-SB+dmb.stpa+dmb.syla OK: Allow
+SB+dmb.stpa+dmb.syla FAILURE: Unexpected result Forbid
 SB+dmb.stla+dmb.syla OK: Forbid
-SB+dmb.ldpa+dmb.sylp OK: Allow
+SB+dmb.ldpa+dmb.sylp FAILURE: Unexpected result Forbid
 SB+dmb.ldla+dmb.sylp OK: Forbid
-SB+dmb.ldpa+dmb.syla OK: Allow
+SB+dmb.ldpa+dmb.syla FAILURE: Unexpected result Forbid
 SB+dmb.ldla+dmb.syla OK: Forbid
 R+dmb.st+dmb.sylp OK: Forbid
 R+dmb.stlp+dmb.sylp OK: Forbid
 R+dmb.st+dmb.syla OK: Forbid
 R+dmb.stlp+dmb.syla OK: Forbid
-R+dmb.ld+dmb.sylp OK: Allow
-R+dmb.ldlp+dmb.sylp OK: Allow
-R+dmb.ld+dmb.syla OK: Allow
-R+dmb.ldlp+dmb.syla OK: Allow
+R+dmb.ld+dmb.sylp FAILURE: Unexpected result Forbid
+R+dmb.ldlp+dmb.sylp FAILURE: Unexpected result Forbid
+R+dmb.ld+dmb.syla FAILURE: Unexpected result Forbid
+R+dmb.ldlp+dmb.syla FAILURE: Unexpected result Forbid
 R+dmb.stpl+dmb.sy OK: Forbid
 R+dmb.stll+dmb.sy OK: Forbid
 R+dmb.stpl+dmb.sypa OK: Forbid
@@ -849,14 +849,14 @@ S+dmb.st+dmb.sy OK: Forbid
 S+dmb.stlp+dmb.sy OK: Forbid
 S+dmb.st+dmb.sypl OK: Forbid
 S+dmb.stlp+dmb.sypl OK: Forbid
-LB+dmb.st+dmb.sy OK: Allow
+LB+dmb.st+dmb.sy FAILURE: Unexpected result Forbid
 LB+dmb.stap+dmb.sy OK: Forbid
-LB+dmb.st+dmb.sypl OK: Allow
+LB+dmb.st+dmb.sypl FAILURE: Unexpected result Forbid
 LB+dmb.stap+dmb.sypl OK: Forbid
-S+dmb.ld+dmb.sy OK: Allow
-S+dmb.ldlp+dmb.sy OK: Allow
-S+dmb.ld+dmb.sypl OK: Allow
-S+dmb.ldlp+dmb.sypl OK: Allow
+S+dmb.ld+dmb.sy FAILURE: Unexpected result Forbid
+S+dmb.ldlp+dmb.sy FAILURE: Unexpected result Forbid
+S+dmb.ld+dmb.sypl FAILURE: Unexpected result Forbid
+S+dmb.ldlp+dmb.sypl FAILURE: Unexpected result Forbid
 LB+dmb.ld+dmb.sy OK: Forbid
 LB+dmb.ldap+dmb.sy OK: Forbid
 LB+dmb.ld+dmb.sypl OK: Forbid
@@ -872,14 +872,14 @@ S+dmb.st+dmb.syap OK: Forbid
 S+dmb.stlp+dmb.syap OK: Forbid
 S+dmb.st+dmb.syal OK: Forbid
 S+dmb.stlp+dmb.syal OK: Forbid
-LB+dmb.st+dmb.syap OK: Allow
+LB+dmb.st+dmb.syap FAILURE: Unexpected result Forbid
 LB+dmb.stap+dmb.syap OK: Forbid
-LB+dmb.st+dmb.syal OK: Allow
+LB+dmb.st+dmb.syal FAILURE: Unexpected result Forbid
 LB+dmb.stap+dmb.syal OK: Forbid
-S+dmb.ld+dmb.syap OK: Allow
-S+dmb.ldlp+dmb.syap OK: Allow
-S+dmb.ld+dmb.syal OK: Allow
-S+dmb.ldlp+dmb.syal OK: Allow
+S+dmb.ld+dmb.syap FAILURE: Unexpected result Forbid
+S+dmb.ldlp+dmb.syap FAILURE: Unexpected result Forbid
+S+dmb.ld+dmb.syal FAILURE: Unexpected result Forbid
+S+dmb.ldlp+dmb.syal FAILURE: Unexpected result Forbid
 LB+dmb.ld+dmb.syap OK: Forbid
 LB+dmb.ldap+dmb.syap OK: Forbid
 LB+dmb.ld+dmb.syal OK: Forbid
@@ -935,18 +935,18 @@ MP+dmb.st+dmb.sy OK: Forbid
 MP+dmb.stlp+dmb.sy OK: Forbid
 MP+dmb.st+dmb.sypa OK: Forbid
 MP+dmb.stlp+dmb.sypa OK: Forbid
-MP+dmb.ld+dmb.sy OK: Allow
-MP+dmb.ldlp+dmb.sy OK: Allow
-MP+dmb.ld+dmb.sypa OK: Allow
-MP+dmb.ldlp+dmb.sypa OK: Allow
+MP+dmb.ld+dmb.sy FAILURE: Unexpected result Forbid
+MP+dmb.ldlp+dmb.sy FAILURE: Unexpected result Forbid
+MP+dmb.ld+dmb.sypa FAILURE: Unexpected result Forbid
+MP+dmb.ldlp+dmb.sypa FAILURE: Unexpected result Forbid
 MP+dmb.st+dmb.syap OK: Forbid
 MP+dmb.stlp+dmb.syap OK: Forbid
 MP+dmb.st+dmb.syaa OK: Forbid
 MP+dmb.stlp+dmb.syaa OK: Forbid
-MP+dmb.ld+dmb.syap OK: Allow
-MP+dmb.ldlp+dmb.syap OK: Allow
-MP+dmb.ld+dmb.syaa OK: Allow
-MP+dmb.ldlp+dmb.syaa OK: Allow
+MP+dmb.ld+dmb.syap FAILURE: Unexpected result Forbid
+MP+dmb.ldlp+dmb.syap FAILURE: Unexpected result Forbid
+MP+dmb.ld+dmb.syaa FAILURE: Unexpected result Forbid
+MP+dmb.ldlp+dmb.syaa FAILURE: Unexpected result Forbid
 MP+dmb.stpl+dmb.sy OK: Forbid
 MP+dmb.stll+dmb.sy OK: Forbid
 MP+dmb.stpl+dmb.sypa OK: Forbid
@@ -963,18 +963,18 @@ MP+dmb.ldpl+dmb.syap OK: Forbid
 MP+dmb.ldll+dmb.syap OK: Forbid
 MP+dmb.ldpl+dmb.syaa OK: Forbid
 MP+dmb.ldll+dmb.syaa OK: Forbid
-R+dmb.sts OK: Allow
-R+dmb.st+dmb.stlp OK: Allow
-R+dmb.stpl+dmb.st OK: Allow
-R+dmb.stpl+dmb.stlp OK: Allow
-MP+dmb.sts OK: Allow
+R+dmb.sts FAILURE: Unexpected result Forbid
+R+dmb.st+dmb.stlp FAILURE: Unexpected result Forbid
+R+dmb.stpl+dmb.st FAILURE: Unexpected result Forbid
+R+dmb.stpl+dmb.stlp FAILURE: Unexpected result Forbid
+MP+dmb.sts FAILURE: Unexpected result Forbid
 MP+dmb.st+dmb.stap OK: Forbid
-MP+dmb.stpl+dmb.st OK: Allow
+MP+dmb.stpl+dmb.st FAILURE: Unexpected result Forbid
 MP+dmb.stpl+dmb.stap OK: Forbid
-R+dmb.st+dmb.ld OK: Allow
-R+dmb.st+dmb.ldlp OK: Allow
-R+dmb.stpl+dmb.ld OK: Allow
-R+dmb.stpl+dmb.ldlp OK: Allow
+R+dmb.st+dmb.ld FAILURE: Unexpected result Forbid
+R+dmb.st+dmb.ldlp FAILURE: Unexpected result Forbid
+R+dmb.stpl+dmb.ld FAILURE: Unexpected result Forbid
+R+dmb.stpl+dmb.ldlp FAILURE: Unexpected result Forbid
 MP+dmb.st+dmb.ld OK: Forbid
 MP+dmb.st+dmb.ldap OK: Forbid
 MP+dmb.stpl+dmb.ld OK: Forbid
@@ -987,14 +987,14 @@ MP+dmb.stpl+addrap OK: Forbid
 2+2W+dmb.st+dmb.stlp OK: Forbid
 2+2W+dmb.st+dmb.stpl OK: Forbid
 2+2W+dmb.stpl+dmb.stlp OK: Forbid
-S+dmb.sts OK: Allow
+S+dmb.sts FAILURE: Unexpected result Forbid
 S+dmb.st+dmb.stap OK: Forbid
-S+dmb.stpl+dmb.st OK: Allow
+S+dmb.stpl+dmb.st FAILURE: Unexpected result Forbid
 S+dmb.stpl+dmb.stap OK: Forbid
-2+2W+dmb.ld+dmb.st OK: Allow
-2+2W+dmb.ldlp+dmb.st OK: Allow
-2+2W+dmb.ld+dmb.stpl OK: Allow
-2+2W+dmb.ldlp+dmb.stpl OK: Allow
+2+2W+dmb.ld+dmb.st FAILURE: Unexpected result Forbid
+2+2W+dmb.ldlp+dmb.st FAILURE: Unexpected result Forbid
+2+2W+dmb.ld+dmb.stpl FAILURE: Unexpected result Forbid
+2+2W+dmb.ldlp+dmb.stpl FAILURE: Unexpected result Forbid
 S+dmb.st+dmb.ld OK: Forbid
 S+dmb.st+dmb.ldap OK: Forbid
 S+dmb.stpl+dmb.ld OK: Forbid
@@ -1003,18 +1003,18 @@ S+dmb.st+data OK: Forbid
 S+dmb.st+dataap OK: Forbid
 S+dmb.stpl+data OK: Forbid
 S+dmb.stpl+dataap OK: Forbid
-R+dmb.stlp+dmb.st OK: Allow
-R+dmb.stlps OK: Allow
-R+dmb.stll+dmb.st OK: Allow
-R+dmb.stll+dmb.stlp OK: Allow
-MP+dmb.stlp+dmb.st OK: Allow
+R+dmb.stlp+dmb.st FAILURE: Unexpected result Forbid
+R+dmb.stlps FAILURE: Unexpected result Forbid
+R+dmb.stll+dmb.st FAILURE: Unexpected result Forbid
+R+dmb.stll+dmb.stlp FAILURE: Unexpected result Forbid
+MP+dmb.stlp+dmb.st FAILURE: Unexpected result Forbid
 MP+dmb.stlp+dmb.stap OK: Forbid
-MP+dmb.stll+dmb.st OK: Allow
+MP+dmb.stll+dmb.st FAILURE: Unexpected result Forbid
 MP+dmb.stll+dmb.stap OK: Forbid
-R+dmb.stlp+dmb.ld OK: Allow
-R+dmb.stlp+dmb.ldlp OK: Allow
-R+dmb.stll+dmb.ld OK: Allow
-R+dmb.stll+dmb.ldlp OK: Allow
+R+dmb.stlp+dmb.ld FAILURE: Unexpected result Forbid
+R+dmb.stlp+dmb.ldlp FAILURE: Unexpected result Forbid
+R+dmb.stll+dmb.ld FAILURE: Unexpected result Forbid
+R+dmb.stll+dmb.ldlp FAILURE: Unexpected result Forbid
 MP+dmb.stlp+dmb.ld OK: Forbid
 MP+dmb.stlp+dmb.ldap OK: Forbid
 MP+dmb.stll+dmb.ld OK: Forbid
@@ -1023,33 +1023,33 @@ MP+dmb.stlp+addr OK: Forbid
 MP+dmb.stlp+addrap OK: Forbid
 MP+dmb.stll+addr OK: Forbid
 MP+dmb.stll+addrap OK: Forbid
-R+dmb.st+dmb.stpa OK: Allow
+R+dmb.st+dmb.stpa FAILURE: Unexpected result Forbid
 R+dmb.st+dmb.stla OK: Forbid
-R+dmb.stpl+dmb.stpa OK: Allow
+R+dmb.stpl+dmb.stpa FAILURE: Unexpected result Forbid
 R+dmb.stpl+dmb.stla OK: Forbid
-MP+dmb.st+dmb.stpa OK: Allow
+MP+dmb.st+dmb.stpa FAILURE: Unexpected result Forbid
 MP+dmb.st+dmb.staa OK: Forbid
-MP+dmb.stpl+dmb.stpa OK: Allow
+MP+dmb.stpl+dmb.stpa FAILURE: Unexpected result Forbid
 MP+dmb.stpl+dmb.staa OK: Forbid
-R+dmb.st+dmb.ldpa OK: Allow
+R+dmb.st+dmb.ldpa FAILURE: Unexpected result Forbid
 R+dmb.st+dmb.ldla OK: Forbid
-R+dmb.stpl+dmb.ldpa OK: Allow
+R+dmb.stpl+dmb.ldpa FAILURE: Unexpected result Forbid
 R+dmb.stpl+dmb.ldla OK: Forbid
 MP+dmb.st+dmb.ldpa OK: Forbid
 MP+dmb.st+dmb.ldaa OK: Forbid
 MP+dmb.stpl+dmb.ldpa OK: Forbid
 MP+dmb.stpl+dmb.ldaa OK: Forbid
-R+dmb.stlp+dmb.stpa OK: Allow
+R+dmb.stlp+dmb.stpa FAILURE: Unexpected result Forbid
 R+dmb.stlp+dmb.stla OK: Forbid
-R+dmb.stll+dmb.stpa OK: Allow
+R+dmb.stll+dmb.stpa FAILURE: Unexpected result Forbid
 R+dmb.stll+dmb.stla OK: Forbid
-MP+dmb.stlp+dmb.stpa OK: Allow
+MP+dmb.stlp+dmb.stpa FAILURE: Unexpected result Forbid
 MP+dmb.stlp+dmb.staa OK: Forbid
-MP+dmb.stll+dmb.stpa OK: Allow
+MP+dmb.stll+dmb.stpa FAILURE: Unexpected result Forbid
 MP+dmb.stll+dmb.staa OK: Forbid
-R+dmb.stlp+dmb.ldpa OK: Allow
+R+dmb.stlp+dmb.ldpa FAILURE: Unexpected result Forbid
 R+dmb.stlp+dmb.ldla OK: Forbid
-R+dmb.stll+dmb.ldpa OK: Allow
+R+dmb.stll+dmb.ldpa FAILURE: Unexpected result Forbid
 R+dmb.stll+dmb.ldla OK: Forbid
 MP+dmb.stlp+dmb.ldpa OK: Forbid
 MP+dmb.stlp+dmb.ldaa OK: Forbid
@@ -1058,14 +1058,14 @@ MP+dmb.stll+dmb.ldaa OK: Forbid
 2+2W+dmb.stlps OK: Forbid
 2+2W+dmb.st+dmb.stll OK: Forbid
 2+2W+dmb.stlp+dmb.stll OK: Forbid
-S+dmb.stlp+dmb.st OK: Allow
+S+dmb.stlp+dmb.st FAILURE: Unexpected result Forbid
 S+dmb.stlp+dmb.stap OK: Forbid
-S+dmb.stll+dmb.st OK: Allow
+S+dmb.stll+dmb.st FAILURE: Unexpected result Forbid
 S+dmb.stll+dmb.stap OK: Forbid
-2+2W+dmb.ld+dmb.stlp OK: Allow
-2+2W+dmb.ldlp+dmb.stlp OK: Allow
-2+2W+dmb.ld+dmb.stll OK: Allow
-2+2W+dmb.ldlp+dmb.stll OK: Allow
+2+2W+dmb.ld+dmb.stlp FAILURE: Unexpected result Forbid
+2+2W+dmb.ldlp+dmb.stlp FAILURE: Unexpected result Forbid
+2+2W+dmb.ld+dmb.stll FAILURE: Unexpected result Forbid
+2+2W+dmb.ldlp+dmb.stll FAILURE: Unexpected result Forbid
 S+dmb.stlp+dmb.ld OK: Forbid
 S+dmb.stlp+dmb.ldap OK: Forbid
 S+dmb.stll+dmb.ld OK: Forbid
@@ -1109,71 +1109,71 @@ S+dmb.stlp+datapl OK: Forbid
 S+dmb.stlp+dataal OK: Forbid
 S+dmb.stll+datapl OK: Forbid
 S+dmb.stll+dataal OK: Forbid
-SB+dmb.sts OK: Allow
-SB+dmb.st+dmb.stlp OK: Allow
-SB+dmb.st+dmb.stpa OK: Allow
-SB+dmb.stpa+dmb.stlp OK: Allow
-SB+dmb.ld+dmb.st OK: Allow
-SB+dmb.ldlp+dmb.st OK: Allow
-SB+dmb.ld+dmb.stpa OK: Allow
-SB+dmb.ldlp+dmb.stpa OK: Allow
-R+dmb.ld+dmb.st OK: Allow
-R+dmb.ldlp+dmb.st OK: Allow
-R+dmb.ld+dmb.stpa OK: Allow
-R+dmb.ldlp+dmb.stpa OK: Allow
-SB+dmb.stlps OK: Allow
-SB+dmb.st+dmb.stla OK: Allow
-SB+dmb.stlp+dmb.stla OK: Allow
-SB+dmb.ld+dmb.stlp OK: Allow
-SB+dmb.ldlp+dmb.stlp OK: Allow
-SB+dmb.ld+dmb.stla OK: Allow
-SB+dmb.ldlp+dmb.stla OK: Allow
-SB+dmb.stpas OK: Allow
-SB+dmb.stpa+dmb.stla OK: Allow
-SB+dmb.ldpa+dmb.st OK: Allow
-SB+dmb.ldla+dmb.st OK: Allow
-SB+dmb.ldpa+dmb.stpa OK: Allow
-SB+dmb.ldla+dmb.stpa OK: Allow
+SB+dmb.sts FAILURE: Unexpected result Forbid
+SB+dmb.st+dmb.stlp FAILURE: Unexpected result Forbid
+SB+dmb.st+dmb.stpa FAILURE: Unexpected result Forbid
+SB+dmb.stpa+dmb.stlp FAILURE: Unexpected result Forbid
+SB+dmb.ld+dmb.st FAILURE: Unexpected result Forbid
+SB+dmb.ldlp+dmb.st FAILURE: Unexpected result Forbid
+SB+dmb.ld+dmb.stpa FAILURE: Unexpected result Forbid
+SB+dmb.ldlp+dmb.stpa FAILURE: Unexpected result Forbid
+R+dmb.ld+dmb.st FAILURE: Unexpected result Forbid
+R+dmb.ldlp+dmb.st FAILURE: Unexpected result Forbid
+R+dmb.ld+dmb.stpa FAILURE: Unexpected result Forbid
+R+dmb.ldlp+dmb.stpa FAILURE: Unexpected result Forbid
+SB+dmb.stlps FAILURE: Unexpected result Forbid
+SB+dmb.st+dmb.stla FAILURE: Unexpected result Forbid
+SB+dmb.stlp+dmb.stla FAILURE: Unexpected result Forbid
+SB+dmb.ld+dmb.stlp FAILURE: Unexpected result Forbid
+SB+dmb.ldlp+dmb.stlp FAILURE: Unexpected result Forbid
+SB+dmb.ld+dmb.stla FAILURE: Unexpected result Forbid
+SB+dmb.ldlp+dmb.stla FAILURE: Unexpected result Forbid
+SB+dmb.stpas FAILURE: Unexpected result Forbid
+SB+dmb.stpa+dmb.stla FAILURE: Unexpected result Forbid
+SB+dmb.ldpa+dmb.st FAILURE: Unexpected result Forbid
+SB+dmb.ldla+dmb.st FAILURE: Unexpected result Forbid
+SB+dmb.ldpa+dmb.stpa FAILURE: Unexpected result Forbid
+SB+dmb.ldla+dmb.stpa FAILURE: Unexpected result Forbid
 SB+dmb.stlas OK: Forbid
-SB+dmb.ldpa+dmb.stlp OK: Allow
-SB+dmb.ldla+dmb.stlp OK: Allow
-SB+dmb.ldpa+dmb.stla OK: Allow
+SB+dmb.ldpa+dmb.stlp FAILURE: Unexpected result Forbid
+SB+dmb.ldla+dmb.stlp FAILURE: Unexpected result Forbid
+SB+dmb.ldpa+dmb.stla FAILURE: Unexpected result Forbid
 SB+dmb.ldla+dmb.stla OK: Forbid
-R+dmb.ld+dmb.stlp OK: Allow
-R+dmb.ldlp+dmb.stlp OK: Allow
-R+dmb.ld+dmb.stla OK: Allow
-R+dmb.ldlp+dmb.stla OK: Allow
-R+dmb.ldpl+dmb.st OK: Allow
-R+dmb.ldll+dmb.st OK: Allow
-R+dmb.ldpl+dmb.stpa OK: Allow
-R+dmb.ldll+dmb.stpa OK: Allow
-R+dmb.ldpl+dmb.stlp OK: Allow
-R+dmb.ldll+dmb.stlp OK: Allow
+R+dmb.ld+dmb.stlp FAILURE: Unexpected result Forbid
+R+dmb.ldlp+dmb.stlp FAILURE: Unexpected result Forbid
+R+dmb.ld+dmb.stla FAILURE: Unexpected result Forbid
+R+dmb.ldlp+dmb.stla FAILURE: Unexpected result Forbid
+R+dmb.ldpl+dmb.st FAILURE: Unexpected result Forbid
+R+dmb.ldll+dmb.st FAILURE: Unexpected result Forbid
+R+dmb.ldpl+dmb.stpa FAILURE: Unexpected result Forbid
+R+dmb.ldll+dmb.stpa FAILURE: Unexpected result Forbid
+R+dmb.ldpl+dmb.stlp FAILURE: Unexpected result Forbid
+R+dmb.ldll+dmb.stlp FAILURE: Unexpected result Forbid
 R+dmb.ldpl+dmb.stla OK: Forbid
 R+dmb.ldll+dmb.stla OK: Forbid
-LB+dmb.sts OK: Allow
-LB+dmb.st+dmb.stap OK: Allow
-LB+dmb.st+dmb.stpl OK: Allow
+LB+dmb.sts FAILURE: Unexpected result Forbid
+LB+dmb.st+dmb.stap FAILURE: Unexpected result Forbid
+LB+dmb.st+dmb.stpl FAILURE: Unexpected result Forbid
 LB+dmb.stpl+dmb.stap OK: Forbid
-S+dmb.ld+dmb.st OK: Allow
-S+dmb.ldlp+dmb.st OK: Allow
-S+dmb.ld+dmb.stpl OK: Allow
-S+dmb.ldlp+dmb.stpl OK: Allow
-LB+dmb.ld+dmb.st OK: Allow
-LB+dmb.ldap+dmb.st OK: Allow
+S+dmb.ld+dmb.st FAILURE: Unexpected result Forbid
+S+dmb.ldlp+dmb.st FAILURE: Unexpected result Forbid
+S+dmb.ld+dmb.stpl FAILURE: Unexpected result Forbid
+S+dmb.ldlp+dmb.stpl FAILURE: Unexpected result Forbid
+LB+dmb.ld+dmb.st FAILURE: Unexpected result Forbid
+LB+dmb.ldap+dmb.st FAILURE: Unexpected result Forbid
 LB+dmb.ld+dmb.stpl OK: Forbid
 LB+dmb.ldap+dmb.stpl OK: Forbid
-LB+dmb.st+data OK: Allow
-LB+dmb.st+dataap OK: Allow
+LB+dmb.st+data FAILURE: Unexpected result Forbid
+LB+dmb.st+dataap FAILURE: Unexpected result Forbid
 LB+dmb.stpl+data OK: Forbid
 LB+dmb.stpl+dataap OK: Forbid
 LB+dmb.staps OK: Forbid
-LB+dmb.st+dmb.stal OK: Allow
+LB+dmb.st+dmb.stal FAILURE: Unexpected result Forbid
 LB+dmb.stap+dmb.stal OK: Forbid
-S+dmb.ld+dmb.stap OK: Allow
-S+dmb.ldlp+dmb.stap OK: Allow
-S+dmb.ld+dmb.stal OK: Allow
-S+dmb.ldlp+dmb.stal OK: Allow
+S+dmb.ld+dmb.stap FAILURE: Unexpected result Forbid
+S+dmb.ldlp+dmb.stap FAILURE: Unexpected result Forbid
+S+dmb.ld+dmb.stal FAILURE: Unexpected result Forbid
+S+dmb.ldlp+dmb.stal FAILURE: Unexpected result Forbid
 LB+dmb.ld+dmb.stap OK: Forbid
 LB+dmb.ldap+dmb.stap OK: Forbid
 LB+dmb.ld+dmb.stal OK: Forbid
@@ -1184,16 +1184,16 @@ LB+dmb.stal+data OK: Forbid
 LB+dmb.stal+dataap OK: Forbid
 LB+dmb.stpls OK: Forbid
 LB+dmb.stpl+dmb.stal OK: Forbid
-S+dmb.ldpl+dmb.st OK: Allow
-S+dmb.ldll+dmb.st OK: Allow
+S+dmb.ldpl+dmb.st FAILURE: Unexpected result Forbid
+S+dmb.ldll+dmb.st FAILURE: Unexpected result Forbid
 S+dmb.ldpl+dmb.stpl OK: Forbid
 S+dmb.ldll+dmb.stpl OK: Forbid
-LB+dmb.ldpl+dmb.st OK: Allow
-LB+dmb.ldal+dmb.st OK: Allow
+LB+dmb.ldpl+dmb.st FAILURE: Unexpected result Forbid
+LB+dmb.ldal+dmb.st FAILURE: Unexpected result Forbid
 LB+dmb.ldpl+dmb.stpl OK: Forbid
 LB+dmb.ldal+dmb.stpl OK: Forbid
-LB+dmb.st+datapl OK: Allow
-LB+dmb.st+dataal OK: Allow
+LB+dmb.st+datapl FAILURE: Unexpected result Forbid
+LB+dmb.st+dataal FAILURE: Unexpected result Forbid
 LB+dmb.stpl+datapl OK: Forbid
 LB+dmb.stpl+dataal OK: Forbid
 LB+dmb.stals OK: Forbid
@@ -1209,113 +1209,113 @@ LB+dmb.stap+datapl OK: Forbid
 LB+dmb.stap+dataal OK: Forbid
 LB+dmb.stal+datapl OK: Forbid
 LB+dmb.stal+dataal OK: Forbid
-MP+dmb.ld+dmb.st OK: Allow
-MP+dmb.ldlp+dmb.st OK: Allow
-MP+dmb.ld+dmb.stpa OK: Allow
-MP+dmb.ldlp+dmb.stpa OK: Allow
-MP+dmb.ld+dmb.stap OK: Allow
-MP+dmb.ldlp+dmb.stap OK: Allow
-MP+dmb.ld+dmb.staa OK: Allow
-MP+dmb.ldlp+dmb.staa OK: Allow
-MP+dmb.ldpl+dmb.st OK: Allow
-MP+dmb.ldll+dmb.st OK: Allow
-MP+dmb.ldpl+dmb.stpa OK: Allow
-MP+dmb.ldll+dmb.stpa OK: Allow
+MP+dmb.ld+dmb.st FAILURE: Unexpected result Forbid
+MP+dmb.ldlp+dmb.st FAILURE: Unexpected result Forbid
+MP+dmb.ld+dmb.stpa FAILURE: Unexpected result Forbid
+MP+dmb.ldlp+dmb.stpa FAILURE: Unexpected result Forbid
+MP+dmb.ld+dmb.stap FAILURE: Unexpected result Forbid
+MP+dmb.ldlp+dmb.stap FAILURE: Unexpected result Forbid
+MP+dmb.ld+dmb.staa FAILURE: Unexpected result Forbid
+MP+dmb.ldlp+dmb.staa FAILURE: Unexpected result Forbid
+MP+dmb.ldpl+dmb.st FAILURE: Unexpected result Forbid
+MP+dmb.ldll+dmb.st FAILURE: Unexpected result Forbid
+MP+dmb.ldpl+dmb.stpa FAILURE: Unexpected result Forbid
+MP+dmb.ldll+dmb.stpa FAILURE: Unexpected result Forbid
 MP+dmb.ldpl+dmb.stap OK: Forbid
 MP+dmb.ldll+dmb.stap OK: Forbid
 MP+dmb.ldpl+dmb.staa OK: Forbid
 MP+dmb.ldll+dmb.staa OK: Forbid
-R+dmb.lds OK: Allow
-R+dmb.ld+dmb.ldlp OK: Allow
-R+dmb.ldpl+dmb.ld OK: Allow
-R+dmb.ldpl+dmb.ldlp OK: Allow
-MP+dmb.lds OK: Allow
-MP+dmb.ld+dmb.ldap OK: Allow
+R+dmb.lds FAILURE: Unexpected result Forbid
+R+dmb.ld+dmb.ldlp FAILURE: Unexpected result Forbid
+R+dmb.ldpl+dmb.ld FAILURE: Unexpected result Forbid
+R+dmb.ldpl+dmb.ldlp FAILURE: Unexpected result Forbid
+MP+dmb.lds FAILURE: Unexpected result Forbid
+MP+dmb.ld+dmb.ldap FAILURE: Unexpected result Forbid
 MP+dmb.ldpl+dmb.ld OK: Forbid
 MP+dmb.ldpl+dmb.ldap OK: Forbid
-MP+dmb.ld+addr OK: Allow
-MP+dmb.ld+addrap OK: Allow
+MP+dmb.ld+addr FAILURE: Unexpected result Forbid
+MP+dmb.ld+addrap FAILURE: Unexpected result Forbid
 MP+dmb.ldpl+addr OK: Forbid
 MP+dmb.ldpl+addrap OK: Forbid
-2+2W+dmb.lds OK: Allow
-2+2W+dmb.ld+dmb.ldlp OK: Allow
-2+2W+dmb.ld+dmb.ldpl OK: Allow
-2+2W+dmb.ldpl+dmb.ldlp OK: Allow
-S+dmb.lds OK: Allow
-S+dmb.ld+dmb.ldap OK: Allow
+2+2W+dmb.lds FAILURE: Unexpected result Forbid
+2+2W+dmb.ld+dmb.ldlp FAILURE: Unexpected result Forbid
+2+2W+dmb.ld+dmb.ldpl FAILURE: Unexpected result Forbid
+2+2W+dmb.ldpl+dmb.ldlp FAILURE: Unexpected result Forbid
+S+dmb.lds FAILURE: Unexpected result Forbid
+S+dmb.ld+dmb.ldap FAILURE: Unexpected result Forbid
 S+dmb.ldpl+dmb.ld OK: Forbid
 S+dmb.ldpl+dmb.ldap OK: Forbid
-S+dmb.ld+data OK: Allow
-S+dmb.ld+dataap OK: Allow
+S+dmb.ld+data FAILURE: Unexpected result Forbid
+S+dmb.ld+dataap FAILURE: Unexpected result Forbid
 S+dmb.ldpl+data OK: Forbid
 S+dmb.ldpl+dataap OK: Forbid
-R+dmb.ldlp+dmb.ld OK: Allow
-R+dmb.ldlps OK: Allow
-R+dmb.ldll+dmb.ld OK: Allow
-R+dmb.ldll+dmb.ldlp OK: Allow
-MP+dmb.ldlp+dmb.ld OK: Allow
-MP+dmb.ldlp+dmb.ldap OK: Allow
+R+dmb.ldlp+dmb.ld FAILURE: Unexpected result Forbid
+R+dmb.ldlps FAILURE: Unexpected result Forbid
+R+dmb.ldll+dmb.ld FAILURE: Unexpected result Forbid
+R+dmb.ldll+dmb.ldlp FAILURE: Unexpected result Forbid
+MP+dmb.ldlp+dmb.ld FAILURE: Unexpected result Forbid
+MP+dmb.ldlp+dmb.ldap FAILURE: Unexpected result Forbid
 MP+dmb.ldll+dmb.ld OK: Forbid
 MP+dmb.ldll+dmb.ldap OK: Forbid
-MP+dmb.ldlp+addr OK: Allow
-MP+dmb.ldlp+addrap OK: Allow
+MP+dmb.ldlp+addr FAILURE: Unexpected result Forbid
+MP+dmb.ldlp+addrap FAILURE: Unexpected result Forbid
 MP+dmb.ldll+addr OK: Forbid
 MP+dmb.ldll+addrap OK: Forbid
-R+dmb.ld+dmb.ldpa OK: Allow
-R+dmb.ld+dmb.ldla OK: Allow
-R+dmb.ldpl+dmb.ldpa OK: Allow
+R+dmb.ld+dmb.ldpa FAILURE: Unexpected result Forbid
+R+dmb.ld+dmb.ldla FAILURE: Unexpected result Forbid
+R+dmb.ldpl+dmb.ldpa FAILURE: Unexpected result Forbid
 R+dmb.ldpl+dmb.ldla OK: Forbid
-MP+dmb.ld+dmb.ldpa OK: Allow
-MP+dmb.ld+dmb.ldaa OK: Allow
+MP+dmb.ld+dmb.ldpa FAILURE: Unexpected result Forbid
+MP+dmb.ld+dmb.ldaa FAILURE: Unexpected result Forbid
 MP+dmb.ldpl+dmb.ldpa OK: Forbid
 MP+dmb.ldpl+dmb.ldaa OK: Forbid
-R+dmb.ldlp+dmb.ldpa OK: Allow
-R+dmb.ldlp+dmb.ldla OK: Allow
-R+dmb.ldll+dmb.ldpa OK: Allow
+R+dmb.ldlp+dmb.ldpa FAILURE: Unexpected result Forbid
+R+dmb.ldlp+dmb.ldla FAILURE: Unexpected result Forbid
+R+dmb.ldll+dmb.ldpa FAILURE: Unexpected result Forbid
 R+dmb.ldll+dmb.ldla OK: Forbid
-MP+dmb.ldlp+dmb.ldpa OK: Allow
-MP+dmb.ldlp+dmb.ldaa OK: Allow
+MP+dmb.ldlp+dmb.ldpa FAILURE: Unexpected result Forbid
+MP+dmb.ldlp+dmb.ldaa FAILURE: Unexpected result Forbid
 MP+dmb.ldll+dmb.ldpa OK: Forbid
 MP+dmb.ldll+dmb.ldaa OK: Forbid
-2+2W+dmb.ldlps OK: Allow
-2+2W+dmb.ld+dmb.ldll OK: Allow
-2+2W+dmb.ldlp+dmb.ldll OK: Allow
-S+dmb.ldlp+dmb.ld OK: Allow
-S+dmb.ldlp+dmb.ldap OK: Allow
+2+2W+dmb.ldlps FAILURE: Unexpected result Forbid
+2+2W+dmb.ld+dmb.ldll FAILURE: Unexpected result Forbid
+2+2W+dmb.ldlp+dmb.ldll FAILURE: Unexpected result Forbid
+S+dmb.ldlp+dmb.ld FAILURE: Unexpected result Forbid
+S+dmb.ldlp+dmb.ldap FAILURE: Unexpected result Forbid
 S+dmb.ldll+dmb.ld OK: Forbid
 S+dmb.ldll+dmb.ldap OK: Forbid
-S+dmb.ldlp+data OK: Allow
-S+dmb.ldlp+dataap OK: Allow
+S+dmb.ldlp+data FAILURE: Unexpected result Forbid
+S+dmb.ldlp+dataap FAILURE: Unexpected result Forbid
 S+dmb.ldll+data OK: Forbid
 S+dmb.ldll+dataap OK: Forbid
 2+2W+dmb.ldpls OK: Forbid
 2+2W+dmb.ldpl+dmb.ldll OK: Forbid
-S+dmb.ld+dmb.ldpl OK: Allow
-S+dmb.ld+dmb.ldal OK: Allow
+S+dmb.ld+dmb.ldpl FAILURE: Unexpected result Forbid
+S+dmb.ld+dmb.ldal FAILURE: Unexpected result Forbid
 S+dmb.ldpls OK: Forbid
 S+dmb.ldpl+dmb.ldal OK: Forbid
-S+dmb.ld+datapl OK: Allow
-S+dmb.ld+dataal OK: Allow
+S+dmb.ld+datapl FAILURE: Unexpected result Forbid
+S+dmb.ld+dataal FAILURE: Unexpected result Forbid
 S+dmb.ldpl+datapl OK: Forbid
 S+dmb.ldpl+dataal OK: Forbid
 2+2W+dmb.ldlls OK: Forbid
-S+dmb.ldlp+dmb.ldpl OK: Allow
-S+dmb.ldlp+dmb.ldal OK: Allow
+S+dmb.ldlp+dmb.ldpl FAILURE: Unexpected result Forbid
+S+dmb.ldlp+dmb.ldal FAILURE: Unexpected result Forbid
 S+dmb.ldll+dmb.ldpl OK: Forbid
 S+dmb.ldll+dmb.ldal OK: Forbid
-S+dmb.ldlp+datapl OK: Allow
-S+dmb.ldlp+dataal OK: Allow
+S+dmb.ldlp+datapl FAILURE: Unexpected result Forbid
+S+dmb.ldlp+dataal FAILURE: Unexpected result Forbid
 S+dmb.ldll+datapl OK: Forbid
 S+dmb.ldll+dataal OK: Forbid
-SB+dmb.lds OK: Allow
-SB+dmb.ld+dmb.ldlp OK: Allow
-SB+dmb.ld+dmb.ldpa OK: Allow
-SB+dmb.ldpa+dmb.ldlp OK: Allow
-SB+dmb.ldlps OK: Allow
-SB+dmb.ld+dmb.ldla OK: Allow
-SB+dmb.ldlp+dmb.ldla OK: Allow
-SB+dmb.ldpas OK: Allow
-SB+dmb.ldpa+dmb.ldla OK: Allow
+SB+dmb.lds FAILURE: Unexpected result Forbid
+SB+dmb.ld+dmb.ldlp FAILURE: Unexpected result Forbid
+SB+dmb.ld+dmb.ldpa FAILURE: Unexpected result Forbid
+SB+dmb.ldpa+dmb.ldlp FAILURE: Unexpected result Forbid
+SB+dmb.ldlps FAILURE: Unexpected result Forbid
+SB+dmb.ld+dmb.ldla FAILURE: Unexpected result Forbid
+SB+dmb.ldlp+dmb.ldla FAILURE: Unexpected result Forbid
+SB+dmb.ldpas FAILURE: Unexpected result Forbid
+SB+dmb.ldpa+dmb.ldla FAILURE: Unexpected result Forbid
 SB+dmb.ldlas OK: Forbid
 LB+dmb.lds OK: Forbid
 LB+dmb.ld+dmb.ldap OK: Forbid
@@ -1515,813 +1515,813 @@ WRC+data+addr OK: Forbid
 WWC+datas OK: Forbid
 3.LB+datas OK: Forbid
 MP+dmb.sy+ctrlisb OK: Forbid
-MP+dmb.sy+addr-ctrl OK: Allow
+MP+dmb.sy+addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrlisb OK: Forbid
 MP+dmb.sy+addr-pos OK: Forbid
 MP+dmb.sy+addr-rfi OK: Forbid
-MP+dmb.sy+ctrl-addr OK: Allow
+MP+dmb.sy+ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-pos OK: Allow
+MP+dmb.sy+ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi OK: Forbid
 MP+dmb.sy+data-rfi OK: Forbid
 MP+dmb.sy+pos-addr OK: Forbid
-MP+dmb.sy+pos-ctrl OK: Allow
+MP+dmb.sy+pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrlisb OK: Forbid
 MP+dmb.sy+addr-addr-rfi OK: Forbid
-MP+dmb.sy+addr-ctrl-addr OK: Allow
+MP+dmb.sy+addr-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+addr-ctrl-pos OK: Allow
+MP+dmb.sy+addr-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-rfi OK: Forbid
 MP+dmb.sy+addr-data-rfi OK: Forbid
 MP+dmb.sy+addr-fri-rfi OK: Forbid
-MP+dmb.sy+addr-pos-addr OK: Allow
-MP+dmb.sy+addr-pos-ctrl OK: Allow
+MP+dmb.sy+addr-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-pos-ctrlisb OK: Forbid
 MP+dmb.sy+addr-rfi-addr OK: Forbid
-MP+dmb.sy+addr-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-rfi-pos OK: Forbid
-MP+dmb.sy+ctrl-addr-ctrl OK: Allow
+MP+dmb.sy+ctrl-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-addr-pos OK: Allow
+MP+dmb.sy+ctrl-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-rfi OK: Forbid
 MP+dmb.sy+ctrl-ctrl-rfi OK: Forbid
 MP+dmb.sy+ctrl-data-rfi OK: Forbid
 MP+dmb.sy+ctrl-fri-rfi OK: Forbid
-MP+dmb.sy+ctrl-pos-addr OK: Allow
-MP+dmb.sy+ctrl-pos-ctrl OK: Allow
+MP+dmb.sy+ctrl-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-pos-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-rfi-pos OK: Forbid
 MP+dmb.sy+data-rfi-addr OK: Forbid
-MP+dmb.sy+data-rfi-ctrl OK: Allow
+MP+dmb.sy+data-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+data-rfi-pos OK: Forbid
-MP+dmb.sy+fri-rfi-addr OK: Allow
-MP+dmb.sy+fri-rfi-ctrl OK: Allow
-MP+dmb.sy+fri-rfi-ctrlisb OK: Allow
-MP+dmb.sy+pos-addr-ctrl OK: Allow
+MP+dmb.sy+fri-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-ctrlisb OK: Forbid
 MP+dmb.sy+pos-addr-pos OK: Forbid
 MP+dmb.sy+pos-addr-rfi OK: Forbid
-MP+dmb.sy+pos-ctrl-addr OK: Allow
+MP+dmb.sy+pos-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+pos-ctrl-pos OK: Allow
+MP+dmb.sy+pos-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-rfi OK: Forbid
 MP+dmb.sy+pos-data-rfi OK: Forbid
 MP+dmb.sy+addr-addr-rfi-addr OK: Forbid
-MP+dmb.sy+addr-addr-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-addr-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-addr-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-addr-rfi-pos OK: Forbid
-MP+dmb.sy+addr-ctrl-addr-ctrl OK: Allow
+MP+dmb.sy+addr-ctrl-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-addr-ctrlisb OK: Forbid
-MP+dmb.sy+addr-ctrl-addr-pos OK: Allow
+MP+dmb.sy+addr-ctrl-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-addr-rfi OK: Forbid
 MP+dmb.sy+addr-ctrl-ctrl-rfi OK: Forbid
 MP+dmb.sy+addr-ctrl-data-rfi OK: Forbid
 MP+dmb.sy+addr-ctrl-fri-rfi OK: Forbid
-MP+dmb.sy+addr-ctrl-pos-addr OK: Allow
-MP+dmb.sy+addr-ctrl-pos-ctrl OK: Allow
+MP+dmb.sy+addr-ctrl-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-ctrl-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-pos-ctrlisb OK: Forbid
-MP+dmb.sy+addr-ctrl-rfi-addr OK: Allow
-MP+dmb.sy+addr-ctrl-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-ctrl-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-ctrl-rfi-pos OK: Forbid
 MP+dmb.sy+addr-data-rfi-addr OK: Forbid
-MP+dmb.sy+addr-data-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-data-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-data-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-data-rfi-pos OK: Forbid
-MP+dmb.sy+addr-fri-rfi-addr OK: Allow
-MP+dmb.sy+addr-fri-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-fri-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-fri-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-fri-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-fri-rfi-pos OK: Forbid
-MP+dmb.sy+addr-pos-addr-ctrl OK: Allow
+MP+dmb.sy+addr-pos-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-pos-addr-ctrlisb OK: Forbid
-MP+dmb.sy+addr-pos-addr-pos OK: Allow
+MP+dmb.sy+addr-pos-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-pos-addr-rfi OK: Forbid
-MP+dmb.sy+addr-pos-ctrl-addr OK: Allow
+MP+dmb.sy+addr-pos-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-pos-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+addr-pos-ctrl-pos OK: Allow
+MP+dmb.sy+addr-pos-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-pos-ctrl-rfi OK: Forbid
 MP+dmb.sy+addr-pos-data-rfi OK: Forbid
 MP+dmb.sy+addr-pos-fri-rfi OK: Forbid
-MP+dmb.sy+addr-rfi-addr-ctrl OK: Allow
+MP+dmb.sy+addr-rfi-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-addr-ctrlisb OK: Forbid
 MP+dmb.sy+addr-rfi-addr-pos OK: Forbid
 MP+dmb.sy+addr-rfi-addr-rfi OK: Forbid
-MP+dmb.sy+addr-rfi-ctrl-addr OK: Allow
+MP+dmb.sy+addr-rfi-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+addr-rfi-ctrl-pos OK: Allow
+MP+dmb.sy+addr-rfi-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-ctrl-rfi OK: Forbid
 MP+dmb.sy+addr-rfi-data-rfi OK: Forbid
 MP+dmb.sy+addr-rfi-pos-addr OK: Forbid
-MP+dmb.sy+addr-rfi-pos-ctrl OK: Allow
+MP+dmb.sy+addr-rfi-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-pos-ctrlisb OK: Forbid
-MP+dmb.sy+addr-wsi-rfi-addr OK: Allow
-MP+dmb.sy+addr-wsi-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-wsi-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-wsi-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-wsi-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-addr-addr-rfi OK: Forbid
-MP+dmb.sy+ctrl-addr-ctrl-addr OK: Allow
+MP+dmb.sy+ctrl-addr-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-addr-ctrl-pos OK: Allow
+MP+dmb.sy+ctrl-addr-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-ctrl-rfi OK: Forbid
 MP+dmb.sy+ctrl-addr-data-rfi OK: Forbid
 MP+dmb.sy+ctrl-addr-fri-rfi OK: Forbid
-MP+dmb.sy+ctrl-addr-pos-addr OK: Allow
-MP+dmb.sy+ctrl-addr-pos-ctrl OK: Allow
+MP+dmb.sy+ctrl-addr-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-addr-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-pos-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-addr-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-addr-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-addr-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-addr-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-addr-rfi-pos OK: Forbid
-MP+dmb.sy+ctrl-ctrl-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-ctrl-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-ctrl-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-ctrl-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-ctrl-rfi-pos OK: Forbid
-MP+dmb.sy+ctrl-data-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-data-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-data-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-data-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-data-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-data-rfi-pos OK: Forbid
-MP+dmb.sy+ctrl-fri-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-fri-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-fri-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-fri-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-fri-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-fri-rfi-pos OK: Forbid
-MP+dmb.sy+ctrl-pos-addr-ctrl OK: Allow
+MP+dmb.sy+ctrl-pos-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-pos-addr-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-pos-addr-pos OK: Allow
+MP+dmb.sy+ctrl-pos-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-pos-addr-rfi OK: Forbid
-MP+dmb.sy+ctrl-pos-ctrl-addr OK: Allow
+MP+dmb.sy+ctrl-pos-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-pos-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-pos-ctrl-pos OK: Allow
+MP+dmb.sy+ctrl-pos-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-pos-ctrl-rfi OK: Forbid
 MP+dmb.sy+ctrl-pos-data-rfi OK: Forbid
 MP+dmb.sy+ctrl-pos-fri-rfi OK: Forbid
-MP+dmb.sy+ctrl-rfi-addr-ctrl OK: Allow
+MP+dmb.sy+ctrl-rfi-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-addr-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-rfi-addr-pos OK: Allow
+MP+dmb.sy+ctrl-rfi-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-addr-rfi OK: Forbid
-MP+dmb.sy+ctrl-rfi-ctrl-addr OK: Allow
+MP+dmb.sy+ctrl-rfi-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-rfi-ctrl-pos OK: Allow
+MP+dmb.sy+ctrl-rfi-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-ctrl-rfi OK: Forbid
 MP+dmb.sy+ctrl-rfi-data-rfi OK: Forbid
-MP+dmb.sy+ctrl-rfi-pos-addr OK: Allow
-MP+dmb.sy+ctrl-rfi-pos-ctrl OK: Allow
+MP+dmb.sy+ctrl-rfi-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-rfi-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-pos-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-wsi-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-wsi-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-wsi-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-wsi-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-wsi-rfi-ctrlisb OK: Forbid
-MP+dmb.sy+data-rfi-addr-ctrl OK: Allow
+MP+dmb.sy+data-rfi-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-addr-ctrlisb OK: Forbid
 MP+dmb.sy+data-rfi-addr-pos OK: Forbid
 MP+dmb.sy+data-rfi-addr-rfi OK: Forbid
-MP+dmb.sy+data-rfi-ctrl-addr OK: Allow
+MP+dmb.sy+data-rfi-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+data-rfi-ctrl-pos OK: Allow
+MP+dmb.sy+data-rfi-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-ctrl-rfi OK: Forbid
 MP+dmb.sy+data-rfi-data-rfi OK: Forbid
 MP+dmb.sy+data-rfi-pos-addr OK: Forbid
-MP+dmb.sy+data-rfi-pos-ctrl OK: Allow
+MP+dmb.sy+data-rfi-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-pos-ctrlisb OK: Forbid
-MP+dmb.sy+data-wsi-rfi-addr OK: Allow
-MP+dmb.sy+data-wsi-rfi-ctrl OK: Allow
-MP+dmb.sy+data-wsi-rfi-ctrlisb OK: Allow
-MP+dmb.sy+fri-rfi-addr-ctrl OK: Allow
-MP+dmb.sy+fri-rfi-addr-ctrlisb OK: Allow
-MP+dmb.sy+fri-rfi-addr-pos OK: Allow
-MP+dmb.sy+fri-rfi-addr-rfi OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-addr OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-ctrlisb OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-pos OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-rfi OK: Allow
-MP+dmb.sy+fri-rfi-data-rfi OK: Allow
-MP+dmb.sy+fri-rfi-pos-addr OK: Allow
-MP+dmb.sy+fri-rfi-pos-ctrl OK: Allow
-MP+dmb.sy+fri-rfi-pos-ctrlisb OK: Allow
+MP+dmb.sy+data-wsi-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-wsi-rfi-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-wsi-rfi-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-pos FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-pos FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-data-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-pos-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-pos-ctrlisb FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-addr-rfi OK: Forbid
-MP+dmb.sy+pos-addr-ctrl-addr OK: Allow
+MP+dmb.sy+pos-addr-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+pos-addr-ctrl-pos OK: Allow
+MP+dmb.sy+pos-addr-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-ctrl-rfi OK: Forbid
 MP+dmb.sy+pos-addr-data-rfi OK: Forbid
 MP+dmb.sy+pos-addr-fri-rfi OK: Forbid
-MP+dmb.sy+pos-addr-pos-addr OK: Allow
-MP+dmb.sy+pos-addr-pos-ctrl OK: Allow
+MP+dmb.sy+pos-addr-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-addr-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-pos-ctrlisb OK: Forbid
 MP+dmb.sy+pos-addr-rfi-addr OK: Forbid
-MP+dmb.sy+pos-addr-rfi-ctrl OK: Allow
+MP+dmb.sy+pos-addr-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+pos-addr-rfi-pos OK: Forbid
-MP+dmb.sy+pos-ctrl-addr-ctrl OK: Allow
+MP+dmb.sy+pos-ctrl-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-addr-ctrlisb OK: Forbid
-MP+dmb.sy+pos-ctrl-addr-pos OK: Allow
+MP+dmb.sy+pos-ctrl-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-addr-rfi OK: Forbid
 MP+dmb.sy+pos-ctrl-ctrl-rfi OK: Forbid
 MP+dmb.sy+pos-ctrl-data-rfi OK: Forbid
 MP+dmb.sy+pos-ctrl-fri-rfi OK: Forbid
-MP+dmb.sy+pos-ctrl-pos-addr OK: Allow
-MP+dmb.sy+pos-ctrl-pos-ctrl OK: Allow
+MP+dmb.sy+pos-ctrl-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-ctrl-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-pos-ctrlisb OK: Forbid
-MP+dmb.sy+pos-ctrl-rfi-addr OK: Allow
-MP+dmb.sy+pos-ctrl-rfi-ctrl OK: Allow
+MP+dmb.sy+pos-ctrl-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+pos-ctrl-rfi-pos OK: Forbid
 MP+dmb.sy+pos-data-rfi-addr OK: Forbid
-MP+dmb.sy+pos-data-rfi-ctrl OK: Allow
+MP+dmb.sy+pos-data-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-data-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+pos-data-rfi-pos OK: Forbid
-MP+dmb.sy+pos-fri-rfi-addr OK: Allow
-MP+dmb.sy+pos-fri-rfi-ctrl OK: Allow
-MP+dmb.sy+pos-fri-rfi-ctrlisb OK: Allow
-MP+dmb.sy+addr-addr-rfi-addr-ctrl OK: Allow
+MP+dmb.sy+pos-fri-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-fri-rfi-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-fri-rfi-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-addr-rfi-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-addr-rfi-addr-ctrlisb OK: Forbid
 MP+dmb.sy+addr-addr-rfi-addr-pos OK: Forbid
 MP+dmb.sy+addr-addr-rfi-addr-rfi OK: Forbid
-MP+dmb.sy+addr-addr-rfi-ctrl-addr OK: Allow
+MP+dmb.sy+addr-addr-rfi-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-addr-rfi-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+addr-addr-rfi-ctrl-pos OK: Allow
+MP+dmb.sy+addr-addr-rfi-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-addr-rfi-ctrl-rfi OK: Forbid
 MP+dmb.sy+addr-addr-rfi-data-rfi OK: Forbid
 MP+dmb.sy+addr-addr-rfi-pos-addr OK: Forbid
-MP+dmb.sy+addr-addr-rfi-pos-ctrl OK: Allow
+MP+dmb.sy+addr-addr-rfi-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-addr-rfi-pos-ctrlisb OK: Forbid
-MP+dmb.sy+addr-addr-wsi-rfi-addr OK: Allow
-MP+dmb.sy+addr-addr-wsi-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-addr-wsi-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-addr-wsi-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-addr-wsi-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-ctrl-addr-addr-rfi OK: Forbid
-MP+dmb.sy+addr-ctrl-addr-ctrl-addr OK: Allow
+MP+dmb.sy+addr-ctrl-addr-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-addr-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+addr-ctrl-addr-ctrl-pos OK: Allow
+MP+dmb.sy+addr-ctrl-addr-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-addr-ctrl-rfi OK: Forbid
 MP+dmb.sy+addr-ctrl-addr-data-rfi OK: Forbid
 MP+dmb.sy+addr-ctrl-addr-fri-rfi OK: Forbid
-MP+dmb.sy+addr-ctrl-addr-pos-addr OK: Allow
-MP+dmb.sy+addr-ctrl-addr-pos-ctrl OK: Allow
+MP+dmb.sy+addr-ctrl-addr-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-ctrl-addr-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-addr-pos-ctrlisb OK: Forbid
-MP+dmb.sy+addr-ctrl-addr-rfi-addr OK: Allow
-MP+dmb.sy+addr-ctrl-addr-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-ctrl-addr-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-ctrl-addr-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-addr-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-ctrl-addr-rfi-pos OK: Forbid
-MP+dmb.sy+addr-ctrl-ctrl-rfi-addr OK: Allow
-MP+dmb.sy+addr-ctrl-ctrl-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-ctrl-ctrl-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-ctrl-ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-ctrl-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-ctrl-ctrl-rfi-pos OK: Forbid
-MP+dmb.sy+addr-ctrl-data-rfi-addr OK: Allow
-MP+dmb.sy+addr-ctrl-data-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-ctrl-data-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-ctrl-data-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-data-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-ctrl-data-rfi-pos OK: Forbid
-MP+dmb.sy+addr-ctrl-fri-rfi-addr OK: Allow
-MP+dmb.sy+addr-ctrl-fri-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-ctrl-fri-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-ctrl-fri-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-fri-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-ctrl-fri-rfi-pos OK: Forbid
-MP+dmb.sy+addr-ctrl-pos-addr-ctrl OK: Allow
+MP+dmb.sy+addr-ctrl-pos-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-pos-addr-ctrlisb OK: Forbid
-MP+dmb.sy+addr-ctrl-pos-addr-pos OK: Allow
+MP+dmb.sy+addr-ctrl-pos-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-pos-addr-rfi OK: Forbid
-MP+dmb.sy+addr-ctrl-pos-ctrl-addr OK: Allow
+MP+dmb.sy+addr-ctrl-pos-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-pos-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+addr-ctrl-pos-ctrl-pos OK: Allow
+MP+dmb.sy+addr-ctrl-pos-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-pos-ctrl-rfi OK: Forbid
 MP+dmb.sy+addr-ctrl-pos-data-rfi OK: Forbid
 MP+dmb.sy+addr-ctrl-pos-fri-rfi OK: Forbid
-MP+dmb.sy+addr-ctrl-rfi-addr-ctrl OK: Allow
+MP+dmb.sy+addr-ctrl-rfi-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-rfi-addr-ctrlisb OK: Forbid
-MP+dmb.sy+addr-ctrl-rfi-addr-pos OK: Allow
+MP+dmb.sy+addr-ctrl-rfi-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-rfi-addr-rfi OK: Forbid
-MP+dmb.sy+addr-ctrl-rfi-ctrl-addr OK: Allow
+MP+dmb.sy+addr-ctrl-rfi-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-rfi-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+addr-ctrl-rfi-ctrl-pos OK: Allow
+MP+dmb.sy+addr-ctrl-rfi-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-rfi-ctrl-rfi OK: Forbid
 MP+dmb.sy+addr-ctrl-rfi-data-rfi OK: Forbid
-MP+dmb.sy+addr-ctrl-rfi-pos-addr OK: Allow
-MP+dmb.sy+addr-ctrl-rfi-pos-ctrl OK: Allow
+MP+dmb.sy+addr-ctrl-rfi-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-ctrl-rfi-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-rfi-pos-ctrlisb OK: Forbid
-MP+dmb.sy+addr-ctrl-wsi-rfi-addr OK: Allow
-MP+dmb.sy+addr-ctrl-wsi-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-ctrl-wsi-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-ctrl-wsi-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-ctrl-wsi-rfi-ctrlisb OK: Forbid
-MP+dmb.sy+addr-data-rfi-addr-ctrl OK: Allow
+MP+dmb.sy+addr-data-rfi-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-data-rfi-addr-ctrlisb OK: Forbid
 MP+dmb.sy+addr-data-rfi-addr-pos OK: Forbid
 MP+dmb.sy+addr-data-rfi-addr-rfi OK: Forbid
-MP+dmb.sy+addr-data-rfi-ctrl-addr OK: Allow
+MP+dmb.sy+addr-data-rfi-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-data-rfi-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+addr-data-rfi-ctrl-pos OK: Allow
+MP+dmb.sy+addr-data-rfi-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-data-rfi-ctrl-rfi OK: Forbid
 MP+dmb.sy+addr-data-rfi-data-rfi OK: Forbid
 MP+dmb.sy+addr-data-rfi-pos-addr OK: Forbid
-MP+dmb.sy+addr-data-rfi-pos-ctrl OK: Allow
+MP+dmb.sy+addr-data-rfi-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-data-rfi-pos-ctrlisb OK: Forbid
-MP+dmb.sy+addr-data-wsi-rfi-addr OK: Allow
-MP+dmb.sy+addr-data-wsi-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-data-wsi-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-data-wsi-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-data-wsi-rfi-ctrlisb OK: Forbid
-MP+dmb.sy+addr-fri-rfi-addr-ctrl OK: Allow
+MP+dmb.sy+addr-fri-rfi-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-fri-rfi-addr-ctrlisb OK: Forbid
-MP+dmb.sy+addr-fri-rfi-addr-pos OK: Allow
+MP+dmb.sy+addr-fri-rfi-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-fri-rfi-addr-rfi OK: Forbid
-MP+dmb.sy+addr-fri-rfi-ctrl-addr OK: Allow
+MP+dmb.sy+addr-fri-rfi-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-fri-rfi-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+addr-fri-rfi-ctrl-pos OK: Allow
+MP+dmb.sy+addr-fri-rfi-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-fri-rfi-ctrl-rfi OK: Forbid
 MP+dmb.sy+addr-fri-rfi-data-rfi OK: Forbid
-MP+dmb.sy+addr-fri-rfi-pos-addr OK: Allow
-MP+dmb.sy+addr-fri-rfi-pos-ctrl OK: Allow
+MP+dmb.sy+addr-fri-rfi-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-fri-rfi-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-fri-rfi-pos-ctrlisb OK: Forbid
 MP+dmb.sy+addr-pos-addr-addr-rfi OK: Forbid
-MP+dmb.sy+addr-pos-addr-ctrl-addr OK: Allow
+MP+dmb.sy+addr-pos-addr-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-pos-addr-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+addr-pos-addr-ctrl-pos OK: Allow
+MP+dmb.sy+addr-pos-addr-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-pos-addr-ctrl-rfi OK: Forbid
 MP+dmb.sy+addr-pos-addr-data-rfi OK: Forbid
 MP+dmb.sy+addr-pos-addr-fri-rfi OK: Forbid
-MP+dmb.sy+addr-pos-addr-pos-addr OK: Allow
-MP+dmb.sy+addr-pos-addr-pos-ctrl OK: Allow
+MP+dmb.sy+addr-pos-addr-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-pos-addr-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-pos-addr-pos-ctrlisb OK: Forbid
-MP+dmb.sy+addr-pos-addr-rfi-addr OK: Allow
-MP+dmb.sy+addr-pos-addr-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-pos-addr-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-pos-addr-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-pos-addr-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-pos-addr-rfi-pos OK: Forbid
-MP+dmb.sy+addr-pos-ctrl-addr-ctrl OK: Allow
+MP+dmb.sy+addr-pos-ctrl-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-pos-ctrl-addr-ctrlisb OK: Forbid
-MP+dmb.sy+addr-pos-ctrl-addr-pos OK: Allow
+MP+dmb.sy+addr-pos-ctrl-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-pos-ctrl-addr-rfi OK: Forbid
 MP+dmb.sy+addr-pos-ctrl-ctrl-rfi OK: Forbid
 MP+dmb.sy+addr-pos-ctrl-data-rfi OK: Forbid
 MP+dmb.sy+addr-pos-ctrl-fri-rfi OK: Forbid
-MP+dmb.sy+addr-pos-ctrl-pos-addr OK: Allow
-MP+dmb.sy+addr-pos-ctrl-pos-ctrl OK: Allow
+MP+dmb.sy+addr-pos-ctrl-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-pos-ctrl-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-pos-ctrl-pos-ctrlisb OK: Forbid
-MP+dmb.sy+addr-pos-ctrl-rfi-addr OK: Allow
-MP+dmb.sy+addr-pos-ctrl-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-pos-ctrl-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-pos-ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-pos-ctrl-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-pos-ctrl-rfi-pos OK: Forbid
-MP+dmb.sy+addr-pos-data-rfi-addr OK: Allow
-MP+dmb.sy+addr-pos-data-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-pos-data-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-pos-data-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-pos-data-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-pos-data-rfi-pos OK: Forbid
-MP+dmb.sy+addr-pos-fri-rfi-addr OK: Allow
-MP+dmb.sy+addr-pos-fri-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-pos-fri-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-pos-fri-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-pos-fri-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-pos-fri-rfi-pos OK: Forbid
 MP+dmb.sy+addr-rfi-addr-addr-rfi OK: Forbid
-MP+dmb.sy+addr-rfi-addr-ctrl-addr OK: Allow
+MP+dmb.sy+addr-rfi-addr-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-addr-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+addr-rfi-addr-ctrl-pos OK: Allow
+MP+dmb.sy+addr-rfi-addr-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-addr-ctrl-rfi OK: Forbid
 MP+dmb.sy+addr-rfi-addr-data-rfi OK: Forbid
 MP+dmb.sy+addr-rfi-addr-fri-rfi OK: Forbid
-MP+dmb.sy+addr-rfi-addr-pos-addr OK: Allow
-MP+dmb.sy+addr-rfi-addr-pos-ctrl OK: Allow
+MP+dmb.sy+addr-rfi-addr-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-rfi-addr-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-addr-pos-ctrlisb OK: Forbid
 MP+dmb.sy+addr-rfi-addr-rfi-addr OK: Forbid
-MP+dmb.sy+addr-rfi-addr-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-rfi-addr-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-addr-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-rfi-addr-rfi-pos OK: Forbid
-MP+dmb.sy+addr-rfi-ctrl-addr-ctrl OK: Allow
+MP+dmb.sy+addr-rfi-ctrl-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-ctrl-addr-ctrlisb OK: Forbid
-MP+dmb.sy+addr-rfi-ctrl-addr-pos OK: Allow
+MP+dmb.sy+addr-rfi-ctrl-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-ctrl-addr-rfi OK: Forbid
 MP+dmb.sy+addr-rfi-ctrl-ctrl-rfi OK: Forbid
 MP+dmb.sy+addr-rfi-ctrl-data-rfi OK: Forbid
 MP+dmb.sy+addr-rfi-ctrl-fri-rfi OK: Forbid
-MP+dmb.sy+addr-rfi-ctrl-pos-addr OK: Allow
-MP+dmb.sy+addr-rfi-ctrl-pos-ctrl OK: Allow
+MP+dmb.sy+addr-rfi-ctrl-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-rfi-ctrl-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-ctrl-pos-ctrlisb OK: Forbid
-MP+dmb.sy+addr-rfi-ctrl-rfi-addr OK: Allow
-MP+dmb.sy+addr-rfi-ctrl-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-rfi-ctrl-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-rfi-ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-ctrl-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-rfi-ctrl-rfi-pos OK: Forbid
 MP+dmb.sy+addr-rfi-data-rfi-addr OK: Forbid
-MP+dmb.sy+addr-rfi-data-rfi-ctrl OK: Allow
+MP+dmb.sy+addr-rfi-data-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-data-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+addr-rfi-data-rfi-pos OK: Forbid
-MP+dmb.sy+addr-rfi-pos-addr-ctrl OK: Allow
+MP+dmb.sy+addr-rfi-pos-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-pos-addr-ctrlisb OK: Forbid
 MP+dmb.sy+addr-rfi-pos-addr-pos OK: Forbid
 MP+dmb.sy+addr-rfi-pos-addr-rfi OK: Forbid
-MP+dmb.sy+addr-rfi-pos-ctrl-addr OK: Allow
+MP+dmb.sy+addr-rfi-pos-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-pos-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+addr-rfi-pos-ctrl-pos OK: Allow
+MP+dmb.sy+addr-rfi-pos-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-rfi-pos-ctrl-rfi OK: Forbid
 MP+dmb.sy+addr-rfi-pos-data-rfi OK: Forbid
-MP+dmb.sy+addr-wsi-rfi-addr-ctrl OK: Allow
+MP+dmb.sy+addr-wsi-rfi-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-wsi-rfi-addr-ctrlisb OK: Forbid
-MP+dmb.sy+addr-wsi-rfi-addr-pos OK: Allow
+MP+dmb.sy+addr-wsi-rfi-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-wsi-rfi-addr-rfi OK: Forbid
-MP+dmb.sy+addr-wsi-rfi-ctrl-addr OK: Allow
+MP+dmb.sy+addr-wsi-rfi-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-wsi-rfi-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+addr-wsi-rfi-ctrl-pos OK: Allow
+MP+dmb.sy+addr-wsi-rfi-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-wsi-rfi-ctrl-rfi OK: Forbid
 MP+dmb.sy+addr-wsi-rfi-data-rfi OK: Forbid
-MP+dmb.sy+addr-wsi-rfi-pos-addr OK: Allow
-MP+dmb.sy+addr-wsi-rfi-pos-ctrl OK: Allow
+MP+dmb.sy+addr-wsi-rfi-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+addr-wsi-rfi-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-wsi-rfi-pos-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-addr-addr-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-addr-addr-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-addr-addr-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-addr-addr-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-addr-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-addr-addr-rfi-pos OK: Forbid
-MP+dmb.sy+ctrl-addr-ctrl-addr-ctrl OK: Allow
+MP+dmb.sy+ctrl-addr-ctrl-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-ctrl-addr-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-addr-ctrl-addr-pos OK: Allow
+MP+dmb.sy+ctrl-addr-ctrl-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-ctrl-addr-rfi OK: Forbid
 MP+dmb.sy+ctrl-addr-ctrl-ctrl-rfi OK: Forbid
 MP+dmb.sy+ctrl-addr-ctrl-data-rfi OK: Forbid
 MP+dmb.sy+ctrl-addr-ctrl-fri-rfi OK: Forbid
-MP+dmb.sy+ctrl-addr-ctrl-pos-addr OK: Allow
-MP+dmb.sy+ctrl-addr-ctrl-pos-ctrl OK: Allow
+MP+dmb.sy+ctrl-addr-ctrl-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-addr-ctrl-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-ctrl-pos-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-addr-ctrl-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-addr-ctrl-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-addr-ctrl-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-addr-ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-ctrl-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-addr-ctrl-rfi-pos OK: Forbid
-MP+dmb.sy+ctrl-addr-data-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-addr-data-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-addr-data-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-addr-data-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-data-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-addr-data-rfi-pos OK: Forbid
-MP+dmb.sy+ctrl-addr-fri-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-addr-fri-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-addr-fri-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-addr-fri-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-fri-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-addr-fri-rfi-pos OK: Forbid
-MP+dmb.sy+ctrl-addr-pos-addr-ctrl OK: Allow
+MP+dmb.sy+ctrl-addr-pos-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-pos-addr-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-addr-pos-addr-pos OK: Allow
+MP+dmb.sy+ctrl-addr-pos-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-pos-addr-rfi OK: Forbid
-MP+dmb.sy+ctrl-addr-pos-ctrl-addr OK: Allow
+MP+dmb.sy+ctrl-addr-pos-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-pos-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-addr-pos-ctrl-pos OK: Allow
+MP+dmb.sy+ctrl-addr-pos-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-pos-ctrl-rfi OK: Forbid
 MP+dmb.sy+ctrl-addr-pos-data-rfi OK: Forbid
 MP+dmb.sy+ctrl-addr-pos-fri-rfi OK: Forbid
-MP+dmb.sy+ctrl-addr-rfi-addr-ctrl OK: Allow
+MP+dmb.sy+ctrl-addr-rfi-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-rfi-addr-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-addr-rfi-addr-pos OK: Allow
+MP+dmb.sy+ctrl-addr-rfi-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-rfi-addr-rfi OK: Forbid
-MP+dmb.sy+ctrl-addr-rfi-ctrl-addr OK: Allow
+MP+dmb.sy+ctrl-addr-rfi-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-rfi-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-addr-rfi-ctrl-pos OK: Allow
+MP+dmb.sy+ctrl-addr-rfi-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-rfi-ctrl-rfi OK: Forbid
 MP+dmb.sy+ctrl-addr-rfi-data-rfi OK: Forbid
-MP+dmb.sy+ctrl-addr-rfi-pos-addr OK: Allow
-MP+dmb.sy+ctrl-addr-rfi-pos-ctrl OK: Allow
+MP+dmb.sy+ctrl-addr-rfi-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-addr-rfi-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-rfi-pos-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-addr-wsi-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-addr-wsi-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-addr-wsi-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-addr-wsi-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-addr-wsi-rfi-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-ctrl-rfi-addr-ctrl OK: Allow
+MP+dmb.sy+ctrl-ctrl-rfi-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-ctrl-rfi-addr-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-ctrl-rfi-addr-pos OK: Allow
+MP+dmb.sy+ctrl-ctrl-rfi-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-ctrl-rfi-addr-rfi OK: Forbid
-MP+dmb.sy+ctrl-ctrl-rfi-ctrl-addr OK: Allow
+MP+dmb.sy+ctrl-ctrl-rfi-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-ctrl-rfi-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-ctrl-rfi-ctrl-pos OK: Allow
+MP+dmb.sy+ctrl-ctrl-rfi-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-ctrl-rfi-ctrl-rfi OK: Forbid
 MP+dmb.sy+ctrl-ctrl-rfi-data-rfi OK: Forbid
-MP+dmb.sy+ctrl-ctrl-rfi-pos-addr OK: Allow
-MP+dmb.sy+ctrl-ctrl-rfi-pos-ctrl OK: Allow
+MP+dmb.sy+ctrl-ctrl-rfi-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-ctrl-rfi-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-ctrl-rfi-pos-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-ctrl-wsi-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-ctrl-wsi-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-ctrl-wsi-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-ctrl-wsi-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-ctrl-wsi-rfi-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-data-rfi-addr-ctrl OK: Allow
+MP+dmb.sy+ctrl-data-rfi-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-data-rfi-addr-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-data-rfi-addr-pos OK: Allow
+MP+dmb.sy+ctrl-data-rfi-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-data-rfi-addr-rfi OK: Forbid
-MP+dmb.sy+ctrl-data-rfi-ctrl-addr OK: Allow
+MP+dmb.sy+ctrl-data-rfi-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-data-rfi-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-data-rfi-ctrl-pos OK: Allow
+MP+dmb.sy+ctrl-data-rfi-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-data-rfi-ctrl-rfi OK: Forbid
 MP+dmb.sy+ctrl-data-rfi-data-rfi OK: Forbid
-MP+dmb.sy+ctrl-data-rfi-pos-addr OK: Allow
-MP+dmb.sy+ctrl-data-rfi-pos-ctrl OK: Allow
+MP+dmb.sy+ctrl-data-rfi-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-data-rfi-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-data-rfi-pos-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-data-wsi-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-data-wsi-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-data-wsi-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-data-wsi-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-data-wsi-rfi-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-fri-rfi-addr-ctrl OK: Allow
+MP+dmb.sy+ctrl-fri-rfi-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-fri-rfi-addr-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-fri-rfi-addr-pos OK: Allow
+MP+dmb.sy+ctrl-fri-rfi-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-fri-rfi-addr-rfi OK: Forbid
-MP+dmb.sy+ctrl-fri-rfi-ctrl-addr OK: Allow
+MP+dmb.sy+ctrl-fri-rfi-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-fri-rfi-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-fri-rfi-ctrl-pos OK: Allow
+MP+dmb.sy+ctrl-fri-rfi-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-fri-rfi-ctrl-rfi OK: Forbid
 MP+dmb.sy+ctrl-fri-rfi-data-rfi OK: Forbid
-MP+dmb.sy+ctrl-fri-rfi-pos-addr OK: Allow
-MP+dmb.sy+ctrl-fri-rfi-pos-ctrl OK: Allow
+MP+dmb.sy+ctrl-fri-rfi-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-fri-rfi-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-fri-rfi-pos-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-pos-addr-addr-rfi OK: Forbid
-MP+dmb.sy+ctrl-pos-addr-ctrl-addr OK: Allow
+MP+dmb.sy+ctrl-pos-addr-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-pos-addr-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-pos-addr-ctrl-pos OK: Allow
+MP+dmb.sy+ctrl-pos-addr-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-pos-addr-ctrl-rfi OK: Forbid
 MP+dmb.sy+ctrl-pos-addr-data-rfi OK: Forbid
 MP+dmb.sy+ctrl-pos-addr-fri-rfi OK: Forbid
-MP+dmb.sy+ctrl-pos-addr-pos-addr OK: Allow
-MP+dmb.sy+ctrl-pos-addr-pos-ctrl OK: Allow
+MP+dmb.sy+ctrl-pos-addr-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-pos-addr-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-pos-addr-pos-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-pos-addr-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-pos-addr-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-pos-addr-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-pos-addr-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-pos-addr-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-pos-addr-rfi-pos OK: Forbid
-MP+dmb.sy+ctrl-pos-ctrl-addr-ctrl OK: Allow
+MP+dmb.sy+ctrl-pos-ctrl-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-pos-ctrl-addr-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-pos-ctrl-addr-pos OK: Allow
+MP+dmb.sy+ctrl-pos-ctrl-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-pos-ctrl-addr-rfi OK: Forbid
 MP+dmb.sy+ctrl-pos-ctrl-ctrl-rfi OK: Forbid
 MP+dmb.sy+ctrl-pos-ctrl-data-rfi OK: Forbid
 MP+dmb.sy+ctrl-pos-ctrl-fri-rfi OK: Forbid
-MP+dmb.sy+ctrl-pos-ctrl-pos-addr OK: Allow
-MP+dmb.sy+ctrl-pos-ctrl-pos-ctrl OK: Allow
+MP+dmb.sy+ctrl-pos-ctrl-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-pos-ctrl-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-pos-ctrl-pos-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-pos-ctrl-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-pos-ctrl-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-pos-ctrl-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-pos-ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-pos-ctrl-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-pos-ctrl-rfi-pos OK: Forbid
-MP+dmb.sy+ctrl-pos-data-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-pos-data-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-pos-data-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-pos-data-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-pos-data-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-pos-data-rfi-pos OK: Forbid
-MP+dmb.sy+ctrl-pos-fri-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-pos-fri-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-pos-fri-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-pos-fri-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-pos-fri-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-pos-fri-rfi-pos OK: Forbid
 MP+dmb.sy+ctrl-rfi-addr-addr-rfi OK: Forbid
-MP+dmb.sy+ctrl-rfi-addr-ctrl-addr OK: Allow
+MP+dmb.sy+ctrl-rfi-addr-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-addr-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-rfi-addr-ctrl-pos OK: Allow
+MP+dmb.sy+ctrl-rfi-addr-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-addr-ctrl-rfi OK: Forbid
 MP+dmb.sy+ctrl-rfi-addr-data-rfi OK: Forbid
 MP+dmb.sy+ctrl-rfi-addr-fri-rfi OK: Forbid
-MP+dmb.sy+ctrl-rfi-addr-pos-addr OK: Allow
-MP+dmb.sy+ctrl-rfi-addr-pos-ctrl OK: Allow
+MP+dmb.sy+ctrl-rfi-addr-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-rfi-addr-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-addr-pos-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-rfi-addr-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-rfi-addr-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-rfi-addr-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-rfi-addr-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-addr-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-rfi-addr-rfi-pos OK: Forbid
-MP+dmb.sy+ctrl-rfi-ctrl-addr-ctrl OK: Allow
+MP+dmb.sy+ctrl-rfi-ctrl-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-ctrl-addr-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-rfi-ctrl-addr-pos OK: Allow
+MP+dmb.sy+ctrl-rfi-ctrl-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-ctrl-addr-rfi OK: Forbid
 MP+dmb.sy+ctrl-rfi-ctrl-ctrl-rfi OK: Forbid
 MP+dmb.sy+ctrl-rfi-ctrl-data-rfi OK: Forbid
 MP+dmb.sy+ctrl-rfi-ctrl-fri-rfi OK: Forbid
-MP+dmb.sy+ctrl-rfi-ctrl-pos-addr OK: Allow
-MP+dmb.sy+ctrl-rfi-ctrl-pos-ctrl OK: Allow
+MP+dmb.sy+ctrl-rfi-ctrl-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-rfi-ctrl-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-ctrl-pos-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-rfi-ctrl-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-rfi-ctrl-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-rfi-ctrl-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-rfi-ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-ctrl-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-rfi-ctrl-rfi-pos OK: Forbid
-MP+dmb.sy+ctrl-rfi-data-rfi-addr OK: Allow
-MP+dmb.sy+ctrl-rfi-data-rfi-ctrl OK: Allow
+MP+dmb.sy+ctrl-rfi-data-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-rfi-data-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-data-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+ctrl-rfi-data-rfi-pos OK: Forbid
-MP+dmb.sy+ctrl-rfi-pos-addr-ctrl OK: Allow
+MP+dmb.sy+ctrl-rfi-pos-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-pos-addr-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-rfi-pos-addr-pos OK: Allow
+MP+dmb.sy+ctrl-rfi-pos-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-pos-addr-rfi OK: Forbid
-MP+dmb.sy+ctrl-rfi-pos-ctrl-addr OK: Allow
+MP+dmb.sy+ctrl-rfi-pos-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-pos-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-rfi-pos-ctrl-pos OK: Allow
+MP+dmb.sy+ctrl-rfi-pos-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-rfi-pos-ctrl-rfi OK: Forbid
 MP+dmb.sy+ctrl-rfi-pos-data-rfi OK: Forbid
-MP+dmb.sy+ctrl-wsi-rfi-addr-ctrl OK: Allow
+MP+dmb.sy+ctrl-wsi-rfi-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-wsi-rfi-addr-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-wsi-rfi-addr-pos OK: Allow
+MP+dmb.sy+ctrl-wsi-rfi-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-wsi-rfi-addr-rfi OK: Forbid
-MP+dmb.sy+ctrl-wsi-rfi-ctrl-addr OK: Allow
+MP+dmb.sy+ctrl-wsi-rfi-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-wsi-rfi-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+ctrl-wsi-rfi-ctrl-pos OK: Allow
+MP+dmb.sy+ctrl-wsi-rfi-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-wsi-rfi-ctrl-rfi OK: Forbid
 MP+dmb.sy+ctrl-wsi-rfi-data-rfi OK: Forbid
-MP+dmb.sy+ctrl-wsi-rfi-pos-addr OK: Allow
-MP+dmb.sy+ctrl-wsi-rfi-pos-ctrl OK: Allow
+MP+dmb.sy+ctrl-wsi-rfi-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+ctrl-wsi-rfi-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrl-wsi-rfi-pos-ctrlisb OK: Forbid
 MP+dmb.sy+data-rfi-addr-addr-rfi OK: Forbid
-MP+dmb.sy+data-rfi-addr-ctrl-addr OK: Allow
+MP+dmb.sy+data-rfi-addr-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-addr-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+data-rfi-addr-ctrl-pos OK: Allow
+MP+dmb.sy+data-rfi-addr-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-addr-ctrl-rfi OK: Forbid
 MP+dmb.sy+data-rfi-addr-data-rfi OK: Forbid
 MP+dmb.sy+data-rfi-addr-fri-rfi OK: Forbid
-MP+dmb.sy+data-rfi-addr-pos-addr OK: Allow
-MP+dmb.sy+data-rfi-addr-pos-ctrl OK: Allow
+MP+dmb.sy+data-rfi-addr-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-rfi-addr-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-addr-pos-ctrlisb OK: Forbid
 MP+dmb.sy+data-rfi-addr-rfi-addr OK: Forbid
-MP+dmb.sy+data-rfi-addr-rfi-ctrl OK: Allow
+MP+dmb.sy+data-rfi-addr-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-addr-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+data-rfi-addr-rfi-pos OK: Forbid
-MP+dmb.sy+data-rfi-ctrl-addr-ctrl OK: Allow
+MP+dmb.sy+data-rfi-ctrl-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-ctrl-addr-ctrlisb OK: Forbid
-MP+dmb.sy+data-rfi-ctrl-addr-pos OK: Allow
+MP+dmb.sy+data-rfi-ctrl-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-ctrl-addr-rfi OK: Forbid
 MP+dmb.sy+data-rfi-ctrl-ctrl-rfi OK: Forbid
 MP+dmb.sy+data-rfi-ctrl-data-rfi OK: Forbid
 MP+dmb.sy+data-rfi-ctrl-fri-rfi OK: Forbid
-MP+dmb.sy+data-rfi-ctrl-pos-addr OK: Allow
-MP+dmb.sy+data-rfi-ctrl-pos-ctrl OK: Allow
+MP+dmb.sy+data-rfi-ctrl-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-rfi-ctrl-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-ctrl-pos-ctrlisb OK: Forbid
-MP+dmb.sy+data-rfi-ctrl-rfi-addr OK: Allow
-MP+dmb.sy+data-rfi-ctrl-rfi-ctrl OK: Allow
+MP+dmb.sy+data-rfi-ctrl-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-rfi-ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-ctrl-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+data-rfi-ctrl-rfi-pos OK: Forbid
 MP+dmb.sy+data-rfi-data-rfi-addr OK: Forbid
-MP+dmb.sy+data-rfi-data-rfi-ctrl OK: Allow
+MP+dmb.sy+data-rfi-data-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-data-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+data-rfi-data-rfi-pos OK: Forbid
-MP+dmb.sy+data-rfi-pos-addr-ctrl OK: Allow
+MP+dmb.sy+data-rfi-pos-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-pos-addr-ctrlisb OK: Forbid
 MP+dmb.sy+data-rfi-pos-addr-pos OK: Forbid
 MP+dmb.sy+data-rfi-pos-addr-rfi OK: Forbid
-MP+dmb.sy+data-rfi-pos-ctrl-addr OK: Allow
+MP+dmb.sy+data-rfi-pos-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-pos-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+data-rfi-pos-ctrl-pos OK: Allow
+MP+dmb.sy+data-rfi-pos-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+data-rfi-pos-ctrl-rfi OK: Forbid
 MP+dmb.sy+data-rfi-pos-data-rfi OK: Forbid
-MP+dmb.sy+data-wsi-rfi-addr-ctrl OK: Allow
-MP+dmb.sy+data-wsi-rfi-addr-ctrlisb OK: Allow
-MP+dmb.sy+data-wsi-rfi-addr-pos OK: Allow
-MP+dmb.sy+data-wsi-rfi-addr-rfi OK: Allow
-MP+dmb.sy+data-wsi-rfi-ctrl-addr OK: Allow
-MP+dmb.sy+data-wsi-rfi-ctrl-ctrlisb OK: Allow
-MP+dmb.sy+data-wsi-rfi-ctrl-pos OK: Allow
-MP+dmb.sy+data-wsi-rfi-ctrl-rfi OK: Allow
-MP+dmb.sy+data-wsi-rfi-data-rfi OK: Allow
-MP+dmb.sy+data-wsi-rfi-pos-addr OK: Allow
-MP+dmb.sy+data-wsi-rfi-pos-ctrl OK: Allow
-MP+dmb.sy+data-wsi-rfi-pos-ctrlisb OK: Allow
-MP+dmb.sy+fri-rfi-addr-addr-rfi OK: Allow
-MP+dmb.sy+fri-rfi-addr-ctrl-addr OK: Allow
-MP+dmb.sy+fri-rfi-addr-ctrl-ctrlisb OK: Allow
-MP+dmb.sy+fri-rfi-addr-ctrl-pos OK: Allow
-MP+dmb.sy+fri-rfi-addr-ctrl-rfi OK: Allow
-MP+dmb.sy+fri-rfi-addr-data-rfi OK: Allow
-MP+dmb.sy+fri-rfi-addr-fri-rfi OK: Allow
-MP+dmb.sy+fri-rfi-addr-pos-addr OK: Allow
-MP+dmb.sy+fri-rfi-addr-pos-ctrl OK: Allow
-MP+dmb.sy+fri-rfi-addr-pos-ctrlisb OK: Allow
-MP+dmb.sy+fri-rfi-addr-rfi-addr OK: Allow
-MP+dmb.sy+fri-rfi-addr-rfi-ctrl OK: Allow
-MP+dmb.sy+fri-rfi-addr-rfi-ctrlisb OK: Allow
-MP+dmb.sy+fri-rfi-addr-rfi-pos OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-addr-ctrl OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-addr-ctrlisb OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-addr-pos OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-addr-rfi OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-ctrl-rfi OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-data-rfi OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-fri-rfi OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-pos-addr OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-pos-ctrl OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-pos-ctrlisb OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-rfi-addr OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-rfi-ctrl OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-rfi-ctrlisb OK: Allow
-MP+dmb.sy+fri-rfi-ctrl-rfi-pos OK: Allow
-MP+dmb.sy+fri-rfi-data-rfi-addr OK: Allow
-MP+dmb.sy+fri-rfi-data-rfi-ctrl OK: Allow
-MP+dmb.sy+fri-rfi-data-rfi-ctrlisb OK: Allow
-MP+dmb.sy+fri-rfi-data-rfi-pos OK: Allow
-MP+dmb.sy+fri-rfi-pos-addr-ctrl OK: Allow
-MP+dmb.sy+fri-rfi-pos-addr-ctrlisb OK: Allow
-MP+dmb.sy+fri-rfi-pos-addr-pos OK: Allow
-MP+dmb.sy+fri-rfi-pos-addr-rfi OK: Allow
-MP+dmb.sy+fri-rfi-pos-ctrl-addr OK: Allow
-MP+dmb.sy+fri-rfi-pos-ctrl-ctrlisb OK: Allow
-MP+dmb.sy+fri-rfi-pos-ctrl-pos OK: Allow
-MP+dmb.sy+fri-rfi-pos-ctrl-rfi OK: Allow
-MP+dmb.sy+fri-rfi-pos-data-rfi OK: Allow
+MP+dmb.sy+data-wsi-rfi-addr-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-wsi-rfi-addr-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-wsi-rfi-addr-pos FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-wsi-rfi-addr-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-wsi-rfi-ctrl-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-wsi-rfi-ctrl-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-wsi-rfi-ctrl-pos FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-wsi-rfi-ctrl-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-wsi-rfi-data-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-wsi-rfi-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-wsi-rfi-pos-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-wsi-rfi-pos-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-addr-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-ctrl-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-ctrl-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-ctrl-pos FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-ctrl-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-data-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-fri-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-pos-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-pos-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-rfi-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-rfi-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-addr-rfi-pos FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-addr-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-addr-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-addr-pos FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-addr-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-ctrl-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-data-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-fri-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-pos-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-pos-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-rfi-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-ctrl-rfi-pos FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-data-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-data-rfi-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-data-rfi-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-data-rfi-pos FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-pos-addr-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-pos-addr-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-pos-addr-pos FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-pos-addr-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-pos-ctrl-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-pos-ctrl-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-pos-ctrl-pos FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-pos-ctrl-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+fri-rfi-pos-data-rfi FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-addr-rfi-addr OK: Forbid
-MP+dmb.sy+pos-addr-addr-rfi-ctrl OK: Allow
+MP+dmb.sy+pos-addr-addr-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-addr-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+pos-addr-addr-rfi-pos OK: Forbid
-MP+dmb.sy+pos-addr-ctrl-addr-ctrl OK: Allow
+MP+dmb.sy+pos-addr-ctrl-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-ctrl-addr-ctrlisb OK: Forbid
-MP+dmb.sy+pos-addr-ctrl-addr-pos OK: Allow
+MP+dmb.sy+pos-addr-ctrl-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-ctrl-addr-rfi OK: Forbid
 MP+dmb.sy+pos-addr-ctrl-ctrl-rfi OK: Forbid
 MP+dmb.sy+pos-addr-ctrl-data-rfi OK: Forbid
 MP+dmb.sy+pos-addr-ctrl-fri-rfi OK: Forbid
-MP+dmb.sy+pos-addr-ctrl-pos-addr OK: Allow
-MP+dmb.sy+pos-addr-ctrl-pos-ctrl OK: Allow
+MP+dmb.sy+pos-addr-ctrl-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-addr-ctrl-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-ctrl-pos-ctrlisb OK: Forbid
-MP+dmb.sy+pos-addr-ctrl-rfi-addr OK: Allow
-MP+dmb.sy+pos-addr-ctrl-rfi-ctrl OK: Allow
+MP+dmb.sy+pos-addr-ctrl-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-addr-ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-ctrl-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+pos-addr-ctrl-rfi-pos OK: Forbid
 MP+dmb.sy+pos-addr-data-rfi-addr OK: Forbid
-MP+dmb.sy+pos-addr-data-rfi-ctrl OK: Allow
+MP+dmb.sy+pos-addr-data-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-data-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+pos-addr-data-rfi-pos OK: Forbid
-MP+dmb.sy+pos-addr-fri-rfi-addr OK: Allow
-MP+dmb.sy+pos-addr-fri-rfi-ctrl OK: Allow
+MP+dmb.sy+pos-addr-fri-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-addr-fri-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-fri-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+pos-addr-fri-rfi-pos OK: Forbid
-MP+dmb.sy+pos-addr-pos-addr-ctrl OK: Allow
+MP+dmb.sy+pos-addr-pos-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-pos-addr-ctrlisb OK: Forbid
-MP+dmb.sy+pos-addr-pos-addr-pos OK: Allow
+MP+dmb.sy+pos-addr-pos-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-pos-addr-rfi OK: Forbid
-MP+dmb.sy+pos-addr-pos-ctrl-addr OK: Allow
+MP+dmb.sy+pos-addr-pos-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-pos-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+pos-addr-pos-ctrl-pos OK: Allow
+MP+dmb.sy+pos-addr-pos-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-pos-ctrl-rfi OK: Forbid
 MP+dmb.sy+pos-addr-pos-data-rfi OK: Forbid
 MP+dmb.sy+pos-addr-pos-fri-rfi OK: Forbid
-MP+dmb.sy+pos-addr-rfi-addr-ctrl OK: Allow
+MP+dmb.sy+pos-addr-rfi-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-rfi-addr-ctrlisb OK: Forbid
 MP+dmb.sy+pos-addr-rfi-addr-pos OK: Forbid
 MP+dmb.sy+pos-addr-rfi-addr-rfi OK: Forbid
-MP+dmb.sy+pos-addr-rfi-ctrl-addr OK: Allow
+MP+dmb.sy+pos-addr-rfi-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-rfi-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+pos-addr-rfi-ctrl-pos OK: Allow
+MP+dmb.sy+pos-addr-rfi-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-rfi-ctrl-rfi OK: Forbid
 MP+dmb.sy+pos-addr-rfi-data-rfi OK: Forbid
 MP+dmb.sy+pos-addr-rfi-pos-addr OK: Forbid
-MP+dmb.sy+pos-addr-rfi-pos-ctrl OK: Allow
+MP+dmb.sy+pos-addr-rfi-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-rfi-pos-ctrlisb OK: Forbid
-MP+dmb.sy+pos-addr-wsi-rfi-addr OK: Allow
-MP+dmb.sy+pos-addr-wsi-rfi-ctrl OK: Allow
+MP+dmb.sy+pos-addr-wsi-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-addr-wsi-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-addr-wsi-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+pos-ctrl-addr-addr-rfi OK: Forbid
-MP+dmb.sy+pos-ctrl-addr-ctrl-addr OK: Allow
+MP+dmb.sy+pos-ctrl-addr-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-addr-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+pos-ctrl-addr-ctrl-pos OK: Allow
+MP+dmb.sy+pos-ctrl-addr-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-addr-ctrl-rfi OK: Forbid
 MP+dmb.sy+pos-ctrl-addr-data-rfi OK: Forbid
 MP+dmb.sy+pos-ctrl-addr-fri-rfi OK: Forbid
-MP+dmb.sy+pos-ctrl-addr-pos-addr OK: Allow
-MP+dmb.sy+pos-ctrl-addr-pos-ctrl OK: Allow
+MP+dmb.sy+pos-ctrl-addr-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-ctrl-addr-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-addr-pos-ctrlisb OK: Forbid
-MP+dmb.sy+pos-ctrl-addr-rfi-addr OK: Allow
-MP+dmb.sy+pos-ctrl-addr-rfi-ctrl OK: Allow
+MP+dmb.sy+pos-ctrl-addr-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-ctrl-addr-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-addr-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+pos-ctrl-addr-rfi-pos OK: Forbid
-MP+dmb.sy+pos-ctrl-ctrl-rfi-addr OK: Allow
-MP+dmb.sy+pos-ctrl-ctrl-rfi-ctrl OK: Allow
+MP+dmb.sy+pos-ctrl-ctrl-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-ctrl-ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-ctrl-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+pos-ctrl-ctrl-rfi-pos OK: Forbid
-MP+dmb.sy+pos-ctrl-data-rfi-addr OK: Allow
-MP+dmb.sy+pos-ctrl-data-rfi-ctrl OK: Allow
+MP+dmb.sy+pos-ctrl-data-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-ctrl-data-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-data-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+pos-ctrl-data-rfi-pos OK: Forbid
-MP+dmb.sy+pos-ctrl-fri-rfi-addr OK: Allow
-MP+dmb.sy+pos-ctrl-fri-rfi-ctrl OK: Allow
+MP+dmb.sy+pos-ctrl-fri-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-ctrl-fri-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-fri-rfi-ctrlisb OK: Forbid
 MP+dmb.sy+pos-ctrl-fri-rfi-pos OK: Forbid
-MP+dmb.sy+pos-ctrl-pos-addr-ctrl OK: Allow
+MP+dmb.sy+pos-ctrl-pos-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-pos-addr-ctrlisb OK: Forbid
-MP+dmb.sy+pos-ctrl-pos-addr-pos OK: Allow
+MP+dmb.sy+pos-ctrl-pos-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-pos-addr-rfi OK: Forbid
-MP+dmb.sy+pos-ctrl-pos-ctrl-addr OK: Allow
+MP+dmb.sy+pos-ctrl-pos-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-pos-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+pos-ctrl-pos-ctrl-pos OK: Allow
+MP+dmb.sy+pos-ctrl-pos-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-pos-ctrl-rfi OK: Forbid
 MP+dmb.sy+pos-ctrl-pos-data-rfi OK: Forbid
 MP+dmb.sy+pos-ctrl-pos-fri-rfi OK: Forbid
-MP+dmb.sy+pos-ctrl-rfi-addr-ctrl OK: Allow
+MP+dmb.sy+pos-ctrl-rfi-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-rfi-addr-ctrlisb OK: Forbid
-MP+dmb.sy+pos-ctrl-rfi-addr-pos OK: Allow
+MP+dmb.sy+pos-ctrl-rfi-addr-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-rfi-addr-rfi OK: Forbid
-MP+dmb.sy+pos-ctrl-rfi-ctrl-addr OK: Allow
+MP+dmb.sy+pos-ctrl-rfi-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-rfi-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+pos-ctrl-rfi-ctrl-pos OK: Allow
+MP+dmb.sy+pos-ctrl-rfi-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-rfi-ctrl-rfi OK: Forbid
 MP+dmb.sy+pos-ctrl-rfi-data-rfi OK: Forbid
-MP+dmb.sy+pos-ctrl-rfi-pos-addr OK: Allow
-MP+dmb.sy+pos-ctrl-rfi-pos-ctrl OK: Allow
+MP+dmb.sy+pos-ctrl-rfi-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-ctrl-rfi-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-rfi-pos-ctrlisb OK: Forbid
-MP+dmb.sy+pos-ctrl-wsi-rfi-addr OK: Allow
-MP+dmb.sy+pos-ctrl-wsi-rfi-ctrl OK: Allow
+MP+dmb.sy+pos-ctrl-wsi-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-ctrl-wsi-rfi-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-ctrl-wsi-rfi-ctrlisb OK: Forbid
-MP+dmb.sy+pos-data-rfi-addr-ctrl OK: Allow
+MP+dmb.sy+pos-data-rfi-addr-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-data-rfi-addr-ctrlisb OK: Forbid
 MP+dmb.sy+pos-data-rfi-addr-pos OK: Forbid
 MP+dmb.sy+pos-data-rfi-addr-rfi OK: Forbid
-MP+dmb.sy+pos-data-rfi-ctrl-addr OK: Allow
+MP+dmb.sy+pos-data-rfi-ctrl-addr FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-data-rfi-ctrl-ctrlisb OK: Forbid
-MP+dmb.sy+pos-data-rfi-ctrl-pos OK: Allow
+MP+dmb.sy+pos-data-rfi-ctrl-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-data-rfi-ctrl-rfi OK: Forbid
 MP+dmb.sy+pos-data-rfi-data-rfi OK: Forbid
 MP+dmb.sy+pos-data-rfi-pos-addr OK: Forbid
-MP+dmb.sy+pos-data-rfi-pos-ctrl OK: Allow
+MP+dmb.sy+pos-data-rfi-pos-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-data-rfi-pos-ctrlisb OK: Forbid
-MP+dmb.sy+pos-data-wsi-rfi-addr OK: Allow
-MP+dmb.sy+pos-data-wsi-rfi-ctrl OK: Allow
-MP+dmb.sy+pos-data-wsi-rfi-ctrlisb OK: Allow
-MP+dmb.sy+pos-fri-rfi-addr-ctrl OK: Allow
-MP+dmb.sy+pos-fri-rfi-addr-ctrlisb OK: Allow
-MP+dmb.sy+pos-fri-rfi-addr-pos OK: Allow
-MP+dmb.sy+pos-fri-rfi-addr-rfi OK: Allow
-MP+dmb.sy+pos-fri-rfi-ctrl-addr OK: Allow
-MP+dmb.sy+pos-fri-rfi-ctrl-ctrlisb OK: Allow
-MP+dmb.sy+pos-fri-rfi-ctrl-pos OK: Allow
-MP+dmb.sy+pos-fri-rfi-ctrl-rfi OK: Allow
-MP+dmb.sy+pos-fri-rfi-data-rfi OK: Allow
-MP+dmb.sy+pos-fri-rfi-pos-addr OK: Allow
-MP+dmb.sy+pos-fri-rfi-pos-ctrl OK: Allow
-MP+dmb.sy+pos-fri-rfi-pos-ctrlisb OK: Allow
+MP+dmb.sy+pos-data-wsi-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-data-wsi-rfi-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-data-wsi-rfi-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-fri-rfi-addr-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-fri-rfi-addr-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-fri-rfi-addr-pos FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-fri-rfi-addr-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-fri-rfi-ctrl-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-fri-rfi-ctrl-ctrlisb FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-fri-rfi-ctrl-pos FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-fri-rfi-ctrl-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-fri-rfi-data-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-fri-rfi-pos-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-fri-rfi-pos-ctrl FAILURE: Unexpected result Forbid
+MP+dmb.sy+pos-fri-rfi-pos-ctrlisb FAILURE: Unexpected result Forbid
 MP+dmb.sy+[fr-rf]-addr OK: Forbid
 MP+dmb.sy+[fr-rf]-ctrl FAILURE: Unexpected result Forbid
 MP+dmb.sy+[fr-rf]-ctrlisb OK: Forbid
@@ -3534,25 +3534,25 @@ MP+dmb.sy+pos-data-rfi-ctrlisb-[fr-rf] OK: Forbid
 MP+dmb.sy+pos-fri-rfi-addr-[fr-rf] FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-fri-rfi-ctrl-[fr-rf] FAILURE: Unexpected result Forbid
 MP+dmb.sy+pos-fri-rfi-ctrlisb-[fr-rf] FAILURE: Unexpected result Forbid
-MP+dmb.sy+rs OK: Allow
+MP+dmb.sy+rs FAILURE: Unexpected result Forbid
 PPOAA OK: Forbid
-PPOCA OK: Allow
+PPOCA FAILURE: Unexpected result Forbid
 PPODA OK: Forbid
 PPOASWDWI OK: Forbid
 RDW OK: Forbid
-RDWI OK: Allow
+RDWI FAILURE: Unexpected result Forbid
 RSDWI OK: Forbid
-RSW OK: Allow
-S+dmb.sy+pos-fri-rfi-addr-pos-addr OK: Allow
+RSW FAILURE: Unexpected result Forbid
+S+dmb.sy+pos-fri-rfi-addr-pos-addr FAILURE: Unexpected result Forbid
 ARMARM04+TER FAILURE: Unexpected result Forbid
 ARMARM06+AP+AP OK: Forbid
 ARMARM06+AP+AA OK: Forbid
 ARMARM06 OK: Forbid
-MP+dmb.sy+ctrl OK: Allow
+MP+dmb.sy+ctrl FAILURE: Unexpected result Forbid
 CoRR1 OK: Forbid
 CoRW OK: Forbid
 CoWR OK: Forbid
-LB+rs OK: Allow
+LB+rs FAILURE: Unexpected result Forbid
 WRC+dmb.st+addr FAILURE: Unexpected result Forbid
 WRC+dmb.ld+dmb.sy OK: Forbid
 WRC+dmb.ld+addr OK: Forbid
@@ -3573,7 +3573,7 @@ is-dmb.st-B-cumulative3 OK: Forbid
 MP+dmb.sy+data-rfipa-poap OK: Forbid
 MP+dmb.sy+popl-rfila-poap OK: Forbid
 MP+dmb.st+data-rfi-addr OK: Forbid
-MP+dmb.st+popl-rfilp-addr OK: Allow
+MP+dmb.st+popl-rfilp-addr FAILURE: Unexpected result Forbid
 S+dmb.sy+data-wsi+R OK: Forbid
 ARM-bigdetour-failure OK: Forbid
 MP+dmb.sy+data-wsi-[ws-rf]-addr OK: Forbid
@@ -3581,8 +3581,8 @@ Z3-floating OK: Forbid
 ARM-rfn-obs-v2 OK: Forbid
 C11-Z-allow OK: Forbid
 C11-Z-forbid OK: Forbid
-John01 OK: Allow
-John02 OK: Allow
+John01 FAILURE: Unexpected result Forbid
+John02 FAILURE: Unexpected result Forbid
 ARM-super-detour2 OK: Forbid
 LB+dmb.sy+ctrl-rfi-addr OK: Forbid
 JSV FAILURE: Unexpected result Forbid
@@ -4393,10 +4393,10 @@ LB+data-[rf-popl-rf]lp-addrs OK: Forbid
 LB+data-[ws-popl-rf]lp-addrs OK: Forbid
 ISA2+dmb.st+addr+dmb.sy OK: Forbid
 ISA2+dmb.st+addr+addr OK: Forbid
-LB+ctrl+data-rfi-fri-rfi-ctrl OK: Allow
-LB+data+data-rfi-fri-rfi-addr OK: Allow
-MP+dmb.sy+data-rfi-fri-rfi-addr OK: Allow
-MP+dmb.sy+data-rfi-fri-rfi-ctrlisb OK: Allow
+LB+ctrl+data-rfi-fri-rfi-ctrl FAILURE: Unexpected result Forbid
+LB+data+data-rfi-fri-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-rfi-fri-rfi-addr FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-rfi-fri-rfi-ctrlisb FAILURE: Unexpected result Forbid
 WW+RR+WW+RR+wsilp+poaa+wsilp+poaa OK: Forbid
 W+RWC+wsilp+poaa+pola OK: Forbid
 Z6.3+poll+wsilp+poaa OK: Forbid
@@ -4431,13 +4431,13 @@ ISA2+wsilp-rfipa-poap+addr+addr OK: Forbid
 S+dmb.sy+addr-po OK: Forbid
 WRR+2W+dmb.ld-rfipa+dmb.sypl+L OK: Forbid
 MP+poslp-rfipa-poap+addr OK: Forbid
-MP+rfipa-poap+addr OK: Allow
+MP+rfipa-poap+addr FAILURE: Unexpected result Forbid
 POP1 OK: Forbid
-MP+dmb.sy+isb OK: Allow
-SB+rfi-pos OK: Allow
+MP+dmb.sy+isb FAILURE: Unexpected result Forbid
+SB+rfi-pos FAILURE: Unexpected result Forbid
 MP+dmb.sy+ctrlap OK: Forbid
 LB+addrs+WW OK: Forbid
-LB+datas+WW OK: Allow
+LB+datas+WW FAILURE: Unexpected result Forbid
 LB+addrs+RW OK: Forbid
 S+dmb.sy+ctrl OK: Forbid
 LB+addrs OK: Forbid
@@ -4775,77 +4775,77 @@ R+wsi-po-wsipl+pola OK: Forbid
 R+wsi-rfi-ctrlpl+pola OK: Forbid
 R+wsi-rfi-datapl+pola OK: Forbid
 R+wsi-rfi-popl+pola OK: Forbid
-R+dmb.st+rfi-addr-fri-rfi OK: Allow
-R+dmb.st+rfi-ctrl-fri-rfi OK: Allow
-R+dmb.st+rfi-addr-rfi OK: Allow
-R+dmb.st+rfi-pos-addr-rfi OK: Allow
-R+dmb.st+rfi-addr-addr-rfi OK: Allow
-R+dmb.st+rfi-ctrl-addr-rfi OK: Allow
-R+dmb.st+rfi-data-rfi OK: Allow
-R+dmb.st+rfi-pos-data-rfi OK: Allow
-R+dmb.st+rfi-addr-data-rfi OK: Allow
-R+dmb.st+rfi-ctrl-data-rfi OK: Allow
-R+dmb.st+rfi-ctrl-rfi OK: Allow
-R+dmb.st+rfi-pos-ctrl-rfi OK: Allow
-R+dmb.st+rfi-addr-ctrl-rfi OK: Allow
-R+dmb.st+rfi-ctrl-ctrl-rfi OK: Allow
-R+dmb.st+rfi-addr-rfi-pos OK: Allow
-R+dmb.st+rfi-data-rfi-pos OK: Allow
-R+dmb.st+rfi-ctrl-rfi-pos OK: Allow
-R+dmb.st+rfi-addr-pos OK: Allow
-R+dmb.st+rfi-pos-addr-pos OK: Allow
-R+dmb.st+rfi-ctrl-addr-pos OK: Allow
-R+dmb.st+rfi-ctrl-pos OK: Allow
-R+dmb.st+rfi-pos-ctrl-pos OK: Allow
-R+dmb.st+rfi-addr-ctrl-pos OK: Allow
+R+dmb.st+rfi-addr-fri-rfi FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-fri-rfi FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-rfi FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-pos-addr-rfi FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-addr-rfi FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-addr-rfi FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-data-rfi FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-pos-data-rfi FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-data-rfi FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-data-rfi FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-rfi FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-pos-ctrl-rfi FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-ctrl-rfi FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-ctrl-rfi FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-rfi-pos FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-data-rfi-pos FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-rfi-pos FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-pos FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-pos-addr-pos FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-addr-pos FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-pos FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-pos-ctrl-pos FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-ctrl-pos FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-addr-[fr-rf]-pos FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-ctrl-[fr-rf]-pos FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-ctrlisb-[fr-rf]-pos FAILURE: Unexpected result Forbid
-R+dmb.st+rfi-addr OK: Allow
-R+dmb.st+rfi-addr-rfi-addr OK: Allow
-R+dmb.st+rfi-data-rfi-addr OK: Allow
-R+dmb.st+rfi-ctrl-rfi-addr OK: Allow
-R+dmb.st+rfi-pos-addr OK: Allow
-R+dmb.st+rfi-addr-pos-addr OK: Allow
-R+dmb.st+rfi-ctrl-pos-addr OK: Allow
-R+dmb.st+rfi-ctrl-addr OK: Allow
-R+dmb.st+rfi-pos-ctrl-addr OK: Allow
-R+dmb.st+rfi-addr-ctrl-addr OK: Allow
+R+dmb.st+rfi-addr FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-rfi-addr FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-data-rfi-addr FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-rfi-addr FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-pos-addr FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-pos-addr FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-pos-addr FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-addr FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-pos-ctrl-addr FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-ctrl-addr FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-addr-[fr-rf]-addr FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-ctrl-[fr-rf]-addr FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-ctrlisb-[fr-rf]-addr FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-addr-[ws-rf]-addr FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-data-[ws-rf]-addr FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-ctrl-[ws-rf]-addr FAILURE: Unexpected result Forbid
-R+dmb.st+rfi-ctrl OK: Allow
-R+dmb.st+rfi-addr-rfi-ctrl OK: Allow
-R+dmb.st+rfi-data-rfi-ctrl OK: Allow
-R+dmb.st+rfi-ctrl-rfi-ctrl OK: Allow
-R+dmb.st+rfi-pos-ctrl OK: Allow
-R+dmb.st+rfi-addr-pos-ctrl OK: Allow
-R+dmb.st+rfi-ctrl-pos-ctrl OK: Allow
-R+dmb.st+rfi-addr-ctrl OK: Allow
-R+dmb.st+rfi-pos-addr-ctrl OK: Allow
-R+dmb.st+rfi-ctrl-addr-ctrl OK: Allow
+R+dmb.st+rfi-ctrl FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-rfi-ctrl FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-data-rfi-ctrl FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-pos-ctrl FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-pos-ctrl FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-pos-ctrl FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-ctrl FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-pos-addr-ctrl FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-addr-ctrl FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-addr-[fr-rf]-ctrl FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-ctrl-[fr-rf]-ctrl FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-ctrlisb-[fr-rf]-ctrl FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-addr-[ws-rf]-ctrl FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-data-[ws-rf]-ctrl FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-ctrl-[ws-rf]-ctrl FAILURE: Unexpected result Forbid
-R+dmb.st+rfi-ctrlisb OK: Allow
-R+dmb.st+rfi-addr-rfi-ctrlisb OK: Allow
-R+dmb.st+rfi-data-rfi-ctrlisb OK: Allow
-R+dmb.st+rfi-ctrl-rfi-ctrlisb OK: Allow
-R+dmb.st+rfi-pos-ctrlisb OK: Allow
-R+dmb.st+rfi-addr-pos-ctrlisb OK: Allow
-R+dmb.st+rfi-ctrl-pos-ctrlisb OK: Allow
-R+dmb.st+rfi-addr-ctrlisb OK: Allow
-R+dmb.st+rfi-pos-addr-ctrlisb OK: Allow
-R+dmb.st+rfi-ctrl-addr-ctrlisb OK: Allow
-R+dmb.st+rfi-ctrl-ctrlisb OK: Allow
-R+dmb.st+rfi-pos-ctrl-ctrlisb OK: Allow
-R+dmb.st+rfi-addr-ctrl-ctrlisb OK: Allow
+R+dmb.st+rfi-ctrlisb FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-rfi-ctrlisb FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-data-rfi-ctrlisb FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-rfi-ctrlisb FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-pos-ctrlisb FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-pos-ctrlisb FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-pos-ctrlisb FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-ctrlisb FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-pos-addr-ctrlisb FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-addr-ctrlisb FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-ctrl-ctrlisb FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-pos-ctrl-ctrlisb FAILURE: Unexpected result Forbid
+R+dmb.st+rfi-addr-ctrl-ctrlisb FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-addr-[fr-rf]-ctrlisb FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-ctrl-[fr-rf]-ctrlisb FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-ctrlisb-[fr-rf]-ctrlisb FAILURE: Unexpected result Forbid
@@ -4864,185 +4864,185 @@ R+dmb.st+rfi-ctrlisb-[fr-rf] FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-pos-ctrlisb-[fr-rf] FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-addr-ctrlisb-[fr-rf] FAILURE: Unexpected result Forbid
 R+dmb.st+rfi-ctrl-ctrlisb-[fr-rf] FAILURE: Unexpected result Forbid
-R+rfi-addr-pos-fri+dmb.sy OK: Allow
-R+rfi-ctrl-pos-fri+dmb.sy OK: Allow
-R+rfi-addr-fri+dmb.sy OK: Allow
-R+wsi-rfi-addr-fri+dmb.sy OK: Allow
-R+rfi-pos-addr-fri+dmb.sy OK: Allow
-R+rfi-ctrl-addr-fri+dmb.sy OK: Allow
-R+rfi-ctrl-fri+dmb.sy OK: Allow
-R+wsi-rfi-ctrl-fri+dmb.sy OK: Allow
-R+rfi-pos-ctrl-fri+dmb.sy OK: Allow
-R+rfi-addr-ctrl-fri+dmb.sy OK: Allow
-R+rfi-addr+dmb.sy OK: Allow
-R+wsi-rfi-addr+dmb.sy OK: Allow
-R+rfi-addr-rfi-addr+dmb.sy OK: Allow
-R+rfi-data-rfi-addr+dmb.sy OK: Allow
-R+rfi-ctrl-rfi-addr+dmb.sy OK: Allow
-R+rfi-pos-addr+dmb.sy OK: Allow
-R+wsi-rfi-pos-addr+dmb.sy OK: Allow
-R+rfi-addr-pos-addr+dmb.sy OK: Allow
-R+rfi-ctrl-pos-addr+dmb.sy OK: Allow
-R+rfi-addr-addr+dmb.sy OK: Allow
-R+wsi-rfi-addr-addr+dmb.sy OK: Allow
-R+rfi-pos-addr-addr+dmb.sy OK: Allow
-R+rfi-ctrl-addr-addr+dmb.sy OK: Allow
-R+rfi-ctrl-addr+dmb.sy OK: Allow
-R+wsi-rfi-ctrl-addr+dmb.sy OK: Allow
-R+rfi-pos-ctrl-addr+dmb.sy OK: Allow
-R+rfi-addr-ctrl-addr+dmb.sy OK: Allow
-R+rfi-data+dmb.sy OK: Allow
-R+wsi-rfi-data+dmb.sy OK: Allow
-R+rfi-addr-rfi-data+dmb.sy OK: Allow
-R+rfi-data-rfi-data+dmb.sy OK: Allow
-R+rfi-ctrl-rfi-data+dmb.sy OK: Allow
-R+rfi-pos-data+dmb.sy OK: Allow
-R+wsi-rfi-pos-data+dmb.sy OK: Allow
-R+rfi-addr-pos-data+dmb.sy OK: Allow
-R+rfi-ctrl-pos-data+dmb.sy OK: Allow
-R+rfi-addr-data+dmb.sy OK: Allow
-R+wsi-rfi-addr-data+dmb.sy OK: Allow
-R+rfi-pos-addr-data+dmb.sy OK: Allow
-R+rfi-ctrl-addr-data+dmb.sy OK: Allow
-R+rfi-ctrl-data+dmb.sy OK: Allow
-R+wsi-rfi-ctrl-data+dmb.sy OK: Allow
-R+rfi-pos-ctrl-data+dmb.sy OK: Allow
-R+rfi-addr-ctrl-data+dmb.sy OK: Allow
-R+rfi-ctrl+dmb.sy OK: Allow
-R+wsi-rfi-ctrl+dmb.sy OK: Allow
-R+rfi-addr-rfi-ctrl+dmb.sy OK: Allow
-R+rfi-data-rfi-ctrl+dmb.sy OK: Allow
-R+rfi-ctrl-rfi-ctrl+dmb.sy OK: Allow
-R+rfi-pos-ctrl+dmb.sy OK: Allow
-R+wsi-rfi-pos-ctrl+dmb.sy OK: Allow
-R+rfi-addr-pos-ctrl+dmb.sy OK: Allow
-R+rfi-ctrl-pos-ctrl+dmb.sy OK: Allow
-R+rfi-addr-ctrl+dmb.sy OK: Allow
-R+wsi-rfi-addr-ctrl+dmb.sy OK: Allow
-R+rfi-pos-addr-ctrl+dmb.sy OK: Allow
-R+rfi-ctrl-addr-ctrl+dmb.sy OK: Allow
-R+rfi-ctrl-ctrl+dmb.sy OK: Allow
-R+wsi-rfi-ctrl-ctrl+dmb.sy OK: Allow
-R+rfi-pos-ctrl-ctrl+dmb.sy OK: Allow
-R+rfi-addr-ctrl-ctrl+dmb.sy OK: Allow
-2+2W+dmb.sy+rfi-addr-pos-fri OK: Allow
-2+2W+dmb.sy+rfi-ctrl-pos-fri OK: Allow
-2+2W+dmb.sy+rfi-addr-fri OK: Allow
-2+2W+dmb.sy+rfi-pos-addr-fri OK: Allow
-2+2W+dmb.sy+rfi-ctrl-addr-fri OK: Allow
-2+2W+dmb.sy+rfi-ctrl-fri OK: Allow
-2+2W+dmb.sy+rfi-pos-ctrl-fri OK: Allow
-2+2W+dmb.sy+rfi-addr-ctrl-fri OK: Allow
-2+2W+dmb.sy+rfi-addr OK: Allow
-2+2W+dmb.sy+rfi-addr-rfi-addr OK: Allow
-2+2W+dmb.sy+rfi-data-rfi-addr OK: Allow
-2+2W+dmb.sy+rfi-ctrl-rfi-addr OK: Allow
-2+2W+dmb.sy+rfi-pos-addr OK: Allow
-2+2W+dmb.sy+rfi-addr-pos-addr OK: Allow
-2+2W+dmb.sy+rfi-ctrl-pos-addr OK: Allow
-2+2W+dmb.sy+rfi-addr-addr OK: Allow
-2+2W+dmb.sy+rfi-pos-addr-addr OK: Allow
-2+2W+dmb.sy+rfi-ctrl-addr-addr OK: Allow
-2+2W+dmb.sy+rfi-ctrl-addr OK: Allow
-2+2W+dmb.sy+rfi-pos-ctrl-addr OK: Allow
-2+2W+dmb.sy+rfi-addr-ctrl-addr OK: Allow
-2+2W+dmb.sy+rfi-data OK: Allow
-2+2W+dmb.sy+rfi-addr-rfi-data OK: Allow
-2+2W+dmb.sy+rfi-data-rfi-data OK: Allow
-2+2W+dmb.sy+rfi-ctrl-rfi-data OK: Allow
-2+2W+dmb.sy+rfi-pos-data OK: Allow
-2+2W+dmb.sy+rfi-addr-pos-data OK: Allow
-2+2W+dmb.sy+rfi-ctrl-pos-data OK: Allow
-2+2W+dmb.sy+rfi-addr-data OK: Allow
-2+2W+dmb.sy+rfi-pos-addr-data OK: Allow
-2+2W+dmb.sy+rfi-ctrl-addr-data OK: Allow
-2+2W+dmb.sy+rfi-ctrl-data OK: Allow
-2+2W+dmb.sy+rfi-pos-ctrl-data OK: Allow
-2+2W+dmb.sy+rfi-addr-ctrl-data OK: Allow
-2+2W+dmb.sy+rfi-ctrl OK: Allow
-2+2W+dmb.sy+rfi-addr-rfi-ctrl OK: Allow
-2+2W+dmb.sy+rfi-data-rfi-ctrl OK: Allow
-2+2W+dmb.sy+rfi-ctrl-rfi-ctrl OK: Allow
-2+2W+dmb.sy+rfi-pos-ctrl OK: Allow
-2+2W+dmb.sy+rfi-addr-pos-ctrl OK: Allow
-2+2W+dmb.sy+rfi-ctrl-pos-ctrl OK: Allow
-2+2W+dmb.sy+rfi-addr-ctrl OK: Allow
-2+2W+dmb.sy+rfi-pos-addr-ctrl OK: Allow
-2+2W+dmb.sy+rfi-ctrl-addr-ctrl OK: Allow
-2+2W+dmb.sy+rfi-ctrl-ctrl OK: Allow
-2+2W+dmb.sy+rfi-pos-ctrl-ctrl OK: Allow
-2+2W+dmb.sy+rfi-addr-ctrl-ctrl OK: Allow
-SB+dmb.sy+rfi-addr-fri-rfi OK: Allow
-SB+dmb.sy+rfi-ctrl-fri-rfi OK: Allow
-SB+dmb.sy+rfi-addr-rfi OK: Allow
-SB+dmb.sy+wsi-rfi-addr-rfi OK: Allow
-SB+dmb.sy+rfi-pos-addr-rfi OK: Allow
-SB+dmb.sy+rfi-addr-addr-rfi OK: Allow
-SB+dmb.sy+rfi-ctrl-addr-rfi OK: Allow
-SB+dmb.sy+rfi-data-rfi OK: Allow
-SB+dmb.sy+wsi-rfi-data-rfi OK: Allow
-SB+dmb.sy+rfi-pos-data-rfi OK: Allow
-SB+dmb.sy+rfi-addr-data-rfi OK: Allow
-SB+dmb.sy+rfi-ctrl-data-rfi OK: Allow
-SB+dmb.sy+rfi-ctrl-rfi OK: Allow
-SB+dmb.sy+wsi-rfi-ctrl-rfi OK: Allow
-SB+dmb.sy+rfi-pos-ctrl-rfi OK: Allow
-SB+dmb.sy+rfi-addr-ctrl-rfi OK: Allow
-SB+dmb.sy+rfi-ctrl-ctrl-rfi OK: Allow
-SB+dmb.sy+rfi-addr-rfi-pos OK: Allow
-SB+dmb.sy+rfi-data-rfi-pos OK: Allow
-SB+dmb.sy+rfi-ctrl-rfi-pos OK: Allow
-SB+dmb.sy+rfi-addr-pos OK: Allow
-SB+dmb.sy+wsi-rfi-addr-pos OK: Allow
-SB+dmb.sy+rfi-pos-addr-pos OK: Allow
-SB+dmb.sy+rfi-ctrl-addr-pos OK: Allow
-SB+dmb.sy+rfi-ctrl-pos OK: Allow
-SB+dmb.sy+wsi-rfi-ctrl-pos OK: Allow
-SB+dmb.sy+rfi-pos-ctrl-pos OK: Allow
-SB+dmb.sy+rfi-addr-ctrl-pos OK: Allow
-SB+dmb.sy+rfi-addr OK: Allow
-SB+dmb.sy+wsi-rfi-addr OK: Allow
-SB+dmb.sy+rfi-addr-rfi-addr OK: Allow
-SB+dmb.sy+rfi-data-rfi-addr OK: Allow
-SB+dmb.sy+rfi-ctrl-rfi-addr OK: Allow
-SB+dmb.sy+rfi-pos-addr OK: Allow
-SB+dmb.sy+wsi-rfi-pos-addr OK: Allow
-SB+dmb.sy+rfi-addr-pos-addr OK: Allow
-SB+dmb.sy+rfi-ctrl-pos-addr OK: Allow
-SB+dmb.sy+rfi-ctrl-addr OK: Allow
-SB+dmb.sy+wsi-rfi-ctrl-addr OK: Allow
-SB+dmb.sy+rfi-pos-ctrl-addr OK: Allow
-SB+dmb.sy+rfi-addr-ctrl-addr OK: Allow
-SB+dmb.sy+rfi-ctrl OK: Allow
-SB+dmb.sy+wsi-rfi-ctrl OK: Allow
-SB+dmb.sy+rfi-addr-rfi-ctrl OK: Allow
-SB+dmb.sy+rfi-data-rfi-ctrl OK: Allow
-SB+dmb.sy+rfi-ctrl-rfi-ctrl OK: Allow
-SB+dmb.sy+rfi-pos-ctrl OK: Allow
-SB+dmb.sy+wsi-rfi-pos-ctrl OK: Allow
-SB+dmb.sy+rfi-addr-pos-ctrl OK: Allow
-SB+dmb.sy+rfi-ctrl-pos-ctrl OK: Allow
-SB+dmb.sy+rfi-addr-ctrl OK: Allow
-SB+dmb.sy+wsi-rfi-addr-ctrl OK: Allow
-SB+dmb.sy+rfi-pos-addr-ctrl OK: Allow
-SB+dmb.sy+rfi-ctrl-addr-ctrl OK: Allow
-SB+dmb.sy+rfi-ctrlisb OK: Allow
-SB+dmb.sy+wsi-rfi-ctrlisb OK: Allow
-SB+dmb.sy+rfi-addr-rfi-ctrlisb OK: Allow
-SB+dmb.sy+rfi-data-rfi-ctrlisb OK: Allow
-SB+dmb.sy+rfi-ctrl-rfi-ctrlisb OK: Allow
-SB+dmb.sy+rfi-pos-ctrlisb OK: Allow
-SB+dmb.sy+wsi-rfi-pos-ctrlisb OK: Allow
-SB+dmb.sy+rfi-addr-pos-ctrlisb OK: Allow
-SB+dmb.sy+rfi-ctrl-pos-ctrlisb OK: Allow
-SB+dmb.sy+rfi-addr-ctrlisb OK: Allow
-SB+dmb.sy+wsi-rfi-addr-ctrlisb OK: Allow
-SB+dmb.sy+rfi-pos-addr-ctrlisb OK: Allow
-SB+dmb.sy+rfi-ctrl-addr-ctrlisb OK: Allow
-SB+dmb.sy+rfi-ctrl-ctrlisb OK: Allow
-SB+dmb.sy+wsi-rfi-ctrl-ctrlisb OK: Allow
-SB+dmb.sy+rfi-pos-ctrl-ctrlisb OK: Allow
-SB+dmb.sy+rfi-addr-ctrl-ctrlisb OK: Allow
+R+rfi-addr-pos-fri+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-ctrl-pos-fri+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-addr-fri+dmb.sy FAILURE: Unexpected result Forbid
+R+wsi-rfi-addr-fri+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-pos-addr-fri+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-ctrl-addr-fri+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-ctrl-fri+dmb.sy FAILURE: Unexpected result Forbid
+R+wsi-rfi-ctrl-fri+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-pos-ctrl-fri+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-addr-ctrl-fri+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+wsi-rfi-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-addr-rfi-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-data-rfi-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-ctrl-rfi-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-pos-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+wsi-rfi-pos-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-addr-pos-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-ctrl-pos-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-addr-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+wsi-rfi-addr-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-pos-addr-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-ctrl-addr-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-ctrl-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+wsi-rfi-ctrl-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-pos-ctrl-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-addr-ctrl-addr+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-data+dmb.sy FAILURE: Unexpected result Forbid
+R+wsi-rfi-data+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-addr-rfi-data+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-data-rfi-data+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-ctrl-rfi-data+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-pos-data+dmb.sy FAILURE: Unexpected result Forbid
+R+wsi-rfi-pos-data+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-addr-pos-data+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-ctrl-pos-data+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-addr-data+dmb.sy FAILURE: Unexpected result Forbid
+R+wsi-rfi-addr-data+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-pos-addr-data+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-ctrl-addr-data+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-ctrl-data+dmb.sy FAILURE: Unexpected result Forbid
+R+wsi-rfi-ctrl-data+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-pos-ctrl-data+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-addr-ctrl-data+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+R+wsi-rfi-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-addr-rfi-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-data-rfi-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-ctrl-rfi-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-pos-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+R+wsi-rfi-pos-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-addr-pos-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-ctrl-pos-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-addr-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+R+wsi-rfi-addr-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-pos-addr-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-ctrl-addr-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-ctrl-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+R+wsi-rfi-ctrl-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-pos-ctrl-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+R+rfi-addr-ctrl-ctrl+dmb.sy FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-addr-pos-fri FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-ctrl-pos-fri FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-addr-fri FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-pos-addr-fri FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-ctrl-addr-fri FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-ctrl-fri FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-pos-ctrl-fri FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-addr-ctrl-fri FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-addr FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-addr-rfi-addr FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-data-rfi-addr FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-ctrl-rfi-addr FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-pos-addr FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-addr-pos-addr FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-ctrl-pos-addr FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-addr-addr FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-pos-addr-addr FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-ctrl-addr-addr FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-ctrl-addr FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-pos-ctrl-addr FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-addr-ctrl-addr FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-data FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-addr-rfi-data FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-data-rfi-data FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-ctrl-rfi-data FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-pos-data FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-addr-pos-data FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-ctrl-pos-data FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-addr-data FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-pos-addr-data FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-ctrl-addr-data FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-ctrl-data FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-pos-ctrl-data FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-addr-ctrl-data FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-ctrl FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-addr-rfi-ctrl FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-data-rfi-ctrl FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-pos-ctrl FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-addr-pos-ctrl FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-ctrl-pos-ctrl FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-addr-ctrl FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-pos-addr-ctrl FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-ctrl-addr-ctrl FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-ctrl-ctrl FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-pos-ctrl-ctrl FAILURE: Unexpected result Forbid
+2+2W+dmb.sy+rfi-addr-ctrl-ctrl FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-fri-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-fri-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+wsi-rfi-addr-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-pos-addr-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-addr-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-addr-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-data-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+wsi-rfi-data-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-pos-data-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-data-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-data-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+wsi-rfi-ctrl-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-pos-ctrl-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-ctrl-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-ctrl-rfi FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-rfi-pos FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-data-rfi-pos FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-rfi-pos FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-pos FAILURE: Unexpected result Forbid
+SB+dmb.sy+wsi-rfi-addr-pos FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-pos-addr-pos FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-addr-pos FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-pos FAILURE: Unexpected result Forbid
+SB+dmb.sy+wsi-rfi-ctrl-pos FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-pos-ctrl-pos FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-ctrl-pos FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr FAILURE: Unexpected result Forbid
+SB+dmb.sy+wsi-rfi-addr FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-rfi-addr FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-data-rfi-addr FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-rfi-addr FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-pos-addr FAILURE: Unexpected result Forbid
+SB+dmb.sy+wsi-rfi-pos-addr FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-pos-addr FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-pos-addr FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-addr FAILURE: Unexpected result Forbid
+SB+dmb.sy+wsi-rfi-ctrl-addr FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-pos-ctrl-addr FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-ctrl-addr FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl FAILURE: Unexpected result Forbid
+SB+dmb.sy+wsi-rfi-ctrl FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-rfi-ctrl FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-data-rfi-ctrl FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-rfi-ctrl FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-pos-ctrl FAILURE: Unexpected result Forbid
+SB+dmb.sy+wsi-rfi-pos-ctrl FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-pos-ctrl FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-pos-ctrl FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-ctrl FAILURE: Unexpected result Forbid
+SB+dmb.sy+wsi-rfi-addr-ctrl FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-pos-addr-ctrl FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-addr-ctrl FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrlisb FAILURE: Unexpected result Forbid
+SB+dmb.sy+wsi-rfi-ctrlisb FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-rfi-ctrlisb FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-data-rfi-ctrlisb FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-rfi-ctrlisb FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-pos-ctrlisb FAILURE: Unexpected result Forbid
+SB+dmb.sy+wsi-rfi-pos-ctrlisb FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-pos-ctrlisb FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-pos-ctrlisb FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-ctrlisb FAILURE: Unexpected result Forbid
+SB+dmb.sy+wsi-rfi-addr-ctrlisb FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-pos-addr-ctrlisb FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-addr-ctrlisb FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-ctrl-ctrlisb FAILURE: Unexpected result Forbid
+SB+dmb.sy+wsi-rfi-ctrl-ctrlisb FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-pos-ctrl-ctrlisb FAILURE: Unexpected result Forbid
+SB+dmb.sy+rfi-addr-ctrl-ctrlisb FAILURE: Unexpected result Forbid
 LB+data+addr-pos-fri OK: Forbid
 LB+data+ctrl-pos-fri OK: Forbid
 LB+data+addr-fri OK: Forbid
@@ -5063,7 +5063,7 @@ LB+data+pos-ctrl-wsi OK: Forbid
 LB+data+addr-ctrl-wsi OK: Forbid
 LB+data+ctrl-ctrl-wsi OK: Forbid
 LB+addr+data OK: Forbid
-LB+data+fri-rfi-addr OK: Allow
+LB+data+fri-rfi-addr FAILURE: Unexpected result Forbid
 LB+data+addr-rfi-addr OK: Forbid
 LB+data+data-rfi-addr OK: Forbid
 LB+data+ctrl-rfi-addr OK: Forbid
@@ -5076,7 +5076,7 @@ LB+data+ctrl-addr-addr OK: Forbid
 LB+data+ctrl-addr OK: Forbid
 LB+data+pos-ctrl-addr OK: Forbid
 LB+data+addr-ctrl-addr OK: Forbid
-LB+data+fri-rfi-data OK: Allow
+LB+data+fri-rfi-data FAILURE: Unexpected result Forbid
 LB+data+addr-rfi-data OK: Forbid
 LB+data+data-rfi-data OK: Forbid
 LB+data+ctrl-rfi-data OK: Forbid
@@ -5090,7 +5090,7 @@ LB+data+ctrl-data OK: Forbid
 LB+data+pos-ctrl-data OK: Forbid
 LB+data+addr-ctrl-data OK: Forbid
 LB+data+ctrl OK: Forbid
-LB+data+fri-rfi-ctrl OK: Allow
+LB+data+fri-rfi-ctrl FAILURE: Unexpected result Forbid
 LB+data+addr-rfi-ctrl OK: Forbid
 LB+data+data-rfi-ctrl OK: Forbid
 LB+data+ctrl-rfi-ctrl OK: Forbid
@@ -5103,30 +5103,30 @@ LB+data+ctrl-addr-ctrl OK: Forbid
 LB+data+ctrl-ctrl OK: Forbid
 LB+data+pos-ctrl-ctrl OK: Forbid
 LB+data+addr-ctrl-ctrl OK: Forbid
-MP+po+ctrl OK: Allow
-MP+po+ctrlisb OK: Allow
-S+po+addr OK: Allow
-S+po+ctrl OK: Allow
-S+po+ctrlisb OK: Allow
-LB+addr+po OK: Allow
-LB+ctrl+po OK: Allow
-LB+ctrlisb+po OK: Allow
-MP+dmb.ld+ctrl OK: Allow
-MP+dmb.ld+ctrlisb OK: Allow
-S+dmb.ld+addr OK: Allow
-S+dmb.ld+ctrl OK: Allow
-S+dmb.ld+ctrlisb OK: Allow
+MP+po+ctrl FAILURE: Unexpected result Forbid
+MP+po+ctrlisb FAILURE: Unexpected result Forbid
+S+po+addr FAILURE: Unexpected result Forbid
+S+po+ctrl FAILURE: Unexpected result Forbid
+S+po+ctrlisb FAILURE: Unexpected result Forbid
+LB+addr+po FAILURE: Unexpected result Forbid
+LB+ctrl+po FAILURE: Unexpected result Forbid
+LB+ctrlisb+po FAILURE: Unexpected result Forbid
+MP+dmb.ld+ctrl FAILURE: Unexpected result Forbid
+MP+dmb.ld+ctrlisb FAILURE: Unexpected result Forbid
+S+dmb.ld+addr FAILURE: Unexpected result Forbid
+S+dmb.ld+ctrl FAILURE: Unexpected result Forbid
+S+dmb.ld+ctrlisb FAILURE: Unexpected result Forbid
 LB+dmb.ld+addr OK: Forbid
 LB+dmb.ld+ctrl OK: Forbid
 LB+dmb.ld+ctrlisb OK: Forbid
-MP+dmb.st+ctrl OK: Allow
+MP+dmb.st+ctrl FAILURE: Unexpected result Forbid
 MP+dmb.st+ctrlisb OK: Forbid
 S+dmb.st+addr OK: Forbid
 S+dmb.st+ctrl OK: Forbid
 S+dmb.st+ctrlisb OK: Forbid
-LB+dmb.st+addr OK: Allow
-LB+dmb.st+ctrl OK: Allow
-LB+dmb.st+ctrlisb OK: Allow
+LB+dmb.st+addr FAILURE: Unexpected result Forbid
+LB+dmb.st+ctrl FAILURE: Unexpected result Forbid
+LB+dmb.st+ctrlisb FAILURE: Unexpected result Forbid
 S+dmb.sy+addr OK: Forbid
 S+dmb.sy+ctrlisb OK: Forbid
 LB+dmb.sy+addr OK: Forbid
@@ -6483,13 +6483,13 @@ Z6.5+po+dmb.sy+dmb.st FAILURE: Unexpected result Forbid
 Z6.5+po+po+dmb.ld FAILURE: Unexpected result Forbid
 Z6.5+po+po+dmb.st FAILURE: Unexpected result Forbid
 MP+dmb.sy+addr-isb OK: Forbid
-MP+dmb.sy+addr-po OK: Allow
-MP+dmb.sy+data-isb OK: Allow
-MP+dmb.sy+data-po OK: Allow
-MP+dmb.sy+po-isb OK: Allow
-MP+dmb.sy+po-po OK: Allow
-MP+dmb.sy+po-rfi OK: Allow
-MP+dmb.sy+data-isb+REAL OK: Allow
+MP+dmb.sy+addr-po FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-isb FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-po FAILURE: Unexpected result Forbid
+MP+dmb.sy+po-isb FAILURE: Unexpected result Forbid
+MP+dmb.sy+po-po FAILURE: Unexpected result Forbid
+MP+dmb.sy+po-rfi FAILURE: Unexpected result Forbid
+MP+dmb.sy+data-isb+REAL FAILURE: Unexpected result Forbid
 RW-B OK: Forbid
 WW-B OK: Forbid
 coRW1+o+o OK: Forbid
@@ -6498,16 +6498,16 @@ coRR+o-o+o OK: Forbid
 coRW2+o+o OK: Forbid
 coWR+o+o OK: Forbid
 2+2W+fencembonceonce+pooncerelease OK: Forbid
-2+2W+fencembonceonce+poreleaseonce OK: Allow
+2+2W+fencembonceonce+poreleaseonce FAILURE: Unexpected result Forbid
 2+2W+fencembonceonce+poreleaserelease OK: Forbid
-2+2W+poonceonce+pooncerelease OK: Allow
-2+2W+poonceonce+poreleaseonce OK: Allow
-2+2W+poonceonce+poreleaserelease OK: Allow
-2+2W+pooncerelease+poreleaseonce OK: Allow
+2+2W+poonceonce+pooncerelease FAILURE: Unexpected result Forbid
+2+2W+poonceonce+poreleaseonce FAILURE: Unexpected result Forbid
+2+2W+poonceonce+poreleaserelease FAILURE: Unexpected result Forbid
+2+2W+pooncerelease+poreleaseonce FAILURE: Unexpected result Forbid
 2+2W+pooncerelease+poreleaserelease OK: Forbid
 2+2W+pooncereleases OK: Forbid
-2+2W+poreleaseonce+poreleaserelease OK: Allow
-2+2W+poreleaseonces OK: Allow
+2+2W+poreleaseonce+poreleaserelease FAILURE: Unexpected result Forbid
+2+2W+poreleaseonces FAILURE: Unexpected result Forbid
 2+2W+poreleasereleases OK: Forbid
 2+2w+o-mb-o+o-mb-o OK: Forbid
 2+2w+o-mb-o+o-wb-o OK: Forbid
@@ -6525,84 +6525,84 @@ LB+fencembonceonce+pooncerelease OK: Forbid
 LB+mb+data OK: Forbid
 lb+o-mb-o+o-mb-o OK: Forbid
 lb+o-mb-o+o-rmb-o OK: Forbid
-lb+o-o+o-o OK: Allow
+lb+o-o+o-o FAILURE: Unexpected result Forbid
 lb+o-rel+acq-o OK: Forbid
 lb+o-rel+o-rel OK: Forbid
 LB+poacquireonce+poacquirerelease OK: Forbid
-LB+poacquireonce+poonceonce OK: Allow
+LB+poacquireonce+poonceonce FAILURE: Unexpected result Forbid
 LB+poacquireonce+pooncerelease OK: Forbid
 LB+poacquireonces OK: Forbid
-LB+poacquirerelease+poonceonce OK: Allow
+LB+poacquirerelease+poonceonce FAILURE: Unexpected result Forbid
 LB+poacquirerelease+pooncerelease OK: Forbid
 LB+poacquirereleases OK: Forbid
-LB+poonceonce+pooncerelease OK: Allow
+LB+poonceonce+pooncerelease FAILURE: Unexpected result Forbid
 LB+pooncereleases OK: Forbid
 MP+fencembonceonce+poacquireacquire OK: Forbid
 MP+fencembonceonce+poacquireonce OK: Forbid
-MP+fencembonceonce+poonceacquire OK: Allow
+MP+fencembonceonce+poonceacquire FAILURE: Unexpected result Forbid
 mp+o-mb-o+o-mb-o OK: Forbid
 mp+o-mb-o+o-mb-o2 OK: Forbid
 mp+o-mb-o+o-rb-o OK: Forbid
 mp+o-mb-o+o-rb-o2 OK: Forbid
-mp+o-mb-o+o-wmb-o OK: Allow
+mp+o-mb-o+o-wmb-o FAILURE: Unexpected result Forbid
 mp+o-rel+acq-o OK: Forbid
-mp+o-rmb-o+o-mb-o OK: Allow
+mp+o-rmb-o+o-mb-o FAILURE: Unexpected result Forbid
 mp+o-wb-o+o-mb-o OK: Forbid
 mp+o-wb-o+o-mb-o2 OK: Forbid
 mp+o-wb-o+o-rb-o OK: Forbid
 mp+o-wb-o+o-rb-o2 OK: Forbid
 mp+o-wb-o+o-rb+o OK: Forbid
-mp+o-o+o-o OK: Allow
+mp+o-o+o-o FAILURE: Unexpected result Forbid
 MP+po-rel+addr OK: Forbid
-MP+poonceonce+poacquireacquire OK: Allow
-MP+poonceonce+poacquireonce OK: Allow
-MP+poonceonce+poonceacquire OK: Allow
+MP+poonceonce+poacquireacquire FAILURE: Unexpected result Forbid
+MP+poonceonce+poacquireonce FAILURE: Unexpected result Forbid
+MP+poonceonce+poonceacquire FAILURE: Unexpected result Forbid
 MP+pooncerelease+fencembonceonce OK: Forbid
 MP+pooncerelease+poacquireacquire OK: Forbid
 MP+pooncerelease+poacquireonce OK: Forbid
-MP+pooncerelease+poonceacquire OK: Allow
-MP+pooncerelease+poonceonce OK: Allow
-MP+poreleaseonce+fencembonceonce OK: Allow
-MP+poreleaseonce+poacquireacquire OK: Allow
-MP+poreleaseonce+poacquireonce OK: Allow
-MP+poreleaseonce+poonceacquire OK: Allow
-MP+poreleaseonce+poonceonce OK: Allow
+MP+pooncerelease+poonceacquire FAILURE: Unexpected result Forbid
+MP+pooncerelease+poonceonce FAILURE: Unexpected result Forbid
+MP+poreleaseonce+fencembonceonce FAILURE: Unexpected result Forbid
+MP+poreleaseonce+poacquireacquire FAILURE: Unexpected result Forbid
+MP+poreleaseonce+poacquireonce FAILURE: Unexpected result Forbid
+MP+poreleaseonce+poonceacquire FAILURE: Unexpected result Forbid
+MP+poreleaseonce+poonceonce FAILURE: Unexpected result Forbid
 MP+poreleaserelease+fencembonceonce OK: Forbid
 MP+poreleaserelease+poacquireacquire OK: Forbid
 MP+poreleaserelease+poacquireonce OK: Forbid
-MP+poreleaserelease+poonceacquire OK: Allow
-MP+poreleaserelease+poonceonce OK: Allow
+MP+poreleaserelease+poonceacquire FAILURE: Unexpected result Forbid
+MP+poreleaserelease+poonceonce FAILURE: Unexpected result Forbid
 MP+wmb+addr OK: Forbid
 MP+wmb+addr-rb_dep OK: Forbid
-R+fencembonceonce+poonceacquire OK: Allow
+R+fencembonceonce+poonceacquire FAILURE: Unexpected result Forbid
 R+fencembonceonce+poreleaseacquire OK: Forbid
-R+fencembonceonce+poreleaseonce OK: Allow
+R+fencembonceonce+poreleaseonce FAILURE: Unexpected result Forbid
 r+o-mb-o+o-mb-o OK: Forbid
 r+o-mb-o+o-mb-o2 OK: Forbid
-r+o-mb-o+o-rmb-o2 OK: Allow
+r+o-mb-o+o-rmb-o2 FAILURE: Unexpected result Forbid
 r+o-mb-o+o-wb-o OK: Forbid
 r+o-mb-o+o-wb-o2 OK: Forbid
-r+o-o+o-o OK: Allow
-r+o-wmb-o+o-mb-o2 OK: Allow
-r+o-wmb-o+o-rmb-o2 OK: Allow
-R+poonceonce+poonceacquire OK: Allow
-R+poonceonce+poreleaseacquire OK: Allow
-R+poonceonce+poreleaseonce OK: Allow
+r+o-o+o-o FAILURE: Unexpected result Forbid
+r+o-wmb-o+o-mb-o2 FAILURE: Unexpected result Forbid
+r+o-wmb-o+o-rmb-o2 FAILURE: Unexpected result Forbid
+R+poonceonce+poonceacquire FAILURE: Unexpected result Forbid
+R+poonceonce+poreleaseacquire FAILURE: Unexpected result Forbid
+R+poonceonce+poreleaseonce FAILURE: Unexpected result Forbid
 R+pooncerelease+fencembonceonce OK: Forbid
-R+pooncerelease+poonceacquire OK: Allow
-R+pooncerelease+poonceonce OK: Allow
+R+pooncerelease+poonceacquire FAILURE: Unexpected result Forbid
+R+pooncerelease+poonceonce FAILURE: Unexpected result Forbid
 R+pooncerelease+poreleaseacquire OK: Forbid
-R+pooncerelease+poreleaseonce OK: Allow
-R+poreleaseonce+fencembonceonce OK: Allow
-R+poreleaseonce+poonceacquire OK: Allow
-R+poreleaseonce+poonceonce OK: Allow
-R+poreleaseonce+poreleaseacquire OK: Allow
-R+poreleaseonces OK: Allow
+R+pooncerelease+poreleaseonce FAILURE: Unexpected result Forbid
+R+poreleaseonce+fencembonceonce FAILURE: Unexpected result Forbid
+R+poreleaseonce+poonceacquire FAILURE: Unexpected result Forbid
+R+poreleaseonce+poonceonce FAILURE: Unexpected result Forbid
+R+poreleaseonce+poreleaseacquire FAILURE: Unexpected result Forbid
+R+poreleaseonces FAILURE: Unexpected result Forbid
 R+poreleaserelease+fencembonceonce OK: Forbid
-R+poreleaserelease+poonceacquire OK: Allow
-R+poreleaserelease+poonceonce OK: Allow
+R+poreleaserelease+poonceacquire FAILURE: Unexpected result Forbid
+R+poreleaserelease+poonceonce FAILURE: Unexpected result Forbid
 R+poreleaserelease+poreleaseacquire OK: Forbid
-R+poreleaserelease+poreleaseonce OK: Allow
+R+poreleaserelease+poreleaseonce FAILURE: Unexpected result Forbid
 R+wmb+mb OK: Forbid
 S+fencembonceonce+poacquireonce OK: Forbid
 S+fencembonceonce+poacquirerelease OK: Forbid
@@ -6612,44 +6612,44 @@ s+o-mb-o+o-mb-o OK: Forbid
 s+o-mb-o+o-mb-o2 OK: Forbid
 s+o-wb-o+o-mb-o OK: Forbid
 s+o-wb-o+o-mb-o2 OK: Forbid
-S+poonceonce+poacquireonce OK: Allow
-S+poonceonce+poacquirerelease OK: Allow
-S+poonceonce+pooncerelease OK: Allow
+S+poonceonce+poacquireonce FAILURE: Unexpected result Forbid
+S+poonceonce+poacquirerelease FAILURE: Unexpected result Forbid
+S+poonceonce+pooncerelease FAILURE: Unexpected result Forbid
 S+pooncerelease+ctrlonceonce OK: Forbid
 S+pooncerelease+fencembonceonce OK: Forbid
 S+pooncerelease+poacquireonce OK: Forbid
 S+pooncerelease+poacquirerelease OK: Forbid
-S+pooncerelease+poonceonce OK: Allow
+S+pooncerelease+poonceonce FAILURE: Unexpected result Forbid
 S+pooncereleases OK: Forbid
-S+poreleaseonce+ctrlonceonce OK: Allow
-S+poreleaseonce+fencembonceonce OK: Allow
-S+poreleaseonce+poacquireonce OK: Allow
-S+poreleaseonce+poacquirerelease OK: Allow
-S+poreleaseonce+poonceonce OK: Allow
-S+poreleaseonce+pooncerelease OK: Allow
+S+poreleaseonce+ctrlonceonce FAILURE: Unexpected result Forbid
+S+poreleaseonce+fencembonceonce FAILURE: Unexpected result Forbid
+S+poreleaseonce+poacquireonce FAILURE: Unexpected result Forbid
+S+poreleaseonce+poacquirerelease FAILURE: Unexpected result Forbid
+S+poreleaseonce+poonceonce FAILURE: Unexpected result Forbid
+S+poreleaseonce+pooncerelease FAILURE: Unexpected result Forbid
 S+poreleaserelease+ctrlonceonce OK: Forbid
 S+poreleaserelease+fencembonceonce OK: Forbid
 S+poreleaserelease+poacquireonce OK: Forbid
 S+poreleaserelease+poacquirerelease OK: Forbid
-S+poreleaserelease+poonceonce OK: Allow
+S+poreleaserelease+poonceonce FAILURE: Unexpected result Forbid
 S+poreleaserelease+pooncerelease OK: Forbid
 S+wmb+data OK: Forbid
-SB+fencembonceonce+poonceacquire OK: Allow
+SB+fencembonceonce+poonceacquire FAILURE: Unexpected result Forbid
 SB+fencembonceonce+poreleaseacquire OK: Forbid
-SB+fencembonceonce+poreleaseonce OK: Allow
+SB+fencembonceonce+poreleaseonce FAILURE: Unexpected result Forbid
 sb+o-mb-o+o-mb-o OK: Forbid
-sb+o-o+o-o OK: Allow
-SB+poonceacquire+poonceonce OK: Allow
-SB+poonceacquire+poreleaseacquire OK: Allow
-SB+poonceacquire+poreleaseonce OK: Allow
-SB+poonceacquires OK: Allow
-SB+poonceonce+poreleaseacquire OK: Allow
-SB+poonceonce+poreleaseonce OK: Allow
-SB+poreleaseacquire+poreleaseonce OK: Allow
+sb+o-o+o-o FAILURE: Unexpected result Forbid
+SB+poonceacquire+poonceonce FAILURE: Unexpected result Forbid
+SB+poonceacquire+poreleaseacquire FAILURE: Unexpected result Forbid
+SB+poonceacquire+poreleaseonce FAILURE: Unexpected result Forbid
+SB+poonceacquires FAILURE: Unexpected result Forbid
+SB+poonceonce+poreleaseacquire FAILURE: Unexpected result Forbid
+SB+poonceonce+poreleaseonce FAILURE: Unexpected result Forbid
+SB+poreleaseacquire+poreleaseonce FAILURE: Unexpected result Forbid
 SB+poreleaseacquires OK: Forbid
-SB+poreleaseonces OK: Allow
+SB+poreleaseonces FAILURE: Unexpected result Forbid
 sb+rel-acq+rel-acq OK: Forbid
-sb+rel-o+rel-o OK: Allow
+sb+rel-o+rel-o FAILURE: Unexpected result Forbid
 TC16 OK: Forbid
 TC8 OK: Forbid
 LB-LRW+OB-Ov OK: Forbid
@@ -6659,7 +6659,7 @@ mp+fencewmbonceonce+fencermbonceonce OK: Forbid
 s+fencewmbonceonce+fencembonceonce OK: Forbid
 LB+dataonceonce+dataonceonce-wsionceonce OK: Forbid
 LB+dataonceonce+dataoncerelease-wsireleaseonce OK: Forbid
-Luc10 OK: Allow
+Luc10 FAILURE: Unexpected result Forbid
 Luc21 OK: Forbid
 Luc22 OK: Forbid
 mp+o-wb-o+loc-rb-loc OK: Forbid
@@ -6671,7 +6671,7 @@ LB+dataonceonce+dataonceonce-rfionceonce-frionceonce OK: Forbid
 LISA-rfi-acq0 OK: Forbid
 LISA-rfi-acq1 OK: Forbid
 LISA-rfi-acq3 OK: Forbid
-Luc16 OK: Allow
+Luc16 FAILURE: Unexpected result Forbid
 Luc18 OK: Forbid
 MP+fencewmbonceonce+dataonceonce-rfionceacquire-poacquireonce OK: Forbid
 S+fencembonceonce+dataonceonce-rfionceonce-frionceonce OK: Forbid
@@ -6681,7 +6681,7 @@ LISA-release-acquire-int OK: Forbid
 LB+dataonceonce+dataonceonce-rfionceonce-frionceonce-wsionceonce OK: Forbid
 LB+dataonceonce+dataonceonce-wsionceonce-rfionceonce-frionceonce OK: Forbid
 LB+dataonceonce+dataoncerelease-wsireleaseonce-rfionceonce-frionceonce OK: Forbid
-LISA-rfi-acq2 OK: Allow
+LISA-rfi-acq2 FAILURE: Unexpected result Forbid
 S+fencembonceonce+dataonceonce-rfionceonce-frionceonce-wsionceonce OK: Forbid
 S+fencembonceonce+dataonceonce-wsionceonce-rfionceonce-frionceonce OK: Forbid
 S+fencembonceonce+dataoncerelease-wsireleaseonce-rfionceonce-frionceonce OK: Forbid
@@ -8659,4 +8659,4 @@ RW-r+RW-a+RW-B+RW-B+RW-B+RW-B+RW-B+RW-B OK: Forbid
 IRIW+poaps+LL OK: Forbid
 IRIW+poap+poaa+LL OK: Forbid
 IRIW+poaas+LL OK: Forbid
-# Time: 6577.76 s
+# Time: 5704.92 s

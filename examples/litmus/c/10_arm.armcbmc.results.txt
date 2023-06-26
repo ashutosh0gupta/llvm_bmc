@@ -6,7 +6,7 @@
 # Otherwise, they are marked "Allow".
 # 
 # The tests where executed using runall-ARMCBMC.py.
-# Date: 230605-03:08
+# Date: 230625-11:48
 
 R OK: Allow
 R+po+polp OK: Allow
@@ -8659,4 +8659,4 @@ RW-r+RW-a+RW-B+RW-B+RW-B+RW-B+RW-B+RW-B OK: Forbid
 IRIW+poaps+LL OK: Forbid
 IRIW+poap+poaa+LL OK: Forbid
 IRIW+poaas+LL OK: Forbid
-# Time: 14269.10 s
+# Time: 11180.67 s
