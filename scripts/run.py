@@ -21,8 +21,8 @@ l = 1
 
 # folder = "examples/kbound/omkar/bench"
 # folder = "./examples/kbound/popl23-benchmarks/TRACER/ARMCBMC/"
-# folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
-folder = "./examples/kbound/popl23-benchmarks/HMC/ARMCBMC/"
+folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
+# folder = "./examples/kbound/popl23-benchmarks/HMC/ARMCBMC/"
 
 
 # folder = "examples/kbound/pldi19-benchmark"
