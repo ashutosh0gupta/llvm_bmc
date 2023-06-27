@@ -2059,33 +2059,35 @@ identify_array_in_gep(const llvm::GEPOperator* gep ) {
   llvm_bmc_error("bmc", "unseen GEP pattern detected!");
 }
 
-std::pair<const llvm::Value*, uint64_t> identify_lpad_struct(const llvm::Value* op, int index) {
-  auto lpi = llvm::dyn_cast<const llvm::LandingPadInst>(op);
-  auto predecessor = lpi->getParent()->getSinglePredecessor();
-  auto terminator = predecessor->getTerminator();
+std::pair<const llvm::Value*, uint64_t>
+identify_lpad_struct(const llvm::Value* op, int index) {
+  if( auto lpi = llvm::dyn_cast<const llvm::LandingPadInst>(op) ) {
+    auto predecessor = lpi->getParent()->getSinglePredecessor();
+    auto terminator = predecessor->getTerminator();
 
-  if (auto invoke = llvm::dyn_cast<const llvm::InvokeInst>(terminator)) {
-    llvm::Function* fp = invoke->getCalledFunction();
-    if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
-      llvm::Value* arg;
-      if (index == 0) {
-        arg = invoke->getArgOperand(index);
-      } else {
-        arg = invoke->getArgOperand(index);
-        //TODO : add code to convert it into int for future purpose
-      }
+    if (auto invoke = llvm::dyn_cast<const llvm::InvokeInst>(terminator)) {
+      llvm::Function* fp = invoke->getCalledFunction();
+      if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
+        llvm::Value* arg;
+        if (index == 0) {
+          arg = invoke->getArgOperand(index);
+        } else {
+          arg = invoke->getArgOperand(index);
+          //TODO : add code to convert it into int for future purpose
+        }
       
-      uint64_t size = 0;
-      // Check if the argument is an array and determine its size
-    if (auto arrayTy = llvm::dyn_cast<llvm::ArrayType>(op->getType())) {
-      size = arrayTy->getNumElements();
+        uint64_t size = 0;
+        // Check if the argument is an array and determine its size
+        if (auto arrayTy = llvm::dyn_cast<llvm::ArrayType>(op->getType())) {
+          size = arrayTy->getNumElements();
+        }
+        return std::make_pair(arg, size);
       }
-      return std::make_pair(arg, size);
     }
-  }
 
-  llvm_bmc_warning("bmc","failed to recognize lpad structure");
-  op->dump();
+    llvm_bmc_warning("bmc","failed to recognize lpad structure");
+    op->dump();
+  }
   return std::make_pair(nullptr, 0);
 }
 

@@ -225,7 +225,7 @@ reg_ctx_t kbound::get_reg_ctx( const llvm::Value* v) {
 
 void kbound::dump_update_reg_ctx( std::set<const llvm::Value*> ops,
                                    const llvm::Value *out,
-                                   svec& idxs,
+                                  // svec& idxs, //todo: remove Not in use
                                    reg_ctx_t& expr
                                    ) {
   assert( ops.size() > 0 || expr.size() > 0 );
@@ -245,18 +245,20 @@ void kbound::dump_update_reg_ctx( std::set<const llvm::Value*> ops,
   dump_Assign_ctx( co, ctxs);
 }
 
-void kbound::dump_update_reg_ctx( std::set<const llvm::Value*> ops,
-                                   const llvm::Value *out,
-                                   svec& idxs ) {
-  reg_ctx_t empty;
-  dump_update_reg_ctx(ops, out, idxs, empty);
-}
+// void kbound::dump_update_reg_ctx( std::set<const llvm::Value*> ops,
+//                                    const llvm::Value *out,
+//                                    reg_ctx_t expr ) {
+//   svec idxs;
+//   // reg_ctx_t empty;
+//   dump_update_reg_ctx(ops, out, idxs, expr);
+// }
 
 void kbound::dump_update_reg_ctx( std::set<const llvm::Value*> ops,
                                    const llvm::Value *out ) {
   reg_ctx_t empty;
-  svec idxs;
-  dump_update_reg_ctx( ops, out, idxs, empty );
+  // svec idxs;
+  // dump_update_reg_ctx( ops, out, idxs, empty );
+  dump_update_reg_ctx( ops, out, empty );
 }
 
 void kbound::dump_update_reg_ctx( const llvm::Value *op1,
@@ -511,7 +513,7 @@ std::string kbound::get_GEPOperator(const llvm::GEPOperator* gep) {
 }
 
 void kbound::dump_GetElementPtrInst( const llvm::GetElementPtrInst* gep) {
-  bool isLocalUse = false;
+  bool isLocalUse = false; // Dummy value passed
   dump_GetElementPtrInst( gep, isLocalUse );
 }
 
@@ -709,8 +711,9 @@ void kbound::dump_AtomicCmpXchgInst( const llvm::AtomicCmpXchgInst* cxng ) {
   // dump_Assume_geq( cr, cov ); // old value must be ready
   // dump_Assume_geq( cr, cnv ); // new value must be ready
 
+  auto czero= zero_ctx();
   dump_update_reg_ctx( { cxng->getNewValOperand(),
-      cxng->getCompareOperand() }, cxng, zero );
+      cxng->getCompareOperand() }, cxng, czero );
 
   dump_ld( r, cr, caddr, gid, is_acquire(sord), true, isLocalUse,loc);
 
