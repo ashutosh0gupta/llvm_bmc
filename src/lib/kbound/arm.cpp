@@ -21,7 +21,7 @@ void kbound::dump_thread_join_arm( std::string child_tid ) {
 //-------------------------------------------------------------------
 
 void kbound::dump_start_thread_arm() {
-  if(is_sc_semantics) dump_Comment( "Thread semanics = SC");
+  if(is_sc_semantics) dump_Comment( "Thread semantics = SC");
   auto cdy     =     "cdy[" + tid + "]";
   auto cstart  =  "cstart[" + tid + "]";  // if we turn the local variabls
   dump_Assign_rand_ctx( cdy ); //todo : do we need to do this

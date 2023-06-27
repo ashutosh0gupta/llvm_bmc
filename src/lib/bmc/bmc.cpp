@@ -96,8 +96,6 @@ void bmc::run_bmc_pass() {
       }
     }
 
-    for( auto fun_name : o.sc_threads ){
-    }
     collect_globals( module, *this, o.mem_enc, o.solver_ctx, o );
     passMan.add( new kbound(o, module, *this) );
     passMan.run( *module.get() );
