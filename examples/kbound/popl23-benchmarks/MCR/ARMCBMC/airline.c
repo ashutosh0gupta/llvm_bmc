@@ -9,67 +9,60 @@
 /* This benchmark is buggy in the sense that it is missing synchronization */
 
 #include <assert.h>
-#include <pthread.h>
+#include <stdint.h>
 #include <stdatomic.h>
+#include <pthread.h>
 
 #ifndef N
 #  warning "N was not defined"
 #  define N 5
 #endif
 
-#define INIT_MONEY 1000
-#define ONE_DEPOSIT  100
-#define ONE_WITHDRAW 10
-#define N_DEPOSIT N
-#define N_WITHDRAW 1
+#define NumOfExtra  (((N / 10) == 0) ? 1 : (N / 10))
+#define MaximumCapacity (N - NumOfExtra)
 
 // shared variables
-atomic_int amount;
+atomic_int numberOfSeatsSold;
+atomic_int stopSales;
+atomic_int numOfTickets;
 
-void * deposit(void *arg)
+void * salethread(void *arg)
 {
-  int tmp = atomic_load_explicit(&amount, memory_order_relaxed);
-  tmp = tmp + ONE_DEPOSIT;
-  atomic_store_explicit(&amount, tmp, memory_order_relaxed);
-
+  if (!atomic_load_explicit(&stopSales, memory_order_seq_cst)) {
+    int _numberOfSeatsSold = atomic_load_explicit(&numberOfSeatsSold, memory_order_seq_cst);
+    if (_numberOfSeatsSold >= MaximumCapacity) {
+      atomic_store_explicit(&stopSales, 1, memory_order_seq_cst);
+    } else {
+      atomic_store_explicit(&numberOfSeatsSold, _numberOfSeatsSold+1, memory_order_seq_cst);
+    }
+  }
+  
   return NULL;
 }
 
-void * withdraw(void *arg)
+
+int main(int argc, char **argv)
 {
-  int tmp = atomic_load_explicit(&amount, memory_order_relaxed);
-  tmp = tmp - ONE_WITHDRAW;
-  atomic_store_explicit(&amount, tmp, memory_order_relaxed);
-
-  return NULL;
-}
-
-
-
-int main(int argc, char *argv[])
-{
-  pthread_t deposits[N_DEPOSIT], withdraws[N_WITHDRAW];
-
-  atomic_init(&amount, INIT_MONEY);
-
-  for (int i = 0; i < N_DEPOSIT; i++) {
-    pthread_create(&deposits[i], NULL, deposit, NULL);
+  pthread_t salethreads[N];;
+  
+  atomic_init(&numOfTickets, N);
+  atomic_init(&numberOfSeatsSold, 0);
+  atomic_init(&stopSales, 0);
+  
+  for (int i = 0; i < N; i++) {
+    pthread_create(&salethreads[i], 0, salethread, NULL);
   }
-
-  for (int i = 0; i < N_WITHDRAW; i++) {
-    pthread_create(&withdraws[i], NULL, withdraw, NULL);
+  
+  for (int i = 0; i < N; i++) {
+    pthread_join(salethreads[i], 0);
   }
-
-  for (int i = 0; i < N_DEPOSIT; i++) {
-    pthread_join(deposits[i], NULL);
-  }
-
-  for (int i = 0; i < N_WITHDRAW; i++) {
-    pthread_join(withdraws[i], NULL);
-  }
-
-  int _amount = atomic_load_explicit(&amount, memory_order_relaxed);
-  assert(_amount != INIT_MONEY + N_DEPOSIT * ONE_DEPOSIT - N_WITHDRAW * ONE_WITHDRAW);
-
+  
+  int _numberOfSeatsSold = atomic_load_explicit(&numberOfSeatsSold, memory_order_seq_cst);
+  assert(_numberOfSeatsSold <= MaximumCapacity); // not too many tickets sold
+  assert(_numberOfSeatsSold >= MaximumCapacity);	// not too few tickets sold
+  
   return 0;
 }
+
+
+
