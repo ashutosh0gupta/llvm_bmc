@@ -706,6 +706,46 @@ void kbound::dump_thread_join( unsigned bidx, std::string child_tid ) {
   // dump_Assume_geq(  "cdy[" + tid + "]", "creturn[" + child_tid + "]" );
 }
 
+void kbound::dump_lock( std::string gid, reg_ctx_t caddr ) {
+  dump_dmbsy();
+  auto gaccess     = "("+ tid + ","+ gid + ")";
+  auto cr          = "cr"+gaccess;
+  auto cw          = "cw"+gaccess;
+  auto gctx_access = "("+ gid +","+ cr + ")";
+
+  dump_Assign_rand_ctx( cr );
+  dump_Assign( cw, cr );
+
+  dump_Assume_geq( cr, "cdy[" + tid + "]" );
+  dump_Assume( "mem"+ gctx_access + "== 0" );
+  dump_Assign( "mem"+ gctx_access,  "1" );
+
+}
+
+void kbound::dump_unlock( std::string gid, reg_ctx_t caddr ) {
+  dump_dmbsy();
+  auto gaccess     = "("+ tid + ","+ gid + ")";
+  auto cr          = "cr"+gaccess;
+  auto cw          = "cw"+gaccess;
+  auto gctx_access = "("+ gid +","+ cr + ")";
+
+  dump_Assign_rand_ctx( cr );
+  dump_Assign( cw, cr );
+
+  dump_Assume_geq( cr, "cdy[" + tid + "]" );
+  dump_Assume( "mem"+ gctx_access + "== 1" );
+  dump_Assign( "mem"+ gctx_access,  "0" );
+}
+
+void kbound::dump_lock_init( std::string gid, reg_ctx_t caddr ) {
+  auto gaccess     = "("+ tid + ","+ gid + ")";
+  auto cw          = "cw"+gaccess;
+  auto gctx_access = "("+ gid +","+ cw + ")";
+
+  dump_Assign_rand_ctx( cw );
+
+  dump_Assign( "mem"+ gctx_access,  "0" );
+}
 
 void kbound::
 dump_ld( std::string r, reg_ctx_t cval, reg_ctx_t caddr, std::string gid,

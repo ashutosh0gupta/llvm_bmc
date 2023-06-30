@@ -1718,6 +1718,28 @@ bool is_thread_join( const llvm::CallInst* call ) {
   return match_function_names( call, names );
 }
 
+
+bool is_thread_exit( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "pthread_exit" };
+  return match_function_names(  call,  names );
+}
+
+bool is_lock( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "pthread_mutex_lock" };
+  return match_function_names(  call,  names );
+}
+
+bool is_unlock( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "pthread_mutex_unlock" };
+  return match_function_names(  call,  names );
+}
+
+bool is_mutex_init( const llvm::CallInst* call ) {
+  std::vector<std::string> names = { "pthread_mutex_init" };
+  return match_function_names(  call,  names );
+}
+
+
 bool is_error(const llvm::CallInst* call) {
   assert( call );
   std::vector<std::string> names = { "__VERIFIER_error_" };
@@ -1883,7 +1905,11 @@ expr read_const( options& o, const llvm::Value* op ) {
     // return ctx.int_val(0);// todo: match types in z3
   }else if( llvm::isa<llvm::Instruction>(op) ) {
 
-  }else if( llvm::isa<llvm::ConstantExpr>(op) ) {
+  }else if( auto cexpr = llvm::dyn_cast<llvm::ConstantExpr>(op) ) {
+    if( cexpr->getOpcode() == llvm::Instruction::IntToPtr ) {
+      auto c = cexpr->getOperand(0);
+      return read_const( o, c );
+    }
     llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
   }else if( llvm::isa<llvm::ConstantArray>(op) ) {
     // const llvm::ArrayType* n = c->getType();

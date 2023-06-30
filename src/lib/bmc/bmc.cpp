@@ -90,11 +90,6 @@ void bmc::run_bmc_pass() {
 
   if( o.kbound ) {
     collect_threads( module, *this, o );
-    for( auto& thread : sys_spec.threads ) {
-      if( exists( o.sc_threads, thread.entry_function ) ) {
-        thread.wmm = weak_memory_model::SC;
-      }
-    }
 
     collect_globals( module, *this, o.mem_enc, o.solver_ctx, o );
     passMan.add( new kbound(o, module, *this) );

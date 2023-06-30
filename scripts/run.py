@@ -23,6 +23,8 @@ l = 1
 # folder = "./examples/kbound/popl23-benchmarks/TRACER/ARMCBMC/"
 folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
 # folder = "./examples/kbound/popl23-benchmarks/HMC/ARMCBMC/"
+# folder = "./examples/kbound/popl23-benchmarks/DPU/ARMCBMC/"
+
 
 
 # folder = "examples/kbound/pldi19-benchmark"
@@ -49,6 +51,10 @@ folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
 sys.path.append(folder)
 import examples
 exs = examples.exs
+
+# for ex in exs:
+#    print(ex[0])
+# exit()
 
 p = re.compile(r'([A-Z]*SAFE) *([0-9\.]*)user')
 
@@ -163,8 +169,8 @@ def runner(ex):
 if len(exs) > 100:
    subprocess.run(["make",  "cleantmp" ])
 
-# seq = True
-seq = False
+seq = True
+# seq = False
 
 if seq:
    for ex in exs:
