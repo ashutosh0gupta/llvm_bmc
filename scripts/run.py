@@ -20,12 +20,13 @@ l = 1
 # choose a folder to execute
 
 # folder = "examples/kbound/omkar/bench"
+# folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
+# folder = "~/tmp/"
+folder = "examples/kbound/popl23-benchmarks/SV-COMP/ARMCBMC/"
 # folder = "./examples/kbound/popl23-benchmarks/TRACER/ARMCBMC/"
-folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
+# folder = "./examples/kbound/popl23-benchmarks/TRACER/ARMCBMC/"
 # folder = "./examples/kbound/popl23-benchmarks/HMC/ARMCBMC/"
 # folder = "./examples/kbound/popl23-benchmarks/DPU/ARMCBMC/"
-
-
 
 # folder = "examples/kbound/pldi19-benchmark"
 
@@ -47,6 +48,8 @@ folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
 # for line in lines:
 #    sl = line.split(',')
 #    fails.append( sl[1] )
+
+folder = os.path.expanduser(folder)
 
 sys.path.append(folder)
 import examples
@@ -83,7 +86,7 @@ print("Memory model :" + mm)
 # if only_error:
 #    print("Full report only for wrong answers!")
 print("------------------------------")
-print( "Index\tName\t\t\tKind\tN K L Result\tTime" )
+# print( "Index\tName\t\t\tKind\tN K L Result\tTime" )
 err_cnt = 0
 total_time = 0.0
 def runner(ex):
