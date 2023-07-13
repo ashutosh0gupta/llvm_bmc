@@ -8,6 +8,9 @@
 #include <pthread.h>
 #include <stdatomic.h>
 
+# define LOOP_BOUND 3 // This bound is needed due to the nature of our
+                      // encoding, which needs terminating program
+
 // shared variables
 long flag1; // A workaround
 long flag2; // A workaround
@@ -16,7 +19,8 @@ long x;     // A workaround
 
 void *p1(void *arg)
 {
-  	while (1)
+  for(unsigned i = 0; i < LOOP_BOUND; i++)
+  	/* while (1) */
   	{
     	atomic_store_explicit(&flag1, 1, memory_order_relaxed);   
     	while (1)
@@ -48,7 +52,8 @@ void *p1(void *arg)
 
 void *p2(void *arg)
 {  
-  	while (1)
+  for(unsigned i = 0; i < LOOP_BOUND; i++)
+  	/* while (1) */
   	{
     	atomic_store_explicit(&flag2, 1, memory_order_relaxed);   
     	while (1)

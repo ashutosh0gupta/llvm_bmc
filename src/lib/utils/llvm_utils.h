@@ -80,6 +80,10 @@ bool is_nondet( const llvm::CallInst* );
 bool is_error ( const llvm::CallInst* );
 bool is_thread_create( const llvm::CallInst* );
 bool is_thread_join( const llvm::CallInst* );
+bool is_thread_exit( const llvm::CallInst* );
+bool is_lock( const llvm::CallInst* );
+bool is_unlock( const llvm::CallInst* );
+bool is_mutex_init( const llvm::CallInst* );
 
  bool ignore_special_functions( const llvm::CallInst* fp );
 

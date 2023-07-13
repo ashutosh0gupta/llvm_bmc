@@ -20,10 +20,13 @@ l = 1
 # choose a folder to execute
 
 # folder = "examples/kbound/omkar/bench"
+# folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
+# folder = "~/tmp/"
+folder = "examples/kbound/popl23-benchmarks/SV-COMP/ARMCBMC/"
 # folder = "./examples/kbound/popl23-benchmarks/TRACER/ARMCBMC/"
-folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
+# folder = "./examples/kbound/popl23-benchmarks/TRACER/ARMCBMC/"
 # folder = "./examples/kbound/popl23-benchmarks/HMC/ARMCBMC/"
-
+# folder = "./examples/kbound/popl23-benchmarks/DPU/ARMCBMC/"
 
 # folder = "examples/kbound/pldi19-benchmark"
 
@@ -46,9 +49,15 @@ folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
 #    sl = line.split(',')
 #    fails.append( sl[1] )
 
+folder = os.path.expanduser(folder)
+
 sys.path.append(folder)
 import examples
 exs = examples.exs
+
+# for ex in exs:
+#    print(ex[0])
+# exit()
 
 p = re.compile(r'([A-Z]*SAFE) *([0-9\.]*)user')
 
@@ -77,7 +86,7 @@ print("Memory model :" + mm)
 # if only_error:
 #    print("Full report only for wrong answers!")
 print("------------------------------")
-print( "Index\tName\t\t\tKind\tN K L Result\tTime" )
+# print( "Index\tName\t\t\tKind\tN K L Result\tTime" )
 err_cnt = 0
 total_time = 0.0
 def runner(ex):
@@ -163,8 +172,8 @@ def runner(ex):
 if len(exs) > 100:
    subprocess.run(["make",  "cleantmp" ])
 
-# seq = True
-seq = False
+seq = True
+# seq = False
 
 if seq:
    for ex in exs:

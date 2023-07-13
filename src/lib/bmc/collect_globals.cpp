@@ -61,10 +61,14 @@ collect_globals_internal( std::unique_ptr<llvm::Module>& m, bmc &b ) {
               auto glb = identify_global_in_addr( addr );
               if( glb && !exists( list_gvars, glb )) list_gvars.push_back(glb);
               if(glb) passed.insert( glb );
-            // }
-            // for( unsigned i = 0; i < call->getNumOperands(); i++) {
               addr = call->getOperand(0);
               glb = identify_global_in_addr( addr );
+              if( glb && !exists( list_gvars, glb )) list_gvars.push_back(glb);
+              if(glb) written.insert( glb );
+            }
+            if( is_lock(call) || is_unlock(call) || is_mutex_init(call) ) {
+              addr = call->getOperand(0);
+              auto glb = identify_global_in_addr( addr );
               if( glb && !exists( list_gvars, glb )) list_gvars.push_back(glb);
               if(glb) written.insert( glb );
             }

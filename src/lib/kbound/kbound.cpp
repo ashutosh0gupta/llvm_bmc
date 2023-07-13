@@ -613,8 +613,9 @@ void kbound::addr_name( const llvm::Value* addr,
     // addr->dump();
     // assert(false);
   } else if( llvm::isa<llvm::Constant>(addr) ) {
-    addr->dump();
-    llvm_bmc_error("kbound", "constant access to the memory!");
+    gid = read_const_str( o, addr );
+    caddr = zero_ctx();
+    return;
   }
 
   gid = add_reg_map( addr );
@@ -850,6 +851,10 @@ void kbound::dump_CallInst( unsigned bidx, const llvm::CallInst* call ) {
   } else if( is_lda   (call) ) { dump_LD_(bidx, call, true,  false);
   } else if( is_ldx   (call) ) { dump_LD_(bidx, call, false, true );
   } else if( is_ldax  (call) ) { dump_LD_(bidx, call, true,  true );
+  } else if( is_lock  (call) )   { dump_CallLock  ( bidx, call );
+  } else if( is_unlock  (call) ) { dump_CallUnlock  ( bidx, call );
+  } else if( is_mutex_init  (call) )  { dump_CallMutexInit  ( bidx, call );
+  } else if( is_thread_exit  (call) ) { dump_CallThreadExit  ( bidx, call );
   } else if( is_thread_create(call) ) { dump_CallThreadCreate( bidx, call );
   } else if( is_thread_join  (call) ) { dump_CallThreadJoin  ( bidx, call );
   } else if( is_begin_transaction(call) ) { dump_begin_transaction();
@@ -858,6 +863,38 @@ void kbound::dump_CallInst( unsigned bidx, const llvm::CallInst* call ) {
     LLVM_DUMP(call);
     llvm_bmc_error("kbound", "function call is not recognized !!");
   }
+}
+
+void kbound::dump_CallMutexInit( unsigned bidx, const llvm::CallInst* call ) {
+
+  std::string gid;
+  reg_ctx_t caddr;
+  bool isLocalUse = false;
+  addr_name( call->getOperand(0), gid, caddr, isLocalUse );
+
+  dump_lock_init( gid, caddr );
+}
+
+void kbound::dump_CallLock( unsigned bidx, const llvm::CallInst* call ) {
+
+  std::string gid;
+  reg_ctx_t caddr;
+  bool isLocalUse = false;
+  addr_name( call->getOperand(0), gid, caddr, isLocalUse );
+
+  dump_lock( gid, caddr );
+}
+
+
+
+void kbound::dump_CallUnlock( unsigned bidx, const llvm::CallInst* call){
+
+  std::string gid;
+  reg_ctx_t caddr;
+  bool isLocalUse = false;
+  addr_name( call->getOperand(0), gid, caddr, isLocalUse );
+
+  dump_unlock( gid, caddr );
 }
 
 void kbound::dump_CallThreadCreate( unsigned bidx, const llvm::CallInst* call){
@@ -891,6 +928,18 @@ void kbound::dump_CallThreadJoin( unsigned bidx, const llvm::CallInst* call){
   auto join_reg = add_reg_map(call);
   //dump_Assume( "ret_thread_"+child_tid +" == " + join_reg );
   dump_thread_join( bidx, child_tid );
+}
+
+void kbound::dump_CallThreadExit( unsigned bidx, const llvm::CallInst* call){
+  assert( call );
+  llvm::Value* v = call->getOperand(0);
+
+  if( v ) {
+    auto r = get_reg(v);
+    dump_Assume("ret_thread_"+tid + " == " + r);
+  }
+  dump_Goto( block_name("_END") );
+
 }
 
 void kbound::dump_CastInst( unsigned bidx, const llvm::CastInst* cast ) {

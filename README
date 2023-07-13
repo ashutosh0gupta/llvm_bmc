@@ -53,3 +53,10 @@ Testing
 Running kbound
 
 grep -e "c.*]=" -e "c.*[0-9]=" /tmp/clean.tr > ~/tmp/stamps.txt
+
+
+Open issues of kbound:
+-- Testing arm-thread
+-- Testing lock support
+-- Processing thread-return value
+-- Handling bounded execution

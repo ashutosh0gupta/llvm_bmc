@@ -142,7 +142,7 @@ int main()
 
   // process requests
   int r;
-  for (r = 0; r < RNUM; r++){
+  for (r = 0; r < RNUM; r++) {
     if (r == 0)
       picked_servers[r] = process_request(r, SNUM);
     else

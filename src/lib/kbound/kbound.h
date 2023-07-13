@@ -164,6 +164,9 @@ private:
   // thread create
   void dump_thread_create( unsigned bidx, std::string child_tid );
   void dump_thread_join  ( unsigned bidx, std::string child_tid );
+  void dump_lock  ( std::string gid, reg_ctx_t caddr );
+  void dump_unlock( std::string gid, reg_ctx_t caddr );
+  void dump_lock_init( std::string gid, reg_ctx_t caddr );
 
   // functions to handle start and finish of threads
   void dump_start_thread();
@@ -235,8 +238,12 @@ private:
   void dump_BinOp( unsigned bidx, const llvm::BinaryOperator* bop);
   void dump_CmpInst    ( unsigned bidx, const llvm::CmpInst* cmp);
   void dump_SelectInst( const llvm::SelectInst *sel );
- 
+
   void dump_CallInst( unsigned bidx, const llvm::CallInst* call);
+
+  void dump_CallLock     ( unsigned bidx, const llvm::CallInst* cmp);
+  void dump_CallUnlock   ( unsigned bidx, const llvm::CallInst* cmp);
+  void dump_CallMutexInit( unsigned bidx, const llvm::CallInst* cmp);
 
   void dump_CallAssume ( unsigned bidx, const llvm::CallInst* cmp);
   void dump_CallAssert ( unsigned bidx, const llvm::CallInst* cmp);
@@ -275,7 +282,8 @@ private:
   void dump_UnreachableInst( unsigned, const llvm::UnreachableInst *I);
 
   void dump_CallThreadCreate( unsigned bidx, const llvm::CallInst* call );
-  void dump_CallThreadJoin( unsigned bidx, const llvm::CallInst* call );
+  void dump_CallThreadJoin  ( unsigned bidx, const llvm::CallInst* call );
+  void dump_CallThreadExit  ( unsigned bidx, const llvm::CallInst* call );
 
 
   void dump_Thread();

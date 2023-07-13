@@ -78,6 +78,7 @@ public:
   int ctx_bound = 10;
   std::string memory_model = "armv1";
   std::vector<std::string> sc_threads;
+  std::string arm_thread;
 
 
   //----------------------------------------
