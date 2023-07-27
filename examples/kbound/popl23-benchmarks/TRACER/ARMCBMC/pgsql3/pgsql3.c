@@ -20,7 +20,7 @@ long latch[N];      // A workaround
 long flag[N];       // A workaround
 long x;             // A workaround
 
-void *t(void *arg)
+void *t0(void *arg)
 {
   	int tid = *((int *)arg);
     while (1) {
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 	atomic_init(&flag[0], 1);
 	for (i=0; i<N; i++) {
 	  	arg[i] = i;
-	  	pthread_create(&ts[i], NULL, t, &arg[i]);
+	  	pthread_create(&ts[i], NULL, t0, &arg[i]);
 	}
   	for (i=0; i<N; i++) {
   		pthread_join(ts[i], NULL);

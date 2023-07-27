@@ -26,10 +26,10 @@ void fun1(int x)  {
 
   // stl( &m, 1 );
   // stx( &m, 1 );
-  // stlx( &m, 1 );
+  stlx( &m, 1 );
   // int p = lda ( &m);
   // int k = ldx ( &m );
-  // int z = ldax( &m );
+  int z = ldax( &m );
 
   // x = x + x;
   // dmbsy();

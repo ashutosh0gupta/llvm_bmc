@@ -2018,7 +2018,7 @@ void set_unroll_counts::getAnalysisUsage(llvm::AnalysisUsage &au) const {
 void forced_inliner_pass( std::unique_ptr<llvm::Module>& module ) {
   for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
     // todo: remove dependency on demangle from llvm_utils
-    std::string fname = demangle(fit->getName().str());
+    // std::string fname = demangle(fit->getName().str());
     if( !fit->isDeclaration() ) {
       // function has a body available
       fit->addFnAttr(llvm::Attribute::AlwaysInline);

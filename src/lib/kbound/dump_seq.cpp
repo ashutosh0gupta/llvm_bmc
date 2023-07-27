@@ -453,7 +453,7 @@ void kbound::postfix_seq() {
 
   dump_post_context_matching();
   dump_Newline();
-  for(auto& term: in_code_spec ) dump_String("ASSERT(" + term + ");");
+  for(auto& term: in_code_spec ) dump_String("ASSERT(" + term + " == 0);");
   std::map<std::string,std::string> rename;
   auto ctx_name = ","+std::to_string(ncontext-1);
   for( auto pair : global_position ) {
@@ -485,7 +485,11 @@ void kbound::dump_locals() {
 
         for( unsigned i = 0; i < bmc_obj.sys_spec.threads.size();i++ ) {
           tid = std::to_string(i);
-          out << "  int ret_thread_"   << tid <<";\n";
+          out << "  int ret_thread_" << tid <<";\n";
+          out << "  int skip_" << tid <<";\n";
+        }
+        for( auto spec : in_code_spec ) {
+          out << "  int " << spec <<" = 0;\n";
         }
         for( auto& v : unmapped_names ) {
           if( v[0] == 'r') out << "  int " << v << "= 0;\n";

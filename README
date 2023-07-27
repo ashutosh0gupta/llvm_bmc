@@ -1,13 +1,23 @@
 Dependencies
 ------------
 
-* Install llvm-14
-* Install clang-14
+* Install llvm-15-dev
+* Install libclang-15-dev clang-tools-15
 * Install Boost
 * depends on -lz
 
+
+TODO:
+LLVM_VERSION is referred at two places.
+./src/CMakeLists.txt
+./Makefile
+Fix: Make it unified
+
+FIXIT.
+
 Install
 -------
+
 
 $make
 

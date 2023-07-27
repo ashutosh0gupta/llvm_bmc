@@ -33,10 +33,11 @@ IF(LLVM_DEBUG)
   find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "${CLANG_DIR}/lib/cmake/clang/")
 ELSE(LLVM_DEBUG)
   # change here to modify the relase version of LLVM
-  find_package(LLVM 14 REQUIRED CONFIG)
+  find_package(LLVM 15 REQUIRED CONFIG)
   # find_package(Clang 12 REQUIRED CONFIG)
   # find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/llvm-12/lib/cmake/clang")
- find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/cmake/clang-14/")
+ find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/cmake/clang-15/") # Due to bug in clang 
+ # find_package(Clang 15 REQUIRED CONFIG)
   message(STATUS "LLVM INCLUDE DIR - ${LLVM_INCLUDE_DIRS}")
   message(STATUS "CLANG INCLUDE DIR - ${CLANG_INCLUDE_DIRS}")
   # find_package(Clang REQUIRED clangTooling libClang)

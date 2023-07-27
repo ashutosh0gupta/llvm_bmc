@@ -747,8 +747,17 @@ void kbound::dump_CallAssume(unsigned bidx, const llvm::CallInst* call) {
 
 void kbound::dump_CallAssert(unsigned bidx, const llvm::CallInst* call) {
   assert(call);
+  // auto term = get_reg( call->getArgOperand(0) );
+  // in_code_spec.push_back( term );
+
+  auto idx  = in_code_spec.size();
+  auto spec = "spec_" + std::to_string(idx);
+  in_code_spec.push_back( spec );
   auto term = get_reg( call->getArgOperand(0) );
-  in_code_spec.push_back( term );
+  dump_If( "!("+term+")"); {
+    dump_Assign( spec, "1" );
+  }dump_Close_scope();
+
 }
 
 void kbound::dump_CallNondet(unsigned bidx, const llvm::CallInst* call) {
@@ -1202,10 +1211,15 @@ void kbound::dump_Branch( unsigned bidx, const llvm::BranchInst* br ) {
 
 void kbound::dump_UnreachableInst( unsigned bidx,
                                    const llvm::UnreachableInst *I) {
-  auto r = add_reg_map( I );
-  dump_Assign( r, "1" );
+  auto spec = "spec_" + std::to_string(in_code_spec.size());
+  dump_Assign( spec, "1" );
   dump_Goto( block_name("_END") );
-  in_code_spec.push_back( r + "== 0" );
+  in_code_spec.push_back( spec );
+
+  // auto r = add_reg_map( I );
+  // dump_Assign( r, "1" );
+  // dump_Goto( block_name("_END") );
+  // in_code_spec.push_back( r + "== 0" );
 }
 
 
