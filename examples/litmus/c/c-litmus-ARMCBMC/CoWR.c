@@ -10,6 +10,11 @@ void dmbld();
 void dmbst();
 void dmbsy();
 void isb();
+// ARM-CBMC specific functions to support exclusive accesses
+void ldx(int *);
+void ldax(int *);
+void stx(int *, int);
+void stlx(int *, int);
 
 long vars[1]; 
 int atom_0_X2_2; 
@@ -17,9 +22,9 @@ int atom_0_X2_2;
 void *t0(void *arg){
 label_1:;
   atomic_store_explicit(&vars[0], 1, memory_order_relaxed);
-  int v3_W2 = atomic_load_explicit(&vars[0], memory_order_relaxed);
-  int v8 = (v3_W2 == 2);
-  atom_0_X2_2 = v8;
+  int v1_W2 = atomic_load_explicit(&vars[0], memory_order_relaxed);
+  int v6 = (v1_W2 == 2);
+  atom_0_X2_2 = v6;
   return NULL;
 }
 
@@ -42,10 +47,10 @@ int main(int argc, char *argv[]){
   pthread_join(thr0, NULL);
   pthread_join(thr1, NULL);
 
-  int v4 = atomic_load_explicit(&vars[0], memory_order_relaxed);
-  int v5 = (v4 == 1);
-  int v6 = atom_0_X2_2;
-  int v7_conj = v5 & v6;
-  if (v7_conj == 1) assert(0);
+  int v2 = atomic_load_explicit(&vars[0], memory_order_relaxed);
+  int v3 = (v2 == 1);
+  int v4 = atom_0_X2_2;
+  int v5_conj = v3 & v4;
+  if (v5_conj == 1) assert(0);
   return 0;
 }

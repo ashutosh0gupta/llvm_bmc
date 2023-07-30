@@ -10,6 +10,11 @@ void dmbld();
 void dmbst();
 void dmbsy();
 void isb();
+// ARM-CBMC specific functions to support exclusive accesses
+void ldx(int *);
+void ldax(int *);
+void stx(int *, int);
+void stlx(int *, int);
 
 long vars[3]; 
 int atom_1_X0_1; 
@@ -25,16 +30,16 @@ label_1:;
 
 void *t1(void *arg){
 label_2:;
-  int v3_W0 = atomic_load_explicit(&vars[1], memory_order_relaxed);
-  int v4_W2 = v3_W0 ^ v3_W0;
-  int v7_W3 = atomic_load_explicit(&vars[2+v4_W2], memory_order_relaxed);
-  int v8_W5 = v7_W3 ^ v7_W3;
-  atomic_store_explicit(&vars[0+v8_W5], 1, memory_order_relaxed);
-  int v11_W8 = atomic_load_explicit(&vars[0], memory_order_relaxed);
-  int v21 = (v3_W0 == 1);
-  atom_1_X0_1 = v21;
-  int v22 = (v11_W8 == 1);
-  atom_1_X8_1 = v22;
+  int v1_W0 = atomic_load_explicit(&vars[1], memory_order_relaxed);
+  int v2_W2 = v1_W0 ^ v1_W0;
+  int v3_W3 = atomic_load_explicit(&vars[2+v2_W2], memory_order_relaxed);
+  int v4_W5 = v3_W3 ^ v3_W3;
+  atomic_store_explicit(&vars[0+v4_W5], 1, memory_order_relaxed);
+  int v5_W8 = atomic_load_explicit(&vars[0], memory_order_relaxed);
+  int v15 = (v1_W0 == 1);
+  atom_1_X0_1 = v15;
+  int v16 = (v5_W8 == 1);
+  atom_1_X8_1 = v16;
   return NULL;
 }
 
@@ -54,15 +59,15 @@ int main(int argc, char *argv[]){
   pthread_join(thr0, NULL);
   pthread_join(thr1, NULL);
 
-  int v12 = atomic_load_explicit(&vars[0], memory_order_relaxed);
-  int v13 = (v12 == 2);
-  int v14 = atomic_load_explicit(&vars[1], memory_order_relaxed);
-  int v15 = (v14 == 1);
-  int v16 = atom_1_X0_1;
-  int v17 = atom_1_X8_1;
-  int v18_conj = v16 & v17;
-  int v19_conj = v15 & v18_conj;
-  int v20_conj = v13 & v19_conj;
-  if (v20_conj == 1) assert(0);
+  int v6 = atomic_load_explicit(&vars[0], memory_order_relaxed);
+  int v7 = (v6 == 2);
+  int v8 = atomic_load_explicit(&vars[1], memory_order_relaxed);
+  int v9 = (v8 == 1);
+  int v10 = atom_1_X0_1;
+  int v11 = atom_1_X8_1;
+  int v12_conj = v10 & v11;
+  int v13_conj = v9 & v12_conj;
+  int v14_conj = v7 & v13_conj;
+  if (v14_conj == 1) assert(0);
   return 0;
 }
