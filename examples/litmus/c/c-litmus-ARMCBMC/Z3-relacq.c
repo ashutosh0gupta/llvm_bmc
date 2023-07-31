@@ -1,3 +1,4 @@
+vars[1]
 /* Copyright (C) 2023 ARM-CBMC
 * This benchmark is part of ARM-CBMC */
 
@@ -10,6 +11,11 @@ void dmbld();
 void dmbst();
 void dmbsy();
 void isb();
+// ARM-CBMC specific functions to support exclusive accesses
+int ldx(int *);
+int ldax(int *);
+int stx(int *, int);
+int stlx(int *, int);
 
 long vars[3]; 
 int atom_0_X0_1; 
@@ -17,13 +23,13 @@ int atom_0_X3_0;
 
 void *t0(void *arg){
 label_1:;
-  int v3_W0 = atomic_load_explicit(&vars[1], memory_order_acquire);
-  int v4_W2 = v3_W0 & 8;
-  int v7_W3 = atomic_load_explicit(&vars[0+v4_W2], memory_order_relaxed);
-  int v14 = (v3_W0 == 1);
-  atom_0_X0_1 = v14;
-  int v15 = (v7_W3 == 0);
-  atom_0_X3_0 = v15;
+  int v1_W0 = atomic_load_explicit(&vars[1], memory_order_acquire);
+  int v2_W2 = v1_W0 & 8;
+  int v3_W3 = atomic_load_explicit(&vars[0+v2_W2], memory_order_relaxed);
+  int v10 = (v1_W0 == 1);
+  atom_0_X0_1 = v10;
+  int v11 = (v3_W3 == 0);
+  atom_0_X3_0 = v11;
   return NULL;
 }
 
@@ -60,12 +66,12 @@ int main(int argc, char *argv[]){
   pthread_join(thr1, NULL);
   pthread_join(thr2, NULL);
 
-  int v8 = atomic_load_explicit(&vars[2], memory_order_relaxed);
-  int v9 = (v8 == 2);
-  int v10 = atom_0_X0_1;
-  int v11 = atom_0_X3_0;
-  int v12_conj = v10 & v11;
-  int v13_conj = v9 & v12_conj;
-  if (v13_conj == 1) assert(0);
+  int v4 = atomic_load_explicit(&vars[2], memory_order_relaxed);
+  int v5 = (v4 == 2);
+  int v6 = atom_0_X0_1;
+  int v7 = atom_0_X3_0;
+  int v8_conj = v6 & v7;
+  int v9_conj = v5 & v8_conj;
+  if (v9_conj == 1) assert(0);
   return 0;
 }

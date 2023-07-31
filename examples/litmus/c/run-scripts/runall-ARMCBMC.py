@@ -14,7 +14,7 @@ import glob
 
 curDir = os.getcwd()
 LITMUSDIR = curDir + '/../c-litmus-ARMCBMC'
-EXPECTEDLISTFILE = curDir + '/../aarch64.herd.results.txt'
+EXPECTEDLISTFILE = curDir + '/../exclusive.aarch64.herd.results.txt'
 SCRIPT1 = curDir + '/../../../../llvmbmc'
 SCRIPT2 = 'cbmc'
 LOGFILENAME = curDir + '/../arm.armcbmc.results.txt'

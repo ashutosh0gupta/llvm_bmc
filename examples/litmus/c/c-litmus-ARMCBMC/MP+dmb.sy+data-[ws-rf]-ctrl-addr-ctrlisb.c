@@ -10,6 +10,11 @@ void dmbld();
 void dmbst();
 void dmbsy();
 void isb();
+// ARM-CBMC specific functions to support exclusive accesses
+int ldx(int *);
+int ldax(int *);
+int stx(int *, int);
+int stlx(int *, int);
 
 long vars[5]; 
 int atom_1_X0_1; 
@@ -26,26 +31,26 @@ label_1:;
 
 void *t1(void *arg){
 label_2:;
-  int v3_W0 = atomic_load_explicit(&vars[1], memory_order_relaxed);
-  int v4_W2 = v3_W0 ^ v3_W0;
-  int v5_W2 = v4_W2 + 1;
-  atomic_store_explicit(&vars[2], v5_W2, memory_order_relaxed);
-  int v8_W4 = atomic_load_explicit(&vars[2], memory_order_relaxed);
-  if (v8_W4) goto lbl_LC00; else goto lbl_LC00;
+  int v1_W0 = atomic_load_explicit(&vars[1], memory_order_relaxed);
+  int v2_W2 = v1_W0 ^ v1_W0;
+  int v3_W2 = v2_W2 + 1;
+  atomic_store_explicit(&vars[2], v3_W2, memory_order_relaxed);
+  int v4_W4 = atomic_load_explicit(&vars[2], memory_order_relaxed);
+  if (v4_W4) goto lbl_LC00; else goto lbl_LC00;
 lbl_LC00:;
-  int v11_W5 = atomic_load_explicit(&vars[3], memory_order_relaxed);
-  int v12_W7 = v11_W5 ^ v11_W5;
-  int v15_W8 = atomic_load_explicit(&vars[4+v12_W7], memory_order_relaxed);
-  if (v15_W8) goto lbl_LC01; else goto lbl_LC01;
+  int v5_W5 = atomic_load_explicit(&vars[3], memory_order_relaxed);
+  int v6_W7 = v5_W5 ^ v5_W5;
+  int v7_W8 = atomic_load_explicit(&vars[4+v6_W7], memory_order_relaxed);
+  if (v7_W8) goto lbl_LC01; else goto lbl_LC01;
 lbl_LC01:;
   isb();
-  int v18_W10 = atomic_load_explicit(&vars[0], memory_order_relaxed);
-  int v33 = (v3_W0 == 1);
-  atom_1_X0_1 = v33;
-  int v34 = (v8_W4 == 2);
-  atom_1_X4_2 = v34;
-  int v35 = (v18_W10 == 0);
-  atom_1_X10_0 = v35;
+  int v8_W10 = atomic_load_explicit(&vars[0], memory_order_relaxed);
+  int v23 = (v1_W0 == 1);
+  atom_1_X0_1 = v23;
+  int v24 = (v4_W4 == 2);
+  atom_1_X4_2 = v24;
+  int v25 = (v8_W10 == 0);
+  atom_1_X10_0 = v25;
   return NULL;
 }
 
@@ -77,20 +82,20 @@ int main(int argc, char *argv[]){
   pthread_join(thr1, NULL);
   pthread_join(thr2, NULL);
 
-  int v19 = atomic_load_explicit(&vars[0], memory_order_relaxed);
-  int v20 = (v19 == 1);
-  int v21 = atomic_load_explicit(&vars[1], memory_order_relaxed);
-  int v22 = (v21 == 1);
-  int v23 = atomic_load_explicit(&vars[2], memory_order_relaxed);
-  int v24 = (v23 == 2);
-  int v25 = atom_1_X0_1;
-  int v26 = atom_1_X4_2;
-  int v27 = atom_1_X10_0;
-  int v28_conj = v26 & v27;
-  int v29_conj = v25 & v28_conj;
-  int v30_conj = v24 & v29_conj;
-  int v31_conj = v22 & v30_conj;
-  int v32_conj = v20 & v31_conj;
-  if (v32_conj == 1) assert(0);
+  int v9 = atomic_load_explicit(&vars[0], memory_order_relaxed);
+  int v10 = (v9 == 1);
+  int v11 = atomic_load_explicit(&vars[1], memory_order_relaxed);
+  int v12 = (v11 == 1);
+  int v13 = atomic_load_explicit(&vars[2], memory_order_relaxed);
+  int v14 = (v13 == 2);
+  int v15 = atom_1_X0_1;
+  int v16 = atom_1_X4_2;
+  int v17 = atom_1_X10_0;
+  int v18_conj = v16 & v17;
+  int v19_conj = v15 & v18_conj;
+  int v20_conj = v14 & v19_conj;
+  int v21_conj = v12 & v20_conj;
+  int v22_conj = v10 & v21_conj;
+  if (v22_conj == 1) assert(0);
   return 0;
 }

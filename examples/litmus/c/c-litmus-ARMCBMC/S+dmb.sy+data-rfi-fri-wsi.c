@@ -10,6 +10,11 @@ void dmbld();
 void dmbst();
 void dmbsy();
 void isb();
+// ARM-CBMC specific functions to support exclusive accesses
+int ldx(int *);
+int ldax(int *);
+int stx(int *, int);
+int stlx(int *, int);
 
 long vars[2]; 
 int atom_1_X7_4; 
@@ -26,20 +31,20 @@ label_1:;
 
 void *t1(void *arg){
 label_2:;
-  int v3_W0 = atomic_load_explicit(&vars[1], memory_order_relaxed);
-  int v4_W2 = v3_W0 ^ v3_W0;
-  int v5_W2 = v4_W2 + 1;
-  atomic_store_explicit(&vars[0], v5_W2, memory_order_relaxed);
-  int v8_W4 = atomic_load_explicit(&vars[0], memory_order_relaxed);
+  int v1_W0 = atomic_load_explicit(&vars[1], memory_order_relaxed);
+  int v2_W2 = v1_W0 ^ v1_W0;
+  int v3_W2 = v2_W2 + 1;
+  atomic_store_explicit(&vars[0], v3_W2, memory_order_relaxed);
+  int v4_W4 = atomic_load_explicit(&vars[0], memory_order_relaxed);
   atomic_store_explicit(&vars[0], 2, memory_order_relaxed);
   atomic_store_explicit(&vars[0], 3, memory_order_relaxed);
-  int v11_W7 = atomic_load_explicit(&vars[0], memory_order_relaxed);
-  int v17 = (v11_W7 == 4);
-  atom_1_X7_4 = v17;
-  int v18 = (v3_W0 == 1);
-  atom_1_X0_1 = v18;
-  int v19 = (v8_W4 == 1);
-  atom_1_X4_1 = v19;
+  int v5_W7 = atomic_load_explicit(&vars[0], memory_order_relaxed);
+  int v11 = (v5_W7 == 4);
+  atom_1_X7_4 = v11;
+  int v12 = (v1_W0 == 1);
+  atom_1_X0_1 = v12;
+  int v13 = (v4_W4 == 1);
+  atom_1_X4_1 = v13;
   return NULL;
 }
 
@@ -59,11 +64,11 @@ int main(int argc, char *argv[]){
   pthread_join(thr0, NULL);
   pthread_join(thr1, NULL);
 
-  int v12 = atom_1_X7_4;
-  int v13 = atom_1_X0_1;
-  int v14 = atom_1_X4_1;
-  int v15_conj = v13 & v14;
-  int v16_conj = v12 & v15_conj;
-  if (v16_conj == 1) assert(0);
+  int v6 = atom_1_X7_4;
+  int v7 = atom_1_X0_1;
+  int v8 = atom_1_X4_1;
+  int v9_conj = v7 & v8;
+  int v10_conj = v6 & v9_conj;
+  if (v10_conj == 1) assert(0);
   return 0;
 }

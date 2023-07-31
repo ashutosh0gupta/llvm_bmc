@@ -10,6 +10,11 @@ void dmbld();
 void dmbst();
 void dmbsy();
 void isb();
+// ARM-CBMC specific functions to support exclusive accesses
+int ldx(int *);
+int ldax(int *);
+int stx(int *, int);
+int stlx(int *, int);
 
 long vars[2]; 
 int atom_1_X0_2; 
@@ -23,13 +28,13 @@ label_1:;
 
 void *t1(void *arg){
 label_2:;
-  int v3_W0 = atomic_load_explicit(&vars[0], memory_order_relaxed);
-  int v4_cmpeq = (v3_W0 == 0);
-  if (v4_cmpeq)  goto lbl_label164; else goto lbl_label164;
+  int v1_W0 = atomic_load_explicit(&vars[0], memory_order_relaxed);
+  int v2_cmpeq = (v1_W0 == 0);
+  if (v2_cmpeq)  goto lbl_label164; else goto lbl_label164;
 lbl_label164:;
   atomic_store_explicit(&vars[1], 1, memory_order_relaxed);
-  int v17 = (v3_W0 == 2);
-  atom_1_X0_2 = v17;
+  int v13 = (v1_W0 == 2);
+  atom_1_X0_2 = v13;
   return NULL;
 }
 
@@ -41,10 +46,10 @@ label_3:;
 
 void *t3(void *arg){
 label_4:;
-  int v7_W0 = atomic_load_explicit(&vars[1], memory_order_relaxed);
+  int v3_W0 = atomic_load_explicit(&vars[1], memory_order_relaxed);
   atomic_store_explicit(&vars[0], 1, memory_order_release);
-  int v18 = (v7_W0 == 2);
-  atom_3_X0_2 = v18;
+  int v14 = (v3_W0 == 2);
+  atom_3_X0_2 = v14;
   return NULL;
 }
 
@@ -69,15 +74,15 @@ int main(int argc, char *argv[]){
   pthread_join(thr2, NULL);
   pthread_join(thr3, NULL);
 
-  int v8 = atomic_load_explicit(&vars[0], memory_order_relaxed);
-  int v9 = (v8 == 2);
-  int v10 = atomic_load_explicit(&vars[1], memory_order_relaxed);
-  int v11 = (v10 == 2);
-  int v12 = atom_1_X0_2;
-  int v13 = atom_3_X0_2;
-  int v14_conj = v12 & v13;
-  int v15_conj = v11 & v14_conj;
-  int v16_conj = v9 & v15_conj;
-  if (v16_conj == 1) assert(0);
+  int v4 = atomic_load_explicit(&vars[0], memory_order_relaxed);
+  int v5 = (v4 == 2);
+  int v6 = atomic_load_explicit(&vars[1], memory_order_relaxed);
+  int v7 = (v6 == 2);
+  int v8 = atom_1_X0_2;
+  int v9 = atom_3_X0_2;
+  int v10_conj = v8 & v9;
+  int v11_conj = v7 & v10_conj;
+  int v12_conj = v5 & v11_conj;
+  if (v12_conj == 1) assert(0);
   return 0;
 }
