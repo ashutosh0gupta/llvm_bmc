@@ -1,4 +1,5 @@
 #include "collect_loopdata.h"
+#include "llvm/Analysis/ScalarEvolutionExpressions.h"
 
 char collect_loopdata::ID = 0;
 
@@ -70,8 +71,7 @@ getInductionVariable(llvm::Loop *L, llvm::ScalarEvolution *SE) {
     llvm::Type *PhiTy = PhiVar->getType();
     if (!PhiTy->isIntegerTy())
       return nullptr;
-    const llvm::SCEVAddRecExpr *AddRec =
-      llvm::dyn_cast<llvm::SCEVAddRecExpr>(SE->getSCEV(PhiVar));
+    auto *AddRec = llvm::dyn_cast<llvm::SCEVAddRecExpr>(SE->getSCEV(PhiVar));
     if (!AddRec || !AddRec->isAffine())
       continue;
     const llvm::SCEV *Step = AddRec->getStepRecurrence(*SE);
