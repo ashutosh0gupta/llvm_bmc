@@ -11,10 +11,10 @@ void dmbst();
 void dmbsy();
 void isb();
 // ARM-CBMC specific functions to support exclusive accesses
-void ldx(int *);
-void ldax(int *);
-void stx(int *, int);
-void stlx(int *, int);
+int ldx(int *);
+int ldax(int *);
+int stx(int *, int);
+int stlx(int *, int);
 
 long vars[2]; 
 int atom_1_X0_1; 
@@ -27,7 +27,7 @@ label_1:;
   if (v2_W3) goto lbl_Fail0; else goto label_2;
 label_2:;
   atomic_store_explicit(&vars[1], 1, memory_order_relaxed);
-  goto label lbl_Fail0;
+  goto  lbl_Fail0;
 lbl_Fail0:;
   return NULL;
 }
