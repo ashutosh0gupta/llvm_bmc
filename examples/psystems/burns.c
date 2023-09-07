@@ -24,7 +24,7 @@ int flags[NUM_THREADS];
 
 void *function(void *pid)
 {
-    const int id = * (int *) pid;
+    const int id = * (const int *) pid;
     L0:
     flags[id] = 0;
     L1:
