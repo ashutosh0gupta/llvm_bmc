@@ -9,6 +9,26 @@ collect_threads::collect_threads( std::unique_ptr<llvm::Module>& m_,
                                   options& o )
   : module(m_), b(b), mem_enc(o.mem_enc), solver_ctx(o.solver_ctx), o(o) {
   collect_threads_internal(module, b);
+  if( o.arm_thread != "" ) {
+    assert( o.sc_threads.size() == 0 );
+    bool seen = false;
+    for( auto& thread : b.sys_spec.threads ) {
+      if( o.arm_thread != thread.entry_function ) {
+        thread.wmm = weak_memory_model::SC;
+      }else{
+        seen = true;
+      }
+    }
+    if( seen == false ) {
+      llvm_bmc_error( "kbound", "ARM thread is not found!!" );
+    }
+  }
+  for( auto& thread : b.sys_spec.threads ) {
+    if( exists( o.sc_threads, thread.entry_function ) ) {
+      assert( o.arm_thread == "" );
+      thread.wmm = weak_memory_model::SC;
+    }
+  }
 }
 
 collect_threads::~collect_threads() {}

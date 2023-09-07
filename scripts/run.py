@@ -20,10 +20,13 @@ l = 1
 # choose a folder to execute
 
 # folder = "examples/kbound/omkar/bench"
+# folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
+folder = "~/tmp/"
+# folder = "examples/kbound/popl23-benchmarks/SV-COMP/ARMCBMC/"
 # folder = "./examples/kbound/popl23-benchmarks/TRACER/ARMCBMC/"
-folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
+# folder = "./examples/kbound/popl23-benchmarks/TRACER/ARMCBMC/"
 # folder = "./examples/kbound/popl23-benchmarks/HMC/ARMCBMC/"
-
+# folder = "./examples/kbound/popl23-benchmarks/DPU/ARMCBMC/"
 
 # folder = "examples/kbound/pldi19-benchmark"
 
@@ -46,9 +49,15 @@ folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
 #    sl = line.split(',')
 #    fails.append( sl[1] )
 
+folder = os.path.expanduser(folder)
+
 sys.path.append(folder)
 import examples
 exs = examples.exs
+
+# for ex in exs:
+#    print(ex[0])
+# exit()
 
 p = re.compile(r'([A-Z]*SAFE) *([0-9\.]*)user')
 
@@ -68,7 +77,8 @@ for ex in exs:
    new_exs.append([i]+ex)
 exs = new_exs
 
-mm = "armv2"
+mm = "armv1"
+# mm = "armv2"
 
 print("------------------------------")
 print("Running kbound implementation:")
@@ -77,7 +87,7 @@ print("Memory model :" + mm)
 # if only_error:
 #    print("Full report only for wrong answers!")
 print("------------------------------")
-print( "Index\tName\t\t\tKind\tN K L Result\tTime" )
+# print( "Index\tName\t\t\tKind\tN K L Result\tTime" )
 err_cnt = 0
 total_time = 0.0
 def runner(ex):
@@ -88,12 +98,14 @@ def runner(ex):
    #    return 0
    # if ex[0] < 1552: #1564:  #1530: 3579: #3599:
    #    return 0
-   f = folder + "/"+ ex[1]+".cpp"
+   f = folder + "/"+ ex[1]
    if not os.path.isfile(f):
-      f = folder + "/"+ ex[1]+".c"
-   if not os.path.isfile(f):
-      print(f+' does not exists!')
-      exit()
+      f = folder + "/"+ ex[1]+".cpp"
+      if not os.path.isfile(f):
+         f = folder + "/"+ ex[1]+".c"
+      if not os.path.isfile(f):
+         print(f+' does not exists!')
+         exit()
    if ex[2] != "-":
       s = folder + "/"+ ex[2]+".spec"
    else:
@@ -104,7 +116,7 @@ def runner(ex):
    else:
       lk = 10
    # lk = n+4
-   lk = 10
+   # lk = 10
    if( len(ex) > 4):
       l = ex[5]
    else:
@@ -116,7 +128,7 @@ def runner(ex):
    tmp_path = "./tmp/"
    if report:
       print(str(ex[0])+"\t"+ex[1]+"\t"+ kind +"\t" + str(n) + " " + str(lk) + " " +str(l) + " ", end="")
-   result = subprocess.check_output(["time", run, str(l), str(lk), f, s, tmp_path,mm,'N'],stderr=subprocess.STDOUT)
+   result = subprocess.check_output(["time", run, str(l), str(lk), f, s, tmp_path,mm,'Y'],stderr=subprocess.STDOUT)
    result=result.decode("utf-8")
    # print(result)
    time = find_time(result)
@@ -163,8 +175,8 @@ def runner(ex):
 if len(exs) > 100:
    subprocess.run(["make",  "cleantmp" ])
 
-# seq = True
-seq = False
+seq = True
+# seq = False
 
 if seq:
    for ex in exs:

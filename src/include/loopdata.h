@@ -8,6 +8,7 @@
 #pragma GCC diagnostic pop
 
 #include <map>
+#include <list> // Bad Idea
 
 class collect_loopdata;
 

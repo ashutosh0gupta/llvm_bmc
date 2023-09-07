@@ -10,6 +10,11 @@ void dmbld();
 void dmbst();
 void dmbsy();
 void isb();
+// ARM-CBMC specific functions to support exclusive accesses
+int ldx(int *);
+int ldax(int *);
+int stx(int *, int);
+int stlx(int *, int);
 
 long vars[3]; 
 int atom_1_X0_1; 
@@ -24,25 +29,25 @@ label_1:;
 
 void *t1(void *arg){
 label_2:;
-  int v3_W0 = atomic_load_explicit(&vars[0], memory_order_relaxed);
-  int v4_cmpeq = (v3_W0 == 0);
-  if (v4_cmpeq)  goto lbl_label206; else goto lbl_label206;
+  int v1_W0 = atomic_load_explicit(&vars[0], memory_order_relaxed);
+  int v2_cmpeq = (v1_W0 == 0);
+  if (v2_cmpeq)  goto lbl_label206; else goto lbl_label206;
 lbl_label206:;
   atomic_store_explicit(&vars[2], 1, memory_order_relaxed);
-  int v15 = (v3_W0 == 1);
-  atom_1_X0_1 = v15;
+  int v11 = (v1_W0 == 1);
+  atom_1_X0_1 = v11;
   return NULL;
 }
 
 void *t2(void *arg){
 label_3:;
-  int v7_W0 = atomic_load_explicit(&vars[2], memory_order_relaxed);
-  int v8_cmpeq = (v7_W0 == 0);
-  if (v8_cmpeq)  goto lbl_label207; else goto lbl_label207;
+  int v3_W0 = atomic_load_explicit(&vars[2], memory_order_relaxed);
+  int v4_cmpeq = (v3_W0 == 0);
+  if (v4_cmpeq)  goto lbl_label207; else goto lbl_label207;
 lbl_label207:;
   atomic_store_explicit(&vars[1], 1, memory_order_relaxed);
-  int v16 = (v7_W0 == 1);
-  atom_2_X0_1 = v16;
+  int v12 = (v3_W0 == 1);
+  atom_2_X0_1 = v12;
   return NULL;
 }
 
@@ -65,12 +70,12 @@ int main(int argc, char *argv[]){
   pthread_join(thr1, NULL);
   pthread_join(thr2, NULL);
 
-  int v9 = atomic_load_explicit(&vars[1], memory_order_relaxed);
-  int v10 = (v9 == 2);
-  int v11 = atom_1_X0_1;
-  int v12 = atom_2_X0_1;
-  int v13_conj = v11 & v12;
-  int v14_conj = v10 & v13_conj;
-  if (v14_conj == 1) assert(0);
+  int v5 = atomic_load_explicit(&vars[1], memory_order_relaxed);
+  int v6 = (v5 == 2);
+  int v7 = atom_1_X0_1;
+  int v8 = atom_2_X0_1;
+  int v9_conj = v7 & v8;
+  int v10_conj = v6 & v9_conj;
+  if (v10_conj == 1) assert(0);
   return 0;
 }

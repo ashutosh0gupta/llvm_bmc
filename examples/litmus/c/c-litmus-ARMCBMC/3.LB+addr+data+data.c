@@ -10,6 +10,11 @@ void dmbld();
 void dmbst();
 void dmbsy();
 void isb();
+// ARM-CBMC specific functions to support exclusive accesses
+int ldx(int *);
+int ldax(int *);
+int stx(int *, int);
+int stlx(int *, int);
 
 long vars[3]; 
 int atom_0_X0_1; 
@@ -18,33 +23,33 @@ int atom_2_X0_1;
 
 void *t0(void *arg){
 label_1:;
-  int v3_W0 = atomic_load_explicit(&vars[0], memory_order_relaxed);
-  int v4_W2 = v3_W0 ^ v3_W0;
-  atomic_store_explicit(&vars[1+v4_W2], 1, memory_order_relaxed);
-  int v20 = (v3_W0 == 1);
-  atom_0_X0_1 = v20;
+  int v1_W0 = atomic_load_explicit(&vars[0], memory_order_relaxed);
+  int v2_W2 = v1_W0 ^ v1_W0;
+  atomic_store_explicit(&vars[1+v2_W2], 1, memory_order_relaxed);
+  int v14 = (v1_W0 == 1);
+  atom_0_X0_1 = v14;
   return NULL;
 }
 
 void *t1(void *arg){
 label_2:;
-  int v7_W0 = atomic_load_explicit(&vars[1], memory_order_relaxed);
-  int v8_W2 = v7_W0 ^ v7_W0;
-  int v9_W2 = v8_W2 + 1;
-  atomic_store_explicit(&vars[2], v9_W2, memory_order_relaxed);
-  int v21 = (v7_W0 == 1);
-  atom_1_X0_1 = v21;
+  int v3_W0 = atomic_load_explicit(&vars[1], memory_order_relaxed);
+  int v4_W2 = v3_W0 ^ v3_W0;
+  int v5_W2 = v4_W2 + 1;
+  atomic_store_explicit(&vars[2], v5_W2, memory_order_relaxed);
+  int v15 = (v3_W0 == 1);
+  atom_1_X0_1 = v15;
   return NULL;
 }
 
 void *t2(void *arg){
 label_3:;
-  int v12_W0 = atomic_load_explicit(&vars[2], memory_order_relaxed);
-  int v13_W2 = v12_W0 ^ v12_W0;
-  int v14_W2 = v13_W2 + 1;
-  atomic_store_explicit(&vars[0], v14_W2, memory_order_relaxed);
-  int v22 = (v12_W0 == 1);
-  atom_2_X0_1 = v22;
+  int v6_W0 = atomic_load_explicit(&vars[2], memory_order_relaxed);
+  int v7_W2 = v6_W0 ^ v6_W0;
+  int v8_W2 = v7_W2 + 1;
+  atomic_store_explicit(&vars[0], v8_W2, memory_order_relaxed);
+  int v16 = (v6_W0 == 1);
+  atom_2_X0_1 = v16;
   return NULL;
 }
 
@@ -68,11 +73,11 @@ int main(int argc, char *argv[]){
   pthread_join(thr1, NULL);
   pthread_join(thr2, NULL);
 
-  int v15 = atom_0_X0_1;
-  int v16 = atom_1_X0_1;
-  int v17 = atom_2_X0_1;
-  int v18_conj = v16 & v17;
-  int v19_conj = v15 & v18_conj;
-  if (v19_conj == 1) assert(0);
+  int v9 = atom_0_X0_1;
+  int v10 = atom_1_X0_1;
+  int v11 = atom_2_X0_1;
+  int v12_conj = v10 & v11;
+  int v13_conj = v9 & v12_conj;
+  if (v13_conj == 1) assert(0);
   return 0;
 }

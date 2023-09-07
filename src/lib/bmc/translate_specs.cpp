@@ -1,4 +1,5 @@
 #include "lib/bmc/translate_specs.h"
+#include "lib/utils/llvm_utils.h"
 
 translate_specs::translate_specs( )
   {}

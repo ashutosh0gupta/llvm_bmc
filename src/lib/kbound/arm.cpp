@@ -26,6 +26,11 @@ void kbound::dump_start_thread_arm() {
   auto cstart  =  "cstart[" + tid + "]";  // if we turn the local variabls
   dump_Assign_rand_ctx( cdy ); //todo : do we need to do this
   dump_Assume_geq( cdy, cstart );
+  if( tid != "0" ) {
+    dump_If( "skip_"+tid );{
+      dump_Goto( block_name("_END") );
+    } dump_Close_scope();
+  }
 }
 
 void kbound::dump_post_context_matching_arm() {
@@ -144,7 +149,7 @@ dump_ld_v1( std::string r, reg_ctx_t cval,reg_ctx_t caddr,
   auto gctx_access = "("+ gid +","+ cr + ")";
 
   dump_Comment("LD: Guess");
-  if(isExclusive)   dump_Comment("  : Exlusive");
+  if(isExclusive)   dump_Comment("  : Exclusive");
   if(isAcquire)     dump_Comment("  : Acquire");
   dump_Assign( "old_cr",  cr);
   dump_Assign_rand_ctx( cr, tid + " ASSIGN LDCOM " + loc);
@@ -165,7 +170,7 @@ dump_ld_v1( std::string r, reg_ctx_t cval,reg_ctx_t caddr,
     dump_Assume_geq( cr, "cisb["+ tid + "]" );
     dump_Assume_geq( cr,  "cdl["+ tid + "]" );
     dump_Assume_geq( cr,   "cl["+ tid + "]" );
-    if( isExclusive ) dump_Assume_geq ( cr, "old_cr" );   // extra in exlusive
+    if( isExclusive ) dump_Assume_geq ( cr, "old_cr" );   // extra in exclusive
     if( isAcquire   ) dump_Assume_geq ( cr, "cx"+gaccess);// extra in lda
     if( isAcquire   ) dump_geq_globals( cr, "cs");        // extra in lda
 
@@ -210,7 +215,7 @@ dump_st_v1( std::string v, reg_ctx_t cval,reg_ctx_t caddr, std::string gid,
   auto gctx_access = "("+ gid +","+ cw + ")";
 
   dump_Comment("ST: Guess");
-  if(isExclusive)   dump_Comment("  : Exlusive");
+  if(isExclusive)   dump_Comment("  : Exclusive");
   if(isRelease)   dump_Comment("  : Release");
   dump_Assign_rand_ctx( iw, tid + " ASSIGN STIW " + loc );
   dump_Assign( "old_cw",  cw);
@@ -396,7 +401,7 @@ dump_ld_v2( std::string r,
   auto t    = "["+ tid + "]";
 
   dump_Comment("LD: Guess");
-  if(isExclusive)   dump_Comment("  : Exlusive");
+  if(isExclusive)   dump_Comment("  : Exclusive");
   if(isAcquire)     dump_Comment("  : Acquire");
   // dump_Assign( "old_cr",  cr);
   dump_Assign( "old_sr",  sr);
@@ -471,7 +476,7 @@ dump_st_v2( std::string v,
   auto t    = "["+ tid + "]";
 
   dump_Comment("ST: Guess");
-  if(isExclusive) dump_Comment("  : Exlusive");
+  if(isExclusive) dump_Comment("  : Exclusive");
   if(isRelease  ) dump_Comment("  : Release");
   dump_Assign( "old_cw",  cw);
   dump_Assign_rand_ctx( cw, tid + " ASSIGN STCOM " + loc );
@@ -572,5 +577,5 @@ dump_st_v2( std::string v,
 // if( isExclusive ) dump_Assign( "delta"+g_cr, tid );
 // if( isExclusive ) active_lax = active_lax + 1;
 // dump_Assume_geq( cr, "iw"+t_g );
-// if( isExclusive ) dump_Assume_geq ( cr, "old_cr" );   // extra in exlusive
+// if( isExclusive ) dump_Assume_geq ( cr, "old_cr" );   // extra in exclusive
 //   if( isAcquire   ) dump_Assume_geq ( cr, "cx"+t_g);// extra in lda

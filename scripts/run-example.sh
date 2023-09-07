@@ -33,7 +33,7 @@ fi
 
 echo "./llvmbmc --unwind $1 -o $tmp_path --context-bound $2 --memory-model $6 -k $3 $spec_option"
 ./llvmbmc --unwind $1 -o $tmp_path --context-bound $2 --memory-model $6 -k $3 $spec_option > /dev/null 2>&1
-timeout $timeout cbmc $tmp_path/$fname.cbmc_out.cpp --unwind $1 $debug > $tmp_path/$fname.tr.tr 2>&1
+timeout $timeout cbmc $tmp_path/$fname.cbmc_out.cpp --unwind 1 $debug > $tmp_path/$fname.tr.tr 2>&1
 
 tr_file=$tmp_path/$fname.tr.tr
 

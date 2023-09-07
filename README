@@ -1,13 +1,23 @@
 Dependencies
 ------------
 
-* Install llvm-14
-* Install clang-14
+* Install llvm-15-dev
+* Install libclang-15-dev clang-tools-15
 * Install Boost
 * depends on -lz
 
+
+TODO:
+LLVM_VERSION is referred at two places.
+./src/CMakeLists.txt
+./Makefile
+Fix: Make it unified
+
+FIXIT.
+
 Install
 -------
+
 
 $make
 
@@ -53,3 +63,10 @@ Testing
 Running kbound
 
 grep -e "c.*]=" -e "c.*[0-9]=" /tmp/clean.tr > ~/tmp/stamps.txt
+
+
+Open issues of kbound:
+-- Testing arm-thread
+-- Testing lock support
+-- Processing thread-return value
+-- Handling bounded execution

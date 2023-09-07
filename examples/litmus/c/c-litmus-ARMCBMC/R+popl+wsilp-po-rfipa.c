@@ -1,3 +1,4 @@
+vars[0]
 /* Copyright (C) 2023 ARM-CBMC
 * This benchmark is part of ARM-CBMC */
 
@@ -10,6 +11,11 @@ void dmbld();
 void dmbst();
 void dmbsy();
 void isb();
+// ARM-CBMC specific functions to support exclusive accesses
+int ldx(int *);
+int ldax(int *);
+int stx(int *, int);
+int stlx(int *, int);
 
 long vars[2]; 
 int atom_0_X4_2; 
@@ -20,9 +26,9 @@ void *t0(void *arg){
 label_1:;
   atomic_store_explicit(&vars[0], 2, memory_order_relaxed);
   atomic_store_explicit(&vars[1], 1, memory_order_release);
-  int v3_W4 = atomic_load_explicit(&vars[1], memory_order_relaxed);
-  int v21 = (v3_W4 == 2);
-  atom_0_X4_2 = v21;
+  int v1_W4 = atomic_load_explicit(&vars[1], memory_order_relaxed);
+  int v15 = (v1_W4 == 2);
+  atom_0_X4_2 = v15;
   return NULL;
 }
 
@@ -31,12 +37,12 @@ label_2:;
   atomic_store_explicit(&vars[1], 2, memory_order_release);
   atomic_store_explicit(&vars[1], 3, memory_order_relaxed);
   atomic_store_explicit(&vars[0], 1, memory_order_relaxed);
-  int v6_W5 = atomic_load_explicit(&vars[0], memory_order_acquire);
-  int v9_W6 = atomic_load_explicit(&vars[0], memory_order_relaxed);
-  int v22 = (v9_W6 == 2);
-  atom_1_X6_2 = v22;
-  int v23 = (v6_W5 == 1);
-  atom_1_X5_1 = v23;
+  int v2_W5 = atomic_load_explicit(&vars[0], memory_order_acquire);
+  int v3_W6 = atomic_load_explicit(&vars[0], memory_order_relaxed);
+  int v16 = (v3_W6 == 2);
+  atom_1_X6_2 = v16;
+  int v17 = (v2_W5 == 1);
+  atom_1_X5_1 = v17;
   return NULL;
 }
 
@@ -56,17 +62,17 @@ int main(int argc, char *argv[]){
   pthread_join(thr0, NULL);
   pthread_join(thr1, NULL);
 
-  int v10 = atomic_load_explicit(&vars[0], memory_order_relaxed);
-  int v11 = (v10 == 2);
-  int v12 = atomic_load_explicit(&vars[1], memory_order_relaxed);
-  int v13 = (v12 == 3);
-  int v14 = atom_0_X4_2;
-  int v15 = atom_1_X6_2;
-  int v16 = atom_1_X5_1;
-  int v17_conj = v15 & v16;
-  int v18_conj = v14 & v17_conj;
-  int v19_conj = v13 & v18_conj;
-  int v20_conj = v11 & v19_conj;
-  if (v20_conj == 1) assert(0);
+  int v4 = atomic_load_explicit(&vars[0], memory_order_relaxed);
+  int v5 = (v4 == 2);
+  int v6 = atomic_load_explicit(&vars[1], memory_order_relaxed);
+  int v7 = (v6 == 3);
+  int v8 = atom_0_X4_2;
+  int v9 = atom_1_X6_2;
+  int v10 = atom_1_X5_1;
+  int v11_conj = v9 & v10;
+  int v12_conj = v8 & v11_conj;
+  int v13_conj = v7 & v12_conj;
+  int v14_conj = v5 & v13_conj;
+  if (v14_conj == 1) assert(0);
   return 0;
 }
