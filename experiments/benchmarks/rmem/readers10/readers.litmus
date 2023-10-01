@@ -1,0 +1,21 @@
+AArch64 readers/10
+
+{
+       int64_t var;
+       0:X0 = var;
+       1:X0 = var;
+       2:X0 = var;
+       3:X0 = var;
+       4:X0 = var;
+       5:X0 = var;
+       6:X0 = var;
+       7:X0 = var;
+       8:X0 = var;
+       9:X0 = var;
+       10:X0 = var;
+}
+
+P0           | P1           | P2           | P3           | P4           | P5           | P6           | P7           | P8           | P9           | P10          ;
+
+MOV X1, #42  |              |              |              |              |              |              |              |              |              |              ;
+STR X1, [X0] | LDR X1, [X0] | LDR X1, [X0] | LDR X1, [X0] | LDR X1, [X0] | LDR X1, [X0] | LDR X1, [X0] | LDR X1, [X0] | LDR X1, [X0] | LDR X1, [X0] | LDR X1, [X0] ;

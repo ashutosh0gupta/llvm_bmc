@@ -1,0 +1,30 @@
+C ainc/5
+
+{ atomic_t x = ATOMIC_INIT(0); }
+
+P0 (atomic_t *x)
+{
+	int r1 = atomic_fetch_add(1, x);
+}
+
+P1 (atomic_t *x)
+{
+	int r1 = atomic_fetch_add(1, x);
+}
+
+P2 (atomic_t *x)
+{
+	int r1 = atomic_fetch_add(1, x);
+}
+
+P3 (atomic_t *x)
+{
+	int r1 = atomic_fetch_add(1, x);
+}
+
+P4 (atomic_t *x)
+{
+	int r1 = atomic_fetch_add(1, x);
+}
+
+exists x = 15

@@ -1,0 +1,22 @@
+AArch64 binc/3
+
+{
+       int64_t x;
+       int64_t y;
+       0:X0 = x;
+       0:X1 = y;
+       1:X0 = x;
+       1:X1 = y;
+       2:X0 = x;
+       2:X1 = y;
+}
+
+P0                   | P1                  | P2                 ;
+
+LDXR X5, [X0]        | LDXR X5, [X0]       | LDXR X5, [X0]      ;
+ADD X5, X5, #1       | ADD X5, X5, #1      | ADD X5, X5, #1     ;
+STXR W13, X5, [X0]   | STXR W13, X5, [X0]  | STXR W13, X5, [X0] ;
+
+LDXR X5, [X1]        | LDXR X5, [X1]       | LDXR X5, [X1]      ;
+ADD X5, X5, #1       | ADD X5, X5, #1      | ADD X5, X5, #1     ;
+STXR W13, X5, [X1]   | STXR W13, X5, [X1]  | STXR W13, X5, [X1] ;

@@ -1,0 +1,17 @@
+AArch64 nwrites/5
+
+{
+       int64_t array[5];
+       0:X0 = array;
+       1:X0 = array;
+       2:X0 = array;
+       3:X0 = array;
+       4:X0 = array;
+}
+
+P0           | P1               | P2                | P3                | P4                ;
+
+MOV X2, #42  | MOV X2, #42      | MOV X2, #42       | MOV X2, #42       | MOV X2, #42       ;
+STR X2, [X0] | STR X2, [X0, #8] | STR X2, [X0, #16] | STR X2, [X0, #24] | STR X2, [X0, #32] ;
+
+forall array[0] = 42 /\ array[1] = 42 /\ array[2] = 42 /\ array[3] = 42 /\ array[4] = 42

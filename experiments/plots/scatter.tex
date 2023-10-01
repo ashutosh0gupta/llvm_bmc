@@ -1,0 +1,22 @@
+\begin{tikzpicture}[scale=0.6]
+\begin{loglogaxis}[
+    scale only axis,
+    xlabel={\large\genmc time (s)},
+    ylabel={\large\hmmc time (s)},
+    ylabel shift=-12pt,
+    xmin=0.1,xmax=10,
+    ymin=0.1,ymax=10,
+    legend pos=north west,
+]
+\addlegendimage{color=black}
+\addlegendimage{color=green}
+\addlegendimage{color=red}
+\addlegendimage{color=yellow}
+
+\addplot[only marks, mark size=.7pt]
+    table[x=time-genmc, y=time-hmc] {scatter.dat};
+\addplot[ultra thin,domain=0.1:10]
+    { x };
+%\legend{CoA, casw, inc, Nw1r}
+\end{loglogaxis}
+\end{tikzpicture}

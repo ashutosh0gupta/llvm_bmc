@@ -1,0 +1,3 @@
+flag0/8;
+flag1/8;
+turn/8;

@@ -1,0 +1,19 @@
+{cond, park_counter}
+
+thread t0
+{
+	c = cond.load(_rx);
+	while (c == 0) {
+		counter = park_counter.load(_rx);
+		park_counter.store(_rx, 0);
+		c = cond.load(_rx);
+	}
+}
+
+thread t1
+{
+	cond.store(_rx,1);
+	park_counter.store(_rx,1);
+}
+
+exists cond = 10

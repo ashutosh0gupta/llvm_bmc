@@ -1,0 +1,6 @@
+global_cond/8;
+unparker_finished/8;
+x/8;
+y/8;
+parker_counter/8;
+parker_cond/8;

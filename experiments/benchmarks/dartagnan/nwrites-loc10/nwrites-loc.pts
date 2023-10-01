@@ -1,0 +1,53 @@
+{ x }
+
+thread t0
+{
+	x.store(_rx, 42);
+}
+
+thread t1
+{
+	x.store(_rx, 42);
+}
+
+thread t2
+{
+	x.store(_rx, 42);
+}
+
+thread t3
+{
+	x.store(_rx, 42);
+}
+
+thread t4
+{
+	x.store(_rx, 42);
+}
+
+thread t5
+{
+	x.store(_rx, 42);
+}
+
+thread t6
+{
+	x.store(_rx, 42);
+}
+
+thread t7
+{
+	x.store(_rx, 42);
+}
+
+thread t7
+{
+	x.store(_rx, 42);
+}
+
+thread t9
+{
+	x.store(_rx, 42);
+}
+
+exists x = 42

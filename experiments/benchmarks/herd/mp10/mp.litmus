@@ -1,0 +1,62 @@
+AArch64 mp10
+
+{
+	int64_t x;
+	int64_t y;
+
+	0:X0 = x;
+	0:X1 = y;
+
+	1:X0 = x;
+	1:X1 = y;
+}
+
+P0            | P1            ;
+
+MOV X2, #1    | LOOP:         ;
+STR X2, [X0]  | LDAR X2, [X1] ;
+MOV X2, #1    | CMP X2, #1    ;
+STLR X2, [X1] | B.EQ LOAD_Y   ;
+
+              | LDAR X2, [X1] ;
+	      | CMP X2, #1    ;
+	      | B.EQ LOAD_Y   ;
+
+              | LDAR X2, [X1] ;
+	      | CMP X2, #1    ;
+	      | B.EQ LOAD_Y   ;
+
+              | LDAR X2, [X1] ;
+	      | CMP X2, #1    ;
+	      | B.EQ LOAD_Y   ;
+
+              | LDAR X2, [X1] ;
+	      | CMP X2, #1    ;
+	      | B.EQ LOAD_Y   ;
+
+              | LDAR X2, [X1] ;
+	      | CMP X2, #1    ;
+	      | B.EQ LOAD_Y   ;
+
+              | LDAR X2, [X1] ;
+	      | CMP X2, #1    ;
+	      | B.EQ LOAD_Y   ;
+
+              | LDAR X2, [X1] ;
+	      | CMP X2, #1    ;
+	      | B.EQ LOAD_Y   ;
+
+              | LDAR X2, [X1] ;
+	      | CMP X2, #1    ;
+	      | B.EQ LOAD_Y   ;
+
+              | LDAR X2, [X1] ;
+	      | CMP X2, #1    ;
+	      | B.EQ LOAD_Y   ;
+
+	      | B EXIT2       ;
+
+	      | LOAD_Y:       ;
+	      | LDR X2, [X0]  ;
+
+	      | EXIT2:        ;

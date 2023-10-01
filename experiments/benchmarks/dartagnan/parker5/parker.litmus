@@ -1,0 +1,592 @@
+AArch64 parker
+
+{
+	0:X0 = global_cond;
+	0:X1 = unparker_finished;
+	0:X2 = x;
+	0:X3 = y;
+	0:X4 = parker_counter;
+	0:X5 = parker_cond;
+
+	1:X0 = global_cond;
+	1:X1 = unparker_finished;
+	1:X2 = x;
+	1:X3 = y;
+	1:X4 = parker_counter;
+	1:X5 = parker_cond;
+}
+
+P0            | P1 ;
+
+(* T1: UNROLLED LOOP 5 TIMES *)
+
+LDAR X7, [X0] |; (* load global_cond *)
+CMP X7, #1    |;
+B.EQ EXIT1    |; (* if (global_cond == 1) then exit *)
+
+(****************************)
+(* T1: PARK BEGIN (#1) *)
+(****************************)
+
+LDAR X7, [X4] |; (* load parker_counter *)
+(* B.GT is not supported by all tools (0) *)
+CMP X7, #0    |;
+B.EQ AFTER_IF11 |;
+
+MOV X6, #0    |;
+STLR X6, [X4] |; (* parker_counter = 0 *)
+B PARK_END11  |;
+
+AFTER_IF11:  |;
+
+(* TRYLOCK BEGIN (1) -- result stored in X10 *)
+MOV X6, #1    |;
+STLR X6, [X2] |; (* x = 1 *)
+LDAR X7, [X3] |; (* load y *)
+CMP X7, #0    |;
+B.EQ TRYLOCK_0RET11 |; (* if (y == 0) return 0 *)
+
+MOV X6, #0    |;
+STLR X6, [X2] |; (* x = 0 *)
+B TRYLOCK_1RET11 |; (* return 1 *)
+
+TRYLOCK_0RET11: |;
+MOV X10, #0     |;
+B AFTER_TRYLOCK11 |;
+
+TRYLOCK_1RET11: |;
+MOV X10, #1     |;
+B AFTER_TRYLOCK11 |;
+(* TRYLOCK END (1) -- result stored in X10 *)
+
+AFTER_TRYLOCK11: |;
+CMP X10, #0   |;
+B.NE PARK_END11 |; (* if (trylock(1) != 0) return *)
+
+LDAR X7, [X4] |; (* load parker_counter *)
+(* B.GT not supported in all tools *)
+CMP X7, #0    |;
+B.EQ AFTER_IF12 |;
+
+MOV X6, #0    |;
+STLR X6, [X4] |; (* parker_counter = 0 *)
+(* UNLOCK (1) BEGIN *)
+MOV X6, #0    |;
+STLR X6, [X3] |; (* y = 0 *)
+(* UNLOCK (1) END *)
+B PARK_END11  |;
+
+AFTER_IF12:  |;
+
+(* PARKER_COND_WAIT (1) BEGIN *)
+MOV X6, #1    |;
+STLR X6, [X5] |; (* parker_cond = 1 *)
+
+(* UNLOCK (1) BEGIN *)
+MOV X6, #0    |;
+STLR X6, [X3] |; (* y = 0 *)
+(* UNLOCK (1) END *)
+
+LDAR X7, [X5] |; (* load parker_cond *)
+CMP X7, #0    |;
+B.NE EXIT1    |; (* if (parker_cond != 0) then exit *)
+
+(* LOCK (1) BEGIN *)
+MOV X6, #1    |;
+STLR X6, [X3] |; (* y = 1 *)
+LDAR X7, [X2] |; (* load x *)
+CMP X7, #0    |;
+B.NE EXIT1    |; (* if (x != 0) then exit *)
+(* LOCK (1) END *)
+
+(* PARKER_COND_WAIT (1) END *)
+
+MOV X6, #0    |;
+STLR X6, [X4] |; (* parker_counter = 0 *)
+
+(* UNLOCK (1) BEGIN *)
+MOV X6, #0    |;
+STLR X6, [X3] |; (* y = 0 *)
+(* UNLOCK (1) END *)
+
+PARK_END11:   |;
+
+(****************************)
+(* T1: PARK END (#1) *)
+(****************************)
+
+
+LDAR X7, [X0] |; (* load global_cond *)
+CMP X7, #1    |;
+B.EQ EXIT1    |; (* if (global_cond == 1) then exit *)
+
+(****************************)
+(* T1: PARK BEGIN (#2) *)
+(****************************)
+
+LDAR X7, [X4] |; (* load parker_counter *)
+(* B.GT is not supported by all tools (0) *)
+CMP X7, #0    |;
+B.EQ AFTER_IF21 |;
+
+MOV X6, #0    |;
+STLR X6, [X4] |; (* parker_counter = 0 *)
+B PARK_END21  |;
+
+AFTER_IF21:  |;
+
+(* TRYLOCK BEGIN (1) -- result stored in X10 *)
+MOV X6, #1    |;
+STLR X6, [X2] |; (* x = 1 *)
+LDAR X7, [X3] |; (* load y *)
+CMP X7, #0    |;
+B.EQ TRYLOCK_0RET21 |; (* if (y == 0) return 0 *)
+
+MOV X6, #0    |;
+STLR X6, [X2] |; (* x = 0 *)
+B TRYLOCK_1RET21 |; (* return 1 *)
+
+TRYLOCK_0RET21: |;
+MOV X10, #0     |;
+B AFTER_TRYLOCK21 |;
+
+TRYLOCK_1RET21: |;
+MOV X10, #1     |;
+B AFTER_TRYLOCK21 |;
+(* TRYLOCK END (1) -- result stored in X10 *)
+
+AFTER_TRYLOCK21: |;
+CMP X10, #0   |;
+B.NE PARK_END21 |; (* if (trylock(1) != 0) return *)
+
+LDAR X7, [X4] |; (* load parker_counter *)
+(* B.GT not supported in all tools *)
+CMP X7, #0    |;
+B.EQ AFTER_IF22 |;
+
+MOV X6, #0    |;
+STLR X6, [X4] |; (* parker_counter = 0 *)
+(* UNLOCK (1) BEGIN *)
+MOV X6, #0    |;
+STLR X6, [X3] |; (* y = 0 *)
+(* UNLOCK (1) END *)
+B PARK_END21  |;
+
+AFTER_IF22:  |;
+
+(* PARKER_COND_WAIT (1) BEGIN *)
+MOV X6, #1    |;
+STLR X6, [X5] |; (* parker_cond = 1 *)
+
+(* UNLOCK (1) BEGIN *)
+MOV X6, #0    |;
+STLR X6, [X3] |; (* y = 0 *)
+(* UNLOCK (1) END *)
+
+LDAR X7, [X5] |; (* load parker_cond *)
+CMP X7, #0    |;
+B.NE EXIT1    |; (* if (parker_cond != 0) then exit *)
+
+(* LOCK (1) BEGIN *)
+MOV X6, #1    |;
+STLR X6, [X3] |; (* y = 1 *)
+LDAR X7, [X2] |; (* load x *)
+CMP X7, #0    |;
+B.NE EXIT1    |; (* if (x != 0) then exit *)
+(* LOCK (1) END *)
+
+(* PARKER_COND_WAIT (1) END *)
+
+MOV X6, #0    |;
+STLR X6, [X4] |; (* parker_counter = 0 *)
+
+(* UNLOCK (1) BEGIN *)
+MOV X6, #0    |;
+STLR X6, [X3] |; (* y = 0 *)
+(* UNLOCK (1) END *)
+
+PARK_END21:   |;
+
+(****************************)
+(* T1: PARK END (#2) *)
+(****************************)
+
+
+LDAR X7, [X0] |; (* load global_cond *)
+CMP X7, #1    |;
+B.EQ EXIT1    |; (* if (global_cond == 1) then exit *)
+
+(****************************)
+(* T1: PARK BEGIN (#3) *)
+(****************************)
+
+LDAR X7, [X4] |; (* load parker_counter *)
+(* B.GT is not supported by all tools (0) *)
+CMP X7, #0    |;
+B.EQ AFTER_IF31 |;
+
+MOV X6, #0    |;
+STLR X6, [X4] |; (* parker_counter = 0 *)
+B PARK_END31  |;
+
+AFTER_IF31:  |;
+
+(* TRYLOCK BEGIN (1) -- result stored in X10 *)
+MOV X6, #1    |;
+STLR X6, [X2] |; (* x = 1 *)
+LDAR X7, [X3] |; (* load y *)
+CMP X7, #0    |;
+B.EQ TRYLOCK_0RET31 |; (* if (y == 0) return 0 *)
+
+MOV X6, #0    |;
+STLR X6, [X2] |; (* x = 0 *)
+B TRYLOCK_1RET31 |; (* return 1 *)
+
+TRYLOCK_0RET31: |;
+MOV X10, #0     |;
+B AFTER_TRYLOCK31 |;
+
+TRYLOCK_1RET31: |;
+MOV X10, #1     |;
+B AFTER_TRYLOCK31 |;
+(* TRYLOCK END (1) -- result stored in X10 *)
+
+AFTER_TRYLOCK31: |;
+CMP X10, #0   |;
+B.NE PARK_END31 |; (* if (trylock(1) != 0) return *)
+
+LDAR X7, [X4] |; (* load parker_counter *)
+(* B.GT not supported in all tools *)
+CMP X7, #0    |;
+B.EQ AFTER_IF32 |;
+
+MOV X6, #0    |;
+STLR X6, [X4] |; (* parker_counter = 0 *)
+(* UNLOCK (1) BEGIN *)
+MOV X6, #0    |;
+STLR X6, [X3] |; (* y = 0 *)
+(* UNLOCK (1) END *)
+B PARK_END31  |;
+
+AFTER_IF32:  |;
+
+(* PARKER_COND_WAIT (1) BEGIN *)
+MOV X6, #1    |;
+STLR X6, [X5] |; (* parker_cond = 1 *)
+
+(* UNLOCK (1) BEGIN *)
+MOV X6, #0    |;
+STLR X6, [X3] |; (* y = 0 *)
+(* UNLOCK (1) END *)
+
+LDAR X7, [X5] |; (* load parker_cond *)
+CMP X7, #0    |;
+B.NE EXIT1    |; (* if (parker_cond != 0) then exit *)
+
+(* LOCK (1) BEGIN *)
+MOV X6, #1    |;
+STLR X6, [X3] |; (* y = 1 *)
+LDAR X7, [X2] |; (* load x *)
+CMP X7, #0    |;
+B.NE EXIT1    |; (* if (x != 0) then exit *)
+(* LOCK (1) END *)
+
+(* PARKER_COND_WAIT (1) END *)
+
+MOV X6, #0    |;
+STLR X6, [X4] |; (* parker_counter = 0 *)
+
+(* UNLOCK (1) BEGIN *)
+MOV X6, #0    |;
+STLR X6, [X3] |; (* y = 0 *)
+(* UNLOCK (1) END *)
+
+PARK_END31:   |;
+
+(****************************)
+(* T1: PARK END (#3) *)
+(****************************)
+
+
+LDAR X7, [X0] |; (* load global_cond *)
+CMP X7, #1    |;
+B.EQ EXIT1    |; (* if (global_cond == 1) then exit *)
+
+(****************************)
+(* T1: PARK BEGIN (#4) *)
+(****************************)
+
+LDAR X7, [X4] |; (* load parker_counter *)
+(* B.GT is not supported by all tools (0) *)
+CMP X7, #0    |;
+B.EQ AFTER_IF41 |;
+
+MOV X6, #0    |;
+STLR X6, [X4] |; (* parker_counter = 0 *)
+B PARK_END41  |;
+
+AFTER_IF41:  |;
+
+(* TRYLOCK BEGIN (1) -- result stored in X10 *)
+MOV X6, #1    |;
+STLR X6, [X2] |; (* x = 1 *)
+LDAR X7, [X3] |; (* load y *)
+CMP X7, #0    |;
+B.EQ TRYLOCK_0RET41 |; (* if (y == 0) return 0 *)
+
+MOV X6, #0    |;
+STLR X6, [X2] |; (* x = 0 *)
+B TRYLOCK_1RET41 |; (* return 1 *)
+
+TRYLOCK_0RET41: |;
+MOV X10, #0     |;
+B AFTER_TRYLOCK41 |;
+
+TRYLOCK_1RET41: |;
+MOV X10, #1     |;
+B AFTER_TRYLOCK41 |;
+(* TRYLOCK END (1) -- result stored in X10 *)
+
+AFTER_TRYLOCK41: |;
+CMP X10, #0   |;
+B.NE PARK_END41 |; (* if (trylock(1) != 0) return *)
+
+LDAR X7, [X4] |; (* load parker_counter *)
+(* B.GT not supported in all tools *)
+CMP X7, #0    |;
+B.EQ AFTER_IF42 |;
+
+MOV X6, #0    |;
+STLR X6, [X4] |; (* parker_counter = 0 *)
+(* UNLOCK (1) BEGIN *)
+MOV X6, #0    |;
+STLR X6, [X3] |; (* y = 0 *)
+(* UNLOCK (1) END *)
+B PARK_END41  |;
+
+AFTER_IF42:  |;
+
+(* PARKER_COND_WAIT (1) BEGIN *)
+MOV X6, #1    |;
+STLR X6, [X5] |; (* parker_cond = 1 *)
+
+(* UNLOCK (1) BEGIN *)
+MOV X6, #0    |;
+STLR X6, [X3] |; (* y = 0 *)
+(* UNLOCK (1) END *)
+
+LDAR X7, [X5] |; (* load parker_cond *)
+CMP X7, #0    |;
+B.NE EXIT1    |; (* if (parker_cond != 0) then exit *)
+
+(* LOCK (1) BEGIN *)
+MOV X6, #1    |;
+STLR X6, [X3] |; (* y = 1 *)
+LDAR X7, [X2] |; (* load x *)
+CMP X7, #0    |;
+B.NE EXIT1    |; (* if (x != 0) then exit *)
+(* LOCK (1) END *)
+
+(* PARKER_COND_WAIT (1) END *)
+
+MOV X6, #0    |;
+STLR X6, [X4] |; (* parker_counter = 0 *)
+
+(* UNLOCK (1) BEGIN *)
+MOV X6, #0    |;
+STLR X6, [X3] |; (* y = 0 *)
+(* UNLOCK (1) END *)
+
+PARK_END41:   |;
+
+(****************************)
+(* T1: PARK END (#4) *)
+(****************************)
+
+
+LDAR X7, [X0] |; (* load global_cond *)
+CMP X7, #1    |;
+B.EQ EXIT1    |; (* if (global_cond == 1) then exit *)
+
+(****************************)
+(* T1: PARK BEGIN (#5) *)
+(****************************)
+
+LDAR X7, [X4] |; (* load parker_counter *)
+(* B.GT is not supported by all tools (0) *)
+CMP X7, #0    |;
+B.EQ AFTER_IF51 |;
+
+MOV X6, #0    |;
+STLR X6, [X4] |; (* parker_counter = 0 *)
+B PARK_END51  |;
+
+AFTER_IF51:  |;
+
+(* TRYLOCK BEGIN (1) -- result stored in X10 *)
+MOV X6, #1    |;
+STLR X6, [X2] |; (* x = 1 *)
+LDAR X7, [X3] |; (* load y *)
+CMP X7, #0    |;
+B.EQ TRYLOCK_0RET51 |; (* if (y == 0) return 0 *)
+
+MOV X6, #0    |;
+STLR X6, [X2] |; (* x = 0 *)
+B TRYLOCK_1RET51 |; (* return 1 *)
+
+TRYLOCK_0RET51: |;
+MOV X10, #0     |;
+B AFTER_TRYLOCK51 |;
+
+TRYLOCK_1RET51: |;
+MOV X10, #1     |;
+B AFTER_TRYLOCK51 |;
+(* TRYLOCK END (1) -- result stored in X10 *)
+
+AFTER_TRYLOCK51: |;
+CMP X10, #0   |;
+B.NE PARK_END51 |; (* if (trylock(1) != 0) return *)
+
+LDAR X7, [X4] |; (* load parker_counter *)
+(* B.GT not supported in all tools *)
+CMP X7, #0    |;
+B.EQ AFTER_IF52 |;
+
+MOV X6, #0    |;
+STLR X6, [X4] |; (* parker_counter = 0 *)
+(* UNLOCK (1) BEGIN *)
+MOV X6, #0    |;
+STLR X6, [X3] |; (* y = 0 *)
+(* UNLOCK (1) END *)
+B PARK_END51  |;
+
+AFTER_IF52:  |;
+
+(* PARKER_COND_WAIT (1) BEGIN *)
+MOV X6, #1    |;
+STLR X6, [X5] |; (* parker_cond = 1 *)
+
+(* UNLOCK (1) BEGIN *)
+MOV X6, #0    |;
+STLR X6, [X3] |; (* y = 0 *)
+(* UNLOCK (1) END *)
+
+LDAR X7, [X5] |; (* load parker_cond *)
+CMP X7, #0    |;
+B.NE EXIT1    |; (* if (parker_cond != 0) then exit *)
+
+(* LOCK (1) BEGIN *)
+MOV X6, #1    |;
+STLR X6, [X3] |; (* y = 1 *)
+LDAR X7, [X2] |; (* load x *)
+CMP X7, #0    |;
+B.NE EXIT1    |; (* if (x != 0) then exit *)
+(* LOCK (1) END *)
+
+(* PARKER_COND_WAIT (1) END *)
+
+MOV X6, #0    |;
+STLR X6, [X4] |; (* parker_counter = 0 *)
+
+(* UNLOCK (1) BEGIN *)
+MOV X6, #0    |;
+STLR X6, [X3] |; (* y = 0 *)
+(* UNLOCK (1) END *)
+
+PARK_END51:   |;
+
+(****************************)
+(* T1: PARK END (#5) *)
+(****************************)
+
+EXIT1: |;
+
+
+
+
+
+
+
+(****************************)
+(* T2: UNPARK BEGIN *)
+(****************************)
+
+(* T2: LOCK_BEGIN (0) *)
+| MOV X6, #1    ;
+| STLR X6, [X3] ; (* y = 1 *)
+| LDAR X7, [X2] ; (* load x *)
+| CMP X7, #0    ;
+| B.NE EXIT2    ; (* if (y != 0) then stop the execution for T2 *)
+(*  T2: LOCK_END  (0) *)
+
+| LDAR X10, [X4] ; (* load parker counter (will stay loaded) *)
+| MOV X6, #1    ;
+| STLR X6, [X4] ; (* parker_counter = 1 *)
+
+(* T2: UNLOCK_BEGIN (0) *)
+| MOV X6, #0    ;
+| STLR X6, [X3] ; (* y = 0 *)
+(* T2: UNLOCK_END (0) *)
+
+(* B.LT is not supported (1) *)
+| CMP X10, #0   ;
+| B.NE AFTER_SIGNAL21 ;
+
+(* T2: COND_SIGNAL_BEGIN *)
+| MOV X6, #0    ;
+| STLR X6, [X5] ; (* parker_cond = 0 *)
+(* T2: COND_SIGNAL_END *)
+
+| AFTER_SIGNAL21: ;
+
+(****************************)
+(* T2: UNPARK END *)
+(****************************)
+
+| MOV X6, #1    ;
+| STLR X6, [X0] ; (* global_cond = 1 *)
+
+(****************************)
+(* T2: UNPARK BEGIN *)
+(****************************)
+
+(* T2: LOCK_BEGIN (0) *)
+| MOV X6, #1    ;
+| STLR X6, [X3] ; (* y = 1 *)
+| LDAR X7, [X2] ; (* load x *)
+| CMP X7, #0    ;
+| B.NE EXIT2    ; (* if (y != 0) then stop the execution for T2 *)
+(*  T2: LOCK_END  (0) *)
+
+| LDAR X10, [X4] ; (* load parker counter (will stay loaded) *)
+| MOV X6, #1    ;
+| STLR X6, [X4] ; (* parker_counter = 1 *)
+
+(* T2: UNLOCK_BEGIN (0) *)
+| MOV X6, #0    ;
+| STLR X6, [X3] ; (* y = 0 *)
+(* T2: UNLOCK_END (0) *)
+
+(* B.LT is not supported (1) *)
+| CMP X10, #0   ;
+| B.NE AFTER_SIGNAL22 ;
+
+(* T2: COND_SIGNAL_BEGIN *)
+| MOV X6, #0    ;
+| STLR X6, [X5] ; (* parker_cond = 0 *)
+(* T2: COND_SIGNAL_END *)
+
+| AFTER_SIGNAL22: ;
+
+(****************************)
+(* T2: UNPARK END *)
+(****************************)
+
+(* STORE 1 TO UNPARKER_FINISHED *)
+| MOV X6, #1     ;
+| STLR X6, [X1]  ;
+
+(* T2: DONE *)
+| EXIT2:         ;
+
+exists x = 1

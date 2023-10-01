@@ -1,0 +1,32 @@
+AArch64 peterson40
+
+{
+       int64_t flag0;
+       int64_t flag1;
+       int64_t turn;
+       0:X0 = flag0;
+       0:X1 = flag1;
+       0:X2 = turn;
+       0:X3 = 40 (* LOOP BOUND *);
+       1:X0 = flag0;
+       1:X1 = flag1;
+       1:X2 = turn;
+       1:X3 = 40 (* LOOP BOUND *);
+}
+
+P0                  | P1                  ;
+
+    MOV X5, #1      |     MOV X5, #1      ;
+    STR X5, [X0]    |     STR X5, [X1]    ;
+    STR X5, [X2]    |     STR X5, [X2]    ;
+LOOP:               | LOOP:               ;
+    LDR X6, [X1]    |     LDR X6, [X0]    ;
+    CMP X6, #1      |     CMP X6, #1      ;
+    B.NE EXIT       |     B.NE EXIT       ;
+    LDR X6, [X2]    |     LDR X6, [X2]    ;
+    CMP X6, #1      |     CMP X6, #1      ;
+    B.NE EXIT       |     B.NE EXIT       ;
+    SUBS X3, X3, #1 |     SUBS X3, X3, #1 ;
+    CMP X3, #0      |     CMP X3, #0      ;
+    B.NE LOOP       |     B.NE LOOP       ;
+EXIT:               | EXIT:               ;

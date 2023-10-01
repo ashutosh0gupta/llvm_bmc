@@ -1,0 +1,22 @@
+AArch64 nwrites-loc/10
+
+{
+       int64_t x;
+       0:X0 = x;
+       1:X0 = x;
+       2:X0 = x;
+       3:X0 = x;
+       4:X0 = x;
+       5:X0 = x;
+       6:X0 = x;
+       7:X0 = x;
+       8:X0 = x;
+       9:X0 = x;
+}
+
+P0           | P1           | P2           | P3           | P4           | P5           | P6           | P7           | P8           | P9           ;
+
+MOV X2, #42  | MOV X2, #42  | MOV X2, #42  | MOV X2, #42  | MOV X2, #42  | MOV X2, #42  | MOV X2, #42  | MOV X2, #42  | MOV X2, #42  | MOV X2, #42  ;
+STR X2, [X0] | STR X2, [X0] | STR X2, [X0] | STR X2, [X0] | STR X2, [X0] | STR X2, [X0] | STR X2, [X0] | STR X2, [X0] | STR X2, [X0] | STR X2, [X0] ;
+
+forall x = 42

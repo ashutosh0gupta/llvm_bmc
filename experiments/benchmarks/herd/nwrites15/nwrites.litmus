@@ -1,0 +1,27 @@
+AArch64 nwrites/15
+
+{
+       int64_t array[15];
+       0:X0 = array;
+       1:X0 = array;
+       2:X0 = array;
+       3:X0 = array;
+       4:X0 = array;
+       5:X0 = array;
+       6:X0 = array;
+       7:X0 = array;
+       8:X0 = array;
+       9:X0 = array;
+       10:X0 = array;
+       11:X0 = array;
+       12:X0 = array;
+       13:X0 = array;
+       14:X0 = array;
+}
+
+P0           | P1               | P2                | P3                | P4                | P5                | P6                | P7                | P8                | P9                | P10               | P11               | P12               | P13               | P14               ;
+
+MOV X2, #42  | MOV X2, #42      | MOV X2, #42       | MOV X2, #42       | MOV X2, #42       | MOV X2, #42       | MOV X2, #42       | MOV X2, #42       | MOV X2, #42       | MOV X2, #42       | MOV X2, #42       | MOV X2, #42       | MOV X2, #42       | MOV X2, #42       | MOV X2, #42       ;
+STR X2, [X0] | STR X2, [X0, #8] | STR X2, [X0, #16] | STR X2, [X0, #24] | STR X2, [X0, #32] | STR X2, [X0, #40] | STR X2, [X0, #48] | STR X2, [X0, #56] | STR X2, [X0, #64] | STR X2, [X0, #72] | STR X2, [X0, #80] | STR X2, [X0, #88] | STR X2, [X0, #96] | STR X2, [X0, #104] | STR X2, [X0, #112] ;
+
+forall array[0] = 42 /\ array[1] = 42 /\ array[2] = 42 /\ array[3] = 42 /\ array[4] = 42 /\ array[5] = 42 /\ array[6] = 42 /\ array[7] = 42 /\ array[8] = 42 /\ array[9] = 42 /\ array[10] = 42 /\ array[11] = 42 /\ array[12] = 42 /\ array[14] = 42

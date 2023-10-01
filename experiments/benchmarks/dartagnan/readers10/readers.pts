@@ -1,0 +1,58 @@
+{ x }
+
+thread t0
+{
+	x.store(_rx, 42);
+}
+
+thread t1
+{
+	r1 = x.load(_rx);
+}
+
+thread t2
+{
+	r2 = x.load(_rx);
+}
+
+thread t3
+{
+	r3 = x.load(_rx);
+}
+
+thread t4
+{
+	r4 = x.load(_rx);
+}
+
+thread t5
+{
+	r5 = x.load(_rx);
+}
+
+thread t6
+{
+	r6 = x.load(_rx);
+}
+
+thread t7
+{
+	r7 = x.load(_rx);
+}
+
+thread t8
+{
+	r8 = x.load(_rx);
+}
+
+thread t9
+{
+	r9 = x.load(_rx);
+}
+
+thread t10
+{
+	r10 = x.load(_rx);
+}
+
+exists x = 2

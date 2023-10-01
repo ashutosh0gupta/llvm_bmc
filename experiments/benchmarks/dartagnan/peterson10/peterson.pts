@@ -1,0 +1,39 @@
+{ flag1, flag2, turn, x }
+
+thread t0
+{
+	flag1.store(_rel, 1);
+	turn.store(_rel, 1);
+
+	f2 = flag2.load(_acq);
+	t0 = turn.load(_acq);
+	while ((f2 == 1) and (t0 == 1)) {
+		f2 = flag2.load(_acq);
+		t0 = turn.load(_acq);
+	}
+
+	x.store(_rel, 0);
+	x0 = x.load(_acq);
+
+	flag1.store(_rel, 0);
+}
+
+thread t1
+{
+	flag2.store(_rel, 1);
+	turn.store(_rel, 0);
+
+	f1 = flag1.load(_acq);
+	t1 = turn.load(_acq);
+	while ((f1 == 1) and (t1 == 0)) {
+		f1 = flag1.load(_acq);
+		t1 = turn.load(_acq);
+	}
+
+	x.store(_rel, 1);
+	x1 = x.load(_acq);
+
+	flag2.store(_rel, 0);
+}
+
+exists turn=10
