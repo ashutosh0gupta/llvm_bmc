@@ -8,6 +8,7 @@
 #include <map>
 #include <queue>
 #include <memory>
+#include <optional>
 
 #include "include/options.h"
 #include "include/spec.h"
