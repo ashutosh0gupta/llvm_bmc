@@ -1,5 +1,3 @@
-vars[0]
-vars[2]
 /* Copyright (C) 2023 ARM-CBMC
 * This benchmark is part of ARM-CBMC */
 
@@ -13,12 +11,12 @@ void dmbst();
 void dmbsy();
 void isb();
 // ARM-CBMC specific functions to support exclusive accesses
-int ldx(int *);
-int ldax(int *);
-int stx(int *, int);
-int stlx(int *, int);
+void ldx(int *);
+void ldax(int *);
+void stx(int *, int);
+void stlx(int *, int);
 
-long vars[5]; 
+int vars[5]; 
 int atom_4_X0_1; 
 int atom_0_X0_1; 
 int atom_1_X0_1; 

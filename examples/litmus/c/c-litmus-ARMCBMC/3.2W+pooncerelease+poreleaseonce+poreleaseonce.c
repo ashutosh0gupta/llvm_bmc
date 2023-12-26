@@ -11,12 +11,12 @@ void dmbst();
 void dmbsy();
 void isb();
 // ARM-CBMC specific functions to support exclusive accesses
-int ldx(int *);
-int ldax(int *);
-int stx(int *, int);
-int stlx(int *, int);
+void ldx(int *);
+void ldax(int *);
+void stx(int *, int);
+void stlx(int *, int);
 
-long vars[3]; 
+int vars[3]; 
 
 void *t0(void *arg){
 label_1:;

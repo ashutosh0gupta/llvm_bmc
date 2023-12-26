@@ -1,4 +1,3 @@
-vars[1]
 /* Copyright (C) 2023 ARM-CBMC
 * This benchmark is part of ARM-CBMC */
 
@@ -12,12 +11,12 @@ void dmbst();
 void dmbsy();
 void isb();
 // ARM-CBMC specific functions to support exclusive accesses
-int ldx(int *);
-int ldax(int *);
-int stx(int *, int);
-int stlx(int *, int);
+void ldx(int *);
+void ldax(int *);
+void stx(int *, int);
+void stlx(int *, int);
 
-long vars[3]; 
+int vars[3]; 
 int atom_1_X0_1; 
 int atom_2_X0_1; 
 int atom_2_X3_0; 
@@ -36,7 +35,7 @@ label_2:;
   if (v2_cmpeq)  goto label_3; else goto lbl_Exit1;
 label_3:;
   atomic_store_explicit(&vars[2], 1, memory_order_relaxed);
-  goto  lbl_Exit1;
+  goto label lbl_Exit1;
 lbl_Exit1:;
   int v12 = (v1_W0 == 1);
   atom_1_X0_1 = v12;
@@ -51,7 +50,7 @@ label_4:;
 label_5:;
   int v5_W2 = v3_W0 ^ v3_W0;
   int v6_W3 = atomic_load_explicit(&vars[0+v5_W2], memory_order_relaxed);
-  goto  lbl_Exit2;
+  goto label lbl_Exit2;
 lbl_Exit2:;
   int v13 = (v3_W0 == 1);
   atom_2_X0_1 = v13;
