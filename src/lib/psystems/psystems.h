@@ -99,7 +99,10 @@ private:
     std::string getInstructionString(const llvm::Instruction &);
     std::string getBasicBlockString(const llvm::BasicBlock &);
     bool is_subword(const word_t &, const word_t &);
-    std::unique_ptr<std::set<state_t> > forall_neq_check(const llvm::Loop *);
+    // std::unique_ptr<std::set<state_t> > forall_neq_check(const llvm::Loop *);
+    std::set<state_t> get_guard(const llvm::Loop *, psystems::Quantifier);
+    std::optional<Quantifier> get_quant(const llvm::Loop *);
+    std::optional<AccessRelation> get_ar(const llvm::Loop *);
     //---------------------------------------------------------------------
 public:
     psystems(options &o_,

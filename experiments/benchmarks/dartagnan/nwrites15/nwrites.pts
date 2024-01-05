@@ -1,0 +1,79 @@
+{ x0, x1, x2, x3, x4, x5, x6, x7, x8, x9,
+  x10, x11, x12, x13, x14 }
+
+thread t0
+{
+	x0.store(_rx, 42);
+}
+
+thread t1
+{
+	x1.store(_rx, 42);
+}
+
+thread t2
+{
+	x2.store(_rx, 42);
+}
+
+thread t3
+{
+	x3.store(_rx, 42);
+}
+
+thread t4
+{
+	x4.store(_rx, 42);
+}
+
+thread t5
+{
+	x5.store(_rx, 42);
+}
+
+thread t6
+{
+	x6.store(_rx, 42);
+}
+
+thread t7
+{
+	x7.store(_rx, 42);
+}
+
+thread t8
+{
+	x8.store(_rx, 42);
+}
+
+thread t9
+{
+	x9.store(_rx, 42);
+}
+
+thread t10
+{
+	x10.store(_rx, 42);
+}
+
+thread t11
+{
+	x11.store(_rx, 42);
+}
+
+thread t12
+{
+	x12.store(_rx, 42);
+}
+
+thread t13
+{
+	x13.store(_rx, 42);
+}
+
+thread t14
+{
+	x14.store(_rx, 42);
+}
+
+exists x0 = 17

@@ -59,24 +59,170 @@ std::string psystems::getBasicBlockString(const llvm::BasicBlock &bb)
     return StringStream.str();
 }
 
-std::unique_ptr<std::set<psystems::state_t> > psystems::forall_neq_check(const llvm::Loop *loop)
+// std::unique_ptr<std::set<psystems::state_t> > psystems::forall_neq_check(const llvm::Loop *loop)
+// {
+//     std::unique_ptr<std::set<state_t> > p;
+//     if(loop)
+//     {
+//         const llvm::BasicBlock *header_block = loop->getHeader();
+//         if(header_block)
+//         {
+//             std::string s = getBasicBlockString(*header_block);
+//             if(s[1] == 'L')
+//             {
+//                 state_t header_num = std::stoi(s.c_str() + 2);
+//                 const auto &v = loop->getSubLoops();
+//                 if(v.size() != 1) return p;
+//                 const llvm::Loop *for_loop = v[0];
+//                 if(!for_loop) return p;
+//                 /* check if for loop is of the form for(int i = 0; i < N; ++i) */
+//                 const llvm::BasicBlock *for_header = for_loop->getHeader();
+//                 if(!for_header) return p;
+//                 llvm::SmallVector<llvm::BasicBlock *> l;
+//                 for_loop->getLoopLatches(l);
+//                 if(l.size() != 2) return p;
+//                 const llvm::BasicBlock *latch;
+//                 const llvm::Instruction *termInst;
+//                 const llvm::BranchInst *br;
+//                 const llvm::Value *cond;
+//                 const llvm::ICmpInst *cmpInst;
+//                 const llvm::ConstantInt *ci;
+//                 bool good = false;
+//                 for(state_t i = 0; i < 2; ++i)
+//                 {
+//                     latch = l[i];
+//                     termInst = latch->getTerminator();
+//                     if(!termInst) continue;
+//                     br = llvm::dyn_cast<const llvm::BranchInst>(termInst);
+//                     if(!br || ! br->isConditional()) continue;
+//                     cond = br->getCondition();
+//                     if(!cond) continue;;
+//                     cmpInst = llvm::dyn_cast<const llvm::ICmpInst>(br);
+//                     if(! cmpInst ) continue;
+//                     if(cmpInst->getPredicate() != llvm::CmpInst::ICMP_SLT) continue;
+//                     ci = llvm::dyn_cast<const llvm::ConstantInt>(cmpInst);
+//                     if(!ci) continue;
+//                     good = true;
+//                     break;
+//                 }
+//                 if(!good) return p;
+//                 const llvm::Value *loop_var = cmpInst->getOperand(1);
+//                 const llvm::PHINode *phin = llvm::dyn_cast<const llvm::PHINode>(loop_var);
+//                 if(! phin ) return p;
+//                 const llvm::Type *phitype = phin->getType();
+//                 if(! phitype->isIntegerTy()) return p;
+//                 const llvm::Value *val = phin->getIncomingValue(0);
+//                 const llvm::Instruction *inc_inst = llvm::dyn_cast<const llvm::Instruction>(val);
+//                 if(! inc_inst || inc_inst->getParent() != latch) return p;
+//                 if(inc_inst->getOpcode() != llvm::Instruction::Add) return p;
+//                 if(inc_inst->getOperand(0) != phin) return p;
+//                 const llvm::ConstantInt *const1 = llvm::dyn_cast<const llvm::ConstantInt>(inc_inst->getOperand(1));
+//                 if(!const1 || ! const1->isOne()) return p;
+//                 /* for loop check done */
+//                 /* Check for latches of main loop */
+//                 llvm::SmallVector<llvm::BasicBlock *> latches;
+//                 loop->getLoopLatches(latches);
+//                 std::set<state_t> vals;
+//                 for(const llvm::BasicBlock *bb: latches)
+//                 {
+//                     const llvm::Instruction *term = bb->getTerminator();
+//                     if(!term) continue;
+//                     const llvm::BranchInst *br = llvm::dyn_cast<const llvm::BranchInst>(term);
+//                 }
+//             }
+//         }
+//     }
+//     return p;
+// }
+
+std::set<psystems::state_t> psystems::get_guard(const llvm::Loop *loop, psystems::Quantifier q)
 {
-    std::unique_ptr<std::set<state_t> > p;
-    if(loop)
+
+}
+
+std::optional<psystems::Quantifier> psystems::get_quant(const llvm::Loop *loop)
+{
+
+}
+
+std::optional<psystems::AccessRelation> psystems::get_ar(const llvm::Loop *loop)
+{
+    const llvm::BasicBlock *header = loop->getHeader();
+    if(!header) return std::optional<psystems::AccessRelation>();
+    llvm::SmallVector<llvm::BasicBlock *> v;
+    loop->getLoopLatches(v);
+    if(v.size() != 1) return std::optional<psystems::AccessRelation>(); // continue statement is not a latch!!
+    const llvm::BasicBlock *latch = v[0];
+    // check if latch is a conditional branch with < comparison
+    const llvm::Instruction *termInst = latch->getTerminator();
+    if(!termInst) return std::optional<psystems::AccessRelation>();
+    const llvm::BranchInst *br = llvm::dyn_cast<const llvm::BranchInst>(termInst);
+    if(!br || !br->isConditional()) return std::optional<psystems::AccessRelation>();
+    const llvm::Value *cond = br->getCondition();
+    if(!cond) return std::optional<psystems::AccessRelation>();
+    const llvm::ICmpInst *cmpInst = llvm::dyn_cast<const llvm::ICmpInst>(cond);
+    if(! cmpInst ) return std::optional<psystems::AccessRelation>();
+    if(cmpInst->getPredicate() != llvm::CmpInst::ICMP_SLT) return std::optional<psystems::AccessRelation>();
+    // check if branch is being compared with an integer constant
+    const llvm::ConstantInt *ci = llvm::dyn_cast<const llvm::ConstantInt>(cmpInst->getOperand(1));
+    if(ci)
     {
-        const llvm::BasicBlock *header_block = loop->getHeader();
-        if(header_block)
+        // common check
+        const llvm::Value *loop_var = cmpInst->getOperand(0);
+        const llvm::Instruction *loop_var_inst = llvm::dyn_cast<const llvm::Instruction>(loop_var);
+        if(!loop_var_inst) return std::optional<psystems::AccessRelation>();
+        const llvm::Type *type = loop_var_inst->getType();
+        if(! type->isIntegerTy()) return std::optional<psystems::AccessRelation>();
+        // check if loop variable is initialized to 0
+        int64_t init_val = -1;
+        const llvm::BasicBlock *parent = loop_var_inst->getParent();
+        if(! parent) return std::optional<psystems::AccessRelation>();
+        for (const llvm::Instruction& instruction : parent->getInstList())
         {
-            std::string s = getBasicBlockString(*header_block);
-            if(s[1] == 'L')
+            if (const llvm::AllocaInst* allocaInst = llvm::dyn_cast<const llvm::AllocaInst>(&instruction))
             {
-                state_t header_num = std::stoi(s.c_str() + 2);
-                const auto &v = loop->getSubLoops();
-                if(v.size() != 1);
+                // Found the instruction that allocates memory for the variable
+                // Get the initial value if available (assuming constant initialization)
+                if (const llvm::ConstantInt* constantInt = llvm::dyn_cast<const llvm::ConstantInt>(allocaInst->getOperand(0)))
+                {
+                    init_val = constantInt->getSExtValue();
+                }
+                break;  // Exit the loop after finding the initialization instruction
             }
         }
+        if(init_val == -1) return GT;
+        if(init_val == 0) return NEQ;
+        return std::optional<psystems::AccessRelation>();
     }
-    return p;
+    else
+    {
+        // extra checks
+        // check if branch is being compared with an integer constant
+        const llvm::Value *loop_var = cmpInst->getOperand(0);
+        const llvm::Instruction *loop_var_inst = llvm::dyn_cast<const llvm::Instruction>(loop_var);
+        if(!loop_var_inst) return std::optional<psystems::AccessRelation>();
+        const llvm::Type *type = loop_var_inst->getType();
+        if(! type->isIntegerTy()) return std::optional<psystems::AccessRelation>();
+        // check if loop variable is initialized to 0
+        int64_t init_val = -1;
+        const llvm::BasicBlock *parent = loop_var_inst->getParent();
+        if(! parent) return std::optional<psystems::AccessRelation>();
+        for (const llvm::Instruction& instruction : parent->getInstList())
+        {
+            if (const llvm::AllocaInst* allocaInst = llvm::dyn_cast<const llvm::AllocaInst>(&instruction))
+            {
+                // Found the instruction that allocates memory for the variable
+                // Get the initial value if available (assuming constant initialization)
+                if (const llvm::ConstantInt* constantInt = llvm::dyn_cast<const llvm::ConstantInt>(allocaInst->getOperand(0)))
+                {
+                    init_val = constantInt->getSExtValue();
+                }
+                break;  // Exit the loop after finding the initialization instruction
+            }
+        }
+        if(init_val != 0) return std::optional<psystems::AccessRelation>();
+        return LT;
+    }
 }
 
 bool psystems::runOnFunction(llvm::Function &f)
@@ -106,8 +252,10 @@ bool psystems::runOnFunction(llvm::Function &f)
     // We have to figure out how the flag changes and what are the conditions of passing the checkpoint
     if(EntryFn == "function")
     {
-        // state_t l_count = 0;
+        state_t l_count = 0;
+        // f.dump();
         std::vector<const llvm::BasicBlock *> labelled_blocks;
+        // std::map<const llvm::BasicBlock *, state_t> block_to_label; 
         for(const auto& BB: f)
         {
             std::string s = getBasicBlockString(BB);
@@ -115,7 +263,7 @@ bool psystems::runOnFunction(llvm::Function &f)
             if(s[1] == 'L')
             {
                 labelled_blocks.push_back(&BB);
-                if(auto pptr = BB.getUniqueSuccessor())
+                if(const auto pptr = BB.getUniqueSuccessor())
                 {
                     std::string ss = getBasicBlockString(*pptr);
                     if(ss[1] == 'L')
@@ -125,19 +273,95 @@ bool psystems::runOnFunction(llvm::Function &f)
                 }
             }
         }
-        // getting all global transitions
-        // need to search for 
-        auto &LIWP = getAnalysis<llvm::LoopInfoWrapperPass>();
-        auto &LI = LIWP.getLoopInfo();
-        for(auto I : LI)
+        // // getting all global transitions
+        const auto &LIWP = getAnalysis<llvm::LoopInfoWrapperPass>();
+        const auto &LI = LIWP.getLoopInfo();
+        for(const llvm::Loop *I: LI)
         {
-            for(auto II: I->getSubLoops())
+            for(const llvm::Loop *II: I->getLoopsInPreorder())
             {
-                std::cout << "A" << std::endl;
-                II->dump();
-                std::cout << "B" << std::endl;
+                // if(const llvm::BasicBlock *pred = II->getLoopPredecessor())
+                // {
+                //     std::string s = getBasicBlockString(*pred);
+                //     if(s[1] == 'L')
+                //     {
+                //         state_t init = std::stoi(s.c_str() + 2);
+                //         if(const llvm::BasicBlock *exit = II->getExitBlock())
+                //         {
+                //             if(const llvm::BasicBlock *succ = exit->getUniqueSuccessor())
+                //             {
+                //                 std::string ss = getBasicBlockString(*succ);
+                //                 if(ss[1] == 'L')
+                //                 {
+                //                     state_t fin = std::stoi(ss.c_str() + 2);
+                //                     const std::set<state_t> &guard = get_guard(II);
+                //                     Quantifier q = get_quant(II);
+                //                     AccessRelation ar = get_ar(II);
+                //                 }
+                //             }
+                //         }
+                //     }
+                // }
+                // const llvm::BasicBlock *header = II->getHeader();
+                // header->dump();
+                for(const llvm::BasicBlock *bb: II->blocks())
+                {
+                    bb->dump();
+                }
+                std::optional<AccessRelation> ar = get_ar(II);
+                std::cout << "\nBRUHHH" << std::endl;
+                if(ar)
+                {
+                    switch(ar.value())
+                    {
+                        case NEQ:
+                        {
+                            std::cout << "NEQ" << std::endl;
+                            break;
+                        }
+                        case LT:
+                        {
+                            std::cout << "LT" << std::endl;
+                            break;
+                        }
+                        case GT:
+                        {
+                            std::cout << "GT" << std::endl;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    std::cout << "NONE" << std::endl;
+                }
             }
         }
+        // state_t i = 0;
+        // for(const llvm::Loop *I: LI)
+        // {
+        //     for(const llvm::Loop *II: I->getLoopsInPreorder())
+        //     {
+        //         const llvm::BasicBlock *header = II->getHeader();
+        //         header->getS
+        //         header->dump();
+        //         std::cout << "LOOP " << i << " LEVEL: " << II->getLoopDepth() << std::endl;
+        //         ++i;
+        //     }
+        // }
+        // std::cout << "I: " << i << std::endl;
+        // for(auto I : LI)
+        // {
+        //     // for(auto II: I->getLoopsInPreorder())
+        //     // {
+        //     //     std::cout << "A" << std::endl;
+        //     //     II->dump();
+        //     //     std::cout << "B" << std::endl;
+        //     // }
+        //     // std::cout << "HI" << std::endl;
+        //     // I->dump();
+        //     // std::cout << "BYE" << std::endl;
+        // }
         // for(auto I: LI)
         // {
         //     for(auto II: I->getSubLoops())

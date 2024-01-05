@@ -1,0 +1,29 @@
+C binc/4
+
+{ atomic_t x = ATOMIC_INIT(0); atomic_t y = ATOMIC_INIT(0); }
+
+P0 (atomic_t *x)
+{
+	int r1 = atomic_fetch_add(1, x);
+	int r2 = atomic_fetch_add(1, y);
+}
+
+P1 (atomic_t *x)
+{
+	int r1 = atomic_fetch_add(1, x);
+	int r2 = atomic_fetch_add(1, y);
+}
+
+P2 (atomic_t *x)
+{
+	int r1 = atomic_fetch_add(1, x);
+	int r2 = atomic_fetch_add(1, y);
+}
+
+P3 (atomic_t *x)
+{
+	int r1 = atomic_fetch_add(1, x);
+	int r2 = atomic_fetch_add(1, y);
+}
+
+exists x = 4 /\ y = 4

@@ -1,0 +1,278 @@
+AArch64 indexer12
+
+{
+	int64_t table[128];
+	0:X0 = table;
+	0:X1 = 0; (* TID *)
+	1:X0 = table;
+	1:X1 = 1; (* TID *)
+	2:X0 = table;
+	2:X1 = 2; (* TID *)
+	3:X0 = table;
+	3:X1 = 3; (* TID *)
+	4:X0 = table;
+	4:X1 = 4; (* TID *)
+	5:X0 = table;
+	5:X1 = 5; (* TID *)
+	6:X0 = table;
+	6:X1 = 6; (* TID *)
+	7:X0 = table;
+	7:X1 = 7; (* TID *)
+	8:X0 = table;
+	8:X1 = 8; (* TID *)
+	9:X0 = table;
+	9:X1 = 9; (* TID *)
+	10:X0 = table;
+	10:X1 = 10; (* TID *)
+	11:X0 = table;
+	11:X1 = 11; (* TID *)
+}
+
+P0                     | P1                     | P2                     | P3                     | P4 | P5 | P6 | P7 | P8 | P9 | P10 | P11 ;
+
+(**********************************************************)
+(**                   THREADS 0 TO 3                     **)
+(**********************************************************)
+
+
+(* i = 0 *)              (* i = 0 *)              (* i = 0 *)	           (* i = 0 *)
+MOV X2, #0             | MOV X2, #0             | MOV X2, #0             | MOV X2, #0             | | | | | | | | ;
+(* zero = 0 *)		 (* zero = 0 *)		  (* zero = 0 *)	   (* zero = 0 *)
+MOV X10, #0            | MOV X10, #0            | MOV X10, #0            | MOV X10, #0            | | |	| | | |	| ;
+
+LOOP0:                 | LOOP1:                 | LOOP2:                 | LOOP3:                 | | |	| | | |	| ;
+
+(* w = i * 11 *)	 (* w = i * 11 *)	  (* w = i * 11 *)         (* w = i * 11 *)
+     (* + tid *)	      (* + tid *)	       (* + tid *)              (* + tid *)
+MOV X3, X2             | MOV X3, X2             | MOV X3, X2             | MOV X3, X2             | | |	| | | |	| ;
+ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| | | |	| ;
+ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| | | |	| ;
+ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| | | |	| ;
+ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| | | |	| ;
+ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| | | |	| ;
+ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| | | |	| ;
+ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| | | |	| ;
+ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| | | |	| ;
+ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| | | |	| ;
+ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| | | |	| ;
+ADD X3, X3, X1         | ADD X3, X3, X1         | ADD X3, X3, X1         | ADD X3, X3, X1         | | |	| | | |	| ;
+
+(* h = (w * 7) *)	 (* h = (w * 7) *)	  (* h = (w * 7) *)        (* h = (w * 7) *)
+     (* % SIZE *)	      (* % SIZE *)	       (* % SIZE *)             (* % SIZE *)
+MOV X4, X3             | MOV X4, X3             | MOV X4, X3             | MOV X4, X3             | | |	| | | |	| ;
+ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | | |	| | | |	| ;
+ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | | |	| | | |	| ;
+ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | | |	| | | |	| ;
+ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | | |	| | | |	| ;
+ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | | |	| | | |	| ;
+ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | | |	| | | |	| ;
+AND X4, X4, #127       | AND X4, X4, #127       | AND X4, X4, #127       | AND X4, X4, #127       | | |	| | | |	| ;
+
+(* if (h < 0) *)	 (* if (h < 0) *)	  (* if (h < 0) *)         (* if (h < 0) *)
+(* set X30 = 1 *)	 (* set X30 = 1 *)	  (* set X30 = 1 *)        (* set X30 = 1 *)
+CMP X4, #0             | CMP X4, #0             | CMP X4, #0             | CMP X4, #0             | | |	| | | |	| ;
+B.GE DO_CAS0           | B.GE DO_CAS1           | B.GE DO_CAS2           | B.GE DO_CAS3           | | |	| | | |	| ;
+B FAIL0                | B FAIL1                | B FAIL2                | B FAIL3                | | |	| | | |	| ;
+
+(* Set h, zero *)	 (* Set h, zero *)	  (* Set h, zero *)        (* Set h, zero *)
+BEFORE_CAS0:           | BEFORE_CAS1:           | BEFORE_CAS2:           | BEFORE_CAS3:           | | |	| | | |	| ;
+
+(* h = (h+1)%127 *)	 (* h = (h+1)%127 *)	  (* h = (h+1)%127 *)      (* h = (h+1)%127 *)
+ADD X4, X4, #1         | ADD X4, X4, #1         | ADD X4, X4, #1         | ADD X4, X4, #1         | | |	| | | |	| ;
+AND X4, X4, #127       | AND X4, X4, #127       | AND X4, X4, #127       | AND X4, X4, #127       | | |	| | | |	| ;
+(* zero = 0 *)		 (* zero = 0 *)		  (* zero = 0 *)	   (* zero = 0 *)
+MOV X10, #0            | MOV X10, #0            | MOV X10, #0            | MOV X10, #0            | | |	| | | |	| ;
+
+(* Do the CAS *)	 (* Do the CAS *)	  (* Do the CAS *)         (* Do the CAS *)
+DO_CAS0:               | DO_CAS1:               | DO_CAS2:               | DO_CAS3:               | | |	| | | |	| ;
+
+ADD X9, X0, X4, LSL #3 | ADD X9, X0, X4, LSL #3 | ADD X9, X0, X4, LSL #3 | ADD X9, X0, X4, LSL #3 | | |	| | | |	| ;
+LDXR X5, [X9]          | LDXR X5, [X9]          | LDXR X5, [X9]          | LDXR X5, [X9]          | | |	| | | |	| ;
+CMP X5, X10            | CMP X5, X10            | CMP X5, X10            | CMP X5, X10            | | |	| | | |	| ;
+B.NE AFTER_CASL0       | B.NE AFTER_CASL1       | B.NE AFTER_CASL2       | B.NE AFTER_CASL3       | | |	| | | |	| ;
+STXR W15, X3, [X9]     | STXR W15, X3, [X9]     | STXR W15, X3, [X9]     | STXR W15, X3, [X9]     | | |	| | | |	| ;
+CBNZ W15, FAIL0        | CBNZ W15, FAIL1        | CBNZ W15, FAIL2        | CBNZ W15, FAIL3        | | |	| | | |	| ;
+
+AFTER_CASL0:           | AFTER_CASL1:           | AFTER_CASL2:           | AFTER_CASL3:           | | |	| | | |	| ;
+
+CSET W5, EQ            | CSET W5, EQ            | CSET W5, EQ            | CSET W5, EQ            | | |	| | | |	| ;
+CBNZ W5, AFTER_CAS0    | CBNZ W5, AFTER_CAS1    | CBNZ W5, AFTER_CAS2  	 | CBNZ W5, AFTER_CAS3    | | |	| | | |	| ;
+MOV X10, X5            | MOV X10, X5            | MOV X10, X5            | MOV X10, X5            | | |	| | | |	| ;
+B BEFORE_CAS0          | B BEFORE_CAS1          | B BEFORE_CAS2          | B BEFORE_CAS3          | | |	| | | |	| ;
+
+AFTER_CAS0:            | AFTER_CAS1:            | AFTER_CAS2:            | AFTER_CAS3:            | | |	| | | |	| ;
+
+(* loop cond *)		 (* loop cond *)	  (* loop cond *)	   (* loop cond *)
+CMP X2, #3             | CMP X2, #3             | CMP X2, #3             | CMP X2, #3             | | |	| | | |	| ;
+B.LE LOOP0             | B.LE LOOP1             | B.LE LOOP2             | B.LE LOOP3             | | |	| | | |	| ;
+B EXIT0                | B EXIT1                | B EXIT2                | B EXIT3                | | |	| | | |	| ;
+
+FAIL0:                 | FAIL1:                 | FAIL2:                 | FAIL3:                 | | |	| | | |	| ;
+MOV X30, #1            | MOV X30, #1            | MOV X30, #1            | MOV X30, #1            | | |	| | | |	| ;
+
+EXIT0:                 | EXIT1:                 | EXIT2:                 | EXIT3:                 | | |	| | | |	| ;
+
+(**********************************************************)
+(**                   THREADS 4 TO 7                     **)
+(**********************************************************)
+
+       (* i = 0 *)              (* i = 0 *)              (* i = 0 *)	           (* i = 0 *)
+| | | | MOV X2, #0             | MOV X2, #0             | MOV X2, #0             | MOV X2, #0             | | | | ;
+        (* zero = 0 *)		 (* zero = 0 *)		  (* zero = 0 *)	   (* zero = 0 *)
+| | | | MOV X10, #0            | MOV X10, #0            | MOV X10, #0            | MOV X10, #0            | | |	| ;
+
+| | | | LOOP4:                 | LOOP5:                 | LOOP6:                 | LOOP7:                 | | |	| ;
+
+	  (* w = i * 11 *)	 (* w = i * 11 *)	  (* w = i * 11 *)         (* w = i * 11 *)
+	       (* + tid *)	      (* + tid *)	       (* + tid *)              (* + tid *)
+| | | | MOV X3, X2             | MOV X3, X2             | MOV X3, X2             | MOV X3, X2             | | |	| ;
+| | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| ;
+| | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| ;
+| | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| ;
+| | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| ;
+| | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| ;
+| | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| ;
+| | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| ;
+| | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| ;
+| | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| ;
+| | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | | |	| ;
+| | | | ADD X3, X3, X1         | ADD X3, X3, X1         | ADD X3, X3, X1         | ADD X3, X3, X1         | | |	| ;
+
+	  (* h = (w * 7) *)	 (* h = (w * 7) *)	  (* h = (w * 7) *)        (* h = (w * 7) *)
+	       (* % SIZE *)	      (* % SIZE *)	       (* % SIZE *)             (* % SIZE *)
+| | | | MOV X4, X3             | MOV X4, X3             | MOV X4, X3             | MOV X4, X3             | | |	| ;
+| | | | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | | |	| ;
+| | | | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | | |	| ;
+| | | | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | | |	| ;
+| | | | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | | |	| ;
+| | | | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | | |	| ;
+| | | | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | | |	| ;
+| | | | AND X4, X4, #127       | AND X4, X4, #127       | AND X4, X4, #127       | AND X4, X4, #127       | | |	| ;
+
+	  (* if (h < 0) *)	 (* if (h < 0) *)	  (* if (h < 0) *)         (* if (h < 0) *)
+	  (* set X30 = 1 *)	 (* set X30 = 1 *)	  (* set X30 = 1 *)        (* set X30 = 1 *)
+| | | | CMP X4, #0             | CMP X4, #0             | CMP X4, #0             | CMP X4, #0             | | |	| ;
+| | | | B.GE DO_CAS4           | B.GE DO_CAS5           | B.GE DO_CAS6           | B.GE DO_CAS7           | | |	| ;
+| | | | B FAIL4                | B FAIL5                | B FAIL6                | B FAIL7                | | |	| ;
+
+	  (* Set h, zero *)	 (* Set h, zero *)	  (* Set h, zero *)        (* Set h, zero *)
+| | | | BEFORE_CAS4:           | BEFORE_CAS5:           | BEFORE_CAS6:           | BEFORE_CAS7:           | | |	| ;
+
+	  (* h = (h+1)%127 *)	 (* h = (h+1)%127 *)	  (* h = (h+1)%127 *)      (* h = (h+1)%127 *)
+| | | | ADD X4, X4, #1         | ADD X4, X4, #1         | ADD X4, X4, #1         | ADD X4, X4, #1         | | |	| ;
+| | | | AND X4, X4, #127       | AND X4, X4, #127       | AND X4, X4, #127       | AND X4, X4, #127       | | |	| ;
+        (* zero = 0 *)		 (* zero = 0 *)		  (* zero = 0 *)	   (* zero = 0 *)
+| | | | MOV X10, #0            | MOV X10, #0            | MOV X10, #0            | MOV X10, #0            | | |	| ;
+
+	  (* Do the CAS *)	 (* Do the CAS *)	  (* Do the CAS *)         (* Do the CAS *)
+| | | | DO_CAS4:               | DO_CAS5:               | DO_CAS6:               | DO_CAS7:               | | |	| ;
+
+| | | | ADD X9, X0, X4, LSL #3 | ADD X9, X0, X4, LSL #3 | ADD X9, X0, X4, LSL #3 | ADD X9, X0, X4, LSL #3 | | |	| ;
+| | | | LDXR X5, [X9]          | LDXR X5, [X9]          | LDXR X5, [X9]          | LDXR X5, [X9]          | | |	| ;
+| | | | CMP X5, X10            | CMP X5, X10            | CMP X5, X10            | CMP X5, X10            | | |	| ;
+| | | | B.NE AFTER_CASL4       | B.NE AFTER_CASL5       | B.NE AFTER_CASL6       | B.NE AFTER_CASL7       | | |	| ;
+| | | | STXR W15, X3, [X9]     | STXR W15, X3, [X9]     | STXR W15, X3, [X9]     | STXR W15, X3, [X9]     | | |	| ;
+| | | | CBNZ W15, FAIL4        | CBNZ W15, FAIL5        | CBNZ W15, FAIL6        | CBNZ W15, FAIL7        | | |	| ;
+
+| | | | AFTER_CASL4:           | AFTER_CASL5:           | AFTER_CASL6:           | AFTER_CASL7:           | | |	| ;
+
+| | | | CSET W5, EQ            | CSET W5, EQ            | CSET W5, EQ            | CSET W5, EQ            | | |	| ;
+| | | | CBNZ W5, AFTER_CAS4    | CBNZ W5, AFTER_CAS5    | CBNZ W5, AFTER_CAS6  	 | CBNZ W5, AFTER_CAS7    | | |	| ;
+| | | | MOV X10, X5            | MOV X10, X5            | MOV X10, X5            | MOV X10, X5            | | |	| ;
+| | | | B BEFORE_CAS4          | B BEFORE_CAS5          | B BEFORE_CAS6          | B BEFORE_CAS7          | | |	| ;
+
+| | | | AFTER_CAS4:            | AFTER_CAS5:            | AFTER_CAS6:            | AFTER_CAS7:            | | |	| ;
+
+        (* loop cond *)		 (* loop cond *)	  (* loop cond *)	   (* loop cond *)
+| | | | CMP X2, #3             | CMP X2, #3             | CMP X2, #3             | CMP X2, #3             | | |	| ;
+| | | | B.LE LOOP4             | B.LE LOOP5             | B.LE LOOP6             | B.LE LOOP7             | | |	| ;
+| | | | B EXIT4                | B EXIT5                | B EXIT6                | B EXIT7                | | |	| ;
+
+| | | | FAIL4:                 | FAIL5:                 | FAIL6:                 | FAIL7:                 | | |	| ;
+| | | | MOV X30, #1            | MOV X30, #1            | MOV X30, #1            | MOV X30, #1            | | |	| ;
+
+| | | | EXIT4:                 | EXIT5:                 | EXIT6:                 | EXIT7:                 | | |	| ;
+
+
+(**********************************************************)
+(**                   THREADS 8 TO 11                     **)
+(**********************************************************)
+
+                (* i = 0 *)              (* i = 0 *)              (* i = 0 *)	           (* i = 0 *)
+| | | | | | | | MOV X2, #0             | MOV X2, #0             | MOV X2, #0             | MOV X2, #0             ;
+                (* zero = 0 *)		 (* zero = 0 *)		  (* zero = 0 *)	   (* zero = 0 *)
+| | | | | | | | MOV X10, #0            | MOV X10, #0            | MOV X10, #0            | MOV X10, #0            ;
+
+| | | | | | | | LOOP8:                 | LOOP9:                 | LOOP10:                | LOOP11:                ;
+
+	          (* w = i * 11 *)	 (* w = i * 11 *)	  (* w = i * 11 *)         (* w = i * 11 *)
+	               (* + tid *)	      (* + tid *)	       (* + tid *)              (* + tid *)
+| | | | | | | | MOV X3, X2             | MOV X3, X2             | MOV X3, X2             | MOV X3, X2             ;
+| | | | | | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         ;
+| | | | | | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         ;
+| | | | | | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         ;
+| | | | | | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         ;
+| | | | | | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         ;
+| | | | | | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         ;
+| | | | | | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         ;
+| | | | | | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         ;
+| | | | | | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         ;
+| | | | | | | | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         | ADD X3, X3, X2         ;
+| | | | | | | | ADD X3, X3, X1         | ADD X3, X3, X1         | ADD X3, X3, X1         | ADD X3, X3, X1         ;
+
+	          (* h = (w * 7) *)	 (* h = (w * 7) *)	  (* h = (w * 7) *)        (* h = (w * 7) *)
+	               (* % SIZE *)	      (* % SIZE *)	       (* % SIZE *)             (* % SIZE *)
+| | | | | | | | MOV X4, X3             | MOV X4, X3             | MOV X4, X3             | MOV X4, X3             ;
+| | | | | | | | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         ;
+| | | | | | | | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         ;
+| | | | | | | | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         ;
+| | | | | | | | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         ;
+| | | | | | | | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         ;
+| | | | | | | | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         | ADD X4, X4, #3         ;
+| | | | | | | | AND X4, X4, #127       | AND X4, X4, #127       | AND X4, X4, #127       | AND X4, X4, #127       ;
+
+	          (* if (h < 0) *)	 (* if (h < 0) *)	  (* if (h < 0) *)         (* if (h < 0) *)
+	          (* set X30 = 1 *)	 (* set X30 = 1 *)	  (* set X30 = 1 *)        (* set X30 = 1 *)
+| | | | | | | | CMP X4, #0             | CMP X4, #0             | CMP X4, #0             | CMP X4, #0             ;
+| | | | | | | | B.GE DO_CAS8           | B.GE DO_CAS9           | B.GE DO_CAS10          | B.GE DO_CAS11          ;
+| | | | | | | | B FAIL8                | B FAIL9                | B FAIL10               | B FAIL11               ;
+
+	          (* Set h, zero *)	 (* Set h, zero *)	  (* Set h, zero *)        (* Set h, zero *)
+| | | | | | | | BEFORE_CAS8:           | BEFORE_CAS9:           | BEFORE_CAS10:          | BEFORE_CAS11:          ;
+
+	          (* h = (h+1)%127 *)	 (* h = (h+1)%127 *)	  (* h = (h+1)%127 *)      (* h = (h+1)%127 *)
+| | | | | | | | ADD X4, X4, #1         | ADD X4, X4, #1         | ADD X4, X4, #1         | ADD X4, X4, #1         ;
+| | | | | | | | AND X4, X4, #127       | AND X4, X4, #127       | AND X4, X4, #127       | AND X4, X4, #127       ;
+                (* zero = 0 *)		 (* zero = 0 *)		  (* zero = 0 *)	   (* zero = 0 *)
+| | | | | | | | MOV X10, #0            | MOV X10, #0            | MOV X10, #0            | MOV X10, #0            ;
+
+	          (* Do the CAS *)	 (* Do the CAS *)	  (* Do the CAS *)         (* Do the CAS *)
+| | | | | | | | DO_CAS8:               | DO_CAS9:               | DO_CAS10:              | DO_CAS11:              ;
+
+| | | | | | | | ADD X9, X0, X4, LSL #3 | ADD X9, X0, X4, LSL #3 | ADD X9, X0, X4, LSL #3 | ADD X9, X0, X4, LSL #3 ;
+| | | | | | | | LDXR X5, [X9]          | LDXR X5, [X9]          | LDXR X5, [X9]          | LDXR X5, [X9]          ;
+| | | | | | | | CMP X5, X10            | CMP X5, X10            | CMP X5, X10            | CMP X5, X10            ;
+| | | | | | | | B.NE AFTER_CASL8       | B.NE AFTER_CASL9       | B.NE AFTER_CASL10      | B.NE AFTER_CASL11      ;
+| | | | | | | | STXR W15, X3, [X9]     | STXR W15, X3, [X9]     | STXR W15, X3, [X9]     | STXR W15, X3, [X9]     ;
+| | | | | | | | CBNZ W15, FAIL8        | CBNZ W15, FAIL9        | CBNZ W15, FAIL10       | CBNZ W15, FAIL11       ;
+
+| | | | | | | | AFTER_CASL8:           | AFTER_CASL9:           | AFTER_CASL10:          | AFTER_CASL11:           ;
+
+| | | | | | | | CSET W5, EQ            | CSET W5, EQ            | CSET W5, EQ            | CSET W5, EQ            ;
+| | | | | | | | CBNZ W5, AFTER_CAS8    | CBNZ W5, AFTER_CAS9    | CBNZ W5, AFTER_CAS10 	 | CBNZ W5, AFTER_CAS11   ;
+| | | | | | | | MOV X10, X5            | MOV X10, X5            | MOV X10, X5            | MOV X10, X5            ;
+| | | | | | | | B BEFORE_CAS8          | B BEFORE_CAS9          | B BEFORE_CAS10         | B BEFORE_CAS11         ;
+
+| | | | | | | | AFTER_CAS8:            | AFTER_CAS9:            | AFTER_CAS10:           | AFTER_CAS11:           ;
+
+                (* loop cond *)		 (* loop cond *)	  (* loop cond *)	   (* loop cond *)
+| | | | | | | | CMP X2, #3             | CMP X2, #3             | CMP X2, #3             | CMP X2, #3             ;
+| | | | | | | | B.LE LOOP8             | B.LE LOOP9             | B.LE LOOP10            | B.LE LOOP11            ;
+| | | | | | | | B EXIT8                | B EXIT9                | B EXIT10               | B EXIT11               ;
+
+| | | | | | | | FAIL8:                 | FAIL9:                 | FAIL10:                | FAIL11:                ;
+| | | | | | | | MOV X30, #1            | MOV X30, #1            | MOV X30, #1            | MOV X30, #1            ;
+
+| | | | | | | | EXIT8:                 | EXIT9:                 | EXIT10:                | EXIT11:                ;
+
+forall 0:X0 = 0

@@ -1,0 +1,28 @@
+{ x0, x1, x2, x3, x4 }
+
+thread t0
+{
+	x0.store(_rx, 42);
+}
+
+thread t1
+{
+	x1.store(_rx, 42);
+}
+
+thread t2
+{
+	x2.store(_rx, 42);
+}
+
+thread t3
+{
+	x3.store(_rx, 42);
+}
+
+thread t4
+{
+	x4.store(_rx, 42);
+}
+
+exists x0 = 17

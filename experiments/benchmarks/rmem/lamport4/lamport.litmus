@@ -1,0 +1,229 @@
+AArch64 lamport4
+
+{
+	int64_t x;
+	int64_t y;
+	int64_t b1;
+	int64_t b2;
+	int64_t b3;
+	int64_t b4;
+
+	0:X1 = b1;
+	0:X2 = b2;
+	0:X3 = b3;
+	0:X4 = b4;
+	0:X5 = x;
+	0:X6 = y;
+
+	1:X1 = b1;
+	1:X2 = b2;
+	1:X3 = b3;
+	1:X4 = b4;
+	1:X5 = x;
+	1:X6 = y;
+
+	2:X1 = b1;
+	2:X2 = b2;
+	2:X3 = b3;
+	2:X5 = x;
+	2:X6 = y;
+
+	3:X1 = b1;
+	3:X2 = b2;
+	3:X3 = b3;
+	3:X5 = x;
+	3:X6 = y;
+}
+
+P0            | P1            | P2            | P3            ;
+
+LOCK1:        | LOCK2:        | LOCK3:        | LOCK4:        ; (* BEGIN OF LOCK() OPERATION *)
+LOOP11:       | LOOP21:       | LOOP31:       | LOOP41:       ; (* while(1) is unrolled 3 times *)
+
+MOV X0, #1    | MOV X0, #1    | MOV X0, #1    | MOV X0, #1    ;
+STLR X0, [X1] | STLR X0, [X2] | STLR X0, [X3] | STLR X0, [X4] ; (* b[thread] = true *)
+MOV X0, #1    | MOV X0, #2    | MOV X0, #3    | MOV X0, #4    ;
+STLR X0, [X5] | STLR X0, [X5] | STLR X0, [X5] | STLR X0, [X5] ; (* x = thread *)
+
+LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] ; (* load y *)
+CMP X7, #0    | CMP X7, #0    | CMP X7, #0    | CMP X7, #0    ;
+B.EQ AFT_IF11 | B.EQ AFT_IF21 | B.EQ AFT_IF31 | B.EQ AFT_IF41 ; (* if (y == 0) skip the if body *)
+
+(* if-body begin *)
+MOV X0, #0    | MOV X0, #0    | MOV X0, #0    | MOV X0, #0    ;
+STLR X0, [X1] | STLR X0, [X2] | STLR X0, [X3] | STLR X0, [X4] ; (* b[thread] = false *)
+LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] ; (* load y *)
+CMP X7, #0    | CMP X7, #0    | CMP X7, #0    | CMP X7, #0    ;
+B.NE EXIT1    | B.NE EXIT2    | B.NE EXIT3    | B.NE EXIT4    ; (* if y != 0 exit *)
+B LOOP12      | B LOOP22      | B LOOP32      | B LOOP42      ; (* if y == 0, go to the next loop iteration *)
+(* if-body end *)
+
+AFT_IF11:     | AFT_IF21:     | AFT_IF31:     | AFT_IF41:     ;
+MOV X0, #1    | MOV X0, #2    | MOV X0, #3    | MOV X0, #4    ;
+STLR X0, [X6] | STLR X0, [X6] | STLR X0, [X6] | STLR X0, [X6] ; (* y = thread *)
+
+LDAR X7, [X5] | LDAR X7, [X5] | LDAR X7, [X5] | LDAR X7, [X5] ; (* load x *)
+CMP X7, #1    | CMP X7, #2    | CMP X7, #3    | CMP X7, #4    ;
+B.EQ UNLOCK1  | B.EQ UNLOCK2  | B.EQ UNLOCK3  | B.EQ UNLOCK4  ; (* if (x == thread) skip the if body and break (i.e. go to unlock) *)
+
+(* if-body begin *)
+MOV X0, #0    | MOV X0, #0    | MOV X0, #0    | MOV X0, #0    ;
+STLR X0, [X1] | STLR X0, [X2] | STLR X0, [X3] | STLR X0, [X4] ; (* b[thread] = false *)
+(* loop-body begin*)
+LDAR X7, [X1] | LDAR X7, [X1] | LDAR X7, [X1] | LDAR X7, [X1] ; (* load b[1] *)
+CMP X7, #1    | CMP X7, #1    | CMP X7, #1    | CMP X7, #1    ;
+B.EQ EXIT1    | B.EQ EXIT2    | B.EQ EXIT3    | B.EQ EXIT4    ; (* if (b[1] = true), exit *)
+LDAR X7, [X2] | LDAR X7, [X2] | LDAR X7, [X2] | LDAR X7, [X2] ; (* load b[2] *)
+CMP X7, #1    | CMP X7, #1    | CMP X7, #1    | CMP X7, #1    ;
+B.EQ EXIT1    | B.EQ EXIT2    | B.EQ EXIT3    | B.EQ EXIT4    ; (* if b[2] = true), exit *)
+LDAR X7, [X3] | LDAR X7, [X3] | LDAR X7, [X3] | LDAR X7, [X3] ; (* load b[3] *)
+CMP X7, #1    | CMP X7, #1    | CMP X7, #1    | CMP X7, #1    ;
+B.EQ EXIT1    | B.EQ EXIT2    | B.EQ EXIT3    | B.EQ EXIT4    ; (* if b[3] = true), exit *)
+LDAR X7, [X4] | LDAR X7, [X4] | LDAR X7, [X4] | LDAR X7, [X4] ; (* load b[4] *)
+CMP X7, #1    | CMP X7, #1    | CMP X7, #1    | CMP X7, #1    ;
+B.EQ EXIT1    | B.EQ EXIT2    | B.EQ EXIT3    | B.EQ EXIT4    ; (* if b[4] = true), exit *)
+(* loop-body end *)
+
+LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] ; (* load y *)
+CMP X7, #1    | CMP X7, #2    | CMP X7, #3    | CMP X7, #4    ;
+B.EQ UNLOCK1  | B.EQ UNLOCK2  | B.EQ UNLOCK3  | B.EQ UNLOCK4  ; (* if (y == thread) skip the if body and break (i.e. go to unlock) *)
+
+(* if-body begin *)
+LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] ; (* load y *)
+CMP X7, #0    | CMP X7, #0    | CMP X7, #0    | CMP X7, #0    ;
+B.NE EXIT1    | B.NE EXIT2    | B.NE EXIT3    | B.NE EXIT4    ; (* if (y != 0), exit *)
+B LOOP12      | B LOOP22      | B LOOP32      | B LOOP42      ; (* otherwise, go to the next loop iteration *)
+(* if-body end *)
+(* if-body end *)
+
+(* First LOCK iteration done *)
+
+LOOP12:       | LOOP22:       | LOOP32:       | LOOP42:       ;
+MOV X0, #1    | MOV X0, #1    | MOV X0, #1    | MOV X0, #1    ;
+STLR X0, [X1] | STLR X0, [X2] | STLR X0, [X3] | STLR X0, [X4] ; (* b[thread] = true *)
+MOV X0, #1    | MOV X0, #2    | MOV X0, #3    | MOV X0, #4    ;
+STLR X0, [X5] | STLR X0, [X5] | STLR X0, [X5] | STLR X0, [X5] ; (* x = thread *)
+
+LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] ; (* load y *)
+CMP X7, #0    | CMP X7, #0    | CMP X7, #0    | CMP X7, #0    ;
+B.EQ AFT_IF12 | B.EQ AFT_IF22 | B.EQ AFT_IF32 | B.EQ AFT_IF42 ; (* if (y == 0) skip the if body *)
+
+(* if-body begin *)
+MOV X0, #0    | MOV X0, #0    | MOV X0, #0    | MOV X0, #0    ;
+STLR X0, [X1] | STLR X0, [X2] | STLR X0, [X3] | STLR X0, [X4] ; (* b[thread] = false *)
+LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] ; (* load y *)
+CMP X7, #0    | CMP X7, #0    | CMP X7, #0    | CMP X7, #0    ;
+B.NE EXIT1    | B.NE EXIT2    | B.NE EXIT3    | B.NE EXIT4    ; (* if y != 0 exit *)
+B LOOP13      | B LOOP23      | B LOOP33      | B LOOP43      ; (* if y == 0, go to the next loop iteration *)
+(* if-body end *)
+
+AFT_IF12:     | AFT_IF22:     | AFT_IF32:     | AFT_IF42:     ;
+MOV X0, #1    | MOV X0, #2    | MOV X0, #3    | MOV X0, #4    ;
+STLR X0, [X6] | STLR X0, [X6] | STLR X0, [X6] | STLR X0, [X6] ; (* y = thread *)
+
+LDAR X7, [X5] | LDAR X7, [X5] | LDAR X7, [X5] | LDAR X7, [X5] ; (* load x *)
+CMP X7, #1    | CMP X7, #2    | CMP X7, #3    | CMP X7, #4    ;
+B.EQ UNLOCK1  | B.EQ UNLOCK2  | B.EQ UNLOCK3  | B.EQ UNLOCK4  ; (* if (x == thread) skip the if body and break (i.e. go to unlock) *)
+
+(* if-body begin *)
+MOV X0, #0    | MOV X0, #0    | MOV X0, #0    | MOV X0, #0    ;
+STLR X0, [X1] | STLR X0, [X2] | STLR X0, [X3] | STLR X0, [X4] ; (* b[thread] = false *)
+(* loop-body begin *)
+LDAR X7, [X1] | LDAR X7, [X1] | LDAR X7, [X1] | LDAR X7, [X1] ; (* load b[1] *)
+CMP X7, #1    | CMP X7, #1    | CMP X7, #1    | CMP X7, #1    ;
+B.EQ EXIT1    | B.EQ EXIT2    | B.EQ EXIT3    | B.EQ EXIT4    ; (* if (b[1] = true), exit *)
+LDAR X7, [X2] | LDAR X7, [X2] | LDAR X7, [X2] | LDAR X7, [X2] ; (* load b[2] *)
+CMP X7, #1    | CMP X7, #1    | CMP X7, #1    | CMP X7, #1    ;
+B.EQ EXIT1    | B.EQ EXIT2    | B.EQ EXIT3    | B.EQ EXIT4    ; (* if b[2] = true), exit *)
+LDAR X7, [X3] | LDAR X7, [X3] | LDAR X7, [X3] | LDAR X7, [X3] ; (* load b[3] *)
+CMP X7, #1    | CMP X7, #1    | CMP X7, #1    | CMP X7, #1    ;
+B.EQ EXIT1    | B.EQ EXIT2    | B.EQ EXIT3    | B.EQ EXIT4    ; (* if b[3] = true), exit *)
+LDAR X7, [X4] | LDAR X7, [X4] | LDAR X7, [X4] | LDAR X7, [X4] ; (* load b[4] *)
+CMP X7, #1    | CMP X7, #1    | CMP X7, #1    | CMP X7, #1    ;
+B.EQ EXIT1    | B.EQ EXIT2    | B.EQ EXIT3    | B.EQ EXIT4    ; (* if b[4] = true), exit *)
+(* loop-body end *)
+
+LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] ; (* load y *)
+CMP X7, #1    | CMP X7, #2    | CMP X7, #3    | CMP X7, #4    ;
+B.EQ UNLOCK1  | B.EQ UNLOCK2  | B.EQ UNLOCK3  | B.EQ UNLOCK4  ; (* if (y == thread) skip the if body and break (i.e. go to unlock) *)
+
+(* if-body begin *)
+LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] ; (* load y *)
+CMP X7, #0    | CMP X7, #0    | CMP X7, #0    | CMP X7, #0    ;
+B.NE EXIT1    | B.NE EXIT2    | B.NE EXIT3    | B.NE EXIT4    ; (* if (y != 0), exit *)
+B LOOP13      | B LOOP23      | B LOOP33      | B LOOP43      ; (* otherwise, go to the next loop iteration *)
+(* if-body end *)
+(* if-body end *)
+
+(* Second LOCK iteration done *)
+
+LOOP13:       | LOOP23:       | LOOP33:       | LOOP43:       ;
+MOV X0, #1    | MOV X0, #1    | MOV X0, #1    | MOV X0, #1    ;
+STLR X0, [X1] | STLR X0, [X2] | STLR X0, [X3] | STLR X0, [X4] ; (* b[thread] = true *)
+MOV X0, #1    | MOV X0, #2    | MOV X0, #3    | MOV X0, #4    ;
+STLR X0, [X5] | STLR X0, [X5] | STLR X0, [X5] | STLR X0, [X5] ; (* x = thread *)
+
+LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] ; (* load y *)
+CMP X7, #0    | CMP X7, #0    | CMP X7, #0    | CMP X7, #0    ;
+B.EQ AFT_IF13 | B.EQ AFT_IF23 | B.EQ AFT_IF33 | B.EQ AFT_IF43 ; (* if (y == 0) skip the if body *)
+
+(* if-body begin *)
+MOV X0, #0    | MOV X0, #0    | MOV X0, #0    | MOV X0, #0    ;
+STLR X0, [X1] | STLR X0, [X2] | STLR X0, [X3] | STLR X0, [X4] ; (* b[thread] = false *)
+LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] ; (* load y *)
+CMP X7, #0    | CMP X7, #0    | CMP X7, #0    | CMP X7, #0    ;
+B.NE EXIT1    | B.NE EXIT2    | B.NE EXIT3    | B.NE EXIT4    ; (* if y != 0 exit *)
+B EXIT1       | B EXIT2       | B EXIT3       | B EXIT4       ; (* if y == 0, there is no next iteration *)
+(* if-body end *)
+
+AFT_IF13:     | AFT_IF23:     | AFT_IF33:     | AFT_IF43:      ;
+MOV X0, #1    | MOV X0, #2    | MOV X0, #3    | MOV X0, #4    ;
+STLR X0, [X6] | STLR X0, [X6] | STLR X0, [X6] | STLR X0, [X6] ; (* y = thread *)
+
+LDAR X7, [X5] | LDAR X7, [X5] | LDAR X7, [X5] | LDAR X7, [X5] ; (* load x *)
+CMP X7, #1    | CMP X7, #2    | CMP X7, #3    | CMP X7, #4    ;
+B.EQ UNLOCK1  | B.EQ UNLOCK2  | B.EQ UNLOCK3  | B.EQ UNLOCK4  ; (* if (x == thread) skip the if body and break (i.e. go to unlock) *)
+
+(* if-body begin *)
+MOV X0, #0    | MOV X0, #0    | MOV X0, #0    | MOV X0, #0    ;
+STLR X0, [X1] | STLR X0, [X2] | STLR X0, [X3] | STLR X0, [X4] ; (* b[thread] = false *)
+(* loop-body begin *)
+LDAR X7, [X1] | LDAR X7, [X1] | LDAR X7, [X1] | LDAR X7, [X1] ; (* load b[1] *)
+CMP X7, #1    | CMP X7, #1    | CMP X7, #1    | CMP X7, #1    ;
+B.EQ EXIT1    | B.EQ EXIT2    | B.EQ EXIT3    | B.EQ EXIT4    ; (* if (b[1] = true), exit *)
+LDAR X7, [X2] | LDAR X7, [X2] | LDAR X7, [X2] | LDAR X7, [X2] ; (* load b[2] *)
+CMP X7, #1    | CMP X7, #1    | CMP X7, #1    | CMP X7, #1    ;
+B.EQ EXIT1    | B.EQ EXIT2    | B.EQ EXIT3    | B.EQ EXIT4    ; (* if b[2] = true), exit *)
+LDAR X7, [X3] | LDAR X7, [X3] | LDAR X7, [X3] | LDAR X7, [X3] ; (* load b[3] *)
+CMP X7, #1    | CMP X7, #1    | CMP X7, #1    | CMP X7, #1    ;
+B.EQ EXIT1    | B.EQ EXIT2    | B.EQ EXIT3    | B.EQ EXIT4    ; (* if b[3] = true), exit *)
+LDAR X7, [X4] | LDAR X7, [X4] | LDAR X7, [X4] | LDAR X7, [X4] ; (* load b[4] *)
+CMP X7, #1    | CMP X7, #1    | CMP X7, #1    | CMP X7, #1    ;
+B.EQ EXIT1    | B.EQ EXIT2    | B.EQ EXIT3    | B.EQ EXIT4    ; (* if b[4] = true), exit *)
+(* loop-body end *)
+
+LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] ; (* load y *)
+CMP X7, #1    | CMP X7, #2    | CMP X7, #3    | CMP X7, #4    ;
+B.EQ UNLOCK1  | B.EQ UNLOCK2  | B.EQ UNLOCK3  | B.EQ UNLOCK4  ; (* if (y == thread) skip the if body and break (i.e. go to unlock) *)
+
+(* if-body begin *)
+LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] | LDAR X7, [X6] ; (* load y *)
+CMP X7, #0    | CMP X7, #0    | CMP X7, #0    | CMP X7, #0    ;
+B.NE EXIT1    | B.NE EXIT2    | B.NE EXIT3    | B.NE EXIT4    ; (* if (y != 0), exit *)
+B EXIT1       | B EXIT2       | B EXIT3       | B EXIT4       ; (* otherwise, there is no next iteration *)
+(* if-body end *)
+(* if-body end *)
+
+(* Third loop iteration done -iteration done -iteration done -- STOP *)
+B EXIT1       | B EXIT2       | B EXIT3       | B EXIT4       ;
+
+
+UNLOCK1:      | UNLOCK2:      | UNLOCK3:      | UNLOCK4:      ; (* BEGIN OF UNLOCK() OPERATION *)
+MOV X0, #0    | MOV X0, #0    | MOV X0, #0    | MOV X0, #0    ;
+STLR X0, [X6] | STLR X0, [X6] | STLR X0, [X6] | STLR X0, [X6] ; (* y = 0 *)
+MOV X0, #0    | MOV X0, #0    | MOV X0, #0    | MOV X0, #0    ;
+STLR X0, [X1] | STLR X0, [X2] | STLR X0, [X3] | STLR X0, [X4] ; (* b[thread] = false *)
+
+EXIT1:        | EXIT2:        | EXIT3:        | EXIT4:        ;
+
+exists x = 5

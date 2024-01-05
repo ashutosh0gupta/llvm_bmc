@@ -1,0 +1,19 @@
+{ x, y, r }
+
+thread t0
+{
+	x.store(_rx, 1);
+	y.store(_rel, 1);
+}
+
+thread t1
+{
+	a = y.load(_acq);
+	while (a == 0) {
+		a = y.load(_acq);
+	}
+	b = x.load(_rx);
+	r.store(_rx, b);
+}
+
+forall (r == 1)

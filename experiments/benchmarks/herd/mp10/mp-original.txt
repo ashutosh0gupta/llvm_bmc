@@ -1,0 +1,30 @@
+AArch64 mp10
+
+{
+	int64_t x;
+	int64_t y;
+
+	0:X0 = x;
+	0:X1 = y;
+
+	1:X0 = x;
+	1:X1 = y;
+	1:X3 = 10; (* LOOP BOUND *)
+}
+
+P0            | P1            ;
+
+MOV X2, #1    | LOOP:         ;
+STR X2, [X0]  | LDAR X2, [X1] ;
+MOV X2, #1    | CMP X2, #1    ;
+STLR X2, [X1] | B.EQ AFTER_L  ;
+
+              | SUBS X3, X3, #1 ;
+              | CMP X3, #0    ;
+	      | B.EQ EXIT2    ;
+	      | B LOOP        ;
+
+	      | AFTER_L:      ;
+	      | LDR X2, [X0]  ;
+
+	      | EXIT2:        ;

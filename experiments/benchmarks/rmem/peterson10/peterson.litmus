@@ -1,0 +1,47 @@
+AArch64 peterson10
+
+{
+       int64_t flag1;
+       int64_t flag2;
+       int64_t turn;
+       int64_t x;
+       0:X0 = flag1;
+       0:X1 = flag2;
+       0:X2 = turn;
+       0:X3 = 10 (* LOOP BOUND *);
+       0:X4 = x;
+       0:X7 = 0;
+       1:X0 = flag1;
+       1:X1 = flag2;
+       1:X2 = turn;
+       1:X3 = 10 (* LOOP BOUND *);
+       1:X4 = x;
+       1:X7 = 0;
+}
+
+P0                  | P1                  ;
+
+    MOV X5, #1      |     MOV X5, #1      ;
+    STLR X5, [X0]   |     STLR X5, [X1]   ;
+    MOV X5, #1      |     MOV X5, #0      ;
+    STLR X5, [X2]   |     STLR X5, [X2]   ;
+LOOP1:              | LOOP2:              ;
+    LDAR X6, [X1]   |     LDAR X6, [X0]   ;
+    CMP X6, #1      |     CMP X6, #1      ;
+    B.NE CRIT1      |     B.NE CRIT2      ;
+    LDAR X6, [X2]   |     LDAR X6, [X2]   ;
+    CMP X6, #1      |     CMP X6, #0      ;
+    B.NE CRIT1      |     B.NE CRIT2      ;
+    SUBS X3, X3, #1 |     SUBS X3, X3, #1 ;
+    CMP X3, #0      |     CMP X3, #0      ;
+    B.EQ EXIT1      |     B.EQ EXIT2      ;
+    B LOOP1         |     B LOOP2         ;
+CRIT1:              | CRIT2:              ;
+    MOV X5, #1      |     MOV X5, #2      ;
+    STLR X5, [X4]   |     STLR X5, [X4]   ;
+    LDAR X7, [X4]   |     LDAR X7, [X4]   ;
+    MOV X5, #0      |     MOV X5, #0      ;
+    STLR X5, [X0]   |     STLR X5, [X1]   ;
+EXIT1:              | EXIT2:              ;
+
+forall 0:X7 = 1  /\ 1:X7 = 2

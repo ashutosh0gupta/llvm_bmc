@@ -16,7 +16,7 @@ int ldax(int *);
 int stx(int *, int);
 int stlx(int *, int);
 
-long vars[3]; 
+long vars[3];
 int atom_0_X0_1; 
 int atom_0_X3_0; 
 int atom_0_X6_1; 

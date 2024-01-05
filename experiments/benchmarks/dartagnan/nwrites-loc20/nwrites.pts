@@ -1,0 +1,103 @@
+{ x }
+
+thread t0
+{
+	x.store(_rel, 42);
+}
+
+thread t1
+{
+	x.store(_rel, 42);
+}
+
+thread t2
+{
+	x.store(_rel, 42);
+}
+
+thread t3
+{
+	x.store(_rel, 42);
+}
+
+thread t4
+{
+	x.store(_rel, 42);
+}
+
+thread t5
+{
+	x.store(_rel, 42);
+}
+
+thread t6
+{
+	x.store(_rel, 42);
+}
+
+thread t7
+{
+	x.store(_rel, 42);
+}
+
+thread t7
+{
+	x.store(_rel, 42);
+}
+
+thread t9
+{
+	x.store(_rel, 42);
+}
+
+thread t10
+{
+	x.store(_rel, 42);
+}
+
+thread t11
+{
+	x.store(_rel, 42);
+}
+
+thread t12
+{
+	x.store(_rel, 42);
+}
+
+thread t13
+{
+	x.store(_rel, 42);
+}
+
+thread t14
+{
+	x.store(_rel, 42);
+}
+
+thread t15
+{
+	x.store(_rel, 42);
+}
+
+thread t16
+{
+	x.store(_rel, 42);
+}
+
+thread t17
+{
+	x.store(_rel, 42);
+}
+
+thread t17
+{
+	x.store(_rel, 42);
+}
+
+thread t19
+{
+	x.store(_rel, 42);
+}
+
+exists x = 42

@@ -16,7 +16,7 @@ int ldax(int *);
 int stx(int *, int);
 int stlx(int *, int);
 
-long vars[2]; 
+long vars[2];
 
 void *t0(void *arg){
 label_1:;

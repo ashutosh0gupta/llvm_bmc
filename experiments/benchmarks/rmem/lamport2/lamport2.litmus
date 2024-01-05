@@ -1,0 +1,53 @@
+AArch64 peterson10
+
+{
+       int64_t x;
+       int64_t y;
+       int64_t b1;
+       int64_t b2;
+       int64_t b3;
+       0:X0 = x;
+       0:X1 = y;
+       0:X2 = b1;
+       0:X3 = b2;
+       0:X4 = b3;
+       0:X5 = 2 (* LOOP BOUND *);
+       1:X0 = x;
+       1:X1 = y;
+       1:X2 = b1;
+       1:X3 = b2;
+       1:X4 = b3;
+       1:X5 = 2 (* LOOP BOUND *);
+       2:X0 = x;
+       2:X1 = y;
+       2:X2 = b1;
+       2:X3 = b2;
+       2:X4 = b3;
+       2:X5 = 2 (* LOOP BOUND *);
+}
+
+P0                  | P1                  | P2                  ;
+
+LOOP:               | LOOP:               | LOOP:               ;
+    MOV X6, #1      |     MOV X6, #1      |     MOV X6, #1      ;
+    STR X6, [X2]    |     LDR X6, [X3]    |     LDR X6, [X4]    ;
+    MOV X6, #1      |     MOV X6, #2      |     MOV X6, #3      ;
+    STR X6, [X0]    |     STR X6, [X0]    |     STR X6, [X0]    ;
+    LDR X7, [X1]    |     LDR X7, [X1]    |     LDR X7, [X1]    ;
+    CMP X7, #0      |     CMP X7, #0      |     CMP X7, #0      ;
+    B.EQ IF1_END    |     B.EQ IF1_END    |     B.EQ IF1_END    ;
+    MOV X6, #0      |     MOV X6, #0      |     MOV X6, #0      ;
+    STR X6, [X2]    |     STR X6, [X3]    |     STR X6, [X4]    ;
+IF1_END:            | IF1_END:            | IF1_END:            ;
+    MOV X6, #1      |     MOV X6, #2      |     MOV X6, #3      ;
+    STR X6, [X1]    |     STR X6, [X1]    |     STR X6, [X1]    ;
+    LDR X7, [X0]    |     LDR X7, [X0]    |     LDR X7, [X0]    ;
+    CMP X7, #1      |     CMP X7, #2      |     CMP X7, #3      ;
+    B.EQ IF2_END    |     B.EQ IF2_END    |     B.EQ IF2_END    ;
+    MOV X6, #0      |     MOV X6, #0      |     MOV X6, #0      ;
+    STR X6, [X2]    |     STR X6, [X3]    |     STR X6, [X4]    ;
+IF2_END:            | IF2_END:            | IF2_END:            ;
+    SUBS X5, X5, #1 |     SUBS X5, X5, #1 |     SUBS X5, X5, #1 ;
+    CMP X5, #0      |     CMP X5, #0      |     CMP X5, #0      ;
+    B.NE LOOP       |     B.NE LOOP       |     B.NE LOOP       ;
+EXIT:               | EXIT:               | EXIT:               ;

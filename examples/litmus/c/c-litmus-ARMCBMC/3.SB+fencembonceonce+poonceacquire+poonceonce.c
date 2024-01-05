@@ -1,4 +1,3 @@
-vars[2]
 /* Copyright (C) 2023 ARM-CBMC
 * This benchmark is part of ARM-CBMC */
 
@@ -17,7 +16,7 @@ int ldax(int *);
 int stx(int *, int);
 int stlx(int *, int);
 
-long vars[3]; 
+long vars[3];
 int atom_0_X1_0; 
 int atom_1_X1_0; 
 int atom_2_X1_0; 
