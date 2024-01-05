@@ -98,7 +98,8 @@ public:
   void update_names( unsigned, std::vector<const llvm::Instruction*>&);
   void update_name( unsigned, unsigned );
   void set_num_arrays(unsigned);
-  
+  void set_debug_map(std::map<const llvm::Value*,const llvm::Instruction*>* dmap_);
+
   //Getter
   unsigned get_num_arrays();
   unsigned get_accessed_array( const llvm::Instruction* I );
@@ -110,7 +111,7 @@ public:
   std::vector< sort > get_array_sorts();
   std::vector<expr> get_array_length( const llvm::Value* arr );
   void get_array_length( const llvm::ArrayType*, std::vector<expr>&);
-
+  sort get_solver_array_ty( const llvm::Type* ty );
 
   //Debug
   void dump_ary_access_to_index();
@@ -125,7 +126,7 @@ public:
   std::vector< std::string > ar_names;
   std::vector< sort > ar_sorts;
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
-
+  std::map<const llvm::Value*,const llvm::Instruction*>* debug_map;
 };
 
 class single_array_model : public array_model_full {

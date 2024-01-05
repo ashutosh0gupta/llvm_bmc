@@ -35,9 +35,9 @@ namespace {
         errs() << "Pointer Name = " << AS.begin()->getValue()->getName() << "\n";
         errs() << "Pointer Type = " << *AS.begin()->getValue()->getType() << "\n";
 
-        if (auto *GEP = dyn_cast<GetElementPtrInst>(AS.begin()->getValue())) {
-          errs() << "Pointer Points To Type = " << *GEP->getPointerOperand()->getType()->getPointerElementType() << "\n";
-        }
+        // if (auto *GEP = dyn_cast<GetElementPtrInst>(AS.begin()->getValue())) {
+        //   errs() << "Pointer Points To Type = " << *GEP->getPointerOperand()->getType()->getPointerElementType() << "\n";
+        // }
         errs() << "Number of Aliased Pointers = " << AS.size() << "\n";
         errs()<<"\n";
         errs() << "Points-to Set:\n";
@@ -45,9 +45,9 @@ namespace {
           errs() << "Instruction = " << *Pointer.getValue() << "\n";
           errs() << "Pointer Name = " << Pointer.getValue()->getName() << "\n";
 
-          if (auto *GEP = dyn_cast<GetElementPtrInst>(Pointer.getValue())) {
-            errs() << "Pointer Points To Type = " << *GEP->getPointerOperand()->getType()->getPointerElementType() << "\n";
-          }
+          // if (auto *GEP = dyn_cast<GetElementPtrInst>(Pointer.getValue())) {
+          //   errs() << "Pointer Points To Type = " << *GEP->getPointerOperand()->getType()->getPointerElementType() << "\n";
+          // }
           errs() << "Pointer Address = " << Pointer.getValue() << "\n\n";
           errs()<<"\n";
         }

@@ -155,9 +155,10 @@ void collect_globals::insert_events( bmc& b, memory_cons& mem_enc,
             if( auto g1 = llvm::dyn_cast<llvm::GlobalVariable>(g) ) {
             // if (find(i->second.begin(), i->second.end(), g1) != i->second.end()) {
             const std::string gvar = (std::string)(g1->getName());
-            llvm::Type* ty = g1->getType();
-            if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
-              auto el_ty = pty->getPointerElementType();
+            llvm::Type* el_ty = g1->getValueType();
+            // if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
+            //   auto el_ty = pty->getPointerElementType();
+            if( el_ty ) {
               sort z_sort = llvm_to_sort( o, el_ty);
               b.edata.add_global( gvar, z_sort );
               b.edata.wr_events[ b.edata.get_global( gvar ) ].insert( start );

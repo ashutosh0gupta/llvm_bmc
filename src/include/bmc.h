@@ -50,6 +50,7 @@ public:
   //std::map< me_ptr, unsigned > all_events;
   events_data edata;
   std::map< unsigned , std::vector<std::pair <me_ptr, me_ptr >>> rename_map;
+  std::map<const llvm::Value*,const llvm::Instruction*> debug_map;
 
   bool verify_prop();
   //--------------------------------------------

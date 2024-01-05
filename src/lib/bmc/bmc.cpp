@@ -89,6 +89,8 @@ void bmc::run_bmc_pass() {
   }
 
   if( o.kbound ) {
+    collect_debug_info( module, this->debug_map );
+
     collect_threads( module, *this, o );
 
     collect_globals( module, *this, o.mem_enc, o.solver_ctx, o );
@@ -192,13 +194,15 @@ memory_state bmc::populate_mem_state() {
        iter_glb != end_glb; ++iter_glb ) {
 
     llvm::GlobalVariable* glb = &*iter_glb; //3.8
-    llvm::Type* ty = glb->getType();
+    llvm::Type* el_ty = glb->getValueType();
     //const std::string gvar = (std::string)(glb->getName());
 
-    if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
-      assert(pty);
-      auto el_ty = pty->getPointerElementType();
-      assert(el_ty);
+    // if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
+    //   assert(pty);
+    //   auto el_ty = pty->getPointerElementType();
+    //   assert(el_ty);
+
+    if( el_ty ) {
 
       if(el_ty->isArrayTy()) continue;
 

@@ -20,8 +20,8 @@ l = 1
 # choose a folder to execute
 
 # folder = "examples/kbound/omkar/bench"
-# folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
-folder = "~/tmp/"
+folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
+# folder = "~/tmp/"
 # folder = "examples/kbound/popl23-benchmarks/SV-COMP/ARMCBMC/"
 # folder = "./examples/kbound/popl23-benchmarks/TRACER/ARMCBMC/"
 # folder = "./examples/kbound/popl23-benchmarks/TRACER/ARMCBMC/"
@@ -169,7 +169,7 @@ def runner(ex):
 # exs = exs[1500:2000]
 # exs = exs[2500+4200:]
 # exs = exs[:100]
-# exs = exs[:1]
+exs = exs[:1]
 
 # ensure that ./tmp dir is clean
 if len(exs) > 100:

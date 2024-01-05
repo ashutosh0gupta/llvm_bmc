@@ -133,6 +133,8 @@ llvm::Value* getValueFromZ3SubExpr(expr, llvm::IRBuilder<>&, llvm::LLVMContext&,
                                    std::map<std::string, llvm::Value*>&, std::set<llvm::Value*>&);
 void collectArr(llvm::Function &f, std::set<llvm::Value*>&);
 
+llvm::Type* get_type_of_pointer( const llvm::Value* );
+
 // template< class Key >
 // bool exists( const std::vector<Key>& v, const Key& k ) {
 //   return std::find( v.begin(), v.end(), k ) != v.end();
@@ -158,6 +160,9 @@ void collectArr(llvm::Function &f, std::set<llvm::Value*>&);
 //   return set1.find( k ) !=  set1.end();
 // }
 
+
+void collect_debug_info( std::unique_ptr<llvm::Module>& module,
+                         std::map<const llvm::Value*,const llvm::Instruction*>& dmap );
 
 void computeTopologicalOrder(llvm::Function &F,
                              std::map<const llvm::BasicBlock*,
@@ -188,7 +193,12 @@ std::string demangle( std::string );
 // std::string getLocation(const llvm::Instruction* I );
 std::string getLocRange(const llvm::BasicBlock* b );
 
+llvm::DIType*
+find_type_from_debug( const llvm::Value* v,
+                      std::map<const llvm::Value*,const llvm::Instruction*>& dmap);
+
 src_loc getLoc( const llvm::Instruction* I );
+sort ditype_to_sort( solver_context& c, const llvm::DIType* t );
 sort llvm_to_sort( solver_context& , const llvm::Type* );
 sort llvm_to_bv_sort( solver_context& , const llvm::Type* );
 sort llvm_to_sort( options& , const llvm::Type* );

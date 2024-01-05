@@ -17,8 +17,13 @@ char kbound::ID = 0;
 unsigned kbound::get_word_size(const llvm::Value* v ) {
   auto dl = new llvm::DataLayout(module.get());
   auto typ = v->getType();
-  if( typ->isPointerTy() ) {
-    typ = typ->getPointerElementType();
+  if( auto g = llvm::dyn_cast<llvm::GlobalVariable>(v) ) {
+    typ = g->getValueType();
+  }else if( auto a = llvm::dyn_cast<llvm::AllocaInst>(v) ) {
+    typ = a->getAllocatedType();
+  }else if( typ->isPointerTy() ) {
+    llvm_bmc_error("kbound", "Opaque pointer is found!");
+    // typ = typ->getPointerElementType();
   }
   if( typ->isSized() ) {
     auto size = dl->getTypeAllocSizeInBits(typ);

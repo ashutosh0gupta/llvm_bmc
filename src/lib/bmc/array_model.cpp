@@ -75,31 +75,32 @@ sort array_model_full::get_address_sort() {
   return solver_ctx.int_sort();
 }
 
-sort array_model_full::get_solver_array_ty( const llvm::ArrayType* ty ) {
+// sort array_model_full::get_solver_array_ty( const llvm::ArrayType* ty ) {
+sort array_model_full::get_solver_array_ty( const llvm::Type* ty ) {
   return llvm_to_sort( o, ty);
   // auto elemTy = ty->getArrayElementType();
   // auto s  = llvm_to_sort( o, elemTy );
   // return solver_ctx.array_sort( get_address_sort(ty), s );
 }
 
-sort array_model_full::get_solver_array_ty( const llvm::PointerType* ty ) {
-  auto T = ty->getPointerElementType();
-  if( auto ar_ty = llvm::dyn_cast<llvm::ArrayType>(T)){
-    return get_solver_array_ty( ar_ty );
-  }else if( auto pty = llvm::dyn_cast<llvm::PointerType>(T) ) {
-    // llvm::errs()<<"got here";
-    // todo: creating array of arrays; not multidim array; Z3 may complain
-    auto e_ty = get_solver_array_ty( pty );
-    return solver_ctx.array_sort( get_address_sort(), e_ty );
-    //dump(pty);
-    //assert(false); //todo: fix it when hit it.
-    //return get_solver_array_ty( pty );
-  }else{
-    // llvm::errs()<<"got here";
-    auto e_sort= llvm_to_sort( o, T);
-    return solver_ctx.array_sort( get_address_sort(), e_sort );
-  }
-}
+// sort array_model_full::get_solver_array_ty( const llvm::PointerType* ty ) {
+//   auto T = ty->getPointerElementType();
+//   if( auto ar_ty = llvm::dyn_cast<llvm::ArrayType>(T)){
+//     return get_solver_array_ty( ar_ty );
+//   }else if( auto pty = llvm::dyn_cast<llvm::PointerType>(T) ) {
+//     // llvm::errs()<<"got here";
+//     // todo: creating array of arrays; not multidim array; Z3 may complain
+//     auto e_ty = get_solver_array_ty( pty );
+//     return solver_ctx.array_sort( get_address_sort(), e_ty );
+//     //dump(pty);
+//     //assert(false); //todo: fix it when hit it.
+//     //return get_solver_array_ty( pty );
+//   }else{
+//     // llvm::errs()<<"got here";
+//     auto e_sort= llvm_to_sort( o, T);
+//     return solver_ctx.array_sort( get_address_sort(), e_sort );
+//   }
+// }
 
 void
 array_model_full::
@@ -118,6 +119,7 @@ get_array_length( const llvm::ArrayType* a1, std::vector<expr>& lengths) {
 
 std::vector<expr>
 array_model_full::get_array_length( const llvm::Value* arr ) {
+  // https://llvm.org/docs/OpaquePointers.html
   std::vector<expr> idxs;
   if( llvm::isa< const llvm::AllocaInst >(arr) ) {
     // since we can know symbol for the length of the array
@@ -125,11 +127,17 @@ array_model_full::get_array_length( const llvm::Value* arr ) {
     idxs.push_back( solver_ctx.int_val(1) );
     return idxs;
   }
-  if( auto pty = llvm::dyn_cast<llvm::PointerType>(arr->getType()) ) {
-    auto T1 = pty->getPointerElementType();
-    if( auto a1 = llvm::dyn_cast<llvm::ArrayType>(T1)) {
+  if( auto g = llvm::dyn_cast<llvm::GlobalVariable>(arr) ) {
+    auto typ = g->getValueType();
+    if( auto a1 = llvm::dyn_cast<llvm::ArrayType>(typ) ) {
       get_array_length( a1, idxs );
     }
+  }
+  if( auto pty = llvm::dyn_cast<llvm::PointerType>(arr->getType()) ) {
+  //   auto T1 = pty->getPointerElementType();
+  //   if( auto a1 = llvm::dyn_cast<llvm::ArrayType>(T1) ) {
+  //     get_array_length( a1, idxs );
+  //   }
   }
   return idxs;
 }
@@ -139,11 +147,18 @@ void array_model_full::set_array_length( unsigned ar_num, std::vector<expr>& len
 }
 
 void array_model_full::
+set_debug_map(std::map<const llvm::Value*,const llvm::Instruction*>* dmap_) {
+  debug_map = dmap_;
+}
+
+void array_model_full::
 set_array_info(std::map< const llvm::Value*, unsigned >& ary_ids) {
   num_arrays = ary_ids.size();
-  std::vector<const llvm::Type*> ar_types;
-  ar_types.resize( num_arrays );
-  ar_names.resize( num_arrays );
+  std::vector<const llvm::Type*  > ar_types;
+  std::vector<const llvm::DIType*> ar_ditypes;
+  ar_types.resize  ( num_arrays );
+  ar_ditypes.resize( num_arrays );
+  ar_names.resize  ( num_arrays );
   lengths.clear();
 
   // inserting dummy lengths
@@ -151,21 +166,21 @@ set_array_info(std::map< const llvm::Value*, unsigned >& ary_ids) {
   for( unsigned i = 0; i < num_arrays; i++ ) {
     lengths.push_back( idxs );
   }
-
   for( auto& ar_int_pair : ary_ids ) {
     auto ar = ar_int_pair.first;
     auto indx = ar_int_pair.second;
-    ar_types[indx] = ar->getType();
+    ar_types[indx] = get_type_of_pointer( ar );
+    if( ar_types[indx] == NULL )
+      ar_ditypes[indx] = find_type_from_debug( ar, *debug_map);
     ar_names[indx] = ar->getName();
-    lengths[indx] = get_array_length( ar );
+    lengths[indx]  = get_array_length( ar );
   }
   for( unsigned i = 0; i < num_arrays; i++) {
-    if( auto pty = llvm::dyn_cast<llvm::PointerType>(ar_types[i]) ) {
-      ar_sorts.push_back( get_solver_array_ty( pty ) );
-    } else {
-      //todo: why this path??
-      ar_sorts.push_back( solver_ctx.array_sort( get_address_sort(),
-                                                 solver_ctx.int_sort() ) );
+    if( ar_types[i] ) {
+      ar_sorts.push_back( get_solver_array_ty( ar_types[i] ) );
+    }else{
+      // We try to get the type information from debug info
+      ar_sorts.push_back( ditype_to_sort( o.solver_ctx, ar_ditypes[i] ) );
     }
   }
 }

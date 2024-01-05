@@ -1170,6 +1170,22 @@ void collectArr( llvm::Function &f, std::set<llvm::Value*>& arrSet) {
   }
 }
 
+llvm::Type* get_type_of_pointer( const llvm::Value* v ) {
+  assert( llvm::isa<llvm::PointerType>( v->getType() ) );
+  if( auto g = llvm::dyn_cast<llvm::GlobalVariable>(v) ) {
+    return g->getValueType();
+  }else if( auto a = llvm::dyn_cast<llvm::AllocaInst>(v) ) {
+    return a->getAllocatedType();
+  }
+  // Follow the instructions of https://llvm.org/docs/OpaquePointers.html
+  // }else if( auto a = llvm::dyn_cast<llvm::CallInst>(v) ) {
+  //   return a->getAllocatedType();
+  //llvm_bmc_error("kbound", "Opaque pointer is found; case is not wrritten!");
+  // }else if( typ->isPointerTy() ) {
+    // typ = typ->getPointerElementType();
+  return NULL;
+}
+
 bool is_assert_call(const llvm::CallInst* call ) {
   assert( call );
   llvm::Function* fp = call->getCalledFunction();
@@ -1624,11 +1640,12 @@ std::string getLocRange(const llvm::BasicBlock* b ) {
 }
 
 sort llvm_to_sort( solver_context& c, const llvm::Type* t ) {
+  assert( t );
   if( t->isIntegerTy() ) {
     if( t->isIntegerTy( 16 ) ) return c.int_sort();
     if( t->isIntegerTy( 32 ) ) return c.int_sort();
     if( t->isIntegerTy( 64 ) ) return c.int_sort();
-    if( t->isIntegerTy( 8 ) ) return c.int_sort();
+    if( t->isIntegerTy( 8 )  ) return c.int_sort();
   }
   if( t->isArrayTy() ) {
     llvm::Type* te = t->getArrayElementType();
@@ -1638,7 +1655,7 @@ sort llvm_to_sort( solver_context& c, const llvm::Type* t ) {
       domains.push_back( c.int_sort() );
       te = te->getArrayElementType();
     }
-    sort z_te = llvm_to_sort(c, te);
+    sort z_te = llvm_to_sort( c, te );
     // std::cout << "Sort is " << z_te << "\n";
     return c.array_sort( domains, z_te );
   }
@@ -1647,15 +1664,64 @@ sort llvm_to_sort( solver_context& c, const llvm::Type* t ) {
      //if( t->isDoubleTy() ) return c.fpa_sort<64>();
      return c.real_sort();
   }
-  if(t->isStructTy()){
+  if(t->isStructTy()) {
     // t->print(llvm::outs()); std::cout << "\n";  // << t->getStructName() << "\n";
     return c.bool_sort();
   }
-  if(t->isPointerTy()){
+  if(t->isPointerTy()) {
     // t->print(llvm::outs()); std::cout << "\n";  // << t->getPointerElementType() << "\n";
     return c.int_sort();
   }
   // t->print(llvm::outs());
+  llvm_bmc_error("llvm_utils", "only int and bool sorts are supported");
+  return c.int_sort(); // dummy return
+}
+
+sort ditype_to_sort( solver_context& c, const llvm::DIType* t ) {
+  assert( t );
+  if(auto diBT = llvm::dyn_cast<llvm::DIBasicType>(t) ) {
+    auto name = diBT->getName().str();
+    if( name == "int" ) { return c.int_sort();
+    }else if( name ==  "char") { return c.int_sort();
+    }else if( name == "unsigned" ) {return c.int_sort();
+    }else{ assert(false);
+      llvm_bmc_error("llvm_utils", "debug sort " + name + " not supported!");
+      return c.int_sort(); // dummy return
+    }
+  }else if(auto diDT = llvm::dyn_cast<llvm::DIDerivedType>(t) ) {
+    sort typ = ditype_to_sort( c, diDT->getBaseType() );
+    if( diDT->getTag() == llvm::dwarf::DW_TAG_pointer_type ) {
+      sort_vector domains(c);
+      domains.push_back( c.int_sort() );
+      return c.array_sort( domains, typ );
+    }
+  }
+  // if( t->isArrayTy() ) {
+  //   llvm::Type* te = t->getArrayElementType();
+  //   sort_vector domains(c);
+  //   domains.push_back( c.int_sort() );
+  //   while( te->isArrayTy() ) {
+  //     domains.push_back( c.int_sort() );
+  //     te = te->getArrayElementType();
+  //   }
+  //   sort z_te = llvm_to_sort( c, te );
+  //   // std::cout << "Sort is " << z_te << "\n";
+  //   return c.array_sort( domains, z_te );
+  // }
+  // if( t->isFloatingPointTy() ) {
+  //    //if( t->isFloatTy() ) return c.fpa_sort<32>();
+  //    //if( t->isDoubleTy() ) return c.fpa_sort<64>();
+  //    return c.real_sort();
+  // }
+  // if(t->isStructTy()) {
+  //   // t->print(llvm::outs()); std::cout << "\n";  // << t->getStructName() << "\n";
+  //   return c.bool_sort();
+  // }
+  // if(t->isPointerTy()) {
+  //   // t->print(llvm::outs()); std::cout << "\n";  // << t->getPointerElementType() << "\n";
+  //   return c.int_sort();
+  // }
+  // // t->print(llvm::outs());
   llvm_bmc_error("llvm_utils", "only int and bool sorts are supported");
   return c.int_sort(); // dummy return
 }
@@ -2117,6 +2183,38 @@ identify_lpad_struct(const llvm::Value* op, int index) {
   return std::make_pair(nullptr, 0);
 }
 
+llvm::DIType*
+find_type_from_debug( const llvm::Value* v,
+                      std::map<const llvm::Value*,const llvm::Instruction*>& dmap) {
+  auto di = dmap.at(v);
+  if( auto dbg_val = llvm::dyn_cast<llvm::DbgValueInst>(di) ) {
+    // auto div = ;
+    return dbg_val->getVariable()->getType();
+  }
+  return NULL;
+}
+
+void collect_debug_info( std::unique_ptr<llvm::Module>& module,
+                         std::map<const llvm::Value*,const llvm::Instruction*>& dmap) {
+  const llvm::Module& m = *module.get();
+  for( const llvm::Function& f : m ) {
+    for( const llvm::BasicBlock& bb : f.getBasicBlockList() ) {
+      for( const llvm::Instruction& I : bb.getInstList() ) {
+        if( auto dbg = llvm::dyn_cast<llvm::DbgInfoIntrinsic>(&I) ) {
+          if( auto dbg_val = llvm::dyn_cast<llvm::DbgValueInst>(dbg) ) {
+            dmap[ dbg_val->getValue() ] = &I;
+          }else if( auto dbg_var = llvm::dyn_cast<llvm::DbgDeclareInst>(dbg) ) {
+            dmap[ dbg_var->getAddress() ] = &I;
+          }else if( auto dbg_label = llvm::dyn_cast<llvm::DbgLabelInst>(dbg) ) {
+          //   dmap[ dbg_label->getAddress() ] = &I;
+          }else{
+            assert(false);
+          } // not possible
+        }
+      }
+    }
+  }
+}
 
 const std::pair<const llvm::Value*, uint64_t>
 get_array_info( const llvm::Value* op) {

@@ -4,7 +4,7 @@ LLVMBMC=llvmbmc
 HOME_INSTALLED=~/installed
 BUILDDIR = $(PWD)/build
 SRCDIR = $(PWD)/src
-LLVM_VERSION=15.0.6
+LLVM_VERSION=15.0.7
 # LLVM_VERSION=14.0.6
 # LLVM_VERSION=3.6.2
 LD=ld.gold
@@ -102,8 +102,12 @@ LLVM_HOST=https://github.com/llvm/llvm-project/releases/download/llvmorg-
 $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/CMakeLists.txt: | $(HOME_INSTALLED)
 	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/llvm-$(LLVM_VERSION).src.tar.xz
 	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/clang-$(LLVM_VERSION).src.tar.xz
+	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/cmake-$(LLVM_VERSION).src.tar.xz
 	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/clang-tools-extra-$(LLVM_VERSION).src.tar.xz
 	cd $(HOME_INSTALLED);tar -xvJf llvm-$(LLVM_VERSION).src.tar.xz
+	cd $(HOME_INSTALLED);tar -xvJf cmake-$(LLVM_VERSION).src.tar.xz
+	cd $(HOME_INSTALLED);rm cmake
+	cd $(HOME_INSTALLED);ls -s cmake-$(LLVM_VERSION) cmake
 	cd $(HOME_INSTALLED);tar -xvJf clang-$(LLVM_VERSION).src.tar.xz -C llvm-$(LLVM_VERSION).src/tools/; mv llvm-$(LLVM_VERSION).src/tools/clang-$(LLVM_VERSION).src llvm-$(LLVM_VERSION).src/tools/clang
 	cd $(HOME_INSTALLED);tar -xvJf clang-tools-extra-$(LLVM_VERSION).src.tar.xz -C llvm-$(LLVM_VERSION).src/tools/clang/tools; mv llvm-$(LLVM_VERSION).src/tools/clang/tools/clang-tools-extra-$(LLVM_VERSION).src llvm-$(LLVM_VERSION).src/tools/clang/tools/extra
 
@@ -120,7 +124,7 @@ LLVM_CMAKE_OPTIONS= -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=DEBUG -DLLVM_ENABLE_R
 
 $(HOME_INSTALLED)/llvm-$(LLVM_VERSION)/lib/libLLVMCore.a : $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/CMakeLists.txt
 	cd $(HOME_INSTALLED); mkdir -p llvm-$(LLVM_VERSION).src/build; mkdir -p llvm-$(LLVM_VERSION)
-	cd $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/build;cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=DEBUG  -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DLLVM_ENABLE_RTTI:BOOL=TRUE -DLLVM_ENABLE_BINDINGS=FALSE -DLLVM_ENABLE_DUMP=TRUE -DCMAKE_INSTALL_PREFIX=../../llvm-$(LLVM_VERSION) ../
+	cd $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/build;cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=DEBUG  -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DLLVM_ENABLE_RTTI:BOOL=TRUE -DLLVM_ENABLE_LIBEDIT=off -DLLVM_INCLUDE_BENCHMARKS=off -DLLVM_ENABLE_BINDINGS=FALSE -DLLVM_ENABLE_DUMP=TRUE -DCMAKE_INSTALL_PREFIX=../../llvm-$(LLVM_VERSION) -DCMAKE_INSTALL_PACKAGEDIR=lib/cmake ../
 	+make -C $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/build
 	+make -C $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/build install
 
