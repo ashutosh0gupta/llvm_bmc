@@ -1547,21 +1547,20 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
       auto* v = name_pair.second;
       std::string ty_str;
       if( auto glb = llvm::dyn_cast<llvm::GlobalVariable>(v) ) {
-        // auto  = get_type_of_pointer( ar );
-        // if( ar_types[indx] == NULL )
-        //   ar_ditypes[indx] = find_type_from_debug( ar, *debug_map);
         llvm::Type* ty = glb->getType();
         if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
-          auto el_ty = pty->getPointerElementType();
-          sort z_sort = llvm_to_sort( o, el_ty);
-          ty_str = to_string(z_sort);
+          assert(false);// todo: code commented due to opaque pointer
+          // auto el_ty = pty->getPointerElementType();
+          // sort z_sort = llvm_to_sort( o, el_ty);
+          // ty_str = to_string(z_sort);
         }else{ llvm_bmc_error( "parse comment::", "unrecognized type!"); }
       }else{
         llvm::Type* ty = v->getType();
         if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
-          auto el_ty = pty->getPointerElementType();
-          sort z_sort = llvm_to_sort( o, el_ty);
-          ty_str = to_string( solver_ctx.array_sort( solver_ctx.int_sort(), z_sort ) );
+          assert(false);// todo: code commented due to opaque pointer
+          // auto el_ty = pty->getPointerElementType();
+          // sort z_sort = llvm_to_sort( o, el_ty);
+          // ty_str = to_string( solver_ctx.array_sort( solver_ctx.int_sort(), z_sort ) );
         }else{
           sort z_sort = llvm_to_sort( o, ty);
           ty_str = to_string(z_sort);

@@ -1689,7 +1689,9 @@ sort ditype_to_sort( solver_context& c, const llvm::DIType* t ) {
       return c.int_sort(); // dummy return
     }
   }else if(auto diDT = llvm::dyn_cast<llvm::DIDerivedType>(t) ) {
-    sort typ = ditype_to_sort( c, diDT->getBaseType() );
+    auto bt = diDT->getBaseType();
+    sort typ = c.int_sort();
+    if( bt ) typ = ditype_to_sort( c, bt );
     if( diDT->getTag() == llvm::dwarf::DW_TAG_pointer_type ) {
       sort_vector domains(c);
       domains.push_back( c.int_sort() );

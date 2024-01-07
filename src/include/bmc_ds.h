@@ -87,6 +87,7 @@ public:
   multiple_array_model ar_memory_model_multiple;
 
   array_model_full*  ar_model_full = &ar_memory_model_single;
+  std::map<const llvm::Value*,const llvm::Instruction*>* debug_map = NULL;
 
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
   std::map< const llvm::Value*, unsigned >& ary_to_int;

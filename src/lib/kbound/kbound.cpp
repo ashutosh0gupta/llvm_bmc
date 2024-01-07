@@ -155,6 +155,7 @@ bool kbound::runOnFunction( llvm::Function &f ) {
     populate_array_name_map(&f);
     auto bmc_fun_ptr = new bmc_fun(o, ary_to_int, bmc_obj.m_model);
     bmc_ds_ptr = bmc_fun_ptr; // set the pointer in base cla
+    bmc_ds_ptr->debug_map = &bmc_obj.debug_map;
     bmc_fun_ptr->fun_initialize( this, f);
     // bmc_ds_ptr->thread_id = bmc_obj.sys_spec.threads.at(j).thread_num;
 

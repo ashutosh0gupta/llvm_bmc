@@ -79,6 +79,8 @@ void bmc::run_bmc_pass() {
   passMan.run( *module.get() );
   // todo: check if only one mode is active
 
+  collect_debug_info( module, this->debug_map );
+
   if( o.psystems ) {
     collect_threads( module, *this, o );
     collect_globals( module, *this, o.mem_enc, o.solver_ctx, o );
@@ -89,7 +91,6 @@ void bmc::run_bmc_pass() {
   }
 
   if( o.kbound ) {
-    collect_debug_info( module, this->debug_map );
 
     collect_threads( module, *this, o );
 

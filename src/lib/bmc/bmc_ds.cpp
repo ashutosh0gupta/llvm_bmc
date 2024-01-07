@@ -393,7 +393,7 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
   std::map< const llvm::Instruction*, unsigned >& map = ary_access_to_index;
   if(ar_model_local == FULL) {
     // full model using store and select
-    init_full_array_model( map );
+    init_full_array_model( map);
     ar_model_full->init_state( 0, s );
   } else {
     llvm_bmc_error("bmc", "array model initialization");
@@ -406,12 +406,13 @@ void bmc_ds::init_array_model( array_model_t ar_model_local ) {
 }
 
 void bmc_ds::
-init_full_array_model(std::map< const llvm::Instruction*, unsigned >& map) {
+init_full_array_model(std::map< const llvm::Instruction*, unsigned >& map ) {
   if( ar_model_init != NONE )
        llvm_bmc_error( "bmc", "array model is already initialized" );
   ar_model_init = FULL;
 
   //todo : move to array model code
+  ar_model_full->set_debug_map( debug_map );
   ar_model_full->set_array_info( ary_to_int);
   ar_model_full->set_access_map( map, ary_to_base );
 }
@@ -424,7 +425,8 @@ void bmc_ds::refresh_array_state( unsigned bidx,
   ar_model_full->update_name( bidx, ary_to_int[I] );
 }
 
-void bmc_ds::set_array_length( const llvm::Value* arr, std::vector<expr>& len ) {
+void bmc_ds::
+set_array_length( const llvm::Value* arr, std::vector<expr>& len ) {
   assert(arr);
   unsigned ar_num = ary_to_int.at(arr);
   switch( ar_model_init ) {
