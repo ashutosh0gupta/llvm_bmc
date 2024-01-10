@@ -27,9 +27,9 @@ void kbound::dump_start_thread_arm() {
   dump_Assign_rand_ctx( cdy ); //todo : do we need to do this
   dump_Assume_geq( cdy, cstart );
   if( tid != "0" ) {
-    dump_If( "skip_"+tid );{
-      dump_Goto( block_name("_END") );
-    } dump_Close_scope();
+    // dump_If( "skip_"+tid );{
+    //   dump_Goto( block_name("_END") );
+    // } dump_Close_scope();
   }
 }
 

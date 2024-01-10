@@ -261,7 +261,7 @@ void kbound::dump_Assume_geq(std::string s1,std::string s2) {
   assert( s1 != "" );
   assert( s2 != "" );
   if (s1 == s2) return;
-  if( s2 == "0") return; // Do not dump if RHS is 0
+  // if( s2 == "0") return; // Do not dump if RHS is 0
   dump_Assume( s1 + " >= "+ s2 );
 }
 

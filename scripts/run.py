@@ -77,8 +77,8 @@ for ex in exs:
    new_exs.append([i]+ex)
 exs = new_exs
 
-mm = "armv1"
-# mm = "armv2"
+# mm = "armv1"
+mm = "armv2"
 
 print("------------------------------")
 print("Running kbound implementation:")
@@ -149,6 +149,7 @@ def runner(ex):
       # err_cnt += 1
    return float(time[1])
 
+
 # exs = [ ex if ex[1] ]
 
 # exs = list(filter(lambda ex: "ctrl" in ex[1], exs))
@@ -160,6 +161,7 @@ def runner(ex):
 # exs = list(filter(lambda ex: "Luc21" == ex[1], exs))
 # exs = list(filter(lambda ex: "MP+popl+addr" == ex[1], exs))
 
+exs = list(filter(lambda ex: 'R+popl+dmb.sy' == ex[1], exs))
 
 # print(len(exs))
 # exit()
