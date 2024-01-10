@@ -86,9 +86,9 @@ def runall():
     for tst in tests:
         n = n + 1
         try:
-            cmd1 = SCRIPT1 + ' --unwind ' + UNWIND + ' -o ' + TEMPFOLDER + '/' + '  --context-bound ' + BOUND + ' -k ' + LITMUSDIR + '/' + \
-                   tst['tstname'] + '.c'
-            # print(cmd1)
+            cmd1 = SCRIPT1 + ' --unwind ' + UNWIND + ' -o ' + TEMPFOLDER + '/' + '  --context-bound ' + BOUND + \
+                   ' --memory-model armv2' + ' -k ' + LITMUSDIR + '/' + tst['tstname'] + '.c'
+            #print(cmd1)
             result1 = subprocess.run(shlex.split(cmd1), stderr=subprocess.STDOUT, timeout=TIMEOUT,
                                      stdout=subprocess.PIPE)
             out1 = result1.stdout.decode()
@@ -98,7 +98,7 @@ def runall():
             else:
                 try:
                     cmd2 = SCRIPT2 + ' ' + TEMPFOLDER + '/' + tst['tstname'] + '.c.cbmc_out.cpp'
-                    # print(cmd2)
+                    #print(cmd2)
                     result2 = subprocess.run(shlex.split(cmd2), stderr=subprocess.STDOUT, timeout=TIMEOUT,
                                              stdout=subprocess.PIPE)
                     out2 = result2.stdout.decode()
