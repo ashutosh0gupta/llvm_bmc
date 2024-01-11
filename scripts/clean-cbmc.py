@@ -153,6 +153,8 @@ tf = open(wrong_tag_c,'w+')
 tf.writelines(cf)
 tf.close()
 exit()
+# print('I am here!')
+# print(wrong)
 
 if os.path.isfile(wrong):
     try:
