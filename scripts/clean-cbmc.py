@@ -152,7 +152,7 @@ for es in elists:
 tf = open(wrong_tag_c,'w+')
 tf.writelines(cf)
 tf.close()
-exit()
+# exit()
 # print('I am here!')
 # print(wrong)
 
@@ -171,12 +171,15 @@ if os.path.isfile(wrong):
             t = 0
             for instr in ins:
                 # instr = instr.strip()
-                if instr.startswith(' LD'):
-                    instr = elists[t][epos[t]]+" "+instr
+                if instr.startswith(' LD') or instr.startswith(' ST'):
+                    if len(elists[t]) > epos[t]:
+                        instr = elists[t][epos[t]][0]+" "+instr
+                    else:
+                        # events missing from CBMC output
+                        instr = "_,_ "+instr
                     epos[t] += 1
-                elif instr.startswith(' ST'):
-                    instr = elists[t][epos[t]]+" "+instr
-                    epos[t] += 1
+                    # instr = elists[t][epos[t]]+" "+instr
+                    # epos[t] += 1
                 else:
                     instr = "    "+instr
                 ins[t] = instr
