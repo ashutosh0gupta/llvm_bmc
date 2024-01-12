@@ -689,8 +689,8 @@ void kbound::dump_AtomicRMWInst( const llvm::AtomicRMWInst* rmw ) {
   default:
     llvm_bmc_error("kbound","unspported atomic rmw operation");
   }
-
-  dump_st( w, cw, caddr, gid, is_release(ord), true, isLocalUse,loc);
+  std::string status = "^^7&"; // todo : bad string needs to be addressed
+  dump_st( w, status, cw, caddr, gid, is_release(ord), true, isLocalUse,loc);
 }
 
 void kbound::dump_AtomicCmpXchgInst( const llvm::AtomicCmpXchgInst* cxng ) {
@@ -734,7 +734,8 @@ void kbound::dump_AtomicCmpXchgInst( const llvm::AtomicCmpXchgInst* cxng ) {
 
   dump_If( r + "==" + ov );
   dump_Assign( cnd, "1" );
-  dump_st( nv, cnv, caddr, gid, is_release(sord), true, isLocalUse,loc);
+  std::string status = "%%$34";
+  dump_st( nv, status, cnv, caddr, gid, is_release(sord), true, isLocalUse,loc);
   dump_Else();
   dump_Assign( cnd, "0" );
   dump_Close_scope();
@@ -1056,7 +1057,8 @@ void kbound::dump_LD_(unsigned bidx, const llvm::CallInst* call,
 
 void kbound::dump_StoreInst(unsigned bidx, const llvm::StoreInst* store ) {
   assert( store );
-  auto val = store->getOperand(0);
+  auto status = add_reg_map(store);
+  auto val  = store->getOperand(0);
   auto addr = store->getOperand(1);
   auto ord  = store->getOrdering();
   auto loc  = getLoc(store).position_name();
@@ -1067,12 +1069,13 @@ void kbound::dump_StoreInst(unsigned bidx, const llvm::StoreInst* store ) {
   reg_ctx_t caddr;
   bool isLocalUse = false;
   addr_name( addr, gid, caddr, isLocalUse );
-  dump_st( v, cval, caddr, gid, is_release(ord), false, isLocalUse, loc);
+  dump_st( v, status, cval, caddr, gid, is_release(ord), false, isLocalUse, loc);
 }
 
 
 void kbound::dump_ST_(unsigned bidx, const llvm::CallInst* call,
                       bool isRelease, bool isExclusive) {
+  auto status = add_reg_map(call);
   auto val = call->getArgOperand(1);
   auto v    = get_reg(val);
   auto cval = get_reg_ctx(val);
@@ -1081,7 +1084,7 @@ void kbound::dump_ST_(unsigned bidx, const llvm::CallInst* call,
   reg_ctx_t caddr;
   bool isLocalUse = false;
   addr_name(call->getArgOperand(0), gid, caddr, isLocalUse );
-  dump_st( v, cval, caddr, gid, isRelease, isExclusive, isLocalUse, loc);
+  dump_st( v, status, cval, caddr, gid, isRelease, isExclusive, isLocalUse, loc);
 }
 
 

@@ -602,6 +602,16 @@ range_forbid( std::string gid, std::string lb, std::string ub ) {
   }
 }
 
+// void kbound::
+// if_range_forbid( std::string gid, std::string lb, std::string ub, std::string skip_label ) {
+//   for( unsigned k = 1; k < ncontext; k++ ) {
+//     auto kn = std::to_string(k);
+//     auto range = "( ("+lb + " < " + kn+") && ("+ kn + " < " + ub +") )";
+//     auto xkn = "(" + gid + ","+ kn +")";
+//     dump_if_implies( range, " && (sforbid"+ xkn +"<= 0)" );
+//   }
+// }
+
 void kbound::dump_update_ctrl( //const void* cond,
                               reg_ctx_t cond_ctx ) {
   auto ctrl = "cctrl["+tid+"]";
@@ -776,16 +786,16 @@ dump_ld( std::string r, reg_ctx_t cval, reg_ctx_t caddr, std::string gid,
 
 
 void kbound::
-dump_st( std::string v, reg_ctx_t cval, reg_ctx_t caddr, std::string gid,
+dump_st( std::string v, std::string status, reg_ctx_t cval, reg_ctx_t caddr, std::string gid,
          bool isRelease, bool isExclusive, bool isLocalUse, std::string loc) {
   if(isLocalUse) {
     dump_Assign( "local_mem["   + gid + "]", v);
     return;
   }
   switch( mm ) {
-  case ARMV1: dump_st_v1(v, cval, caddr,gid,isRelease,isExclusive,loc); break;
-  case ARMV2: dump_st_v2(v, cval, caddr,gid,isRelease,isExclusive,loc); break;
-  case CC   : dump_st_cc(v, cval, caddr,gid,isRelease,isExclusive,loc); break;
+  case ARMV1: dump_st_v1(v, status, cval, caddr,gid,isRelease,isExclusive,loc); break;
+  case ARMV2: dump_st_v2(v, status, cval, caddr,gid,isRelease,isExclusive,loc); break;
+  case CC   : dump_st_cc(v, status, cval, caddr,gid,isRelease,isExclusive,loc); break;
   default: llvm_bmc_error("kbound", "bad memory model!");
   }
 

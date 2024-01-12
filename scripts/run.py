@@ -160,9 +160,8 @@ def runner(ex):
 # exs = list(filter(lambda ex: "CO-SBI" == ex[1], exs))
 # exs = list(filter(lambda ex: "Luc21" == ex[1], exs))
 # exs = list(filter(lambda ex: "MP+popl+addr" == ex[1], exs))
-
-
-exs = list(filter(lambda ex: 'R+popl+dmb.sy' == ex[1], exs))
+#exs = list(filter(lambda ex: 'R+popl+dmb.sy' == ex[1], exs))
+exs = list(filter(lambda ex: 'ATOM00' == ex[1], exs))
 
 # print(len(exs))
 # exit()

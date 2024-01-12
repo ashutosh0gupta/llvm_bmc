@@ -125,6 +125,7 @@ dump_ld_cc( std::string r,     // register name
 
 void kbound::
 dump_st_cc( std::string r,     // register name
+            std::string status,     // staus of write; useful in the case of exclusive writes
             reg_ctx_t cval,  // context of register value
             reg_ctx_t caddr, // context of address   (ignoring here)
             std::string gid,   // global variable index

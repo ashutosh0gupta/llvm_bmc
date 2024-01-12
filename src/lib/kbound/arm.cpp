@@ -208,8 +208,9 @@ dump_ld_v1( std::string r, reg_ctx_t cval,reg_ctx_t caddr,
 
 
 void kbound::
-dump_st_v1( std::string v, reg_ctx_t cval,reg_ctx_t caddr, std::string gid,
-         bool isRelease, bool isExclusive, std::string loc) {
+dump_st_v1( std::string v,
+            std::string status, reg_ctx_t cval,reg_ctx_t caddr, std::string gid,
+            bool isRelease, bool isExclusive, std::string loc) {
 
   auto gaccess     = "("+ tid + ","+ gid + ")";
   auto iw          = "iw"+gaccess;
@@ -465,6 +466,7 @@ dump_ld_v2( std::string r,
 
 void kbound::
 dump_st_v2( std::string v,
+            std::string status, // in case of exclusive store returns a status
             reg_ctx_t cval, // ctxstamp for value (input)
             reg_ctx_t caddr,// ctxstamp for address (input)
             std::string gid, // global 
@@ -519,6 +521,8 @@ dump_st_v2( std::string v,
 
   dump_Assign( "xpanding"+ t_g, "0");
   if( isRelease ) dump_Assign_max( "cstr" + t, cw );
+  if( isExclusive )
+    dump_Assign( status, "1" ); // since only allow success
 
   dump_commit_before_thread_finish(cw);
 }

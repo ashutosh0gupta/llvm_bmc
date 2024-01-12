@@ -153,7 +153,7 @@ private:
   void dump_Assign_ctx( reg_ctx_t&, ctxset_t& );
 
   void dump_ld(std::string,reg_ctx_t,reg_ctx_t,std::string,bool,bool,bool,std::string);
-  void dump_st(std::string,reg_ctx_t,reg_ctx_t,std::string,bool,bool,bool,std::string);
+  void dump_st(std::string,std::string,reg_ctx_t,reg_ctx_t,std::string,bool,bool,bool,std::string);
   void dump_dmbsy();
   void dump_dmbld();
   void dump_dmbst();
@@ -189,11 +189,11 @@ private:
   void dump_start_thread_arm();
   void dump_post_context_matching_arm();
   void dump_ld_v1(std::string,reg_ctx_t,reg_ctx_t,std::string,bool,bool,std::string);
-  void dump_st_v1(std::string,reg_ctx_t,reg_ctx_t,std::string,bool,bool,std::string);
+  void dump_st_v1(std::string,std::string,reg_ctx_t,reg_ctx_t,std::string,bool,bool,std::string);
   void prefix_seq_v1();
 
   void dump_ld_v2(std::string,reg_ctx_t,reg_ctx_t,std::string,bool,bool,std::string);
-  void dump_st_v2(std::string,reg_ctx_t,reg_ctx_t,std::string,bool,bool,std::string);
+  void dump_st_v2(std::string,std::string,reg_ctx_t,reg_ctx_t,std::string,bool,bool,std::string);
   void prefix_seq_v2();
 
   // for CC memory model
@@ -201,7 +201,7 @@ private:
   void dump_thread_join_cc  ( std::string child_tid );
   void dump_start_thread_cc();
   void dump_ld_cc(std::string,reg_ctx_t,reg_ctx_t,std::string,bool,bool,std::string);
-  void dump_st_cc(std::string,reg_ctx_t,reg_ctx_t,std::string,bool,bool,std::string);
+  void dump_st_cc(std::string,std::string,reg_ctx_t,reg_ctx_t,std::string,bool,bool,std::string);
   void prefix_seq_cc();
   void dump_post_context_matching_cc();
   void dump_begin_transaction_cc();

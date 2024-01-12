@@ -1,4 +1,6 @@
 exs=[
+        # [ FileName, '-', NumberOFThread, Context, Unroll, ExpectedDecision],
+	['ATOM00', '-', 2, 10, 1, 'unsafe'],
 	['R', '-', 2, 10, 1, 'unsafe'],
 	['R+po+polp', '-', 2, 10, 1, 'unsafe'],
 	['R+popl+po', '-', 2, 10, 1, 'unsafe'],
