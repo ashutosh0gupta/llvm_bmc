@@ -21,6 +21,7 @@ l = 1
 
 # folder = "examples/kbound/omkar/bench"
 folder = "./examples/litmus/c/c-litmus-ARMCBMC/"
+# ./examples/litmus/c/c-litmus-ARMCBMC/examples.py
 # folder = "~/tmp/"
 # folder = "examples/kbound/popl23-benchmarks/SV-COMP/ARMCBMC/"
 # folder = "./examples/kbound/popl23-benchmarks/TRACER/ARMCBMC/"
@@ -161,8 +162,8 @@ def runner(ex):
 # exs = list(filter(lambda ex: "Luc21" == ex[1], exs))
 # exs = list(filter(lambda ex: "MP+popl+addr" == ex[1], exs))
 #exs = list(filter(lambda ex: 'R+popl+dmb.sy' == ex[1], exs))
-exs = list(filter(lambda ex: 'ATOM00' == ex[1], exs))
-
+exs = list(filter(lambda ex: 'ATOM' in ex[1], exs))
+print(exs)
 # print(len(exs))
 # exit()
 

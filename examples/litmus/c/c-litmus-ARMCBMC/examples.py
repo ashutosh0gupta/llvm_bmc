@@ -1,6 +1,12 @@
 exs=[
         # [ FileName, '-', NumberOFThread, Context, Unroll, ExpectedDecision],
-	['ATOM00', '-', 2, 10, 1, 'unsafe'],
+	['ATOM00', '-', 2, 10, 1, 'safe'],
+	['ATOM01', '-', 2, 10, 1, 'unsafe'],
+	['ATOM02', '-', 2, 10, 1, 'unsafe'],
+	['ATOM03', '-', 2, 10, 1, 'unsafe'],
+	['ATOM04', '-', 2, 10, 1, 'unsafe'],
+	['ATOM05', '-', 2, 10, 1, 'unsafe'],
+	['ATOM06', '-', 2, 10, 1, 'unsafe'],
 	['R', '-', 2, 10, 1, 'unsafe'],
 	['R+po+polp', '-', 2, 10, 1, 'unsafe'],
 	['R+popl+po', '-', 2, 10, 1, 'unsafe'],
