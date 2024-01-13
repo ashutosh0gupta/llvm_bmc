@@ -1,4 +1,5 @@
 #include "lib/kbound/kbound.h"
+#include "nameconvention.h"
 // #include <boost/algorithm/string.hpp>
 
 //-------------------------------------------------------------------
@@ -75,7 +76,7 @@ void kbound::prefix_seq_v1() {
 
   dump_Comment( "declare arrays for context stamps" );
   ctx_list = {
-    "cr",        // Last read commit ctx
+    NameConvention::LD_COM_CNTXT,        // Last read commit ctx
     "iw", "cw",  // Write commit ctx
     "cx",        // exclusive commit
     "is",        // RA model write init
@@ -90,13 +91,21 @@ void kbound::prefix_seq_v1() {
   dump_Comment( "declare arrays for synchronizations" );
   proc_list = {
     "cl",                        // Ctxstamps for load acquire
-    "cdy", "cds", "cdl", "cisb", // Ctxstamps for four kind of fences
+    NameConvention::DMB_SY_COM_CNTXT,
+    NameConvention::DMB_ST_COM_CNTXT,
+    NameConvention::DMB_LD_COM_CNTXT,
+    NameConvention::ISB_COM_CNTXT, // Ctxstamps for four kind of fences
     "caddr", "cctrl"             // Ctxstamps for addr and ctrl
   };
   for( auto ary: proc_list ) dump_Decl_array("int", ary, "NTHREAD");
 
 
-  var_list = { "old_cctrl", "old_cr", "old_cdy", "old_cw",  "new_creg" };
+  var_list = {
+    "old_cctrl",
+    NameConvention::OLD_LD_COM_CNTXT,
+    "old_cdy",
+    "old_cw",
+    "new_creg" };
   dump_Newline();
 
   // records ctx and processes
@@ -307,22 +316,28 @@ void kbound::prefix_seq_v2() {
 
   dump_Comment( "declare arrays for context stamps" );
   ctx_list = {
-    "sr", "cr",        // Last read commit ctx
+    // Last read commit ctx
+    NameConvention::LD_SAT_CNTXT,
+    NameConvention::LD_COM_CNTXT,
     // "iw",
-    "cw",  // Write commit ctx
+    NameConvention::ST_COM_CNTXT,  // Write commit ctx
     // "cx",        // exclusive commit
     // "is",        // RA model write init
-    "clrsaddr",
-    "clrsval",
-    "xpanding",
+    NameConvention::ADDR_LRS_COM_CNTXT,
+    NameConvention::DATA_LRS_COM_CNTXT,
+    NameConvention::XPENDING,
     "crmax",      // max read ctx seen so far //ashu added?
   };
   dump_Arrays( "int", ctx_list, "NTHREAD", "ADDRSIZE");
 
   dump_Comment( "declare arrays for synchronizations" );
   proc_list = {
-    "cstr","clda",               // Ctxstamps for store/load RA
-    "cdy", "cds", "cdl", "cisb", // Ctxstamps for four kind of fences
+    NameConvention::STR_COM_CNTXT,
+    NameConvention::LDA_COM_CNTXT,               // Ctxstamps for store/load RA
+    NameConvention::DMB_SY_COM_CNTXT,
+    NameConvention::DMB_ST_COM_CNTXT,
+    NameConvention::DMB_LD_COM_CNTXT,
+    NameConvention::ISB_COM_CNTXT, // Ctxstamps for four kind of fences
     "caddr", "cctrl"             // Ctxstamps for addr and ctrl
   };
   for( auto ary: proc_list ) dump_Decl_array("int", ary, "NTHREAD");
@@ -336,7 +351,12 @@ void kbound::prefix_seq_v2() {
   // for( auto ary: ctx_list ) dump_Decl_array( "int", ary, "NCONTEXT" );
   // dump_Newline();
 
-  var_list = { "old_cctrl", "old_sr", "old_cr", "old_cdy", "old_cw",  "new_creg" };
+  var_list = { "old_cctrl",
+               NameConvention::OLD_LD_SAT_CNTXT,
+               NameConvention::OLD_LD_COM_CNTXT,
+               "old_cdy",
+               "old_cw",
+               "new_creg" };
   dump_Newline();
 
   // records ctx and processes
@@ -397,17 +417,19 @@ dump_ld_v2( std::string r,
             std::string gid,
             bool isAcquire, bool isExclusive, std::string loc ) {
 
-  auto t_g  = "("+ tid + ","+ gid + ")";
-  auto sr   = "sr"+t_g; // new
-  auto cr   = "cr" +t_g;
-  auto g_sr = "("+ gid +","+ sr + ")";
-  auto t    = "["+ tid + "]";
+  auto t_g  = "(" + tid + "," + gid + ")";
+  auto sr   = NameConvention::LD_SAT_CNTXT + t_g; // new
+  auto cr   = NameConvention::LD_COM_CNTXT + t_g;
+  auto g_sr = "(" + gid + "," + sr + ")";
+  auto t    = "[" + tid + "]";
 
   dump_Comment("LD: Guess");
   if(isExclusive)   dump_Comment("  : Exclusive");
   if(isAcquire)     dump_Comment("  : Acquire");
-  // dump_Assign( "old_cr",  cr);
-  dump_Assign( "old_sr",  sr);
+  dump_Assign( NameConvention::OLD_LD_SAT_CNTXT,  sr);
+  // TODO: Where is old_LDComCntxt?
+  dump_Comment("Missing old_LDComCntxt?");
+  // dump_Assign( NameConvention::OLD_LD_COM_CNTXT,  cr);
   dump_Assign_rand_ctx( sr, tid + " ASSIGN LDSAT " + loc );
   dump_Assign_rand_ctx( cr, tid + " ASSIGN LDCOM " + loc );
 
@@ -415,22 +437,27 @@ dump_ld_v2( std::string r,
   dump_Active( cr );
   dump_Active( sr );
   dump_Assume_geq( cr, sr );
-  // dump_Assume_geq( sr, "old_sr" ); // todo : testing
+  // TODO: Where is the constraint LDSatContxt >= old_LDSatCntxt
+  dump_Comment("Missing LDSatContxt >= old_LDSatCntxt?"); 
+  // dump_Assume_geq( sr, NameConvention::OLD_LD_SAT_CNTXT ); // todo : testing
 
-  dump_Assume_geq( cr, "clda" + t );
-  dump_Assume_geq( cr,  "cdy" + t );
-  dump_Assume_geq( cr, "cisb" + t ); // isb is here??
-  dump_Assume_geq( cr,  "cdl" + t );
+  dump_Assume_geq( cr, NameConvention::LDA_COM_CNTXT + t );
+  dump_Assume_geq( cr, NameConvention::DMB_SY_COM_CNTXT + t );
+  dump_Comment("Check ISB and DMBStComCntxt here");
+  dump_Assume_geq( cr, NameConvention::ISB_COM_CNTXT + t ); // isb is here??
+  dump_Assume_geq( cr,  NameConvention::DMB_LD_COM_CNTXT + t );
 
+  // TODO: Where is the constraint LDComCntxt >= RegComCntxt?
+  dump_Comment("Missing LDComCntxt >= RegComCntxt?");
   dump_Assume_geq( cr, caddr[COM_CTX] ); //does not match from paper; paper is syncing with all addr
   // dump_Assume_geq( sr, "clrsaddr"+t_g ); // << different from the paper
   // dump_Assume_geq( sr, "clrsval" +t_g ); // << different from the paper
 
   // dump_Assume_geq( sr, caddr );          // << ordering against sat
-  dump_Assume_geq( cr, "clrsaddr"+t_g ); // << in the paper
-  dump_Assume_geq( cr, "clrsval" +t_g ); // << in the paper
+  dump_Assume_geq( cr, NameConvention::ADDR_LRS_COM_CNTXT + t_g ); // << in the paper
+  dump_Assume_geq( cr, NameConvention::DATA_LRS_COM_CNTXT + t_g ); // << in the paper
 
-  if( isAcquire ) dump_Assume_geq( cr, "cstr" + t );
+  if( isAcquire ) dump_Assume_geq( cr, NameConvention::STR_COM_CNTXT + t );
 
   dump_Comment("Update");
   // dump_Assign_max( cr, "old_cr" ); // << cr is updated again??
@@ -447,7 +474,7 @@ dump_ld_v2( std::string r,
   dump_Else();
   {
     dump_Assign( r, "mem"+ g_sr );
-    dump_Assume_geq( sr, "old_sr" ); // << different from paper
+    dump_Assume_geq( sr, NameConvention::OLD_LD_SAT_CNTXT ); // << different from paper
     range_forbid( gid, sr, cr );
   }
   dump_Close_scope();
@@ -455,7 +482,7 @@ dump_ld_v2( std::string r,
   if( isAcquire   ) dump_Assign_max( "clda" + t, cr   );
   if( isExclusive ) {
     dump_If_NonDet();{
-      dump_Assign( "xpanding"+g_sr, tid );
+      dump_Assign( NameConvention::XPENDING + g_sr, tid );
     }dump_Close_scope();
   }
 
@@ -491,7 +518,7 @@ dump_st_v2( std::string v,
   dump_Assume_geq( cw, "old_cw" );
   // dump_Assume_geq( cw, "cr"    + t_g   );//<< was in old version
   dump_Assume_geq( cw, "crmax"    + t_g   );//should used crmax
-  dump_Assume_geq( cw, "clda" + t );
+  dump_Assume_geq( cw, NameConvention::LDA_COM_CNTXT + t );
 
   dump_Assume_geq( cw, "cisb" + t ); // ?? missing in paper
   dump_Assume_geq( cw, "cdy"  + t );
@@ -508,18 +535,19 @@ dump_st_v2( std::string v,
   dump_Assume_geq( cw, "cctrl" + t );
   dump_Assume_geq( cw, "caddr" + t );
 
-  if( isExclusive ) dump_Assume( "xpanding" + t_g + ">0" ); // Paper has type mismatch
-  if( isExclusive ) range_forbid( gid, "xpanding"+t_g, cw );
+  if( isExclusive ) dump_Assume( NameConvention::XPENDING + t_g + ">0" ); // Paper has type mismatch
+  if( isExclusive ) range_forbid( gid, NameConvention::XPENDING + t_g, cw );
 
   dump_Comment("Update");
   dump_Assign( "buff"  + t_g , v);
   dump_Assign( "mem"   + g_cw, v); // << indexing wrong in paper
   dump_Assign_max( "caddr"    + t,   caddr[COM_CTX] );
 
-  dump_Assign( "clrsaddr" + t_g, caddr[COM_CTX] ); //
-  dump_Assign( "clrsval"  + t_g, cval[COM_CTX]  ); //
+  dump_Assign( NameConvention::ADDR_LRS_COM_CNTXT + t_g, caddr[COM_CTX] ); //
+  dump_Assign( NameConvention::DATA_LRS_COM_CNTXT + t_g, cval[COM_CTX]  ); //
 
-  dump_Assign( "xpanding"+ t_g, "0");
+  dump_Comment("Do we need Xpending if no exculise accesses?");
+  dump_Assign( NameConvention::XPENDING + t_g, "0");
   if( isRelease ) dump_Assign_max( "cstr" + t, cw );
   if( isExclusive )
     dump_Assign( status, "1" ); // since only allow success

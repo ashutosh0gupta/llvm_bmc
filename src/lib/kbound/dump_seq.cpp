@@ -1,4 +1,5 @@
 #include "lib/kbound/kbound.h"
+#include "nameconvention.h"
 #include <boost/algorithm/string.hpp>
 
 
@@ -289,7 +290,7 @@ void kbound::dump_Assign_rand(std::string v, std::string b, std::string cmt ) {
   if( cmt != "" ) {
     cmt = "// " + cmt;
   }
-  dump_String( v + " = get_rng(0," + b + ");" + cmt );
+  dump_String( v + " = " + NameConvention::GEN_ROUND + "(0," + b + ");" + cmt );
 }
 
 void kbound::dump_Assign_max( std::string v, std::string r1, std::string r2 ) {
@@ -374,7 +375,7 @@ void kbound::dump_If(std::string s) {
 }
 
 void kbound::dump_If_NonDet() {
-  dump_If("__get_rng()");
+  dump_If(NameConvention::UNDERSCORE_GEN_ROUND + "()");
 }
 
 void kbound::dump_ElseIf(std::string s) {
@@ -540,20 +541,21 @@ void kbound::preamble() {
   dump_Define("max(a,b)", "(a>b?a:b)");
   dump_Newline();
 
-  dump_String("char __get_rng();");
-  dump_String("char get_rng( char from, char to ) {");
-  dump_String("   char ret = __get_rng();");
+  dump_String("char " + NameConvention::UNDERSCORE_GEN_ROUND + "();");
+  dump_String("char " + NameConvention::GEN_ROUND + "( char from, char to ) {");
+  dump_String("   char ret = " + NameConvention::UNDERSCORE_GEN_ROUND + "();");
   dump_String("   ASSUME(ret >= from && ret <= to);");
   dump_String("   return ret;");
   dump_String("}");
   dump_Newline();
 
-  dump_String("char get_rng_th( char from, char to ) {");
-  dump_String("   char ret = __get_rng();");
-  dump_String("   ASSUME(ret >= from && ret <= to);");
-  dump_String("   return ret;");
-  dump_String("}");
-  dump_Newline();
+  // TODO: Redudant? Remove?
+  // dump_String("char get_rng_th( char from, char to ) {");
+  // dump_String("   char ret = " + NameConvention::UNDERSCORE_GEN_ROUND + "();");
+  // dump_String("   ASSUME(ret >= from && ret <= to);");
+  // dump_String("   return ret;");
+  // dump_String("}");
+  // dump_Newline();
 
   dump_Decl_fun("int", "main", "int argc, char **argv");
 
