@@ -1,5 +1,5 @@
 #include "lib/kbound/kbound.h"
-
+#include "nameconvention.h"
 
 //-------------------------------------------------------------------
 // Sequential code intialization
@@ -119,7 +119,7 @@ dump_ld_cc( std::string r,     // register name
   auto t = "["+ tid +"]";
   auto ct  = "ct"+t;
   dump_Assume_geq(cval[COM_CTX], ct);
-  dump_Assign( r, "buff["+gid+"]");
+  dump_Assign( r, NameConvention::CURR_LOC_MEM_VAL + "["+gid+"]");
 }
 
 
@@ -136,7 +136,7 @@ dump_st_cc( std::string r,     // register name
   assert(inside_transaction);
   auto t = "["+ tid +"]";
   auto ct  = "ct"+t;
-  dump_Assign( "buff["+gid+"]", r );
+  dump_Assign( NameConvention::CURR_LOC_MEM_VAL + "["+gid+"]", r );
   dump_Assume_geq(cval[COM_CTX], ct);
 }
 
@@ -153,7 +153,7 @@ void kbound::dump_begin_transaction_cc() {
   for( unsigned x = 0; x < num_globals; x++ ) {
     auto xn = std::to_string(x);
     dump_Assign_rand_thread( "access_idx["+xn+"]");
-    dump_Assign( "buff["+xn+"]",
+    dump_Assign( NameConvention::CURR_LOC_MEM_VAL + "["+xn+"]",
                  "mem( access_idx["+xn+"]" +","+ xn +","+ ct +")" );
   }
   if( inside_transaction )

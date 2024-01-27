@@ -682,7 +682,7 @@ void kbound::dump_isb() {
   dump_Comment("Check");
   dump_Assume_geq( cisb, "cdy["   + tid + "]" );
   dump_Assume_geq( cisb, "cctrl["  + tid + "]" );
-  dump_Assume_geq( cisb, "caddr[" + tid + "]" );
+  dump_Assume_geq( cisb, "RegCntxtRAddr[" + tid + "]" );
   dump_commit_before_thread_finish(cisb);
 }
 
