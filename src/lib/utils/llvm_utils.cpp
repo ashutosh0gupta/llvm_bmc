@@ -2318,8 +2318,21 @@ get_array_info( const llvm::Value* op) {
   //   } else {
   //     llvm::errs() << "\n\nIN ELSE";
   //   }
-  }
-  else{
+  } else if(auto load = llvm::dyn_cast<const llvm::LoadInst>(op)){
+    uint64_t size = 0;
+    dump(load);
+    if(auto addr = llvm::dyn_cast<const llvm::Instruction>(load->getOperand(0))) {
+      while(llvm::dyn_cast<const llvm::LoadInst>(load->getOperand(0))){
+        load = llvm::dyn_cast<llvm::LoadInst>(load->getOperand(0));
+      }
+      dump(load);
+      // actual allocation in the code
+      return std::make_pair(load->getOperand(0), size);
+    }
+
+    return std::make_pair(op, size);
+    
+  } else{
     // llvm_bmc_error("bmc", "non array global write/read not supported!");
   }
   llvm_bmc_warning("bmc","failed to recognize heap access");
