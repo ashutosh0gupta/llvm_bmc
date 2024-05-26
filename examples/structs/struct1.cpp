@@ -31,11 +31,12 @@ int main(){
     first.e = 50;
     
     second.a = 100;
+    first.b = 2000;
     second.b = 200;
     second.c = 300;
     second.d = 400;
 
     // third.a == 1000;
 
-    assert(first.a == 20);
+    assert(first.a*10 == second.a);
 }

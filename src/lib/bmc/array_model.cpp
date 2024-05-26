@@ -170,18 +170,19 @@ set_array_info(std::map< const llvm::Value*, unsigned >& ary_ids) {
     auto ar = ar_int_pair.first;
     auto indx = ar_int_pair.second;
     ar_types[indx] = get_type_of_pointer( ar );
-    if( ar_types[indx] == NULL )
-      ar_ditypes[indx] = find_type_from_debug( ar, *debug_map);
+    // if( ar_types[indx] == NULL )
+    //   ar_ditypes[indx] = find_type_from_debug( ar, *debug_map);
     ar_names[indx] = ar->getName();
     lengths[indx]  = get_array_length( ar );
   }
   for( unsigned i = 0; i < num_arrays; i++) {
     if( ar_types[i] ) {
       ar_sorts.push_back( get_solver_array_ty( ar_types[i] ) );
-    }else{
-      // We try to get the type information from debug info
-      ar_sorts.push_back( ditype_to_sort( o.solver_ctx, ar_ditypes[i] ) );
     }
+    // else{
+    //   // We try to get the type information from debug info
+    //   ar_sorts.push_back( ditype_to_sort( o.solver_ctx, ar_ditypes[i] ) );
+    // }
   }
 }
 
