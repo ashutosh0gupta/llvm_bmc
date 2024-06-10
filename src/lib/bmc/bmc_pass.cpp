@@ -648,6 +648,13 @@ int bmc_pass::translateCallInst( unsigned bidx,
 
   } else if( fp != NULL && fp->getName().startswith("__cxa_end_catch") ) {
     // llvm::errs() << "\n\n\n\n\n CATCH ENDDDDDDD \n\n\n";
+  } else if( fp != NULL && fp->getName().startswith("_Znwm") ) {
+    auto val = call->getOperand(0);    
+    unsigned ar_num = bmc_ds_ptr->ary_to_int.at(call);
+    bmc_ds_ptr->m.insert_term_map( call, get_expr_const(solver_ctx, ar_num));
+    auto val_expr = bmc_ds_ptr->m.get_term( val );
+    std::vector<expr> ls; ls.push_back( val_expr);
+    bmc_ds_ptr->set_array_length( call, ls );
   } else {
     call->print( llvm::outs() );
     std::cout << "\n";
@@ -2080,6 +2087,15 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
             ary_to_int[I] = arrCntr++;
             // I->print(llvm::outs());
             // std::cout << "\nCOLLECTED EXCEPTION PTR AS ARRAY\n\n";
+        }
+        else if (fp != NULL && fp->getName().startswith("_Znwm")){
+          auto val = call->getOperand(0);
+          auto size = dyn_cast<const llvm::ConstantInt>(val);
+          int sizeValue = size->getSExtValue();
+          int structSize = sizeValue/4; // For integers
+          for(int temp=0; temp<structSize; temp++){
+            ary_to_int[I+temp] = arrCntr++;
+          }
         }
       } else {} // no errors needed!!
       //todo: identify that an array is allocated
