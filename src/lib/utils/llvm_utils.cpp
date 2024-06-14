@@ -2226,7 +2226,9 @@ get_array_info( const llvm::Value* op) {
   }
   if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(op) ) {
     auto op_gep_ptr = gep->getPointerOperand();
-    return get_array_info( op_gep_ptr );
+    // return get_array_info( op_gep_ptr );
+    uint64_t size = 0;
+    return std::make_pair(gep->getOperand(0), size);
   }
   if(auto gep = llvm::dyn_cast<const llvm::GEPOperator>(op)) {
     return get_array_info(identify_array_in_gep( gep ));
@@ -2318,8 +2320,21 @@ get_array_info( const llvm::Value* op) {
   //   } else {
   //     llvm::errs() << "\n\nIN ELSE";
   //   }
-  }
-  else{
+  } else if(auto load = llvm::dyn_cast<const llvm::LoadInst>(op)){
+    uint64_t size = 0;
+    dump(load);
+    if(auto addr = llvm::dyn_cast<const llvm::Instruction>(load->getOperand(0))) {
+      while(llvm::dyn_cast<const llvm::LoadInst>(load->getOperand(0))){
+        load = llvm::dyn_cast<llvm::LoadInst>(load->getOperand(0));
+      }
+      dump(load);
+      // actual allocation in the code
+      return std::make_pair(load->getOperand(0), size);
+    }
+
+    return std::make_pair(op, size);
+    
+  } else{
     // llvm_bmc_error("bmc", "non array global write/read not supported!");
   }
   llvm_bmc_warning("bmc","failed to recognize heap access");

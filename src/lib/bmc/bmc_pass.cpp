@@ -648,6 +648,13 @@ int bmc_pass::translateCallInst( unsigned bidx,
 
   } else if( fp != NULL && fp->getName().startswith("__cxa_end_catch") ) {
     // llvm::errs() << "\n\n\n\n\n CATCH ENDDDDDDD \n\n\n";
+  } else if( fp != NULL && fp->getName().startswith("_Znwm") ) {
+    auto val = call->getOperand(0);    
+    unsigned ar_num = bmc_ds_ptr->ary_to_int.at(call);
+    bmc_ds_ptr->m.insert_term_map( call, get_expr_const(solver_ctx, ar_num));
+    auto val_expr = bmc_ds_ptr->m.get_term( val );
+    std::vector<expr> ls; ls.push_back( val_expr);
+    bmc_ds_ptr->set_array_length( call, ls );
   } else {
     call->print( llvm::outs() );
     std::cout << "\n";
@@ -865,6 +872,10 @@ void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
         else
           ls.push_back( get_expr_const(solver_ctx,constIntValue));
         bmc_ds_ptr->set_array_length( alloca, ls );
+
+        unsigned ar_num = bmc_ds_ptr->ary_to_int.at(alloca);
+        bmc_ds_ptr->m.insert_term_map( alloca, get_expr_const(solver_ctx, ar_num));
+
         // array_lengths.push_back(const_expr);
     } else {
       auto val = alloca->getOperand(0);
@@ -891,6 +902,12 @@ void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
   else {
     //todo : why this else is not implemented?
     // what is the default return value
+    auto val = alloca->getOperand(0);
+    unsigned ar_num = bmc_ds_ptr->ary_to_int.at(alloca);
+    bmc_ds_ptr->m.insert_term_map( alloca, get_expr_const(solver_ctx, ar_num));
+    auto val_expr = bmc_ds_ptr->m.get_term( val );
+    std::vector<expr> ls; ls.push_back( val_expr);
+    bmc_ds_ptr->set_array_length( alloca, ls );
   }
 }
 
@@ -898,6 +915,10 @@ void bmc_pass::translateAllocaInst( const llvm::AllocaInst* alloca ) {
 void bmc_pass::loadFromArrayHelper( unsigned bidx,
                                     const llvm::LoadInst* load,
                                     exprs& idx_exprs ) {
+  idx_exprs[0] = bmc_ds_ptr->m.get_term( load->getOperand(0) );
+  if(auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(load->getOperand(0))){
+    idx_exprs[0] = bmc_ds_ptr->m.get_term( gep->getOperand(0) );
+  }
   auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_exprs);
   if( o.include_out_of_bound_specs ) {
     expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
@@ -1148,6 +1169,14 @@ void bmc_pass::translateLoadInst( unsigned bidx,
       exprs idxs; idxs.push_back( get_expr_const(solver_ctx,0) );
       loadFromArrayHelper(bidx, load, idxs);
     }  
+  } else if(auto l = llvm::dyn_cast<llvm::LoadInst>(addr) ) {
+    exprs idxs;
+    if( o.bit_precise)
+      idxs.push_back( get_expr_bv_const( solver_ctx, 0, 64 ) );
+    else
+      idxs.push_back( get_expr_const( solver_ctx, 0 ) );
+    idxs.push_back( bmc_ds_ptr->m.get_term( addr ) );
+    loadFromArrayHelper(bidx, load, idxs);
   } else {
     // llvm::errs() << "\n5\n";
     LLVM_DUMP( load );
@@ -1269,6 +1298,10 @@ void bmc_pass::storeToArrayHelper( unsigned bidx,
                          const llvm::Value* val,
                          exprs& idxs ) {
   auto val_expr = bmc_ds_ptr->m.get_term( val );
+  idxs[0] = bmc_ds_ptr->m.get_term( store->getOperand(1) );
+  if(auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(store->getOperand(1))){
+    idxs[0] = bmc_ds_ptr->m.get_term( gep->getOperand(0) );
+  }
   auto arr_wrt = bmc_ds_ptr->array_write(bidx, store, idxs, val_expr);
   bmc_ds_ptr->bmc_vec.push_back( arr_wrt.updated_expr );
   if( o.include_out_of_bound_specs ) {
@@ -1344,6 +1377,15 @@ void bmc_pass::translateStoreInst( unsigned bidx,
   } else if( llvm::isa<llvm::Constant>(addr) ) {
   // } else if( auto cons = llvm::dyn_cast<llvm::Constant>(addr) ) {
     llvm_bmc_error("bmc", "constant access to the memory!");
+  } else if( llvm::dyn_cast<llvm::LoadInst>(addr) ) {
+    std::cout<<"new dump";
+    auto v1 = bmc_ds_ptr->m.get_term( addr );
+    exprs idxs;
+    if( o.bit_precise)
+      idxs.push_back( get_expr_bv_const( solver_ctx, 0, 64 ) );
+    else
+      idxs.push_back( get_expr_const( solver_ctx, 0 ) );
+    storeToArrayHelper(bidx, store, val, idxs);
   }else {
     LLVM_DUMP( store );
     llvm_bmc_error("bmc", "Only local array and global write/read supported!");
@@ -1354,6 +1396,13 @@ void bmc_pass::translateGetElementPtrInst(const llvm::GetElementPtrInst* gep) {
   assert( gep );
   // GEP processed inside load and store inst
   // as gep is always followed these inst
+  auto index = gep->getOperand(2);
+  auto constantIndex = dyn_cast<const llvm::ConstantInt>(index);
+  int indexValue = constantIndex->getSExtValue();
+
+  auto st = gep->getOperand(0);
+  unsigned ar_num = bmc_ds_ptr->ary_to_int.at(st);
+  bmc_ds_ptr->m.insert_term_map( st, get_expr_const(solver_ctx, ar_num + indexValue));
 }
 
 //--------------------------------------
@@ -2018,14 +2067,35 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
     auto bb = &(*bbit);
     for( auto it = bb->begin(), e = bb->end(); it != e; ++it) {
       auto I = &(*it);
-      if( llvm::isa<const llvm::AllocaInst>(I) ) {
-        ary_to_int[I] = arrCntr++;
+      if( auto alloca = llvm::dyn_cast<const llvm::AllocaInst>(I) ) {
+        // ary_to_int[I] = arrCntr++;
+        auto typ = alloca->getAllocatedType();
+        if(auto st = llvm::dyn_cast<llvm::StructType>(typ)){
+          int siz1 = (int)st->getNumElements();
+          // ary_to_int[I] = arrCntr;
+          // arrCntr += siz1;
+          for(int temp=0; temp<siz1; temp++){
+            ary_to_int[I+temp] = arrCntr++;
+          }
+        }
+        else{
+          ary_to_int[I] = arrCntr++;
+        }
       } else if (auto call = llvm::dyn_cast<const llvm::CallInst>(I)) {
         llvm::Function* fp = call->getCalledFunction();
         if (fp != NULL && fp->getName().startswith("__cxa_allocate")) {
             ary_to_int[I] = arrCntr++;
             // I->print(llvm::outs());
             // std::cout << "\nCOLLECTED EXCEPTION PTR AS ARRAY\n\n";
+        }
+        else if (fp != NULL && fp->getName().startswith("_Znwm")){
+          auto val = call->getOperand(0);
+          auto size = dyn_cast<const llvm::ConstantInt>(val);
+          int sizeValue = size->getSExtValue();
+          int structSize = sizeValue/4; // For integers
+          for(int temp=0; temp<structSize; temp++){
+            ary_to_int[I+temp] = arrCntr++;
+          }
         }
       } else {} // no errors needed!!
       //todo: identify that an array is allocated
