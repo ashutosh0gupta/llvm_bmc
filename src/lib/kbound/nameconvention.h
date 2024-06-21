@@ -21,14 +21,16 @@ struct NameConvention {
     inline static const std::string OLD_ST_SAT_CNTXT = "old_STSatCntxt";
     inline static const std::string ST_COM_CNTXT = "STComCntxt";
     inline static const std::string OLD_ST_COM_CNTXT = "old_STComCntxt";
+    // For release - acquire
+    inline static const std::string LDA_COM_CNTXT = "LDAComCntxt";
+    inline static const std::string STR_COM_CNTXT = "STRComCntxt";
     // For execlusive
     inline static const std::string XPENDING = "Xpending";
     // For dependency
     inline static const std::string ADDR_LRS_COM_CNTXT = "AddrLrsComCntxt";
     inline static const std::string DATA_LRS_COM_CNTXT = "DataLrsComCntxt";
+    inline static const std::string CTRL = "Ctrl";
     // For synchronization
-    inline static const std::string LDA_COM_CNTXT = "LDAComCntxt";
-    inline static const std::string STR_COM_CNTXT = "STRComCntxt";
     inline static const std::string DMB_SY_COM_CNTXT = "DMBsyComCntxt";
     inline static const std::string DMB_LD_COM_CNTXT = "DMBldComCntxt";
     inline static const std::string DMB_ST_COM_CNTXT = "DMBstComCntxt";
@@ -38,6 +40,7 @@ struct NameConvention {
     inline static const std::string ADDR_COM_CNTXT = "AddrComCntxt";
     // For memory
     inline static const std::string CURR_LOC_MEM_VAL =  "CurrLocMemVal";
+    inline static const std::string CURR_GLOB_MEM_VAL =  "CurrGlobMemVal";
     inline static const std::string INIT_MEM_VAL =  "InitMemVal";
 };
 
