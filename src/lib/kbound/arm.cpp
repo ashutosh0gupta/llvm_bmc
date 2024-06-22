@@ -563,7 +563,7 @@ dump_st_v2( std::string v,
   dump_Assume_geq( cw, NameConvention::OLD_ST_COM_CNTXT );
   if (NameConvention::ENCODE_AS_PAPER)
   {
-    dump_Assume_geq( cw, NameConvention::OLD_LD_COM_CNTXT + t_g );//<< was in old version
+    dump_Assume_geq( cw, NameConvention::LD_COM_CNTXT + t_g );//<< was in old version
   }
   else
   {
@@ -578,12 +578,13 @@ dump_st_v2( std::string v,
   dump_Assume_geq( cw, NameConvention::DMB_ST_COM_CNTXT + t );
   if (!NameConvention::ENCODE_AS_PAPER)
   {
+    dump_Comment("--- TODO: The following constraint is not in the paper");
     dump_Assume_geq( cw, NameConvention::ISB_COM_CNTXT + t ); // ?? missing in paper
   }
 
   // Line 9
+  dump_Comment("--- TODO: Check the following data structures");
   dump_Assume_geq( cw, RegCntxtRAddr[COM_CTX] );
-  dump_Comment("--- TODO: Check the following data structure");
   dump_Assume_geq( cw, RegCntxtRSrc[COM_CTX] );
   dump_Assume_geq( cw, NameConvention::CTRL + t );
 
@@ -597,17 +598,30 @@ dump_st_v2( std::string v,
     if( isRelease ) dump_geq_globals( cw, NameConvention::ST_COM_CNTXT); // missing in paper // why? -- old code?
   }
 
-  if( isExclusive ) dump_Assume( NameConvention::XPENDING + t_g + " > 0" ); // Paper has type mismatch
-  if( isExclusive ) range_forbid( gid, NameConvention::XPENDING + t_g, cw );
+  // Line 11
+  if( isExclusive )
+  {
+    dump_Assume( NameConvention::XPENDING + t_g + " > 0" ); // Paper has type mismatch
+    range_forbid( gid, NameConvention::XPENDING + t_g, cw );
+  }
 
   dump_Comment("====== Update ======");
+  // Line 14
+  if (NameConvention::ENCODE_AS_PAPER)
+  {
+    dump_Assign( NameConvention::LD_SAT_CNTXT + t_g , "0");
+  }
+  else
+  {
+    dump_Comment("--- TODO: Missing the constraint LDSatCntxt(p)(l) = 0);");
+  }
+
   // Line 15
   dump_Assign( NameConvention::CURR_LOC_MEM_VAL + t_g , v);
   dump_Assign( NameConvention::CURR_GLOB_MEM_VAL + g_cw, v); // << indexing wrong in paper
 
   // Line 16
-  // TODO: Incorrect params?
-  dump_Assign_max( "RegCntxtRAddr"    + t,   RegCntxtRAddr[COM_CTX] );
+  dump_Assign_max( NameConvention::ADDR_COM_CNTXT + t,   RegCntxtRAddr[COM_CTX] );
 
   // Line 17
   if (NameConvention::ENCODE_AS_PAPER)
