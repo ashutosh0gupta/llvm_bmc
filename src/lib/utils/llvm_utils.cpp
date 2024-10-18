@@ -2278,11 +2278,75 @@ get_array_info( const llvm::Value* op) {
   }else if( auto call = llvm::dyn_cast<const llvm::CallInst>(op) ) {
     // llvm::errs() << "\n CALL INSTRUCTION \n";
     llvm::Function* fp = call->getCalledFunction();
-    if (fp != NULL && fp->getName().startswith("__cxa_allocate")) {
-      // call->print(llvm::outs());std::cout << "RECOGNIZED PATTERN\n";
-      return std::make_pair(call, 0);
-    } else if (fp != NULL && fp->getName().startswith("__cxa_begin_catch")) {
-      return std::make_pair(call, 0);
+    if (fp != NULL) {
+      
+      if (fp->getName() == "_Znwm" ||        // operator new(size_t)
+          fp->getName() == "_Znam" ||        // operator new[](size_t)
+          fp->getName() == "_ZnwmSt11align_val_t" ||  // aligned operator new
+          fp->getName() == "_ZnamSt11align_val_t" ||  // aligned operator new[]
+          fp->getName() == "_ZnwmRKSt9nothrow_t" ||   // operator new(size_t, nothrow)
+          fp->getName() == "_ZnamRKSt9nothrow_t" ||   // operator new[](size_t, nothrow)
+          fp->getName() == "_ZnwmSt11align_val_tRKSt9nothrow_t" ||  // aligned nothrow new
+          fp->getName() == "_ZnamSt11align_val_tRKSt9nothrow_t") {  // aligned nothrow new[]
+        
+        // Get the size argument (always first operand)
+        if (auto constSize = llvm::dyn_cast<llvm::ConstantInt>(call->getArgOperand(0))) {
+          uint64_t size = constSize->getZExtValue();
+          // For array allocations, try to determine element size from the context
+          if (fp->getName().contains("nam")) {  // If it's an array allocation
+            if (auto bitcast = llvm::dyn_cast<llvm::BitCastInst>(call->getNextNode())) {
+              if (auto ptrTy = llvm::dyn_cast<llvm::PointerType>(bitcast->getDestTy())) {
+                if (auto elemTy = ptrTy->getPointerElementType()) {
+                  uint64_t elemSize = call->getModule()
+                                        ->getDataLayout()
+                                        .getTypeAllocSize(elemTy);
+                  if (elemSize > 0) {
+                    size = size / elemSize;  // Convert bytes to element count
+                  }
+                }
+              }
+            }
+          }
+          return std::make_pair(call, size);
+        }
+        return std::make_pair(call, 0);  // Dynamic size
+      }
+      // Handle low-level allocators
+      else if (fp->getName() == "malloc" ||
+               fp->getName() == "calloc" ||
+               fp->getName() == "realloc" ||
+               fp->getName() == "aligned_alloc" ||
+               fp->getName() == "posix_memalign") {
+        
+        uint64_t size = 0;
+        if (fp->getName() == "calloc") {
+          // calloc(nmemb, size)
+          if (auto constNmemb = llvm::dyn_cast<llvm::ConstantInt>(call->getArgOperand(0))) {
+            if (auto constSize = llvm::dyn_cast<llvm::ConstantInt>(call->getArgOperand(1))) {
+              size = constNmemb->getZExtValue() * constSize->getZExtValue();
+            }
+          }
+        } else if (fp->getName() == "malloc" || fp->getName() == "realloc") {
+          // malloc(size) or realloc(ptr, size)
+          if (auto constSize = llvm::dyn_cast<llvm::ConstantInt>(
+              call->getArgOperand(fp->getName() == "malloc" ? 0 : 1))) {
+            size = constSize->getZExtValue();
+          }
+        } else if (fp->getName() == "aligned_alloc") {
+          // aligned_alloc(alignment, size)
+          if (auto constSize = llvm::dyn_cast<llvm::ConstantInt>(call->getArgOperand(1))) {
+            size = constSize->getZExtValue();
+          }
+        }
+        return std::make_pair(call, size);
+      }
+      // Keep existing special function handling
+      else if (fp->getName().startswith("__cxa_allocate")) {
+        return std::make_pair(call, 0);
+      }
+      else if (fp->getName().startswith("__cxa_begin_catch")) {
+        return std::make_pair(call, 0);
+      }
     }
   } else if (auto ev = llvm::dyn_cast<const llvm::ExtractValueInst>(op)) {
     // std::cout << "\nEXtract value instruction found\n";

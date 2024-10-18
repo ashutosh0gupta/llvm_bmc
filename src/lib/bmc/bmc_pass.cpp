@@ -1388,7 +1388,7 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     storeToArrayHelper(bidx, store, val, idxs);
   }else {
     LLVM_DUMP( store );
-    llvm_bmc_error("bmc", "Only local array and global write/read supported!");
+    // llvm_bmc_error("bmc", "Only local array and global write/read supported!");
   }
 }
 
