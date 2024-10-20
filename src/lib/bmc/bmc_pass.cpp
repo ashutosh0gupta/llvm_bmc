@@ -1386,6 +1386,19 @@ void bmc_pass::translateStoreInst( unsigned bidx,
     else
       idxs.push_back( get_expr_const( solver_ctx, 0 ) );
     storeToArrayHelper(bidx, store, val, idxs);
+  }else if (auto callInst = llvm::dyn_cast<llvm::CallInst>(addr)) {
+    if (auto calledFunction = callInst->getCalledFunction()) {
+      if (calledFunction->getName() == "_Znwm") {
+        // This is a heap allocation via operator new
+        exprs idxs;
+        if (o.bit_precise)
+          idxs.push_back(get_expr_bv_const(solver_ctx, 0, 64));
+        else
+          idxs.push_back(get_expr_const(solver_ctx, 0));
+        storeToArrayHelper(bidx, store, val, idxs);
+        return;
+      }
+    }
   }else {
     LLVM_DUMP( store );
     // llvm_bmc_error("bmc", "Only local array and global write/read supported!");
@@ -2091,13 +2104,45 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
         else if (fp != NULL && fp->getName().startswith("_Znwm")){
           auto val = call->getOperand(0);
           auto size = dyn_cast<const llvm::ConstantInt>(val);
-          int sizeValue = size->getSExtValue();
-          int structSize = sizeValue/4; // For integers
-          for(int temp=0; temp<structSize; temp++){
-            ary_to_int[I+temp] = arrCntr++;
+          size_t sizeValue = size->getZExtValue();  // Use size_t for sizes
+          size_t elementSize = sizeof(char);  // Start with smallest addressable unit
+
+          // Determine the most likely element size based on the allocation size
+          if (sizeValue % sizeof(long double) == 0) elementSize = sizeof(long double);
+          else if (sizeValue % sizeof(double) == 0) elementSize = sizeof(double);
+          else if (sizeValue % sizeof(long long) == 0) elementSize = sizeof(long long);
+          else if (sizeValue % sizeof(long) == 0) elementSize = sizeof(long);
+          else if (sizeValue % sizeof(int) == 0) elementSize = sizeof(int);
+          else if (sizeValue % sizeof(short) == 0) elementSize = sizeof(short);
+
+          size_t structSize = sizeValue / elementSize;
+
+          for (size_t temp = 0; temp < structSize; temp++) {
+              ary_to_int[I + temp] = arrCntr++;
           }
         }
-      } else {} // no errors needed!!
+      } else if (auto loadInst = llvm::dyn_cast<llvm::LoadInst>(I)) {
+        llvm::Value* ptrOperand = loadInst->getPointerOperand();
+        
+        if (llvm::GetElementPtrInst* gep = llvm::dyn_cast<llvm::GetElementPtrInst>(ptrOperand)) {
+            // Handle GEP instruction
+            llvm::Value* basePtr = gep->getPointerOperand();
+            
+            // Assign array number based on the base pointer
+            if (ary_to_int.find(basePtr) != ary_to_int.end()) {
+                ary_to_int[I] = ary_to_int[basePtr]+1;
+            } else {
+                ary_to_int[I] = arrCntr++;
+            }
+        } else {
+            // Handle non-GEP load instructions
+            if (ary_to_int.find(ptrOperand) != ary_to_int.end()) {
+                ary_to_int[I] = ary_to_int[ptrOperand];
+            } else {
+                ary_to_int[I] = arrCntr++;
+            }
+        }
+    } else {} // no errors needed!!
       //todo: identify that an array is allocated
     }
   }
