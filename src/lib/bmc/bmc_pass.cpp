@@ -554,6 +554,17 @@ int bmc_pass::translateIntrinsicInst( unsigned bidx,
         }
       }
     }
+  }else if (I->getIntrinsicID() == llvm::Intrinsic::memset) {
+    // Extract the arguments
+    llvm::Value* dest = I->getArgOperand(0); // i8* destination pointer
+    llvm::Value* val  = I->getArgOperand(1); // i8 value to set
+    llvm::Value* len  = I->getArgOperand(2); // length in bytes
+
+    expr dest_expr = bmc_ds_ptr->m.get_term(dest, bidx);
+    expr val_expr  = bmc_ds_ptr->m.get_term(val, bidx);
+    expr len_expr  = bmc_ds_ptr->m.get_term(len, bidx);
+
+    return 0;
   }
   else{
     BMC_UNSUPPORTED_INSTRUCTIONS( ConstrainedFPIntrinsic, I);

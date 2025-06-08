@@ -172,7 +172,7 @@ set_array_info(std::map< const llvm::Value*, unsigned >& ary_ids) {
     ar_types[indx] = get_type_of_pointer( ar );
     // if( ar_types[indx] == NULL )
     //   ar_ditypes[indx] = find_type_from_debug( ar, *debug_map);
-    ar_names[indx] = ar->getName();
+    // ar_names[indx] = ar->getName(); //commented out due to segmentation fault
     lengths[indx]  = get_array_length( ar );
   }
   for( unsigned i = 0; i < num_arrays; i++) {
