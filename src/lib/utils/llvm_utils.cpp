@@ -1986,6 +1986,7 @@ expr read_const( options& o, const llvm::Value* op ) {
     llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
   }else if( llvm::isa<llvm::ConstantStruct>(op) ) {
     // const llvm::StructType* n = c->getType();
+    return get_fresh_bool(ctx);
     llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
   }else if( llvm::isa<llvm::ConstantVector>(op) ) {
     // const llvm::VectorType* n = c->getType();

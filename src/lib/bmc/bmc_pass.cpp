@@ -279,7 +279,6 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
   assert( phi );
 
   if (phi->getType()->isPointerTy()) {
-    llvm::outs() << "\n\n\n\n---------------------------------------Constraint generation for pointer phi nodes-----------------------------------------------\n\n";
     expr phi_idx = bmc_ds_ptr->m.insert_new_def(phi);
 
     std::vector<expr> phi_cons;
