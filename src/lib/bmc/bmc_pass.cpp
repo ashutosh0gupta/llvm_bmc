@@ -716,9 +716,11 @@ int bmc_pass::translateCallInst( unsigned bidx,
       expr cin_expr = bmc_ds_ptr->m.get_term(call->getArgOperand(0));
       bmc_ds_ptr->m.insert_term_map(call, bidx, cin_expr);
   } else {
-    call->print( llvm::outs() );
-    std::cout << "\n";
-    llvm_bmc_error("bmc", "function call is not recognized !!");
+    // Symbolically handle any unknown function call
+    expr ret_expr = bmc_ds_ptr->m.create_fresh_name(call);
+    bmc_ds_ptr->m.insert_term_map(call, bidx, ret_expr);
+    
+    llvm_bmc_warning("bmc", "Symbolically handled unknown function !!");
   }
   return 0;
 }
