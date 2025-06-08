@@ -279,19 +279,45 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
   assert( phi );
 
   if (phi->getType()->isPointerTy()) {
+    llvm::outs() << "\n\n\n\n---------------------------------------Constraint generation for pointer phi nodes-----------------------------------------------\n\n";
     expr phi_idx = bmc_ds_ptr->m.insert_new_def(phi);
 
     std::vector<expr> phi_cons;
+    std::vector<unsigned> incoming_indices;
+
     for (unsigned i = 0; i < phi->getNumIncomingValues(); ++i) {
       llvm::Value* incoming_val = phi->getIncomingValue(i);
       const bb* incoming_bb = phi->getIncomingBlock(i);
+      expr incoming_idx = get_expr_const(solver_ctx, 0);
 
-      auto incoming_it = ary_to_int.find(incoming_val);
-      if (incoming_it == ary_to_int.end()) {
-        llvm::outs() << "Incoming value: " << *incoming_val<< "\n";
-        llvm_bmc_error("bmc", "Incoming PHI value has no array index!");
+      // Handle function pointers
+      if (auto func = llvm::dyn_cast<llvm::Function>(incoming_val)) {
+        // For function pointers, assign a unique index if not already assigned
+        auto incoming_it = ary_to_int.find(incoming_val);
+        if (incoming_it == ary_to_int.end()) {
+          // Get the next available index
+          unsigned new_index = ary_to_int.empty() ? 0 : 
+            (std::max_element(ary_to_int.begin(), ary_to_int.end(),
+              [](const auto& a, const auto& b) { return a.second < b.second; }
+            )->second + 1);
+          ary_to_int[incoming_val] = new_index;
+        } else {
+          incoming_idx = get_expr_const(solver_ctx, incoming_it->second);
+        }
       }
-      expr incoming_idx = get_expr_const(solver_ctx, incoming_it->second);
+      // Handle null pointers
+      else if (auto cnull = llvm::dyn_cast<llvm::ConstantPointerNull>(incoming_val)) {
+        incoming_idx = get_expr_const(solver_ctx, -1);
+      }
+      // Handle other pointer values
+      else {
+        auto incoming_it = ary_to_int.find(incoming_val);
+        if (incoming_it == ary_to_int.end()) {
+          llvm::outs() << "Incoming value: " << *incoming_val << "\n";
+          llvm_bmc_error("bmc", "Incoming PHI value has no array index!");
+        }
+        incoming_idx = get_expr_const(solver_ctx, incoming_it->second);
+      }
 
       for (unsigned pre_bidx : bmc_ds_ptr->pred_idxs[bidx]) {
         if (incoming_bb == bmc_ds_ptr->bb_vec[pre_bidx]) {
