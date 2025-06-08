@@ -278,6 +278,34 @@ void bmc_pass::translateCmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
 void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
   assert( phi );
 
+  if (phi->getType()->isPointerTy()) {
+    expr phi_idx = bmc_ds_ptr->m.insert_new_def(phi);
+
+    std::vector<expr> phi_cons;
+    for (unsigned i = 0; i < phi->getNumIncomingValues(); ++i) {
+      llvm::Value* incoming_val = phi->getIncomingValue(i);
+      const bb* incoming_bb = phi->getIncomingBlock(i);
+
+      auto incoming_it = ary_to_int.find(incoming_val);
+      if (incoming_it == ary_to_int.end()) {
+        llvm::outs() << "Incoming value: " << *incoming_val<< "\n";
+        llvm_bmc_error("bmc", "Incoming PHI value has no array index!");
+      }
+      expr incoming_idx = get_expr_const(solver_ctx, incoming_it->second);
+
+      for (unsigned pre_bidx : bmc_ds_ptr->pred_idxs[bidx]) {
+        if (incoming_bb == bmc_ds_ptr->bb_vec[pre_bidx]) {
+          expr path_cond = extend_path(bidx, pre_bidx);
+          phi_cons.push_back(implies(path_cond, phi_idx == incoming_idx));
+        }
+      }
+    }
+
+    expr conj = _and(phi_cons, solver_ctx);
+    bmc_ds_ptr->bmc_vec.push_back(conj);
+    return;
+  }
+
   unsigned num = phi->getNumIncomingValues();
 
   if( !phi->getType()->isIntegerTy() && !phi->getType()->isFloatTy() ) {
@@ -1180,7 +1208,7 @@ void bmc_pass::translateLoadInst( unsigned bidx,
   } else {
     // llvm::errs() << "\n5\n";
     LLVM_DUMP( load );
-    llvm_bmc_error("bmc", "Only array and global write/read supported!");
+    // llvm_bmc_error("bmc", "Only array and global write/read supported!");
   }
 }
 
