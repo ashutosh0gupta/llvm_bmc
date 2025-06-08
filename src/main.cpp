@@ -33,17 +33,22 @@ void forced_unroll_pass( options& o,
   // passMan.add( llvm::createSCCPPass() );
   // passMan.run( *module.get() );
 
-  // for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
-  //   // todo: remove dependency on demangle from llvm_utils
-  //   std::string fname = demangle(fit->getName().str());
-  //   if(fname != o.funcName) {
-  //     // declare all non entry functions can be inlined
-  //     if( !fit->isDeclaration() ) {
-  //       // function has a body available
-  //       // fit->addFnAttr(llvm::Attribute::AlwaysInline);
-  //     }
-  //   }
-  // }
+  for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
+    // todo: remove dependency on demangle from llvm_utils
+    std::string fname = demangle(fit->getName().str());
+    if(fname != o.funcName) {
+      // declare all non entry functions can be inlined
+      if( !fit->isDeclaration() ) {
+        // function has a body available
+        fit->addFnAttr(llvm::Attribute::AlwaysInline);
+      }
+    }
+  }
+
+  // Inline non-entry functions
+  llvm::legacy::PassManager passMan_inline;
+  passMan_inline.add(llvm::createAlwaysInlinerLegacyPass());
+  passMan_inline.run(*module.get());
 
   // basic
   llvm::legacy::PassManager passMan_set_count;
