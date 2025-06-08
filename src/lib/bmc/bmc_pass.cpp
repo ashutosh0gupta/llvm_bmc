@@ -703,12 +703,18 @@ int bmc_pass::translateCallInst( unsigned bidx,
   } else if( fp != NULL && fp->getName().startswith("__cxa_end_catch") ) {
     // llvm::errs() << "\n\n\n\n\n CATCH ENDDDDDDD \n\n\n";
   } else if( fp != NULL && fp->getName().startswith("_Znwm") ) {
-    auto val = call->getOperand(0);    
-    unsigned ar_num = bmc_ds_ptr->ary_to_int.at(call);
-    bmc_ds_ptr->m.insert_term_map( call, get_expr_const(solver_ctx, ar_num));
-    auto val_expr = bmc_ds_ptr->m.get_term( val );
-    std::vector<expr> ls; ls.push_back( val_expr);
-    bmc_ds_ptr->set_array_length( call, ls );
+      auto val = call->getOperand(0);    
+      unsigned ar_num = bmc_ds_ptr->ary_to_int.at(call);
+      bmc_ds_ptr->m.insert_term_map( call, get_expr_const(solver_ctx, ar_num));
+      auto val_expr = bmc_ds_ptr->m.get_term( val );
+      std::vector<expr> ls; ls.push_back( val_expr);
+      bmc_ds_ptr->set_array_length( call, ls );
+  } else if (fp != NULL && fp->getName() == "_ZNSirsERi") {
+      const llvm::Value* cond_ptr = call->getArgOperand(1);
+      expr input_expr = bmc_ds_ptr->m.get_term(cond_ptr, bidx);
+
+      expr cin_expr = bmc_ds_ptr->m.get_term(call->getArgOperand(0));
+      bmc_ds_ptr->m.insert_term_map(call, bidx, cin_expr);
   } else {
     call->print( llvm::outs() );
     std::cout << "\n";
