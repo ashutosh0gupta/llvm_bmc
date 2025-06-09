@@ -988,15 +988,15 @@ void bmc_pass::loadFromArrayHelper( unsigned bidx,
                                     const llvm::LoadInst* load,
                                     exprs& idx_exprs ) {
   idx_exprs[0] = bmc_ds_ptr->m.get_term( load->getOperand(0) );
-  if(auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(load->getOperand(0))){
-    idx_exprs[0] = bmc_ds_ptr->m.get_term( gep->getOperand(0) );
-  }
+  // if(auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(load->getOperand(0))){
+  //   idx_exprs[0] = bmc_ds_ptr->m.get_term( gep->getOperand(0) );
+  // }
   auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_exprs);
   if( o.include_out_of_bound_specs ) {
     expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
     bmc_ds_ptr->add_spec( !path_bit || arr_rd.size_bound_guard, spec_reason_t::OUT_OF_BOUND );
   }
-  bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd.return_val );
+  bmc_ds_ptr->m.insert_term_map(load, bidx, idx_exprs[0] );
 }
 
 void bmc_pass::extractValFromArrayHelper( unsigned bidx,

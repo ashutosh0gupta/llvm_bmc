@@ -7,20 +7,26 @@ struct Node {
     Node* next;
 };
 
-Node* fun(Node* node_1, Node* node_2, int cond) {
-    Node* selected = nullptr;
+Node* fun(Node* node_1, Node* node_2, int limit) {
+    // Node* current1 = head;
+    // Node* current2 = head->next;
 
-    if (cond > 0) {
-        selected = node_1;
-    } else {
-        selected = node_2;
+    Node* selected = nullptr;
+    int i = 0;
+
+    while( i < limit) {
+        if (i %2 == 0) {
+            selected = node_1;
+        } else {
+            selected = node_2;
+        }
+        i++;
     }
 
-    assert(selected != node_1);//Aertion to check if selected is one of the nodes
+    assert(selected == node_2);
 
     return selected;
 }
-
 
 int main() {
     Node* node1 = new Node{1, nullptr};
@@ -36,9 +42,10 @@ int main() {
 
     Node* head = node1;
 
-    int cond;
-    std::cin >> cond; 
-    Node* selected = fun(head, node5, cond);
+    // int cond;
+    // std::cin >> cond;
+
+    Node* selected = fun(head, node3, 6);
 
     return 0;
 }
