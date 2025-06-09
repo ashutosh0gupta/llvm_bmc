@@ -1992,7 +1992,7 @@ expr read_const( options& o, const llvm::Value* op ) {
     // const llvm::VectorType* n = c->getType();
     llvm_bmc_error("llvm_utils", "vector constant not implemented!!" );
   }else if (auto func = llvm::dyn_cast<llvm::Function>(op)) {
-    llvm::outs() << "Found function pointer: " << func->getName() << "\n";
+    // llvm::outs() << "Found function pointer: " << func->getName() << "\n";
     
     // Create a unique negative index for the function
     static std::unordered_map<const llvm::Function*, int> func_indices;

@@ -14,6 +14,7 @@
 
 #include "bmc_utils.h"
 #include "witness.h"
+#include <regex>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -161,6 +162,23 @@ std::map< const llvm::Loop*, bmc_loop*>& bmc::get_loop_formula_map() {
 void bmc::init() {
 
   memory_state mem_st = populate_mem_state();
+
+  std::regex structRegex("^struct\\..*"); // matches any name starting with "struct."
+
+  for (llvm::StructType* structTy : module->getIdentifiedStructTypes()) {
+      if (!structTy->hasName()) continue;
+
+      std::string name = structTy->getName().str();
+
+      if (std::regex_match(name, structRegex)) {
+
+        // Insert into the map
+        struct_type_map[structTy] = structTy->getNumElements();
+
+        llvm::outs() << "Inserted " << name << "\n";
+        llvm::outs() << "  --> Number of elements: " << struct_type_map[structTy] << "\n";
+    }
+  }
 
   for (auto fit=module->begin(), endit=module->end(); fit!=endit; ++fit) {
     std::string fname = demangle(fit->getName().str());

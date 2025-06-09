@@ -16,7 +16,7 @@ Node* fun(Node* node_1, Node* node_2, int cond) {
         selected = node_2;
     }
 
-    assert(selected == node_1);//Aertion to check if selected is one of the nodes
+    assert(selected != node_1);//Aertion to check if selected is one of the nodes
 
     return selected;
 }

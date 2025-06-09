@@ -1481,13 +1481,26 @@ void bmc_pass::translateGetElementPtrInst(const llvm::GetElementPtrInst* gep) {
   assert( gep );
   // GEP processed inside load and store inst
   // as gep is always followed these inst
+  llvm::outs() << "----------------------------------------------------------------------------Translating GEP operator: " << *gep << "\n";
+  // GEP processed inside load and store inst
+  // as gep is always followed these inst
   auto index = gep->getOperand(2);
+
+  llvm::outs() << "GEP index: " << *index << "\n";
+
   auto constantIndex = dyn_cast<const llvm::ConstantInt>(index);
+
+  llvm::outs() << "GEP constant index: " << *constantIndex << "\n";
+  
   int indexValue = constantIndex->getSExtValue();
 
+  llvm::outs() << "GEP index value: " << indexValue << "\n";
+
   auto st = gep->getOperand(0);
+  llvm::outs() << "GEP Operand 0: " << *st << "\n";
   unsigned ar_num = bmc_ds_ptr->ary_to_int.at(st);
-  bmc_ds_ptr->m.insert_term_map( st, get_expr_const(solver_ctx, ar_num + indexValue));
+  bmc_ds_ptr->m.insert_term_map( gep, get_expr_const(solver_ctx, ar_num + indexValue ) );
+  llvm::outs()<<ar_num + indexValue << "\n";
 }
 
 //--------------------------------------
@@ -2174,23 +2187,68 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
             // std::cout << "\nCOLLECTED EXCEPTION PTR AS ARRAY\n\n";
         }
         else if (fp != NULL && fp->getName().startswith("_Znwm")){
+          const llvm::Value* allocVal = call; // This is %call from @_Znwm
           auto val = call->getOperand(0);
-          auto size = dyn_cast<const llvm::ConstantInt>(val);
-          size_t sizeValue = size->getZExtValue();  // Use size_t for sizes
-          size_t elementSize = sizeof(char);  // Start with smallest addressable unit
+          auto size = llvm::dyn_cast<llvm::ConstantInt>(val);
+          if (!size) return; // size not constant, skip
+      
+          size_t sizeValue = size->getZExtValue();  // Allocation size
+      
+          for (const llvm::User* U : allocVal->users()) {
+              if (auto* gep = llvm::dyn_cast<llvm::GetElementPtrInst>(U)) {
+                  llvm::Type* sourceType = gep->getSourceElementType();
+                  if (auto* structTy = llvm::dyn_cast<llvm::StructType>(sourceType)) {
+                      // Look up struct in map
+                      auto it = bmc_obj.struct_type_map.find(structTy);
+                      if (it != bmc_obj.struct_type_map.end()) {
+                          unsigned numElems = it->second;
+                          llvm::outs() << "Matched struct: " << structTy->getName()
+                                       << " with " << numElems << " elements.\n";
+      
+                          // Fill ary_to_int
+                          for (unsigned i = 0; i < numElems; ++i) {
+                              ary_to_int[I + i] = arrCntr++;
+                          }
+      
+                          break;  // Stop after first valid GEP match
+                      }
+                  }
+              }
+          }
+          // auto val = call->getOperand(0);
+          // auto size = dyn_cast<const llvm::ConstantInt>(val);
+          // size_t sizeValue = size->getZExtValue();  // Use size_t for sizes
+          // size_t elementSize = sizeof(char);  // Start with smallest addressable unit
 
-          // Determine the most likely element size based on the allocation size
-          if (sizeValue % sizeof(long double) == 0) elementSize = sizeof(long double);
-          else if (sizeValue % sizeof(double) == 0) elementSize = sizeof(double);
-          else if (sizeValue % sizeof(long long) == 0) elementSize = sizeof(long long);
-          else if (sizeValue % sizeof(long) == 0) elementSize = sizeof(long);
-          else if (sizeValue % sizeof(int) == 0) elementSize = sizeof(int);
-          else if (sizeValue % sizeof(short) == 0) elementSize = sizeof(short);
+          // // Determine the most likely element size based on the allocation size
+          // if (sizeValue % sizeof(long double) == 0) elementSize = sizeof(long double);
+          // else if (sizeValue % sizeof(double) == 0) elementSize = sizeof(double);
+          // else if (sizeValue % sizeof(long long) == 0) elementSize = sizeof(long long);
+          // else if (sizeValue % sizeof(long) == 0) elementSize = sizeof(long);
+          // else if (sizeValue % sizeof(int) == 0) elementSize = sizeof(int);
+          // else if (sizeValue % sizeof(short) == 0) elementSize = sizeof(short);
 
-          size_t structSize = sizeValue / elementSize;
+          // size_t structSize = sizeValue / elementSize;
 
-          for (size_t temp = 0; temp < structSize; temp++) {
-              ary_to_int[I + temp] = arrCntr++;
+          // for (size_t temp = 0; temp < structSize; temp++) {
+          //     ary_to_int[I + temp] = arrCntr++;
+          // }
+        } else if (fp != NULL && fp->getIntrinsicID() == llvm::Intrinsic::memset) {
+          llvm::Value* dest = call->getArgOperand(0);   // Destination pointer
+          llvm::Value* val = call->getArgOperand(1);    // Value to set
+          llvm::Value* len = call->getArgOperand(2);    // Number of bytes
+
+          if (ary_to_int.find(dest) == ary_to_int.end()) {
+              ary_to_int[dest] = arrCntr++;
+          }
+
+          ary_to_int[I] = ary_to_int[dest]; 
+        } else if (fp != nullptr && !fp->isIntrinsic() && !fp->isDeclaration()) {
+          // Handle user-defined function that returns a pointer
+          llvm::Type* retTy = fp->getReturnType();
+      
+          if (retTy->isPointerTy()) {
+              ary_to_int[I] = arrCntr++;
           }
         }
       } else if (auto loadInst = llvm::dyn_cast<llvm::LoadInst>(I)) {
@@ -2199,13 +2257,26 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
         if (llvm::GetElementPtrInst* gep = llvm::dyn_cast<llvm::GetElementPtrInst>(ptrOperand)) {
             // Handle GEP instruction
             llvm::Value* basePtr = gep->getPointerOperand();
-            
-            // Assign array number based on the base pointer
-            if (ary_to_int.find(basePtr) != ary_to_int.end()) {
-                ary_to_int[I] = ary_to_int[basePtr]+1;
-            } else {
-                ary_to_int[I] = arrCntr++;
-            }
+
+            llvm::outs()<<"\n\nGEP instruction found: " << *gep << "\n\n";
+
+            if (gep->getNumIndices() >= 2) {
+              llvm::Value* indexVal = gep->getOperand(2); // getelementptr has base pointer + indices, so operand index starts at 1
+              if (auto* constIndex = llvm::dyn_cast<llvm::ConstantInt>(indexVal)) {
+                  unsigned intIndex = constIndex->getZExtValue();
+                  ary_to_int[I] = ary_to_int[basePtr]+intIndex;
+                  llvm::outs() << "Extracted GEP constant index (unsigned): " << intIndex << "\n";
+              } else {
+                  llvm::outs() << "GEP index is not a constant integer!\n";
+              }
+            }else{
+              // Assign array number based on the base pointer
+              if (ary_to_int.find(basePtr) != ary_to_int.end()) {
+                  ary_to_int[I] = ary_to_int[basePtr]+1;
+              } else {
+                  ary_to_int[I] = arrCntr++;
+              }
+          }
         } else {
             // Handle non-GEP load instructions
             if (ary_to_int.find(ptrOperand) != ary_to_int.end()) {

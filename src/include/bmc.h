@@ -32,6 +32,8 @@ public:
   std::map< const llvm::BasicBlock*,rev_name_map > revStartLocalNameMap;//todo:likely useless
   std::map< const llvm::BasicBlock*, rev_name_map > revEndLocalNameMap;
 
+  std::map<const llvm::StructType*, unsigned> struct_type_map;
+
   //--------------------------------------------------
   // add data structure to store information collected
   // from specification file
