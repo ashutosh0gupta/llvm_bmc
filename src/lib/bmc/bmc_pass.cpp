@@ -278,7 +278,8 @@ void bmc_pass::translateCmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
 void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
   assert( phi );
 
-  if (phi->getType()->isPointerTy()) {
+    if (phi->getType()->isPointerTy()) {
+      llvm::outs() << "\n\n\n\n---------------------------------------Constraint generation for pointer phi nodes-----------------------------------------------\n\n";
     expr phi_idx = bmc_ds_ptr->m.insert_new_def(phi);
 
     std::vector<expr> phi_cons;
@@ -294,18 +295,15 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
         // For function pointers, assign a unique index if not already assigned
         auto incoming_it = ary_to_int.find(incoming_val);
         if (incoming_it == ary_to_int.end()) {
-          // Get the next available index
-          unsigned new_index = ary_to_int.empty() ? 0 : 
-            (std::max_element(ary_to_int.begin(), ary_to_int.end(),
-              [](const auto& a, const auto& b) { return a.second < b.second; }
-            )->second + 1);
-          ary_to_int[incoming_val] = new_index;
+          llvm::outs() << "Incoming value: " << *incoming_val << "\n";
+          llvm_bmc_error("bmc", "(Function ptr)Incoming PHI value has no array index!");
         } else {
           incoming_idx = get_expr_const(solver_ctx, incoming_it->second);
         }
       }
       // Handle null pointers
       else if (auto cnull = llvm::dyn_cast<llvm::ConstantPointerNull>(incoming_val)) {
+        llvm::outs() << "incoming_val is null\n";
         incoming_idx = get_expr_const(solver_ctx, -1);
       }
       // Handle other pointer values
@@ -326,16 +324,16 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
       }
     }
 
-    expr conj = _and(phi_cons, solver_ctx);
-    bmc_ds_ptr->bmc_vec.push_back(conj);
-    return;
-  }
+      expr conj = _and(phi_cons, solver_ctx);
+      bmc_ds_ptr->bmc_vec.push_back(conj);
+      return;
+    }
 
   unsigned num = phi->getNumIncomingValues();
-
+  llvm::outs()<<"\n\n\n\n---------------------------------------Constraint generation for integer phi nodes-----------------------------------------------\n\n";
   if( !phi->getType()->isIntegerTy() && !phi->getType()->isFloatTy() ) {
     // phi->getParent()->dump();
-    llvm_bmc_error("bmc", "phi nodes with non integers not supported !!");
+    // llvm_bmc_error("bmc", "phi nodes with non integers not supported !!");
   }
 
   expr new_var = o.loop_aggr ? bmc_ds_ptr->m.get_term( phi ) :
@@ -356,6 +354,9 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
     const llvm::Value* v_ = phi->getIncomingValue(i);
 
     // condition to skip??
+
+    auto &preds = bmc_ds_ptr->pred_idxs[bidx];
+
     std::vector<unsigned> pre_bidxes;
     for( unsigned pre_b_local: bmc_ds_ptr->pred_idxs[bidx]) {
       if( prev == bmc_ds_ptr->bb_vec[pre_b_local] ) {
@@ -371,7 +372,8 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
     }
   }
 
-  bmc_ds_ptr->bmc_vec.push_back( _and(phi_cons, solver_ctx) );
+  expr conj = _and(phi_cons, solver_ctx);
+  bmc_ds_ptr->bmc_vec.push_back(conj);
 }
 
 
@@ -491,6 +493,9 @@ void bmc_pass::translateDebugInfo( unsigned bidx,
         bmc_ds_ptr->dbg_name_map[dbg_val] = name;
         if( !is_pointer(val) ) {
           bmc_ds_ptr->m.insert_term_map(dbg_val, bidx,bmc_ds_ptr->m.get_term( val ) );
+        }else if( llvm::isa<llvm::GlobalValue>(val) ){
+          unsigned ar_num = bmc_ds_ptr->ary_to_int.at(val);
+          bmc_ds_ptr->m.insert_term_map( val, get_expr_const(solver_ctx, ar_num));
         }
         seen_dbg_val.insert( val );
       }
@@ -554,18 +559,42 @@ int bmc_pass::translateIntrinsicInst( unsigned bidx,
         }
       }
     }
-  }else if (I->getIntrinsicID() == llvm::Intrinsic::memset) {
+    else if (I->getIntrinsicID() == llvm::Intrinsic::memset) {
     // Extract the arguments
     llvm::Value* dest = I->getArgOperand(0); // i8* destination pointer
     llvm::Value* val  = I->getArgOperand(1); // i8 value to set
     llvm::Value* len  = I->getArgOperand(2); // length in bytes
+    // llvm::Value* isVolatile = I->getArgOperand(3); // optional
 
+    // You may want to model memset as assigning the value to each byte in a symbolic memory model
     expr dest_expr = bmc_ds_ptr->m.get_term(dest, bidx);
     expr val_expr  = bmc_ds_ptr->m.get_term(val, bidx);
     expr len_expr  = bmc_ds_ptr->m.get_term(len, bidx);
 
+    // Optional: model each byte assignment (loop unrolling-style) up to a reasonable symbolic bound
+    // You may want to just log or store the fact that memory is set
+
+    // If you have a symbolic memory model, you can insert the effect here
+    // For now, just log
+    llvm::errs() << "MODELING MEMSET at: " << *I << "\n";
+    llvm::errs() << "DEST: " << *dest << ", VAL: " << *val << ", LEN: " << *len << "\n";
+
+    // Example: insert into memory abstraction if you have one
+    // bmc_ds_ptr->memory_model.set_bytes(dest_expr, val_expr, len_expr);
+
     return 0;
-  }
+}
+
+  }else if (I->getIntrinsicID() == llvm::Intrinsic::memset) {
+    llvm::Value* val = I->getArgOperand(1);
+    if (auto constVal = llvm::dyn_cast<llvm::ConstantInt>(val)) {
+        if (constVal->isZero()) {
+            // skip zero-init for now
+            return 0;
+        }
+    }
+    llvm_bmc_error("bmc", "Only memset with zero supported.");
+}
   else{
     BMC_UNSUPPORTED_INSTRUCTIONS( ConstrainedFPIntrinsic, I);
 #ifndef LLVM_SVN
@@ -713,24 +742,30 @@ int bmc_pass::translateCallInst( unsigned bidx,
   } else if( fp != NULL && fp->getName().startswith("__cxa_end_catch") ) {
     // llvm::errs() << "\n\n\n\n\n CATCH ENDDDDDDD \n\n\n";
   } else if( fp != NULL && fp->getName().startswith("_Znwm") ) {
-      auto val = call->getOperand(0);    
-      unsigned ar_num = bmc_ds_ptr->ary_to_int.at(call);
-      bmc_ds_ptr->m.insert_term_map( call, get_expr_const(solver_ctx, ar_num));
-      auto val_expr = bmc_ds_ptr->m.get_term( val );
-      std::vector<expr> ls; ls.push_back( val_expr);
-      bmc_ds_ptr->set_array_length( call, ls );
+    auto val = call->getOperand(0);    
+    unsigned ar_num = bmc_ds_ptr->ary_to_int.at(call);
+    bmc_ds_ptr->m.insert_term_map( call, get_expr_const(solver_ctx, ar_num));
+    auto val_expr = bmc_ds_ptr->m.get_term( val );
+    std::vector<expr> ls; ls.push_back( val_expr);
+    bmc_ds_ptr->set_array_length( call, ls );
   } else if (fp != NULL && fp->getName() == "_ZNSirsERi") {
-      const llvm::Value* cond_ptr = call->getArgOperand(1);
-      expr input_expr = bmc_ds_ptr->m.get_term(cond_ptr, bidx);
 
-      expr cin_expr = bmc_ds_ptr->m.get_term(call->getArgOperand(0));
-      bmc_ds_ptr->m.insert_term_map(call, bidx, cin_expr);
-  } else {
+    //needs to be handled in a different way
+
+    // const llvm::Value* input_target = call->getArgOperand(1);
+    // expr input_expr = bmc_ds_ptr->m.create_fresh_name(call);  // Or any function to generate symbolic input
+
+    // llvm::outs() << "[BMC] Handling input target: " << input_expr.to_string() << "\n";
+
+    // bmc_ds_ptr->m.insert_term_map(input_target, bidx, input_expr);
+    // bmc_ds_ptr->m.insert_term_map(call, bidx, input_expr);
+  }else {
     // Symbolically handle any unknown function call
     expr ret_expr = bmc_ds_ptr->m.create_fresh_name(call);
     bmc_ds_ptr->m.insert_term_map(call, bidx, ret_expr);
     
-    llvm_bmc_warning("bmc", "Symbolically handled unknown function !!");
+  // You can optionally log:
+  llvm_bmc_warning("bmc", "Symbolically handled unknown function");
   }
   return 0;
 }
@@ -1249,10 +1284,13 @@ void bmc_pass::translateLoadInst( unsigned bidx,
       idxs.push_back( get_expr_const( solver_ctx, 0 ) );
     idxs.push_back( bmc_ds_ptr->m.get_term( addr ) );
     loadFromArrayHelper(bidx, load, idxs);
+  } else if (auto phi = llvm::dyn_cast<llvm::PHINode>(addr)) {
+    // exprs idxs = ary_access_to_index.at(phi);
+    // loadFromArrayHelper(bidx, load, idxs);
   } else {
     // llvm::errs() << "\n5\n";
     LLVM_DUMP( load );
-    // llvm_bmc_error("bmc", "Only array and global write/read supported!");
+    llvm_bmc_error("bmc", "Only array and global write/read supported!");
   }
 }
 
@@ -1376,6 +1414,10 @@ void bmc_pass::storeToArrayHelper( unsigned bidx,
   }
   auto arr_wrt = bmc_ds_ptr->array_write(bidx, store, idxs, val_expr);
   bmc_ds_ptr->bmc_vec.push_back( arr_wrt.updated_expr );
+
+  llvm::errs() << "Store Array Write: "
+             << arr_wrt.updated_expr.to_string() << "\n\n";
+
   if( o.include_out_of_bound_specs ) {
     expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
     bmc_ds_ptr->add_spec( !path_bit || arr_wrt.size_bound_guard, spec_reason_t::OUT_OF_BOUND );
@@ -1479,8 +1521,7 @@ void bmc_pass::translateStoreInst( unsigned bidx,
 
 void bmc_pass::translateGetElementPtrInst(const llvm::GetElementPtrInst* gep) {
   assert( gep );
-  // GEP processed inside load and store inst
-  // as gep is always followed these inst
+
   llvm::outs() << "----------------------------------------------------------------------------Translating GEP operator: " << *gep << "\n";
   // GEP processed inside load and store inst
   // as gep is always followed these inst
@@ -1501,7 +1542,7 @@ void bmc_pass::translateGetElementPtrInst(const llvm::GetElementPtrInst* gep) {
   unsigned ar_num = bmc_ds_ptr->ary_to_int.at(st);
   bmc_ds_ptr->m.insert_term_map( gep, get_expr_const(solver_ctx, ar_num + indexValue ) );
   llvm::outs()<<ar_num + indexValue << "\n";
-  
+
   std::vector<expr> ls;
   if (o.bit_precise)
     ls.push_back(get_expr_bv_const(solver_ctx, ar_num + indexValue, 64));
@@ -1537,6 +1578,9 @@ void bmc_pass::translateCatchBr( unsigned bidx,
     // }
     // else  
     bmc_ds_ptr->bmc_vec.push_back( exit_bits[brCatch] );
+
+    llvm::errs() << "Exit bit expr: " << exit_bits[brCatch].to_string() << "\n\n";
+
   }else{
     // for unconditional branch, there is no need of constraints
     // bmc_ds_ptr->bmc_vec.push_back( exit_bit );
@@ -1559,20 +1603,39 @@ void bmc_pass::translateBranch( unsigned bidx,
   assert( br );
 
   auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
+
+  // llvm::errs() << "\nTranslating branch: ";
+  // br->print(llvm::errs());
+  // llvm::errs() << "\n";
+
   if( !br->isUnconditional() ) {
     expr cond = bmc_ds_ptr->m.get_term( br->getCondition() );
     auto cond_sort = cond.get_sort();
     auto exit_sort = exit_bits[0].get_sort();
+
+    llvm::errs() << "Condition expression: " << cond.to_string() << "\n";
+    llvm::errs() << "Exit bits: ["
+                 << exit_bits[0].to_string() << ", " 
+                 << exit_bits[1].to_string() << "]\n";
+
     if (cond_sort.is_bv() && exit_sort.is_bool()) {    	
-	expr exitbits_bv = solver_ctx.bv_val(exit_bits[0],1);
+	    expr exitbits_bv = solver_ctx.bv_val(exit_bits[0],1);
     	bmc_ds_ptr->bmc_vec.push_back( cond == exitbits_bv );
+
+      llvm::errs() << "Adding BV constraint: " 
+                   << ( cond == exitbits_bv ).to_string() << "\n";
+
+    }else{ 
+	    bmc_ds_ptr->bmc_vec.push_back( cond == exit_bits[0] );
+
+      llvm::errs() << "Adding Bool constraint: " 
+                   << ( cond == exit_bits[0] ).to_string() << "\n";
     }
-    else  
-	bmc_ds_ptr->bmc_vec.push_back( cond == exit_bits[0] );
   }else{
     // for unconditional branch, there is no need of constraints
     // bmc_ds_ptr->bmc_vec.push_back( exit_bit );
   }
+  // llvm::errs() << "-----------------------------\n";
 }
 
 void bmc_pass::translateRetInst(const llvm::ReturnInst *ret ) {
@@ -1583,6 +1646,10 @@ void bmc_pass::translateRetInst(const llvm::ReturnInst *ret ) {
     expr ret_term = bmc_ds_ptr->m.get_term( v );
     expr ret_val = get_fresh_const(solver_ctx, ret_term.get_sort(), "ret_val");
     bmc_ds_ptr->bmc_vec.push_back( ret_val == ret_term );
+
+    llvm::errs() << "Return value equality: "
+             << (ret_val == ret_term).to_string() << "\n";
+
   } else {
     //todo : handle all cases
     //llvm_bmc_error("bmc", "return instruction without a return value!");
@@ -1636,6 +1703,8 @@ std::string name = fp->getName().str();
     //Do nothing - throws exception
     // unwind is the second bit in the exit bits??
     bmc_ds_ptr->bmc_vec.push_back( exit_bits[1] );
+
+    llvm::errs() << "Exit bit for invoke: " << exit_bits[1].to_string() << "\n";
   } else if( fp != NULL && fp->getName().startswith("ada__numerics__elementary_functions")) { 
 // To be decided - what to do
     auto arg = fp->getArg(0);
@@ -1644,6 +1713,8 @@ std::string name = fp->getName().str();
   } else if( fp != NULL && fp->getName().startswith("__cxa_throw")) {
     // std::cout << "\nExit bit for invoke is : " << exit_bits[1] <<"\n";
     bmc_ds_ptr->bmc_vec.push_back( exit_bits[1] );
+
+    llvm::errs() << "Exit bit for invoke: " << exit_bits[1].to_string() << "\n";
   } else {
     llvm_bmc_error("bmc", "invoke is not recognized !!");
   }
@@ -1869,6 +1940,9 @@ void bmc_pass::init_path_exit_bit( bb_vec_t &bb_vec
       // add constraints that at least one is true;
       // Note that at most one constraint is not added
       bmc_ds_ptr->bmc_vec.push_back( _or(v, solver_ctx) );
+
+      llvm::errs() << "_or(v): " << (_or(v, solver_ctx)).to_string() << "\n\n";
+
     }
 
     bmc_ds_ptr->set_exit_bits( bidx, exit_bits);
@@ -2192,8 +2266,7 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
             ary_to_int[I] = arrCntr++;
             // I->print(llvm::outs());
             // std::cout << "\nCOLLECTED EXCEPTION PTR AS ARRAY\n\n";
-        }
-        else if (fp != NULL && fp->getName().startswith("_Znwm")){
+        }else if (fp != NULL && fp->getName().startswith("_Znwm")) {
           const llvm::Value* allocVal = call; // This is %call from @_Znwm
           auto val = call->getOperand(0);
           auto size = llvm::dyn_cast<llvm::ConstantInt>(val);
@@ -2215,6 +2288,8 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
                           // Fill ary_to_int
                           // for (unsigned i = 0; i < numElems; ++i) {
                           //     ary_to_int[I + i] = arrCntr++;
+                          //     llvm::outs() << "Assigned array id: " << ary_to_int[I + i]
+                          //                  << " for struct element " << i << "\n";
                           // }
 
                           ary_to_int[I] = arrCntr; // Assign the base pointer
@@ -2224,43 +2299,68 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
                       }
                   }
               }
-          }
-          // auto val = call->getOperand(0);
-          // auto size = dyn_cast<const llvm::ConstantInt>(val);
-          // size_t sizeValue = size->getZExtValue();  // Use size_t for sizes
-          // size_t elementSize = sizeof(char);  // Start with smallest addressable unit
+          }      
+        // else if (fp != NULL && fp->getName().startswith("_Znwm")){
+        //   auto val = call->getOperand(0);
+        //   auto size = dyn_cast<const llvm::ConstantInt>(val);
+        //   size_t sizeValue = size->getZExtValue();  // Use size_t for sizes
+        //   size_t elementSize = sizeof(char);  // Start with smallest addressable unit
 
-          // // Determine the most likely element size based on the allocation size
-          // if (sizeValue % sizeof(long double) == 0) elementSize = sizeof(long double);
-          // else if (sizeValue % sizeof(double) == 0) elementSize = sizeof(double);
-          // else if (sizeValue % sizeof(long long) == 0) elementSize = sizeof(long long);
-          // else if (sizeValue % sizeof(long) == 0) elementSize = sizeof(long);
-          // else if (sizeValue % sizeof(int) == 0) elementSize = sizeof(int);
-          // else if (sizeValue % sizeof(short) == 0) elementSize = sizeof(short);
+        //   // Determine the most likely element size based on the allocation size
+        //   if (sizeValue % sizeof(long double) == 0) elementSize = sizeof(long double);
+        //   else if (sizeValue % sizeof(double) == 0) elementSize = sizeof(double);
+        //   else if (sizeValue % sizeof(long long) == 0) elementSize = sizeof(long long);
+        //   else if (sizeValue % sizeof(long) == 0) elementSize = sizeof(long);
+        //   else if (sizeValue % sizeof(int) == 0) elementSize = sizeof(int);
+        //   else if (sizeValue % sizeof(short) == 0) elementSize = sizeof(short);
 
-          // size_t structSize = sizeValue / elementSize;
+        //   size_t structSize = sizeValue / elementSize;
 
-          // for (size_t temp = 0; temp < structSize; temp++) {
-          //     ary_to_int[I + temp] = arrCntr++;
-          // }
+        //   for (size_t temp = 0; temp < structSize; temp++) {
+        //       ary_to_int[I + temp] = arrCntr++;
+        //   }
         } else if (fp != NULL && fp->getIntrinsicID() == llvm::Intrinsic::memset) {
           llvm::Value* dest = call->getArgOperand(0);   // Destination pointer
           llvm::Value* val = call->getArgOperand(1);    // Value to set
           llvm::Value* len = call->getArgOperand(2);    // Number of bytes
 
+          // Optional: handle only when destination is known and trackable
           if (ary_to_int.find(dest) == ary_to_int.end()) {
               ary_to_int[dest] = arrCntr++;
           }
 
-          ary_to_int[I] = ary_to_int[dest]; 
+          // Track the memset instruction itself if needed
+          ary_to_int[I] = ary_to_int[dest]; // or arrCntr++ if separate identity is needed
         } else if (fp != nullptr && !fp->isIntrinsic() && !fp->isDeclaration()) {
           // Handle user-defined function that returns a pointer
           llvm::Type* retTy = fp->getReturnType();
       
           if (retTy->isPointerTy()) {
+              // Conservatively assume the returned pointer refers to a fresh array
               ary_to_int[I] = arrCntr++;
           }
-        }
+        } else if (fp && fp->getName().startswith("llvm.dbg.")) {
+          llvm::Value* val = call->getArgOperand(0);
+          llvm::outs() << "Skipping debug intrinsic value: " << *val << "\n";
+
+          // Unwrap MetadataAsValue -> ValueAsMetadata -> actual llvm::Value
+          if (auto* mdAsVal = llvm::dyn_cast<llvm::MetadataAsValue>(val)) {
+            if (auto* valAsMD = llvm::dyn_cast<llvm::ValueAsMetadata>(mdAsVal->getMetadata())) {
+                llvm::Value* underlyingVal = valAsMD->getValue();
+        
+                if (underlyingVal && llvm::isa<llvm::GlobalValue>(underlyingVal)) {
+                    llvm::Type* valTy = underlyingVal->getType();
+                    if (valTy->isPointerTy()) {
+                        llvm::outs() << "The value is a pointer type\n";
+                        ary_to_int[underlyingVal] = arrCntr++; 
+                        llvm::outs() << "Assigned array id: " << ary_to_int[underlyingVal] << "\n";
+                    } else {
+                        llvm::outs() << "The value is NOT a pointer type\n";
+                    }
+                }
+            }
+          }
+        }      
       } else if (auto loadInst = llvm::dyn_cast<llvm::LoadInst>(I)) {
         llvm::Value* ptrOperand = loadInst->getPointerOperand();
         
@@ -2286,7 +2386,7 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
               } else {
                   ary_to_int[I] = arrCntr++;
               }
-          }
+            }
         } else {
             // Handle non-GEP load instructions
             if (ary_to_int.find(ptrOperand) != ary_to_int.end()) {
@@ -2309,9 +2409,12 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
         // If base pointer is not found, assign a new array number
         ary_to_int[I] = arrCntr++;
       }
-    } else {} // no errors needed!!
+    } else {
+      ary_to_int[I] = 0;
+    } // no errors needed!!
       //todo: identify that an array is allocated
     }
+    
   }
 
   // collect arrays passed in the function

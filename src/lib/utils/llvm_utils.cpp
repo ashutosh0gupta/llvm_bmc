@@ -1992,19 +1992,20 @@ expr read_const( options& o, const llvm::Value* op ) {
     // const llvm::VectorType* n = c->getType();
     llvm_bmc_error("llvm_utils", "vector constant not implemented!!" );
   }else if (auto func = llvm::dyn_cast<llvm::Function>(op)) {
-    // llvm::outs() << "Found function pointer: " << func->getName() << "\n";
+    // // llvm::outs() << "Found function pointer: " << func->getName() << "\n";
     
-    // Create a unique negative index for the function
-    static std::unordered_map<const llvm::Function*, int> func_indices;
-    static int next_func_idx = -2;  // Start at -2 (since -1 is used for null)
+    // // Create a unique negative index for the function
+    // static std::unordered_map<const llvm::Function*, int> func_indices;
+    // static int next_func_idx = -2;  // Start at -2 (since -1 is used for null)
     
-    // Get or create index for this function
-    if (!func_indices.count(func)) {
-      func_indices[func] = next_func_idx--;
-    }
+    // // Get or create index for this function
+    // if (!func_indices.count(func)) {
+    //   func_indices[func] = next_func_idx--;
+    // }
     
-    return ctx.int_val(func_indices[func]);
-  
+    // return ctx.int_val(func_indices[func]);
+    expr e(ctx);
+    return e;
   }else if( llvm::isa<llvm::Constant>(op) ) {
     // expr e(ctx);
     // return e; // contains no expression;

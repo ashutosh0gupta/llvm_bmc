@@ -293,6 +293,7 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
 
   //add function encoding
   for(expr e : bmc_ds_ptr->bmc_vec) {
+    llvm::outs()<<e.to_string()<<"\n";
     s.add(e);
   }
 
