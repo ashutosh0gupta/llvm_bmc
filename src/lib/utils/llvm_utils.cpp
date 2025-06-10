@@ -2244,7 +2244,7 @@ get_array_info( const llvm::Value* op) {
     auto op_gep_ptr = gep->getPointerOperand();
     // return get_array_info( op_gep_ptr );
     uint64_t size = 0;
-    return std::make_pair(gep->getOperand(0), size);
+    return std::make_pair(gep, size);
   }
   if(auto gep = llvm::dyn_cast<const llvm::GEPOperator>(op)) {
     return get_array_info(identify_array_in_gep( gep ));

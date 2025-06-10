@@ -1501,6 +1501,13 @@ void bmc_pass::translateGetElementPtrInst(const llvm::GetElementPtrInst* gep) {
   unsigned ar_num = bmc_ds_ptr->ary_to_int.at(st);
   bmc_ds_ptr->m.insert_term_map( gep, get_expr_const(solver_ctx, ar_num + indexValue ) );
   llvm::outs()<<ar_num + indexValue << "\n";
+  
+  std::vector<expr> ls;
+  if (o.bit_precise)
+    ls.push_back(get_expr_bv_const(solver_ctx, ar_num + indexValue, 64));
+  else
+    ls.push_back(get_expr_const(solver_ctx, ar_num + indexValue));
+  bmc_ds_ptr->set_array_length(gep, ls);
 }
 
 //--------------------------------------
