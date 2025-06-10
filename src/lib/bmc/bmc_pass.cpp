@@ -2206,9 +2206,12 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
                                        << " with " << numElems << " elements.\n";
       
                           // Fill ary_to_int
-                          for (unsigned i = 0; i < numElems; ++i) {
-                              ary_to_int[I + i] = arrCntr++;
-                          }
+                          // for (unsigned i = 0; i < numElems; ++i) {
+                          //     ary_to_int[I + i] = arrCntr++;
+                          // }
+
+                          ary_to_int[I] = arrCntr; // Assign the base pointer
+                          arrCntr += numElems; // Increment counter for next allocation
       
                           break;  // Stop after first valid GEP match
                       }
@@ -2285,6 +2288,20 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
                 ary_to_int[I] = arrCntr++;
             }
         }
+    } else if(auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(I)){
+      // Handle GEP instruction
+      llvm::Value* basePtr = gep->getPointerOperand();
+      llvm::Value* idxVal = gep->getOperand(2);
+      auto* CI = llvm::dyn_cast<llvm::ConstantInt>(idxVal);
+      unsigned fieldIndex = CI->getZExtValue();  // Convert to unsigned integer
+
+      if (ary_to_int.find(basePtr) != ary_to_int.end()) {
+        // Assign array number based on the base pointer
+        ary_to_int[I] = ary_to_int[basePtr]+fieldIndex;
+      } else {
+        // If base pointer is not found, assign a new array number
+        ary_to_int[I] = arrCntr++;
+      }
     } else {} // no errors needed!!
       //todo: identify that an array is allocated
     }
