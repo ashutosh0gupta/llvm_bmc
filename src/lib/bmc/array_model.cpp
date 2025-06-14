@@ -306,6 +306,7 @@ multiple_array_model::array_write( unsigned bidx, const llvm::StoreInst* I,
 arr_read_expr
 multiple_array_model::array_read( unsigned bidx, const llvm::LoadInst* I,
                               exprs& idxs ) {
+                                llvm::outs()<< "multiple_array_model::array_read " << *I << "\n";
   array_state& ar_st = get_state( bidx );
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
   auto& vec = ar_st.get_name_vec();
@@ -356,9 +357,15 @@ single_array_model::array_read( unsigned bidx, const llvm::LoadInst* I,
   expr ar_name = vec.back();
 
   auto& ls = lengths.at(i);
+  llvm::outs()<< "i: "<< i << "Instruction: " << *I << " (legths.at(i) size)--->" << ls.size() << "\n";
+  llvm::outs()<< "idxs: " << idxs[0].to_string() << "\n";
+  llvm::outs()<< ar_name.to_string() << "\n";
+
   auto bound_guard = access_bound_cons(idxs, ls);
 
   idxs[0] = (idxs[0] + static_cast<int>(ar_bases[i])).simplify();
+
+  llvm::outs()<< "idxs[0] after base addition: " << idxs[0].to_string() << "\n";
 
   return arr_read_expr( select( ar_name, idxs), bound_guard );
 }

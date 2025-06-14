@@ -275,11 +275,14 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
 
   //add function encoding
   for(expr e : bmc_ds_ptr->bmc_vec) {
+    llvm::outs() << e.to_string() << "\n";
     s.add(e);
   }
 
   //add assertion
   s.add( !spec.get_formula() );
+
+  llvm::outs() << "Adding assertion: " << spec.get_formula().to_string() << "\n";
 
   //
   // todo: optimization other specs can be added as assume

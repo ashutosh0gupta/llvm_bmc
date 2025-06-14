@@ -9,6 +9,7 @@
 
 void value_expr_map::insert_term_map( const llvm::Value* op, expr e ) {
   assert( op );
+  llvm::outs() << "Inserting term map for " << op->getName() << "\n";
   auto it = versions.find(op);
   if( it == versions.end() ) {
     insert_term_map( op, 0, e );
@@ -20,6 +21,10 @@ void value_expr_map::insert_term_map( const llvm::Value* op, expr e ) {
 void value_expr_map::insert_term_map( const llvm::Value* op, unsigned c_count,
                                       expr e ) {
   assert( op );
+
+  llvm::outs() << "Inserting term map for " << *op
+             << " with count " << c_count << "\n";
+
   auto it = versions.find(op);
   if( it == versions.end() ) {
     // assert( c_count == 0 );
@@ -29,6 +34,7 @@ void value_expr_map::insert_term_map( const llvm::Value* op, unsigned c_count,
   versions[op].push_back( c_count );
   auto pair = std::make_pair( std::make_pair( op, c_count ), e );
   vmap.insert( pair );
+  llvm::outs() << "vmap inserted pair: " << e.to_string() << "\n\n";
 }
 
 //insert_new_def with 2 param is alias of get_term
@@ -50,7 +56,7 @@ expr value_expr_map::get_term( const llvm::Value* op ) {
   if( c ) return c;
   auto it = versions.find(op);
   if( it == versions.end() ) {
-    // llvm_bmc_error("bmc", "call insert_new_def instead of get_term !!");
+    llvm_bmc_error("bmc", "call insert_new_def instead of get_term !!");
     return get_term( op, 0 );
   }else{
     return get_term(op, (it->second).back() );
@@ -127,6 +133,8 @@ expr value_expr_map::read_term( const llvm::Value* op, unsigned c_count ) {
   assert( op );
   auto it = vmap.find( {op,c_count} );
   if( it != vmap.end() ) {
+    llvm::outs() << "Found term for " << op->getName() << " with count "
+               << c_count << " : " << it->second.to_string() << "\n";
     return it->second;
   }else{
     expr e(ctx);

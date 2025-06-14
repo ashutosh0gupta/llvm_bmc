@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Release Build",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/llvmbmc",  // Path to your release binary
+            "args":  ["~/Documents/MTP_2/llvm_bmc/examples/linkedLists/phi_nodes/test3.cpp"],  // Path to the input file
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "build-release",  // Optional: Add a build task to build the release target before debugging
+            "miDebuggerPath": "/usr/bin/gdb",  // Path to your GDB
+            "logging": {
+                "trace": true,
+                "traceResponse": true,
+                "engineLogging": true
+            }
+        }
+    ]
+}

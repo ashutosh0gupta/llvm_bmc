@@ -218,12 +218,19 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
 
 void bmc_pass::translateCmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
   assert( cmp );
+  llvm::outs() << "\n\n\nTranslating CmpInst: ";
+  cmp->print(llvm::outs());
   // todo: two cases of cmp ICmpInst and FCmpInst
   // figure out which one is actually supported
   llvm::Value* lhs = cmp->getOperand( 0 ),* rhs = cmp->getOperand( 1 );
+
+  llvm::outs() << "\nRHS: "<< *rhs << "\n";
+
 //lhs->print( llvm::outs() ); std::cout << "\n";
   expr l = bmc_ds_ptr->m.get_term( lhs );
   expr r = bmc_ds_ptr->m.get_term( rhs );
+
+  llvm::outs() << "\nLHS: " << l.to_string() << "\nRHS: " << r.to_string() << "\n";
 
   // l and r may have different types, due to llvm does not record clearly
   // if something is bool or int. Our translation may incorrectly identify
@@ -273,6 +280,8 @@ void bmc_pass::translateCmpInst( unsigned bidx, const llvm::CmpInst* cmp) {
 
   //store the expression
   bmc_ds_ptr->m.insert_term_map( cmp, bidx, cnd );
+
+  llvm::outs() << "\n\n\n";
 }
 
 void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
@@ -315,7 +324,7 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
           llvm::outs() << "Incoming value: " << *incoming_val << "\n";
           llvm_bmc_error("bmc", "Incoming PHI value has no array index!");
         }
-        incoming_idx = get_expr_const(solver_ctx, incoming_it->second);
+        incoming_idx = bmc_ds_ptr->m.get_term( incoming_val );
       }
 
       for (unsigned pre_bidx : bmc_ds_ptr->pred_idxs[bidx]) {
@@ -988,14 +997,16 @@ void bmc_pass::loadFromArrayHelper( unsigned bidx,
                                     const llvm::LoadInst* load,
                                     exprs& idx_exprs ) {
   idx_exprs[0] = bmc_ds_ptr->m.get_term( load->getOperand(0) );
-  if(auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(load->getOperand(0))){
-    idx_exprs[0] = bmc_ds_ptr->m.get_term( gep->getOperand(0) );
-  }
+  llvm::outs() << "\n\nArray load index is " << idx_exprs[0].to_string() << "\n";
+  // if(auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(load->getOperand(0))){
+  //   idx_exprs[0] = bmc_ds_ptr->m.get_term( gep->getOperand(0) );
+  // }
   auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_exprs);
   if( o.include_out_of_bound_specs ) {
     expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
     bmc_ds_ptr->add_spec( !path_bit || arr_rd.size_bound_guard, spec_reason_t::OUT_OF_BOUND );
   }
+  llvm::outs() << "\n\nArray read return value is " << arr_rd.return_val.to_string() << "\n";
   bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd.return_val );
 }
 
@@ -1481,13 +1492,23 @@ void bmc_pass::translateGetElementPtrInst(const llvm::GetElementPtrInst* gep) {
   assert( gep );
   // GEP processed inside load and store inst
   // as gep is always followed these inst
-  auto index = gep->getOperand(2);
-  auto constantIndex = dyn_cast<const llvm::ConstantInt>(index);
-  int indexValue = constantIndex->getSExtValue();
+  // auto index = gep->getOperand(2);
+  // auto constantIndex = dyn_cast<const llvm::ConstantInt>(index);
+  // int indexValue = constantIndex->getSExtValue();
 
-  auto st = gep->getOperand(0);
-  unsigned ar_num = bmc_ds_ptr->ary_to_int.at(st);
-  bmc_ds_ptr->m.insert_term_map( st, get_expr_const(solver_ctx, ar_num + indexValue));
+  // auto st = gep->getOperand(0);
+  auto gepindex = bmc_ds_ptr->ary_to_int.at(gep);
+  llvm::errs() << "GEP index is " << gepindex << "\n";
+  // unsigned ar_num = bmc_ds_ptr->ary_to_int.at(st);
+  bmc_ds_ptr->m.insert_term_map( gep, get_expr_const(solver_ctx, bmc_ds_ptr->ary_to_int.at(gep)));
+
+  std::vector<expr> ls;
+  if (o.bit_precise)
+    ls.push_back(get_expr_bv_const(solver_ctx, bmc_ds_ptr->ary_to_int.at(gep), 64));
+  else
+    ls.push_back(get_expr_const(solver_ctx, bmc_ds_ptr->ary_to_int.at(gep)));
+  bmc_ds_ptr->set_array_length(gep, ls);
+
 }
 
 //--------------------------------------
@@ -2174,38 +2195,51 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
             // std::cout << "\nCOLLECTED EXCEPTION PTR AS ARRAY\n\n";
         }
         else if (fp != NULL && fp->getName().startswith("_Znwm")){
-          auto val = call->getOperand(0);
-          auto size = dyn_cast<const llvm::ConstantInt>(val);
-          size_t sizeValue = size->getZExtValue();  // Use size_t for sizes
-          size_t elementSize = sizeof(char);  // Start with smallest addressable unit
+          // auto val = call->getOperand(0);
+          // auto size = dyn_cast<const llvm::ConstantInt>(val);
+          // size_t sizeValue = size->getZExtValue();  // Use size_t for sizes
+          // size_t elementSize = sizeof(char);  // Start with smallest addressable unit
 
-          // Determine the most likely element size based on the allocation size
-          if (sizeValue % sizeof(long double) == 0) elementSize = sizeof(long double);
-          else if (sizeValue % sizeof(double) == 0) elementSize = sizeof(double);
-          else if (sizeValue % sizeof(long long) == 0) elementSize = sizeof(long long);
-          else if (sizeValue % sizeof(long) == 0) elementSize = sizeof(long);
-          else if (sizeValue % sizeof(int) == 0) elementSize = sizeof(int);
-          else if (sizeValue % sizeof(short) == 0) elementSize = sizeof(short);
+          // // Determine the most likely element size based on the allocation size
+          // if (sizeValue % sizeof(long double) == 0) elementSize = sizeof(long double);
+          // else if (sizeValue % sizeof(double) == 0) elementSize = sizeof(double);
+          // else if (sizeValue % sizeof(long long) == 0) elementSize = sizeof(long long);
+          // else if (sizeValue % sizeof(long) == 0) elementSize = sizeof(long);
+          // else if (sizeValue % sizeof(int) == 0) elementSize = sizeof(int);
+          // else if (sizeValue % sizeof(short) == 0) elementSize = sizeof(short);
 
-          size_t structSize = sizeValue / elementSize;
+          // size_t structSize = sizeValue / elementSize;
 
-          for (size_t temp = 0; temp < structSize; temp++) {
-              ary_to_int[I + temp] = arrCntr++;
+          // for (size_t temp = 0; temp < structSize; temp++) {
+          //     ary_to_int[I + temp] = arrCntr++;
+          // }
+          ary_to_int[I] = arrCntr++;
+        }else if (fp != nullptr && !fp->isIntrinsic() && !fp->isDeclaration()) {
+          // Handle user-defined function that returns a pointer
+          llvm::Type* retTy = fp->getReturnType();
+      
+          if (retTy->isPointerTy()) {
+              // Conservatively assume the returned pointer refers to a fresh array
+              ary_to_int[I] = arrCntr++;
+              // llvm::outs() << "User-defined function returning pointer detected: "
+              //              << fp->getName() << ", assigned array id: "
+              //              << ary_to_int[I] << "\n";
           }
-        }
+        } 
       } else if (auto loadInst = llvm::dyn_cast<llvm::LoadInst>(I)) {
         llvm::Value* ptrOperand = loadInst->getPointerOperand();
         
         if (llvm::GetElementPtrInst* gep = llvm::dyn_cast<llvm::GetElementPtrInst>(ptrOperand)) {
-            // Handle GEP instruction
-            llvm::Value* basePtr = gep->getPointerOperand();
+            // // Handle GEP instruction
+            // llvm::Value* basePtr = gep->getPointerOperand();
             
-            // Assign array number based on the base pointer
-            if (ary_to_int.find(basePtr) != ary_to_int.end()) {
-                ary_to_int[I] = ary_to_int[basePtr]+1;
-            } else {
-                ary_to_int[I] = arrCntr++;
-            }
+            // // Assign array number based on the base pointer
+            // if (ary_to_int.find(basePtr) != ary_to_int.end()) {
+            //     ary_to_int[I] = ary_to_int[basePtr]+1;
+            // } else {
+            //     ary_to_int[I] = arrCntr++;
+            // }
+            ary_to_int[I] = ary_to_int[ptrOperand];
         } else {
             // Handle non-GEP load instructions
             if (ary_to_int.find(ptrOperand) != ary_to_int.end()) {
@@ -2214,6 +2248,8 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
                 ary_to_int[I] = arrCntr++;
             }
         }
+    }else if(auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(I)){ 
+      ary_to_int[I] = arrCntr++;
     } else {} // no errors needed!!
       //todo: identify that an array is allocated
     }

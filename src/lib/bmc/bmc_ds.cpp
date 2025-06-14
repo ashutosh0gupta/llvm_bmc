@@ -354,6 +354,7 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
       // std::cout <<"\n";
       if( auto load = llvm::dyn_cast<const llvm::LoadInst>(I) ) {
         auto ary_info  = get_array_info( load->getPointerOperand() );
+        llvm::outs() << "Array info is " << *ary_info.first << " for "<< *I << "\n";
         if( ary_info.first && exists( ary_to_int, ary_info.first )) {
           ary_access_to_index[load] = ary_to_int.at( ary_info.first );
 
