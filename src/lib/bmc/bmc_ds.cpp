@@ -350,8 +350,8 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
     for( auto it = bb->begin(), e = bb->end(); it != e; ++it) {
       auto I = &(*it);
       // std::cout << "CURRENT INSTRUCTION IS -";
-      // I->print(llvm::outs());
-      // std::cout <<"\n";
+      I->print(llvm::outs());
+      std::cout <<"\n\n";
       if( auto load = llvm::dyn_cast<const llvm::LoadInst>(I) ) {
         auto ary_info  = get_array_info( load->getPointerOperand() );
         if( ary_info.first && exists( ary_to_int, ary_info.first )) {
@@ -375,8 +375,7 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
         }else{
           // llvm_bmc_error("bmc", "Cound not identify array");
         }
-      }
-      else if (auto eval = llvm::dyn_cast<const llvm::ExtractValueInst>(I)) {
+      } else if (auto eval = llvm::dyn_cast<const llvm::ExtractValueInst>(I)) {
         auto ary_info = get_array_info( eval);
         if( ary_info.first && exists( ary_to_int, ary_info.first ) ) {
           ary_access_to_index[eval] = ary_to_int.at( ary_info.first );
@@ -387,7 +386,16 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
           // DO NOTHING
         }
       }
-      }
+      } else if (auto gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(I)) {
+        auto ary_info = get_array_info(gep->getPointerOperand());
+        if (ary_info.first && exists(ary_to_int, ary_info.first)) {
+            ary_access_to_index[gep] = ary_to_int.at(ary_info.first);
+            if (ary_info.first && !exists(ary_to_base, ary_access_to_index[gep])) {
+                ary_to_base[ary_to_int.at(ary_info.first)] = cnt;
+                cnt += ary_info.second;
+            }
+        }
+    }
     }
   }
   std::map< const llvm::Instruction*, unsigned >& map = ary_access_to_index;
@@ -454,6 +462,16 @@ arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::LoadInst* I,
   // case FIXED_LEN: return ar_model_full->array_read( bidx, I, idx ); break;
   default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
   }
+}
+
+arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::GetElementPtrInst* I,
+  exprs& idxs ) {
+assert( I );
+switch( ar_model_init ) {
+case FULL     : return ar_model_full->array_read( bidx, I, idxs ); break;
+// case FIXED_LEN: return ar_model_full->array_read( bidx, I, idx ); break;
+default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
+}
 }
 
 arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::ExtractValueInst* I,

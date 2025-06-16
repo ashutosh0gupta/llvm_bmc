@@ -32,17 +32,23 @@ int main() {
     TreeNode* leftChild = new TreeNode{5, nullptr, nullptr};
     TreeNode* rightChild = new TreeNode{15, nullptr, nullptr};
     TreeNode* leftLeft = new TreeNode{3, nullptr, nullptr};
-    TreeNode* leftRight = new TreeNode{7, nullptr, nullptr};
+    // TreeNode* leftRight = new TreeNode{7, nullptr, nullptr};
 
     root->left = leftChild;
     root->right = rightChild;
     leftChild->left = leftLeft;
-    leftChild->right = leftRight;
+    // leftChild->right = leftRight;
+
+    root->left->left->data = 9999;
+
+    // assert(false);
+
+    assert(root->left->left != root->right);  // Assertion always fails; for BMC purposes
 
     // int cond;
     // std::cin >> cond;
 
-    TreeNode* selected = fun(root->left, root->right, 6);
+    // TreeNode* selected = fun(root->left, root->right, 6);
 
     return 0;
 }

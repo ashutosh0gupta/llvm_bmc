@@ -67,7 +67,7 @@ private:
   void addEVIExprs( const llvm::ExtractValueInst*, exprs& );
   // llvm::Value getCatchArg(unsigned bidx, const llvm::CallInst* call);
   void translateStoreInst(unsigned, const llvm::StoreInst*);
-  void translateGetElementPtrInst(const llvm::GetElementPtrInst*);
+  void translateGetElementPtrInst(unsigned bidx, const llvm::GetElementPtrInst*);
   void translateSwitchInst(unsigned, const llvm::SwitchInst *);
   void translateUnreachableInst(unsigned, const llvm::UnreachableInst *);
   void translateLandingPadInst( unsigned, const llvm::LandingPadInst *);

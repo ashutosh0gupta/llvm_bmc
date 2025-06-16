@@ -87,6 +87,7 @@ public:
   virtual void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access, std::map< unsigned, unsigned >& array_start_add ) = 0;
   virtual arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val ) = 0;
   virtual arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& ) = 0;
+  virtual arr_read_expr array_read( unsigned bidx, const llvm::GetElementPtrInst* I, exprs& ) = 0;
   virtual arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& ) = 0;
   virtual void init_state( unsigned ) = 0;
   virtual void init_state( unsigned eb, array_state& s ) = 0;
@@ -145,6 +146,7 @@ public:
   //Virtual defined
   arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
   arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
+  arr_read_expr array_read( unsigned bidx, const llvm::GetElementPtrInst* I, exprs& );
   arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& );
   expr join_array_state( std::vector<expr>&,std::vector<unsigned>& prevs,unsigned src );
 
@@ -173,6 +175,7 @@ public:
   //Virtual defined
   arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
   arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
+  arr_read_expr array_read( unsigned bidx, const llvm::GetElementPtrInst* I, exprs& );
   arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& );
   expr join_array_state( std::vector<expr>&,std::vector<unsigned>& prevs,unsigned src );
 

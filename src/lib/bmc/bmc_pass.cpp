@@ -421,8 +421,15 @@ void bmc_pass::assume_to_bmc(unsigned bidx, const llvm::CallInst* call) {
 void bmc_pass::assert_to_spec(unsigned bidx, const llvm::CallInst* call) {
   assert( call );
 
+  llvm::outs() << "\n\n\n\n\n\n\n\n\n\n";
+  llvm::outs() << "assert: " << *call << "\n";
+  llvm::outs() << "assert arg: " << *call->getArgOperand(0) << "\n";
+
   expr assert_path_bit = bmc_ds_ptr->get_path_bit(bidx);
   expr assert_term = bmc_ds_ptr->m.get_term( call->getArgOperand(0) );
+
+  llvm::outs() << "assert_term: " << assert_term.to_string() << "\n";
+
   spec_reason_t reason = spec_reason_t::ASSERT;
   src_loc loc = getLoc( call );
   if(assert_term.is_bool()) {
@@ -1023,15 +1030,43 @@ void bmc_pass::loadFromArrayHelper( unsigned bidx,
                                     const llvm::LoadInst* load,
                                     exprs& idx_exprs ) {
   idx_exprs[0] = bmc_ds_ptr->m.get_term( load->getOperand(0) );
-  // if(auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(load->getOperand(0))){
-  //   idx_exprs[0] = bmc_ds_ptr->m.get_term( gep->getOperand(0) );
-  // }
+  llvm::outs() << "\n\n\nloadFromArrayHelper called for " << *load << "\n";
+  if(auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(load->getOperand(0))){
+    llvm::outs() << "loadFromArrayHelper gep is " << *gep << "\n";
+    llvm::Value *indexVal = gep->getOperand(2);
+    int secIndex;
+    if (auto* CI = llvm::dyn_cast<llvm::ConstantInt>(indexVal)) {
+      secIndex = CI->getSExtValue();
+    }
+
+    llvm::Value* base = gep->getPointerOperand();  // This gives you %call
+    llvm::StringRef baseName;
+    if (base->hasName()) {
+      baseName = base->getName();
+  
+      if (baseName.startswith("call")) {
+          llvm::outs() << "This GEP is derived from some call (root or child)\n";
+      } else {
+          llvm::outs() << "This GEP is NOT derived from a call instruction\n";
+      }
+  }
+
+  if( secIndex == 0 &&  baseName.startswith("call") ) {
+      idx_exprs[0] = bmc_ds_ptr->m.get_term( gep->getOperand(0) );
+    }else if(secIndex != 0 && baseName.startswith("call")) {
+      // expr offset = solver_ctx.int_val(secIndex);
+      // idx_exprs[0] = idx_exprs[0] + offset;
+      // llvm::outs() << "Adjusted GEP index: " << idx_exprs[0].to_string() << "\n";
+    }
+  }
+  llvm::outs() << idx_exprs[0].to_string() << "\n";
   auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_exprs);
   if( o.include_out_of_bound_specs ) {
     expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
     bmc_ds_ptr->add_spec( !path_bit || arr_rd.size_bound_guard, spec_reason_t::OUT_OF_BOUND );
   }
-  bmc_ds_ptr->m.insert_term_map(load, bidx, idx_exprs[0] );
+  llvm::outs() << "loadFromArrayHelper return_val is " << arr_rd.return_val.to_string() << "\n\n\n";
+  bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd.return_val );
 }
 
 void bmc_pass::extractValFromArrayHelper( unsigned bidx,
@@ -1046,6 +1081,9 @@ void bmc_pass::extractValFromArrayHelper( unsigned bidx,
 }
 
 void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
+
+  llvm::outs() << "\n\n\ntranslateGEP called for " << *gep << "\n";
+
   //todo: what is the meaning of the second operand in GEP operator?
 
   //assert( gep->getNumIndices() <= 2);
@@ -1082,6 +1120,12 @@ void bmc_pass::translateGEP( const llvm::GEPOperator* gep, exprs& idxs ) {
   }
   if( auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr) ) {
     translateGEP( sub_gep, idxs );
+  }
+
+  if(auto sub_load = llvm::dyn_cast<llvm::LoadInst>(op_gep_ptr)) {
+    llvm::outs() << "sub_load is " << *sub_load << "\n";
+    expr sub_load_expr = bmc_ds_ptr->m.get_term( sub_load );
+    llvm::outs() << "sub_load_expr is " << sub_load_expr.to_string() << "\n";
   }
 }
 
@@ -1408,9 +1452,38 @@ void bmc_pass::storeToArrayHelper( unsigned bidx,
                          const llvm::Value* val,
                          exprs& idxs ) {
   auto val_expr = bmc_ds_ptr->m.get_term( val );
+  llvm::outs() << "\n\n\nArray store value of "<< *val << ": " << val_expr.to_string() << "\n";
   idxs[0] = bmc_ds_ptr->m.get_term( store->getOperand(1) );
   if(auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(store->getOperand(1))){
-    idxs[0] = bmc_ds_ptr->m.get_term( gep->getOperand(0) );
+    llvm::Value *indexVal = gep->getOperand(2);
+    int secIndex;
+    if (auto* CI = llvm::dyn_cast<llvm::ConstantInt>(indexVal)) {
+      secIndex = CI->getSExtValue();
+      llvm::outs() << "GEP index is constant: " << secIndex << "\n";
+    }
+
+
+    llvm::Value* base = gep->getPointerOperand();  // This gives you %call
+    llvm::StringRef baseName;
+    if (base->hasName()) {
+      baseName = base->getName();
+  }
+  
+  if (baseName.startswith("call")) {
+      llvm::outs() << "This GEP is derived from some call (root or child)\n";
+  } else {
+      llvm::outs() << "This GEP is NOT derived from a call instruction\n";
+  }
+
+    if( secIndex == 0 &&  baseName.startswith("call") ) {
+      idxs[0] = bmc_ds_ptr->m.get_term( gep->getOperand(0) );
+    }else if(!baseName.startswith("call")){
+      // expr offset = solver_ctx.int_val(secIndex);
+      // idxs[0] = idxs[0] + offset;
+      // llvm::outs() << "Adjusted GEP index: " << idxs[0].to_string() << "\n";
+    } 
+    llvm::outs() << "GEP in store: " << *gep << "\n";
+    llvm::outs() << "GEP index: " << idxs[0].to_string() << "\n";
   }
   auto arr_wrt = bmc_ds_ptr->array_write(bidx, store, idxs, val_expr);
   bmc_ds_ptr->bmc_vec.push_back( arr_wrt.updated_expr );
@@ -1453,6 +1526,7 @@ void bmc_pass::translateStoreInst( unsigned bidx,
   }
 
   if( auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr) ) {
+    llvm::outs() << "\n\n\n--------------------------------------------------Store instr gep: " << *store << "\n";
     exprs idxs;
     translateGEP( gop, idxs);
     storeToArrayHelper(bidx, store, val, idxs);
@@ -1519,35 +1593,88 @@ void bmc_pass::translateStoreInst( unsigned bidx,
   }
 }
 
-void bmc_pass::translateGetElementPtrInst(const llvm::GetElementPtrInst* gep) {
+void bmc_pass::translateGetElementPtrInst(unsigned bidx, const llvm::GetElementPtrInst* gep) {
   assert( gep );
 
-  llvm::outs() << "----------------------------------------------------------------------------Translating GEP operator: " << *gep << "\n";
+  llvm::outs() << "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||Translating GEP operator: " << *gep << "\n";
   // GEP processed inside load and store inst
   // as gep is always followed these inst
-  auto index = gep->getOperand(2);
+  // auto index = gep->getOperand(2);
 
-  llvm::outs() << "GEP index: " << *index << "\n";
+  // llvm::outs() << "GEP index: " << *index << "\n";
 
-  auto constantIndex = dyn_cast<const llvm::ConstantInt>(index);
+  // auto constantIndex = dyn_cast<const llvm::ConstantInt>(index);
 
-  llvm::outs() << "GEP constant index: " << *constantIndex << "\n";
+  // llvm::outs() << "GEP constant index: " << *constantIndex << "\n";
   
-  int indexValue = constantIndex->getSExtValue();
+  // int indexValue = constantIndex->getSExtValue();
 
-  llvm::outs() << "GEP index value: " << indexValue << "\n";
+  // llvm::outs() << "GEP index value: " << indexValue << "\n";
 
-  auto st = gep->getOperand(0);
-  llvm::outs() << "GEP Operand 0: " << *st << "\n";
-  unsigned ar_num = bmc_ds_ptr->ary_to_int.at(st);
-  bmc_ds_ptr->m.insert_term_map( gep, get_expr_const(solver_ctx, ar_num + indexValue ) );
-  llvm::outs()<<ar_num + indexValue << "\n";
+  // auto st = gep->getOperand(0);
+  // llvm::outs() << "GEP Operand 0: " << *st << "\n";
+  unsigned ar_num = bmc_ds_ptr->ary_to_int.at(gep);
+
+  llvm::outs() << "GEP array number: " << ar_num << "\n";
+
 
   std::vector<expr> ls;
   if (o.bit_precise)
-    ls.push_back(get_expr_bv_const(solver_ctx, ar_num + indexValue, 64));
+    ls.push_back(get_expr_bv_const(solver_ctx, ar_num , 64));
   else
-    ls.push_back(get_expr_const(solver_ctx, ar_num + indexValue));
+    ls.push_back(get_expr_const(solver_ctx, ar_num ));
+
+    const llvm::Value* base = gep->getPointerOperand();  // This gives you %call, %call1, etc.
+    llvm::StringRef baseName;
+    
+    if (base->hasName()) {
+        baseName = base->getName();
+    
+        
+    }
+    if (baseName.startswith("call")) {
+      llvm::outs() << "This GEP is derived from some call (root or child)\n";
+      bmc_ds_ptr->m.insert_term_map( gep, ls[0] );
+  } else {
+      llvm::outs() << "This GEP is NOT derived from a call instruction\n";
+      // auto arr_rd = bmc_ds_ptr->array_read(bidx, gep, ls);
+      // llvm::outs() << "Array read in GEP: " << arr_rd.return_val.to_string() << "\n";
+      // bmc_ds_ptr->m.insert_term_map( gep, arr_rd.return_val );
+
+      llvm::Value* indexVal = gep->getOperand(2); // 2nd index (i32 1)
+        int index;
+
+        if (auto constInt = llvm::dyn_cast<llvm::ConstantInt>(indexVal)) {
+            index = constInt->getSExtValue(); // or getZExtValue()
+        }
+
+        expr indexExpr = solver_ctx.int_val(index);
+        llvm::outs() << "GEP constant index (as int): " << index << "\n";
+
+        auto expr_base = bmc_ds_ptr->m.get_term( base );
+        llvm::outs() << "Base expression in GEP: " << expr_base.to_string() << "\n";
+
+        expr totalExpr = expr_base + indexExpr;
+        llvm::outs() << "Total expression in GEP: " << totalExpr.to_string() << "\n";
+
+        bmc_ds_ptr->m.insert_term_map( gep, expr_base );
+  }
+    
+    // if (secIndex == 0 && baseName == "call") {
+    //     idxs[0] = bmc_ds_ptr->m.get_term(gep->getOperand(0));
+    // } else if (!baseName.startswith("call")) {
+    //     expr offset = solver_ctx.int_val(secIndex);
+    //     idxs[0] = idxs[0] + offset;
+    //     llvm::outs() << "Adjusted GEP index: " << idxs[0].to_string() << "\n";
+    // } else {
+    //     llvm::outs() << "GEP index is not constant, using original index: " << idxs[0].to_string() << "\n";
+    // }
+    
+
+  // auto arr_rd = bmc_ds_ptr->array_read(bidx, gep, ls);
+  // llvm::outs() << "Array read in GEP: " << arr_rd.return_val.to_string() << "\n";
+
+  // llvm::outs()<<ar_num + indexValue << "\n";
   bmc_ds_ptr->set_array_length(gep, ls);
 }
 
@@ -1855,7 +1982,7 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
     } else if( auto store = llvm::dyn_cast<llvm::StoreInst>(I) ) {
       translateStoreInst( bidx, store );
     } else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(I) ) {
-      translateGetElementPtrInst( gep );
+      translateGetElementPtrInst(bidx, gep );
       // Terminator instructions
     } else if( auto br = llvm::dyn_cast<llvm::BranchInst>(I) ) {
       if (flag) {
@@ -2370,6 +2497,10 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
 
             llvm::outs()<<"\n\nGEP instruction found: " << *gep << "\n\n";
 
+            if(llvm::isa<llvm::LoadInst>(basePtr)){
+              ary_to_int[I] = ary_to_int[basePtr];
+            }else{
+
             if (gep->getNumIndices() >= 2) {
               llvm::Value* indexVal = gep->getOperand(2); // getelementptr has base pointer + indices, so operand index starts at 1
               if (auto* constIndex = llvm::dyn_cast<llvm::ConstantInt>(indexVal)) {
@@ -2387,6 +2518,7 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
                   ary_to_int[I] = arrCntr++;
               }
             }
+          }
         } else {
             // Handle non-GEP load instructions
             if (ary_to_int.find(ptrOperand) != ary_to_int.end()) {
@@ -2402,17 +2534,23 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
       auto* CI = llvm::dyn_cast<llvm::ConstantInt>(idxVal);
       unsigned fieldIndex = CI->getZExtValue();  // Convert to unsigned integer
 
-      if (ary_to_int.find(basePtr) != ary_to_int.end()) {
-        // Assign array number based on the base pointer
-        ary_to_int[I] = ary_to_int[basePtr]+fieldIndex;
-      } else {
-        // If base pointer is not found, assign a new array number
-        ary_to_int[I] = arrCntr++;
+      if(llvm::isa<llvm::LoadInst>(basePtr)){
+        ary_to_int[I] = ary_to_int[basePtr];
+      }else{
+        if (ary_to_int.find(basePtr) != ary_to_int.end()) {
+          // Assign array number based on the base pointer
+          ary_to_int[I] = ary_to_int[basePtr]+fieldIndex;
+        } else {
+          // If base pointer is not found, assign a new array number
+          ary_to_int[I] = arrCntr++;
+        }
       }
     } else {
       ary_to_int[I] = 0;
     } // no errors needed!!
       //todo: identify that an array is allocated
+      llvm::outs() << "Instruction: " << *I << ": ";
+      llvm::outs() << ary_to_int[I] << "\n";
     }
     
   }

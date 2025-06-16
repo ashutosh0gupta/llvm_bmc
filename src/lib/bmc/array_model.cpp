@@ -316,6 +316,17 @@ multiple_array_model::array_read( unsigned bidx, const llvm::LoadInst* I,
 }
 
 arr_read_expr
+multiple_array_model::array_read(unsigned bidx, const llvm::GetElementPtrInst* gep, exprs& idxs) {
+  array_state& ar_st = get_state(bidx);
+  auto i = get_accessed_array(gep);
+  auto& vec = ar_st.get_name_vec();
+  expr ar_name = vec.at(i);
+  auto& ls = lengths.at(i);
+  auto bound_guard = access_bound_cons(idxs, ls);
+  return arr_read_expr(select(ar_name, idxs), bound_guard);
+}
+
+arr_read_expr
 multiple_array_model::array_read( unsigned bidx, const llvm::ExtractValueInst* I,
                               exprs& idxs ) {
   array_state& ar_st = get_state( bidx );
@@ -330,9 +341,10 @@ multiple_array_model::array_read( unsigned bidx, const llvm::ExtractValueInst* I
 arr_write_expr
 single_array_model::array_write( unsigned bidx, const llvm::StoreInst* I,
                                exprs& idxs, expr& val ) {
-
+                                llvm::outs() << " single array_write" << "\n";
   array_state& ar_st = get_state( bidx );
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
+  llvm::outs() << " accessed array: " << i << "\n";
   auto& M_vec = ar_st.get_M_name();
   expr ar_name = M_vec.back();
   sort array_sort = solver_ctx.array_sort( get_address_sort(), solver_ctx.int_sort() );
@@ -342,7 +354,10 @@ single_array_model::array_write( unsigned bidx, const llvm::StoreInst* I,
 
   auto& ls = lengths.at(i);
   auto bound_guard = access_bound_cons(idxs, ls);
-  idxs[0] = (idxs[0] + static_cast<int>(ar_bases[i])).simplify();
+  llvm::outs() << " idxs[0] before base addition: " << idxs[0].to_string() << "\n";
+  llvm::outs() << " ar_bases[i]: " << ar_bases[i] << "\n";
+  // idxs[0] = (idxs[0] + static_cast<int>(ar_bases[i])).simplify();
+  llvm::outs() << " idxs[0] after base addition: " << idxs[0].to_string() << "\n";
   return arr_write_expr( (new_ar == store( ar_name, idxs, val )),
                          bound_guard, new_ar );
 }
@@ -358,9 +373,21 @@ single_array_model::array_read( unsigned bidx, const llvm::LoadInst* I,
   auto& ls = lengths.at(i);
   auto bound_guard = access_bound_cons(idxs, ls);
 
-  idxs[0] = (idxs[0] + static_cast<int>(ar_bases[i])).simplify();
+  // idxs[0] = (idxs[0] + static_cast<int>(ar_bases[i])).simplify();
 
   return arr_read_expr( select( ar_name, idxs), bound_guard );
+}
+
+arr_read_expr
+single_array_model::array_read(unsigned bidx, const llvm::GetElementPtrInst* gep, exprs& idxs) {
+  array_state& ar_st = get_state(bidx);
+  auto i = get_accessed_array(gep);
+  auto& vec = ar_st.get_M_name();
+  expr ar_name = vec.back();
+  auto& ls = lengths.at(i);
+  auto bound_guard = access_bound_cons(idxs, ls);
+  // idxs[0] = (idxs[0] + static_cast<int>(ar_bases[i])).simplify();
+  return arr_read_expr(select(ar_name, idxs), bound_guard);
 }
 
 arr_read_expr
