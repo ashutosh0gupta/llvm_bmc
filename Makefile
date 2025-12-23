@@ -4,7 +4,7 @@ LLVMBMC=llvmbmc
 HOME_INSTALLED=~/installed
 BUILDDIR = $(PWD)/build
 SRCDIR = $(PWD)/src
-LLVM_VERSION=15.0.7
+LLVM_VERSION=21
 # LLVM_VERSION=14.0.6
 # LLVM_VERSION=3.6.2
 LD=ld.gold
@@ -95,21 +95,21 @@ $(BUILDDIR)/z3/buildd/libz3.so : $(BUILDDIR)/z3/README.md
 
 #$(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/tools/clang/tools/extra/docs/clang-modernize.rst
 #LLVM_HOST=http://releases.llvm.org/
-LLVM_HOST=https://github.com/llvm/llvm-project/releases/download/llvmorg-
+LLVM_HOST=https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/
 
 # $(HOME_INSTALLED)
 
-$(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/CMakeLists.txt: | $(HOME_INSTALLED)
-	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/llvm-$(LLVM_VERSION).src.tar.xz
-	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/clang-$(LLVM_VERSION).src.tar.xz
-	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/cmake-$(LLVM_VERSION).src.tar.xz
-	cd $(HOME_INSTALLED);wget $(LLVM_HOST)$(LLVM_VERSION)/clang-tools-extra-$(LLVM_VERSION).src.tar.xz
-	cd $(HOME_INSTALLED);tar -xvJf llvm-$(LLVM_VERSION).src.tar.xz
-	cd $(HOME_INSTALLED);tar -xvJf cmake-$(LLVM_VERSION).src.tar.xz
+$(HOME_INSTALLED)/llvm-project-21.1.8.src/CMakeLists.txt: | $(HOME_INSTALLED)
+	cd $(HOME_INSTALLED);wget $(LLVM_HOST)llvm-project-21.1.8.src.tar.xz
+	cd $(HOME_INSTALLED);wget $(LLVM_HOST)clang-21.1.8.src.tar.xz
+	cd $(HOME_INSTALLED);wget $(LLVM_HOST)cmake-21.1.8.src.tar.xz
+	cd $(HOME_INSTALLED);wget $(LLVM_HOST)clang-tools-extra-21.1.8.src.tar.xz
+	cd $(HOME_INSTALLED);tar -xvJf llvm-project-21.1.8.src.tar.xz
+	cd $(HOME_INSTALLED);tar -xvJf cmake-21.1.8.src.tar.xz
 	cd $(HOME_INSTALLED);rm cmake
-	cd $(HOME_INSTALLED);ls -s cmake-$(LLVM_VERSION) cmake
-	cd $(HOME_INSTALLED);tar -xvJf clang-$(LLVM_VERSION).src.tar.xz -C llvm-$(LLVM_VERSION).src/tools/; mv llvm-$(LLVM_VERSION).src/tools/clang-$(LLVM_VERSION).src llvm-$(LLVM_VERSION).src/tools/clang
-	cd $(HOME_INSTALLED);tar -xvJf clang-tools-extra-$(LLVM_VERSION).src.tar.xz -C llvm-$(LLVM_VERSION).src/tools/clang/tools; mv llvm-$(LLVM_VERSION).src/tools/clang/tools/clang-tools-extra-$(LLVM_VERSION).src llvm-$(LLVM_VERSION).src/tools/clang/tools/extra
+	cd $(HOME_INSTALLED);ls -s cmake-21.1.8 cmake
+	cd $(HOME_INSTALLED);tar -xvJf clang-21.1.8.src.tar.xz -C llvm-project-21.1.8.src/tools/; mv llvm-project-21.1.8.src/tools/clang-21.1.8.src llvm-project-21.1.8.src/tools/clang
+	cd $(HOME_INSTALLED);tar -xvJf clang-tools-extra-21.1.8.src.tar.xz -C llvm-project-21.1.8.src/tools/clang/tools; mv llvm-project-21.1.8.src/tools/clang/tools/clang-tools-extra-21.1.8.src llvm-project-21.1.8.src/tools/clang/tools/extra
 
 # probably outdated; things have moved to git
 $(HOME_INSTALLED)/llvm-svn.src/LLVMBuild.txt:

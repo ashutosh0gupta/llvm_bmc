@@ -1,0 +1,62 @@
+# Create installed directory
+mkdir -p ~/installed
+cd ~/installed
+
+# Download LLVM 21.1.8 source files
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/llvm-project-21.1.8.src.tar.xz
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/clang-21.1.8.src.tar.xz
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/clang-tools-extra-21.1.8.src.tar.xz
+wget https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/cmake-21.1.8.src.tar.xz
+
+# Extract the main LLVM project
+tar -xvJf llvm-project-21.1.8.src.tar.xz
+
+# Extract clang and clang-tools-extra into the LLVM project
+tar -xvJf clang-21.1.8.src.tar.xz -C llvm-project-21.1.8.src/tools/
+tar -xvJf clang-tools-extra-21.1.8.src.tar.xz -C llvm-project-21.1.8.src/tools/clang/tools/
+
+# Extract cmake configuration
+tar -xvJf cmake-21.1.8.src.tar.xz
+
+
+# Create build directory
+mkdir -p ~/installed/llvm-21-build
+cd ~/installed/llvm-21-build
+
+# Configure LLVM build with CMake
+cmake -G "Unix Makefiles" \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra" \
+      -DLLVM_TARGETS_TO_BUILD="X86;AArch64" \
+      -DLLVM_ENABLE_RTTI=ON \
+      -DLLVM_ENABLE_EH=ON \
+      -DLLVM_ENABLE_FFI=ON \
+      -DLLVM_ENABLE_TERMINFO=ON \
+      -DLLVM_ENABLE_LIBEDIT=ON \
+      -DLLVM_ENABLE_LIBXML2=ON \
+      -DLLVM_ENABLE_ZLIB=ON \
+      -DLLVM_ENABLE_ZSTD=ON \
+      -DLLVM_ENABLE_LTO=OFF \
+      -DLLVM_ENABLE_BINDINGS=OFF \
+      -DLLVM_INCLUDE_BENCHMARKS=OFF \
+      -DLLVM_INCLUDE_TESTS=OFF \
+      -DLLVM_INCLUDE_EXAMPLES=OFF \
+      -DLLVM_INCLUDE_DOCS=OFF \
+      -DLLVM_INCLUDE_GO_TESTS=OFF \
+      -DLLVM_INCLUDE_RUNTIMES=OFF \
+      -DLLVM_INCLUDE_UTILS=OFF \
+      -DCMAKE_INSTALL_PREFIX=~/installed/llvm-21 \
+      ~/installed/llvm-project-21.1.8.src/llvm
+
+# Build LLVM (this will take several hours)
+make -j$(nproc)
+
+
+# Navigate to your LLBMC project
+cd ~/Documents/LLVM/llvm_bmc
+
+# Build Z3 (required dependency)
+make ~/installed/z3/buildr/libz3.so
+
+# Build LLBMC with LLVM 21
+make release
