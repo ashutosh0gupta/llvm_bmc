@@ -35,6 +35,7 @@ psystems::~psystems() {}
 void psystems::getAnalysisUsage(llvm::AnalysisUsage &au) const
 {
     au.setPreservesAll();
+    // Require LoopInfo for loop inspection
     au.addRequired<llvm::LoopInfoWrapperPass>();
 }
 
@@ -177,7 +178,7 @@ std::optional<psystems::AccessRelation> psystems::get_ar(const llvm::Loop *loop)
         int64_t init_val = -1;
         const llvm::BasicBlock *parent = loop_var_inst->getParent();
         if(! parent) return std::optional<psystems::AccessRelation>();
-        for (const llvm::Instruction& instruction : parent->getInstList())
+        for (const llvm::Instruction& instruction : *parent)
         {
             if (const llvm::AllocaInst* allocaInst = llvm::dyn_cast<const llvm::AllocaInst>(&instruction))
             {
@@ -207,7 +208,7 @@ std::optional<psystems::AccessRelation> psystems::get_ar(const llvm::Loop *loop)
         int64_t init_val = -1;
         const llvm::BasicBlock *parent = loop_var_inst->getParent();
         if(! parent) return std::optional<psystems::AccessRelation>();
-        for (const llvm::Instruction& instruction : parent->getInstList())
+        for (const llvm::Instruction& instruction : *parent)
         {
             if (const llvm::AllocaInst* allocaInst = llvm::dyn_cast<const llvm::AllocaInst>(&instruction))
             {

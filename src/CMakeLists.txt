@@ -20,6 +20,11 @@ IF(CMAKE_BUILD_TYPE MATCHES Debug)
     SET( LLVM_DEBUG TRUE )
   ENDIF(NOT DEFINED LLVM_DEBUG)
   SET (Z3_DEBUG TRUE)
+  # Enable AddressSanitizer and debug symbols for Debug builds to capture runtime issues
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0 -fno-omit-frame-pointer -fsanitize=address")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fno-omit-frame-pointer -fsanitize=address")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fsanitize=address")
 ENDIF(CMAKE_BUILD_TYPE MATCHES Debug)
 
 
@@ -36,8 +41,8 @@ ELSE(LLVM_DEBUG)
   find_package(LLVM REQUIRED CONFIG)
   # find_package(Clang 12 REQUIRED CONFIG)
   # find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/llvm-12/lib/cmake/clang")
- find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/cmake/clang-21/") # Due to bug in clang
- # find_package(Clang 21 REQUIRED CONFIG)
+ find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/cmake/clang-20/") # Due to bug in clang
+ # find_package(Clang 20 REQUIRED CONFIG)
   message(STATUS "LLVM INCLUDE DIR - ${LLVM_INCLUDE_DIRS}")
   message(STATUS "CLANG INCLUDE DIR - ${CLANG_INCLUDE_DIRS}")
   # find_package(Clang REQUIRED clangTooling libClang)
@@ -122,7 +127,7 @@ LINK_DIRECTORIES(${LLVM_LIBRARY_DIRS})
 
 # lib/bmc/bmc_loop_pass.cpp
 SET(SOURCES lib/utils/utils.cpp lib/utils/llvm_utils.cpp
-  lib/utils/collect_points_to.cpp lib/utils/solver_utils.cpp lib/utils/options.cpp lib/utils/build_name_map.cpp lib/utils/loopdata.cpp lib/utils/collect_loopdata.cpp lib/bmc/collect_globals.cpp lib/bmc/collect_threads.cpp lib/parsers/spec_parser.cpp lib/bmc/memory_event.cpp lib/bmc/value_expr_map.cpp lib/bmc/array_model.cpp lib/bmc/memory_model.cpp lib/bmc/ses.cpp lib/bmc/translate_specs.cpp lib/bmc/bmc_pass.cpp lib/bmc/bmc_fun_pass.cpp lib/bmc/bmc_concurrency.cpp lib/bmc/insert_monitor_pass.cpp lib/bmc/bmc_loop_pass.cpp lib/bmc/witness.cpp lib/bmc/bmc_ds.cpp lib/bmc/bmc.cpp lib/bmc/bmc_utils.cpp lib/psystems/psystems.cpp lib/kbound/kbound.cpp lib/kbound/dump_seq.cpp lib/kbound/arm.cpp lib/kbound/cc.cpp lib/wp/wp.cpp main.cpp)  
+  lib/utils/solver_utils.cpp lib/utils/options.cpp lib/utils/build_name_map.cpp lib/utils/collect_loopdata.cpp lib/utils/loopdata.cpp lib/bmc/collect_globals.cpp lib/bmc/collect_threads.cpp lib/parsers/spec_parser.cpp lib/bmc/memory_event.cpp lib/bmc/value_expr_map.cpp lib/bmc/array_model.cpp lib/bmc/memory_model.cpp lib/bmc/ses.cpp lib/bmc/translate_specs.cpp lib/bmc/bmc_pass.cpp lib/bmc/bmc_fun_pass.cpp lib/bmc/bmc_concurrency.cpp lib/bmc/insert_monitor_pass.cpp lib/bmc/witness.cpp lib/bmc/bmc_ds.cpp lib/bmc/bmc.cpp lib/bmc/bmc_utils.cpp lib/bmc/bmc_loop_pass.cpp lib/kbound/kbound.cpp lib/kbound/dump_seq.cpp lib/kbound/arm.cpp lib/kbound/cc.cpp lib/wp/wp.cpp lib/psystems/psystems.cpp main.cpp)  
 
 add_executable(${LLVMBMC} ${SOURCES})
 

@@ -173,6 +173,10 @@ void collect_loop_backedges(llvm::Pass *p,
                         std::map< const bb*, bb_set_t>& loop_ignore_edge,
                         std::map< const bb*, bb_set_t>& rev_loop_ignore_edge);
 
+void collect_loop_backedges(llvm::Function &F,
+                        std::map< const bb*, bb_set_t>& loop_ignore_edge,
+                        std::map< const bb*, bb_set_t>& rev_loop_ignore_edge);
+
 void collect_loop_backedges(llvm::Loop *L,
                         std::map< const bb*, bb_set_t>& loop_ignore_edge,
                         std::map< const bb*, bb_set_t>& rev_loop_ignore_edge);

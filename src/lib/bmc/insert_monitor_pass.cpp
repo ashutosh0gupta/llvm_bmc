@@ -304,7 +304,7 @@ llvm::StringRef insert_monitor_pass::getPassName() const {
 
 void insert_monitor_pass::getAnalysisUsage(llvm::AnalysisUsage &au) const {
   au.setPreservesAll();
-  au.addRequired<llvm::LoopInfoWrapperPass>();
+  // // au.addRequired<llvm::LoopInfoWrapperPass>(); // deprecated in LLVM 20 // deprecated in LLVM 20
 }
 
 

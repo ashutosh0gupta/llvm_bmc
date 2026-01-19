@@ -73,6 +73,9 @@ void bmc::run_bmc_pass() {
 
   llvm::legacy::PassManager passMan;
 
+  // Ensure LoopInfo analysis is available to function/loop passes
+  passMan.add( new llvm::LoopInfoWrapperPass() );
+
   passMan.add( new build_name_map( o, localNameMap, revStartLocalNameMap,
                                    revEndLocalNameMap ) );
   passMan.add( new collect_loopdata(o, ld_map, localNameMap, module) );
@@ -576,7 +579,7 @@ void bmc::produce_witness( model mdl, bmc_ds* bmc_ds_ptr,
         std::cout << "Block path bit:" << path_bit << "\n";
         dump(b);
       }
-      for( const llvm::Instruction& Iobj : b->getInstList() ) {
+      for( const llvm::Instruction& Iobj : *b ) {
         const llvm::Instruction* I = &(Iobj);
         if( auto call = llvm::dyn_cast<llvm::CallInst>(I) ) {
           produce_witness_call( mdl, call );

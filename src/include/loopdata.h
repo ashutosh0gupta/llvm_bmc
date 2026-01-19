@@ -5,6 +5,7 @@
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #include "llvm/IR/Instructions.h"
 #include "llvm/Analysis/LoopPass.h"
+#include "llvm/Analysis/LoopInfo.h"
 #pragma GCC diagnostic pop
 
 #include <map>

@@ -28,9 +28,9 @@ void forced_unroll_pass( options& o,
   // basic preprocessing
   // llvm::legacy::PassManager passMan;
   // // passMan.add( llvm::createPromoteMemoryToRegisterPass() );
-  // // passMan.add( llvm::createLoopRotatePass() ); // some params
+  // // // passMan.add( llvm::createLoopRotatePass() // deprecated in LLVM 20 ); // some params
   // // passMan.add( llvm::createAlwaysInlinerLegacyPass() );
-  // passMan.add( llvm::createSCCPPass() );
+  // // passMan.add( llvm::createSCCPPass() // deprecated in LLVM 20 );
   // passMan.run( *module.get() );
 
   // for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {

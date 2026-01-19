@@ -490,7 +490,7 @@ int bmc_pass::translateIntrinsicInst( unsigned bidx,
       // llvm::errs() << "\n\nIN IF";
       llvm::Function* fp = invoke->getCalledFunction();
       // llvm::errs() << "\n called function is " << *fp;
-      if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
+      if (fp != nullptr && fp->getName().starts_with("__cxa_throw")) {
         llvm::Value* arg = invoke->getArgOperand(1);
         // llvm::errs() << "ARG NAME IS " << *arg << "======";
         if (arg == actualOperand) {
@@ -539,7 +539,7 @@ int bmc_pass::translateIntrinsicInst( unsigned bidx,
 //     // llvm::errs() << "\n\nIN IF";
 //     llvm::Function* fp = invoke->getCalledFunction();
 //     // llvm::errs() << "\n called function is " << *fp;
-//     if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
+//     if (fp != nullptr && fp->getName().starts_with("__cxa_throw")) {
 //       llvm::Value* idx;
 //       for (int i = 0; i < 1; i++) {
 //         idx = invoke->getArgOperand(i);
@@ -583,22 +583,22 @@ int bmc_pass::translateCallInst( unsigned bidx,
     auto arg = fp->getArg(0);
     expr AbsArg = bmc_ds_ptr->m.get_term( arg );
     bmc_ds_ptr->m.insert_term_map( call, bidx, AbsArg );
-  } else if( fp != NULL && fp->getName().startswith("__gnat") ) { //Do nothing - to be confirmed
+  } else if( fp != NULL && fp->getName().starts_with("__gnat") ) { //Do nothing - to be confirmed
     //std::cout << "These are Ada Runtime functions\n";
-  } else if( fp != NULL && fp->getName().startswith("__VERIFIER") ) {
-    if( fp->getName().startswith("__VERIFIER_nondet_") ) {
+  } else if( fp != NULL && fp->getName().starts_with("__VERIFIER") ) {
+    if( fp->getName().starts_with("__VERIFIER_nondet_") ) {
       translateNondet( bidx, call);
-    } else if ( fp->getName().startswith("__VERIFIER_error") ) {
+    } else if ( fp->getName().starts_with("__VERIFIER_error") ) {
       //VERIFIER_error always has an unreachable instruction which is handled
-    } else if ( fp->getName().startswith("__VERIFIER_assert") ) {
+    } else if ( fp->getName().starts_with("__VERIFIER_assert") ) {
       assert_to_spec( bidx, call);
-    } else if ( fp->getName().startswith("__VERIFIER_assume") ) {
+    } else if ( fp->getName().starts_with("__VERIFIER_assume") ) {
       assume_to_bmc( bidx, call);
     } else { //only error and nondets handled
       llvm_bmc_error("bmc",
           "Only __VERIFIER_[assert,error,nondet_TY] functions are handled!");
     }
-  } else if( fp != NULL && fp->getName().startswith("__cxa_allocate_exception") ) {
+  } else if( fp != NULL && fp->getName().starts_with("__cxa_allocate_exception") ) {
     // do nothing as already collected in collect globals pass.
     int size = 2;
     std::vector<expr> ls;
@@ -607,9 +607,9 @@ int bmc_pass::translateCallInst( unsigned bidx,
     else
       ls.push_back( get_expr_const(solver_ctx,size));
     bmc_ds_ptr->set_array_length( call, ls );
-  } else if( fp != NULL && fp->getName().startswith("__cxa_throw") ) {
+  } else if( fp != NULL && fp->getName().starts_with("__cxa_throw") ) {
     // llvm::errs() << "\n\n\n\n\n THROWWWWWW \n\n\n";
-  } else if( fp != NULL && fp->getName().startswith("__cxa_begin_catch") ) {
+  } else if( fp != NULL && fp->getName().starts_with("__cxa_begin_catch") ) {
     // llvm::errs() << "\n\n\n\n\n CATCH BEGINNNNNNN \n\n\n";
     // llvm::errs() << "The arg of catch is " << *(call->getOperand(0)) << "\n";
     
@@ -646,9 +646,9 @@ int bmc_pass::translateCallInst( unsigned bidx,
 
 
 
-  } else if( fp != NULL && fp->getName().startswith("__cxa_end_catch") ) {
+  } else if( fp != NULL && fp->getName().starts_with("__cxa_end_catch") ) {
     // llvm::errs() << "\n\n\n\n\n CATCH ENDDDDDDD \n\n\n";
-  } else if( fp != NULL && fp->getName().startswith("_Znwm") ) {
+  } else if( fp != NULL && fp->getName().starts_with("_Znwm") ) {
     auto val = call->getOperand(0);    
     unsigned ar_num = bmc_ds_ptr->ary_to_int.at(call);
     bmc_ds_ptr->m.insert_term_map( call, get_expr_const(solver_ctx, ar_num));
@@ -1142,7 +1142,7 @@ void bmc_pass::translateLoadInst( unsigned bidx,
     // llvm::errs() << "\n33\n";
     llvm::Function* fp = call->getCalledFunction();
     // llvm::errs() << (fp->getName()) << "\n";
-    if (fp != NULL && fp->getName().startswith("__cxa_begin_catch")) {
+    if (fp != NULL && fp->getName().starts_with("__cxa_begin_catch")) {
       // auto arr_rd = bmc_ds_ptr->array_read( bidx, load, idx_exprs);
       // if( o.include_out_of_bound_specs ) {
       //   expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
@@ -1197,7 +1197,7 @@ void bmc_pass::addEVIExprs( const llvm::ExtractValueInst* evi, exprs& idxs ) {
     // llvm::errs() << "\n\nIN IF";
     llvm::Function* fp = invoke->getCalledFunction();
     // llvm::errs() << "\n called function is " << *fp;
-    if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
+    if (fp != nullptr && fp->getName().starts_with("__cxa_throw")) {
       llvm::Value* idx;
       for (int i = 0; i < 1; i++) {
         idx = invoke->getArgOperand(i);
@@ -1315,7 +1315,7 @@ void bmc_pass::storeToArrayHelper( unsigned bidx,
 bool isLocallyAllocatedAddress( llvm::Value* addr ) {
   if( auto call = llvm::dyn_cast<const llvm::CallInst>(addr) ) {
     llvm::Function* fp = call->getCalledFunction();
-    if (fp != NULL && fp->getName().startswith("__cxa_allocate")) {
+    if (fp != NULL && fp->getName().starts_with("__cxa_allocate")) {
       return true;
     }
   }
@@ -1531,12 +1531,12 @@ std::string name = fp->getName().str();
     //Do nothing - throws exception
     // unwind is the second bit in the exit bits??
     bmc_ds_ptr->bmc_vec.push_back( exit_bits[1] );
-  } else if( fp != NULL && fp->getName().startswith("ada__numerics__elementary_functions")) { 
+  } else if( fp != NULL && fp->getName().starts_with("ada__numerics__elementary_functions")) { 
 // To be decided - what to do
     auto arg = fp->getArg(0);
     expr NumArg = bmc_ds_ptr->m.get_term( arg );
     bmc_ds_ptr->m.insert_term_map( invoke, bidx, NumArg );
-  } else if( fp != NULL && fp->getName().startswith("__cxa_throw")) {
+  } else if( fp != NULL && fp->getName().starts_with("__cxa_throw")) {
     // std::cout << "\nExit bit for invoke is : " << exit_bits[1] <<"\n";
     bmc_ds_ptr->bmc_vec.push_back( exit_bits[1] );
   } else {
@@ -1656,7 +1656,7 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
   assert( b );
   int brCatch = 0, flag = 0;
   // for( const llvm::Instruction& Iobj : b->getInstList() ) {
-  for (auto iter = b->getInstList().begin(); iter != b->getInstList().end(); ++iter) {
+  for (auto iter = b->begin(); iter != b->end(); ++iter) {
     const llvm::Instruction& Iobj = *iter;
     const llvm::Instruction* I = &(Iobj);
     if(auto bop = llvm::dyn_cast<llvm::BinaryOperator>(I) ) {
@@ -2019,7 +2019,7 @@ void bmc_pass::print_bb_exprs(const bb* src) {
   std::cout << "==============================================\n";
   src->print( llvm::outs() );
   std::cout << "==============================================\n";
-  for( const llvm::Instruction& Iobj : src->getInstList() ) {
+  for( const llvm::Instruction& Iobj : *src ) {
     const llvm::Instruction* I = &(Iobj);
     unsigned copy_count = 0;
     auto val = bmc_ds_ptr->m.read_term( I, copy_count );
@@ -2083,12 +2083,12 @@ void bmc_pass::populate_array_name_map(llvm::Function* f) {
         }
       } else if (auto call = llvm::dyn_cast<const llvm::CallInst>(I)) {
         llvm::Function* fp = call->getCalledFunction();
-        if (fp != NULL && fp->getName().startswith("__cxa_allocate")) {
+        if (fp != NULL && fp->getName().starts_with("__cxa_allocate")) {
             ary_to_int[I] = arrCntr++;
             // I->print(llvm::outs());
             // std::cout << "\nCOLLECTED EXCEPTION PTR AS ARRAY\n\n";
         }
-        else if (fp != NULL && fp->getName().startswith("_Znwm")){
+        else if (fp != NULL && fp->getName().starts_with("_Znwm")){
           auto val = call->getOperand(0);
           auto size = dyn_cast<const llvm::ConstantInt>(val);
           int sizeValue = size->getSExtValue();

@@ -285,5 +285,6 @@ llvm::StringRef bmc_loop_pass::getPassName() const {
 
 void bmc_loop_pass::getAnalysisUsage(llvm::AnalysisUsage &au) const {
   au.setPreservesAll();
+  // Require LoopInfo so getAnalysis<LoopInfoWrapperPass>() is valid
   au.addRequired<llvm::LoopInfoWrapperPass>();
 }

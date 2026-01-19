@@ -6,7 +6,7 @@
 #include "llvm/IR/Constants.h"
 #include "llvm/Support/raw_ostream.h"
 
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
+// // #include "llvm/Transforms/IPO/PassManagerBuilder.h" // removed in LLVM 20 // removed in LLVM 20
 
 // pragam'ed to aviod warnings due to llvm included files
 #include "llvm/IR/DerivedTypes.h"

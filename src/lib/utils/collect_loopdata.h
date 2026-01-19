@@ -2,6 +2,7 @@
 #define TILER_COLLECT_LOOPDATA_H
 
 #include "llvm/Analysis/LoopPass.h"
+#include "llvm/Analysis/LoopInfo.h"
 #include "include/options.h"
 #include "include/loopdata.h"
 #include "lib/utils/llvm_utils.h"

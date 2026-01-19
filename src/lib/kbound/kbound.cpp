@@ -15,7 +15,7 @@ typedef std::vector<std::string> svec;
 char kbound::ID = 0;
 
 unsigned kbound::get_word_size(const llvm::Value* v ) {
-  auto dl = new llvm::DataLayout(module.get());
+  auto dl = new llvm::DataLayout(module.get()->getDataLayout());
   auto typ = v->getType();
   if( auto g = llvm::dyn_cast<llvm::GlobalVariable>(v) ) {
     typ = g->getValueType();
@@ -27,7 +27,17 @@ unsigned kbound::get_word_size(const llvm::Value* v ) {
   }
   if( typ->isSized() ) {
     auto size = dl->getTypeAllocSizeInBits(typ);
-    auto bitSize = size.getFixedSize();
+#if defined(LLVM_VERSION_MAJOR)
+# if LLVM_VERSION_MAJOR >= 20
+    uint64_t bitSize = size.getKnownMinValue();
+# elif LLVM_VERSION_MAJOR >= 15
+    uint64_t bitSize = size.getFixedSize();
+# else
+    uint64_t bitSize = size.getFixedValue();
+# endif
+#else
+    uint64_t bitSize = (uint64_t)size;
+#endif
     // auto bitSize = typ->getScalarSizeInBits();
     unsigned wsize = bitSize/64;
     if( bitSize % 64 != 0 ) {
@@ -118,7 +128,7 @@ kbound::~kbound() {
 
 void kbound::getAnalysisUsage(llvm::AnalysisUsage &au) const {
   au.setPreservesAll();
-  au.addRequired<llvm::LoopInfoWrapperPass>();
+  // // au.addRequired<llvm::LoopInfoWrapperPass>(); // deprecated in LLVM 20 // deprecated in LLVM 20
 }
 
 llvm::StringRef kbound::getPassName() const {
@@ -1115,7 +1125,7 @@ void kbound::dump_PhiNode( unsigned bidx, const llvm::PHINode* phi ) {
 }
 
 void kbound::dump_PhiNodes( const bb* b, const bb* prev_b ) {
-  for( const llvm::Instruction& Iobj : b->getInstList() ) {
+  for( const llvm::Instruction& Iobj : *b ) {
     const llvm::Instruction* I = &(Iobj);
     if( auto phi = llvm::dyn_cast<llvm::PHINode>(I) ) {
       unsigned num = phi->getNumIncomingValues();
@@ -1250,7 +1260,7 @@ void kbound::dump_Block( unsigned bidx, const bb* b ) {
   // auto path = get_path(bidx);
   // dump_Assign( path, "1");
 
-  for( const llvm::Instruction& Iobj : b->getInstList() ) {
+  for( const llvm::Instruction& Iobj : *b ) {
     const llvm::Instruction* I = &(Iobj);
     dump_Comment( toString( I ) );
     if(auto bop = llvm::dyn_cast<llvm::BinaryOperator>(I) ) {

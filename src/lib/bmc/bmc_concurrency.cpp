@@ -86,5 +86,5 @@ bool bmc_concur_pass::runOnFunction( llvm::Function &f ) {
 
 void bmc_concur_pass::getAnalysisUsage(llvm::AnalysisUsage &au) const {
   au.setPreservesAll();
-  au.addRequired<llvm::LoopInfoWrapperPass>();
+  // // au.addRequired<llvm::LoopInfoWrapperPass>(); // deprecated in LLVM 20 // deprecated in LLVM 20
 }

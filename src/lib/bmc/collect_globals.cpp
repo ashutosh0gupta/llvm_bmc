@@ -347,5 +347,5 @@ void collect_globals::insert_events( bmc& b, memory_cons& mem_enc,
 
 //void collect_globals::getAnalysisUsage(llvm::AnalysisUsage &au) const {
 //  au.setPreservesAll();
-//  au.addRequired<llvm::LoopInfoWrapperPass>();
+//  // // au.addRequired<llvm::LoopInfoWrapperPass>(); // deprecated in LLVM 20 // deprecated in LLVM 20
 //}

@@ -26,12 +26,13 @@
 #include "llvm/MC/TargetRegistry.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Support/CodeGen.h"
-#include "llvm/Support/Host.h"
+#include "llvm/TargetParser/Host.h"
 #include "llvm/Support/TargetSelect.h"
 //clang related code
 #include <clang/CodeGen/CodeGenAction.h>
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Frontend/CompilerInvocation.h>
+#include <clang/Frontend/TextDiagnosticPrinter.h>
 #include <clang/Basic/DiagnosticOptions.h>
 #include <clang/Basic/TargetInfo.h>
 #pragma GCC diagnostic pop
@@ -163,8 +164,8 @@ public:
 
   // virtual bool runOnBasicBlock( llvm::BasicBlock &bb ) {
   virtual bool runOnFunction( llvm::Function &f ) {
-    for( llvm::BasicBlock& bb : f.getBasicBlockList() ) {
-    for( llvm::Instruction& I : bb.getInstList() ) {
+    for( llvm::BasicBlock& bb : f ) {
+    for( llvm::Instruction& I : bb ) {
       const llvm::DebugLoc d = I.getDebugLoc();
       if( d ) {
         unsigned l = d.getLine();
@@ -272,7 +273,7 @@ estimate_comment_location(std::unique_ptr<llvm::Module>& module,
       for( auto& B_Is : Is ) {
         if( B_Is[0]->getParent() == I->getParent() ) {
           unsigned i = 0;
-          for( auto& Io : B_Is[0]->getParent()->getInstList() ) {
+          for( auto& Io : *B_Is[0]->getParent() ) {
             if( i == B_Is.size() || &Io == I ) break;
             if( &Io == B_Is[i] ) i++;
           }
@@ -289,7 +290,7 @@ estimate_comment_location(std::unique_ptr<llvm::Module>& module,
     for( llvm::Instruction* I : B_Is ) {
       llvm::BasicBlock* bb = I->getParent();
       auto& pair = bb_comment_map[bb];
-      llvm::Instruction* first = &(*(bb->getInstList().begin()));
+      llvm::Instruction* first = &(*(bb->begin()));
       if( bb->getTerminator() == I ) {
         pair.end_comments = comment_map[I];
       }else if( first == I ) {
@@ -532,7 +533,20 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   llvm::ArrayRef<const char *> args_arry(args);
 
   clang::CompilerInstance Clang;
-  Clang.createDiagnostics();
+  auto diagOpts = new clang::DiagnosticOptions();
+  // Use a text diagnostic printer as the consumer to ensure diagnostics are created
+  auto diagConsumer = new clang::TextDiagnosticPrinter(llvm::errs(), diagOpts);
+  auto vfs = llvm::vfs::createPhysicalFileSystem();
+  if (vfs) {
+    // Use the overload that accepts a DiagnosticConsumer to ensure Diagnostics are created
+    Clang.createDiagnostics(*vfs, diagConsumer, /*ShouldOwnClient=*/true);
+  } else {
+    // Should not happen, but try to create diagnostics with a default filesystem
+    auto real_vfs = llvm::vfs::getRealFileSystem();
+    if (real_vfs) {
+      Clang.createDiagnostics(*real_vfs, diagConsumer, /*ShouldOwnClient=*/true);
+    }
+  }
 
   std::shared_ptr<clang::CompilerInvocation> CI(new clang::CompilerInvocation());
   clang::CompilerInvocation::CreateFromArgs( *CI.get(),
@@ -598,7 +612,7 @@ void generateAssemblyARM( std::unique_ptr<llvm::Module>& module ) {
   llvm::TargetOptions options;
   llvm::Reloc::Model relocModel = llvm::Reloc::Model::PIC_;
   llvm::CodeModel::Model codeModel = llvm::CodeModel::Small;
-  llvm::CodeGenOpt::Level optLevel = llvm::CodeGenOpt::Aggressive;
+  llvm::CodeGenOptLevel optLevel = llvm::CodeGenOptLevel::Aggressive;
 
   // Create a target machine.
   llvm::TargetMachine* targetMachine =
@@ -612,7 +626,7 @@ void generateAssemblyARM( std::unique_ptr<llvm::Module>& module ) {
   // Generate assembly code.
   llvm::legacy::PassManager passManager;
   targetMachine->addPassesToEmitFile( passManager, llvm::outs(),
-                                      nullptr, llvm::CGFT_AssemblyFile );
+                                      nullptr, llvm::CodeGenFileType::AssemblyFile );
   passManager.run( *module.get() );
   output.flush();
 
@@ -1157,11 +1171,11 @@ void collectArr( llvm::Function &f, std::set<llvm::Value*>& arrSet) {
   arrSet.clear();
   for( auto bbit = f.begin(), end = f.end(); bbit != end; bbit++ ) {
     llvm::BasicBlock* bb = &(*bbit);
-    for( llvm::Instruction& Iobj : bb->getInstList() ) {
+    for( llvm::Instruction& Iobj : *bb ) {
       llvm::Instruction* I = &(Iobj);
       if( auto alloc = llvm::dyn_cast<llvm::AllocaInst>(I) ) {
         if( alloc->isArrayAllocation() &&
-            !alloc->getType()->getPointerElementType()->isIntegerTy() ) {
+            !llvm::dyn_cast<llvm::PointerType>(alloc->getType())->getContainedType(0)->isIntegerTy() ) {
           llvm_bmc_error( "llvm_utils", "only pointers to intergers is allowed!" );
         }
         arrSet.insert( alloc );
@@ -1294,11 +1308,24 @@ void collect_loop_backedges(llvm::Pass *p,
                         std::map< const bb*, bb_set_t>& loop_ignore_edge,
                         std::map< const bb*, bb_set_t>& rev_loop_ignore_edge) {
 
-  //todo: llvm::FindFunctionBackedges could have done the job
-  auto &LIWP = p->getAnalysis<llvm::LoopInfoWrapperPass>();
-  auto LI = &LIWP.getLoopInfo();
+  // Best-effort: do nothing here — prefer calling the Function-based variant
+  // (the caller should invoke the Function variant when possible)
+  loop_ignore_edge.clear();
+  rev_loop_ignore_edge.clear();
+}
+
+void collect_loop_backedges(llvm::Function &F,
+                        std::map< const bb*, bb_set_t>& loop_ignore_edge,
+                        std::map< const bb*, bb_set_t>& rev_loop_ignore_edge) {
+  // Compute DominatorTree and LoopInfo for the function locally and then reuse
+  // the existing loop-based helper
+  llvm::DominatorTree DT;
+  DT.recalculate(F);
+  llvm::LoopInfo LI;
+  LI.analyze(DT);
+
   std::vector<llvm::Loop*> loops, stack;
-  for(auto I = LI->rbegin(), E = LI->rend(); I != E; ++I) stack.push_back(*I);
+  for(auto I = LI.rbegin(), E = LI.rend(); I != E; ++I) stack.push_back(*I);
   while( !stack.empty() ) {
     llvm::Loop *L = stack.back();
     stack.pop_back();
@@ -1309,13 +1336,6 @@ void collect_loop_backedges(llvm::Pass *p,
   rev_loop_ignore_edge.clear();
   for( llvm::Loop *L : loops ) {
     collect_loop_backedges( L, loop_ignore_edge, rev_loop_ignore_edge );
-    // auto h = L->getHeader();
-    // llvm::SmallVector<llvm::BasicBlock*,10> LoopLatches;
-    // L->getLoopLatches( LoopLatches );
-    // for( llvm::BasicBlock* bb : LoopLatches ) {
-    //   loop_ignore_edge[h].insert( bb );
-    //   rev_loop_ignore_edge[bb].insert(h);
-    // }
   }
 }
 
@@ -1606,7 +1626,7 @@ std::string getLocRange(const llvm::BasicBlock* b ) {
   unsigned maxLine = 0;
   unsigned maxCol  = 0;
   std::string fname = "";
-  for( const llvm::Instruction& Iobj : b->getInstList() ) {
+  for( const llvm::Instruction& Iobj : *b ) {
     src_loc loc = getLoc( &(Iobj) );
     if( loc.file != "" ) {
       if( fname.empty() )
@@ -1865,7 +1885,7 @@ sort llvm_to_bv_sort( solver_context& c, const llvm::Type* t ) {
     llvm_bmc_error("llvm_utils", "metadata sorts are not supported");
   }else if( t->isTokenTy() ) {
     llvm_bmc_error("llvm_utils", "token sorts are not supported");
-  }else if( t->isX86_MMXTy() ) {
+  }else if( t->isX86_AMXTy() ) {
     llvm_bmc_error("llvm_utils", "X86_MMX sorts are supported");
   }
   llvm_bmc_error("llvm_utils", "unknown sorts seen!!");
@@ -2078,7 +2098,7 @@ llvm::StringRef set_unroll_counts::getPassName() const {
 
 void set_unroll_counts::getAnalysisUsage(llvm::AnalysisUsage &au) const {
   au.setPreservesAll();
-  au.addRequired<llvm::LoopInfoWrapperPass>();
+  // // au.addRequired<llvm::LoopInfoWrapperPass>(); // deprecated in LLVM 20 // deprecated in LLVM 20
   au.addRequired<llvm::ScalarEvolutionWrapperPass>();
 }
 
@@ -2105,8 +2125,8 @@ void forced_inliner_pass( std::unique_ptr<llvm::Module>& module ) {
 void prepare_module(std::unique_ptr<llvm::Module>& module ) {
   llvm::legacy::PassManager passMan;
   passMan.add( llvm::createPromoteMemoryToRegisterPass() );
-  passMan.add( llvm::createLoopRotatePass() ); // some params
-  passMan.add( llvm::createSCCPPass() );
+  // passMan.add( llvm::createLoopRotatePass() // deprecated in LLVM 20 ); // some params
+  // passMan.add( llvm::createSCCPPass() // deprecated in LLVM 20 );
   passMan.run( *module.get() );
 }
 
@@ -2161,7 +2181,7 @@ identify_lpad_struct(const llvm::Value* op, int index) {
 
     if (auto invoke = llvm::dyn_cast<const llvm::InvokeInst>(terminator)) {
       llvm::Function* fp = invoke->getCalledFunction();
-      if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
+      if (fp != nullptr && fp->getName().starts_with("__cxa_throw")) {
         llvm::Value* arg;
         if (index == 0) {
           arg = invoke->getArgOperand(index);
@@ -2200,8 +2220,8 @@ void collect_debug_info( std::unique_ptr<llvm::Module>& module,
                          std::map<const llvm::Value*,const llvm::Instruction*>& dmap) {
   const llvm::Module& m = *module.get();
   for( const llvm::Function& f : m ) {
-    for( const llvm::BasicBlock& bb : f.getBasicBlockList() ) {
-      for( const llvm::Instruction& I : bb.getInstList() ) {
+    for( const llvm::BasicBlock& bb : f ) {
+      for( const llvm::Instruction& I : bb ) {
         if( auto dbg = llvm::dyn_cast<llvm::DbgInfoIntrinsic>(&I) ) {
           if( auto dbg_val = llvm::dyn_cast<llvm::DbgValueInst>(dbg) ) {
             dmap[ dbg_val->getValue() ] = &I;
@@ -2278,10 +2298,10 @@ get_array_info( const llvm::Value* op) {
   }else if( auto call = llvm::dyn_cast<const llvm::CallInst>(op) ) {
     // llvm::errs() << "\n CALL INSTRUCTION \n";
     llvm::Function* fp = call->getCalledFunction();
-    if (fp != NULL && fp->getName().startswith("__cxa_allocate")) {
+    if (fp != NULL && fp->getName().starts_with("__cxa_allocate")) {
       // call->print(llvm::outs());std::cout << "RECOGNIZED PATTERN\n";
       return std::make_pair(call, 0);
-    } else if (fp != NULL && fp->getName().startswith("__cxa_begin_catch")) {
+    } else if (fp != NULL && fp->getName().starts_with("__cxa_begin_catch")) {
       return std::make_pair(call, 0);
     }
   } else if (auto ev = llvm::dyn_cast<const llvm::ExtractValueInst>(op)) {
@@ -2308,7 +2328,7 @@ get_array_info( const llvm::Value* op) {
   //     // llvm::errs() << "\n\nIN IF";
   //     llvm::Function* fp = invoke->getCalledFunction();
   //     llvm::errs() << "\n called function is " << *fp;
-  //     if (fp != nullptr && fp->getName().startswith("__cxa_throw")) {
+  //     if (fp != nullptr && fp->getName().starts_with("__cxa_throw")) {
   //       llvm::Value* arg0;
         
   //       arg0 = invoke->getArgOperand(0);

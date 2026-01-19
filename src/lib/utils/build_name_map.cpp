@@ -43,8 +43,9 @@ void build_name_map::buildNameMap( llvm::Function& f,
   //  std::cout << "Inside buildNameMap\n";
   //  localNameMap.clear();
   //  nameValueMap.clear();
-  for( llvm::inst_iterator iter(f),end(f,true); iter != end; ++iter ) {
-    llvm::Instruction* I = &*iter;
+  for( llvm::BasicBlock& bb : f ) {
+    for( llvm::Instruction& Iobj : bb ) {
+      llvm::Instruction* I = &Iobj;
     llvm::Value* var = NULL;
     llvm::MDNode* md = NULL;
     std::string str;
@@ -86,10 +87,11 @@ void build_name_map::buildNameMap( llvm::Function& f,
 //          nameValueMap[str] = var;
 //        }
     }
+    }
   }
 
   //Extend names to phiNodes
-  for( auto& b: f.getBasicBlockList() ) {
+  for( auto& b: f ) {
     for( llvm::BasicBlock::iterator I = b.begin(); llvm::isa<llvm::PHINode>(I); ++I) {
       llvm::PHINode *phi = llvm::cast<llvm::PHINode>(I);
       if( localNameMap.find(phi) != localNameMap.end() ) continue;
@@ -131,7 +133,8 @@ void build_name_map::buildRevNameMap( llvm::Function &f ) {
   std::map< const bb*, unsigned> block_to_id;        // useless
   std::map< const bb*, bb_set_t > loop_ignore_edges; // useless
   std::map< const bb*, bb_set_t > rev_loop_ignore_edges;
-  collect_loop_backedges(this, loop_ignore_edges, rev_loop_ignore_edges);
+  // Compute loop backedges for this function without relying on pass analysis
+  collect_loop_backedges(f, loop_ignore_edges, rev_loop_ignore_edges);
   computeTopologicalOrder(f, rev_loop_ignore_edges, bb_vec, block_to_id);
 
   for( auto b : bb_vec ) {
@@ -214,5 +217,6 @@ llvm::StringRef build_name_map::getPassName() const {
 
 void build_name_map::getAnalysisUsage(llvm::AnalysisUsage &au) const {
   au.setPreservesAll();
+  // Require LoopInfo so getAnalysis<LoopInfoWrapperPass>() is valid at runtime
   au.addRequired<llvm::LoopInfoWrapperPass>();
 }

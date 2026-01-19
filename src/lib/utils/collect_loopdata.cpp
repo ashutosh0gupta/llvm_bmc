@@ -104,7 +104,7 @@ bool collect_loopdata::hasPhiNode(llvm::Value* v) {
 
 void collect_loopdata::collect_const_vars(llvm::Loop *L, std::vector<llvm::Value*>& const_val) {
   for( auto b: L->getBlocks()) {
-    for( llvm::Instruction& Iobj : b->getInstList() ) {
+    for( llvm::Instruction& Iobj : *b ) {
       llvm::Instruction* I = &(Iobj);
       if( llvm::PHINode* phi = llvm::dyn_cast<llvm::PHINode>(I) ) {
         unsigned num = phi->getNumIncomingValues();
@@ -256,6 +256,7 @@ llvm::StringRef collect_loopdata::getPassName() const {
 
 void collect_loopdata::getAnalysisUsage(llvm::AnalysisUsage &au) const {
   au.setPreservesAll();
+  // Require LoopInfo so getAnalysis<LoopInfoWrapperPass>() is valid
   au.addRequired<llvm::LoopInfoWrapperPass>();
   au.addRequired<llvm::ScalarEvolutionWrapperPass>();
 }
