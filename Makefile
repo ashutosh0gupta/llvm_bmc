@@ -79,7 +79,7 @@ $(BUILDDIR)/z3/README.md :
 $(BUILDDIR)/z3/buildr/libz3.so : $(BUILDDIR)/z3/README.md
 	rm -rf $(BUILDDIR)/z3/buildr
 	mkdir -p $(BUILDDIR)/z3/buildr
-	cd $(BUILDDIR)/z3/buildr; cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ../
+	cd $(BUILDDIR)/z3/buildr; cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=/usr/bin/python3 ../
 	+make -C $(BUILDDIR)/z3/buildr
 
 $(BUILDDIR)/z3/buildr/libz3.a : $(BUILDDIR)/z3/buildr/libz3.so
