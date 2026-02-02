@@ -1,8 +1,7 @@
 Dependencies
 ------------
 
-* Install llvm-15-dev
-* Install libclang-15-dev clang-tools-15
+* Install llvm-20-dev libclang-20-dev clang-tools-20
 * Install Boost
 * depends on -lz
 
