@@ -1607,7 +1607,6 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
       }else{
         llvm::Type* ty = v->getType();
         if( llvm::isa<llvm::PointerType>(ty) ) {
-          assert(pty);
           assert(false);// todo: code commented due to opaque pointer
           // auto el_ty = pty->getPointerElementType();
           // sort z_sort = llvm_to_sort( o, el_ty);
