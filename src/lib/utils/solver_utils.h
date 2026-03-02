@@ -16,7 +16,7 @@ struct expr_hash
   }
 };
 
-struct expr_equal : std::binary_function<expr, expr, bool>
+struct expr_equal //: std::binary_function<expr, expr, bool>
 {
   bool operator()(const expr &x, const expr &y) const
   {

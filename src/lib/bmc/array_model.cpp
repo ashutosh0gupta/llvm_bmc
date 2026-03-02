@@ -133,7 +133,7 @@ array_model_full::get_array_length( const llvm::Value* arr ) {
       get_array_length( a1, idxs );
     }
   }
-  if( auto pty = llvm::dyn_cast<llvm::PointerType>(arr->getType()) ) {
+  if( llvm::isa<llvm::PointerType>(arr->getType()) ) {
   //   auto T1 = pty->getPointerElementType();
   //   if( auto a1 = llvm::dyn_cast<llvm::ArrayType>(T1) ) {
   //     get_array_length( a1, idxs );

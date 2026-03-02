@@ -1169,7 +1169,7 @@ void bmc_pass::translateLoadInst( unsigned bidx,
       exprs idxs; idxs.push_back( get_expr_const(solver_ctx,0) );
       loadFromArrayHelper(bidx, load, idxs);
     }  
-  } else if(auto l = llvm::dyn_cast<llvm::LoadInst>(addr) ) {
+  } else if( llvm::isa<llvm::LoadInst>(addr) ) {
     exprs idxs;
     if( o.bit_precise)
       idxs.push_back( get_expr_bv_const( solver_ctx, 0, 64 ) );
@@ -1597,7 +1597,8 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
       std::string ty_str;
       if( auto glb = llvm::dyn_cast<llvm::GlobalVariable>(v) ) {
         llvm::Type* ty = glb->getType();
-        if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
+        if( llvm::isa<llvm::PointerType>(ty) ) {
+          //assert(pty);
           assert(false);// todo: code commented due to opaque pointer
           // auto el_ty = pty->getPointerElementType();
           // sort z_sort = llvm_to_sort( o, el_ty);
@@ -1605,7 +1606,8 @@ void bmc_pass::translateCommentProperty( unsigned bidx, const bb* b ) {
         }else{ llvm_bmc_error( "parse comment::", "unrecognized type!"); }
       }else{
         llvm::Type* ty = v->getType();
-        if( auto pty = llvm::dyn_cast<llvm::PointerType>(ty) ) {
+        if( llvm::isa<llvm::PointerType>(ty) ) {
+          assert(pty);
           assert(false);// todo: code commented due to opaque pointer
           // auto el_ty = pty->getPointerElementType();
           // sort z_sort = llvm_to_sort( o, el_ty);

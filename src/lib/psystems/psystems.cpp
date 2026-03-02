@@ -253,7 +253,7 @@ bool psystems::runOnFunction(llvm::Function &f)
     // We have to figure out how the flag changes and what are the conditions of passing the checkpoint
     if(EntryFn == "function")
     {
-        state_t l_count = 0;
+        // state_t l_count = 0;
         // f.dump();
         std::vector<const llvm::BasicBlock *> labelled_blocks;
         // std::map<const llvm::BasicBlock *, state_t> block_to_label; 

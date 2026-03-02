@@ -407,13 +407,15 @@ getLocFromClangSource( const clang::SourceLocation& loc,
 std::string exec(const char* cmd) {
     std::array<char, 128> buffer;
     std::string result;
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    FILE* pipe = popen(cmd, "r");
+    // std::unique_ptr<FILE> pipe();
     if (!pipe) {
         throw std::runtime_error("popen() failed!");
     }
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+    while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
         result += buffer.data();
     }
+    pclose(pipe);
     return result;
 }
 
@@ -585,7 +587,7 @@ std::unique_ptr<llvm::Module> asm2ir( options& o, comments& cmts ) {
 
 std::unique_ptr<llvm::Module> c2ir( options& o ) {
   comments comments_found;
-  return move( c2ir( o, comments_found ) );
+  return c2ir( o, comments_found );
 }
 
 void ir2mf( std::unique_ptr<llvm::Module>& module ) {
@@ -2227,7 +2229,7 @@ void collect_debug_info( std::unique_ptr<llvm::Module>& module,
             dmap[ dbg_val->getValue() ] = &I;
           }else if( auto dbg_var = llvm::dyn_cast<llvm::DbgDeclareInst>(dbg) ) {
             dmap[ dbg_var->getAddress() ] = &I;
-          }else if( auto dbg_label = llvm::dyn_cast<llvm::DbgLabelInst>(dbg) ) {
+          }else if( llvm::isa<llvm::DbgLabelInst>(dbg) ) {
           //   dmap[ dbg_label->getAddress() ] = &I;
           }else{
             assert(false);
@@ -2245,7 +2247,8 @@ get_array_info( const llvm::Value* op) {
     op = cast->getOperand(0);
   }
   if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(op) ) {
-    auto op_gep_ptr = gep->getPointerOperand();
+    assert(gep);
+    // auto op_gep_ptr = gep->getPointerOperand();
     // return get_array_info( op_gep_ptr );
     uint64_t size = 0;
     return std::make_pair(gep->getOperand(0), size);
@@ -2343,7 +2346,7 @@ get_array_info( const llvm::Value* op) {
   } else if(auto load = llvm::dyn_cast<const llvm::LoadInst>(op)){
     uint64_t size = 0;
     dump(load);
-    if(auto addr = llvm::dyn_cast<const llvm::Instruction>(load->getOperand(0))) {
+    if(llvm::isa<const llvm::Instruction>(load->getOperand(0))) {
       while(llvm::dyn_cast<const llvm::LoadInst>(load->getOperand(0))){
         load = llvm::dyn_cast<llvm::LoadInst>(load->getOperand(0));
       }

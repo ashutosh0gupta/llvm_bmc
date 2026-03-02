@@ -119,7 +119,7 @@ if( LLVM_DEBUG )
     )
 endif( LLVM_DEBUG )
 
-# message(STATUS "LLVM LIBS : ${llvm_libs}")
+message(STATUS "LLVM LIBS : ${llvm_libs}")
 
 SET(clang_libs clangDaemon clangFrontendTool)
 

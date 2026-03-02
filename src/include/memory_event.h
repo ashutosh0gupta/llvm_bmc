@@ -62,7 +62,8 @@
       size_t operator () (const variable &v) const { return std::hash<std::string>()(v.name); }
     };
 
-    struct variable_equal : std::binary_function <variable,variable,bool> {
+    struct variable_equal //: std::binary_function <variable,variable,bool>
+    {
       bool operator() (const variable& x, const variable& y) const {
         return std::equal_to<std::string>()(x.name, y.name);
       }
@@ -597,15 +598,15 @@ private:
     }
   };
 
-  struct me_equal :
-    std::binary_function <memory_event,memory_event,bool> {
+  struct me_equal //: std::binary_function <memory_event,memory_event,bool>
+  {
     bool operator() (const me_ptr& x, const me_ptr& y) const {
       return std::equal_to<std::string>()(x->name(), y->name());
     }
   };
 
-  struct me_cmp :
-    std::binary_function <memory_event,memory_event,bool> {
+struct me_cmp //: std::binary_function <memory_event,memory_event,bool>
+  {
     bool operator() (const me_ptr& x, const me_ptr& y) const {
       return x->get_topological_order() < y->get_topological_order() ||
         ( x->get_topological_order() == y->get_topological_order() &&
