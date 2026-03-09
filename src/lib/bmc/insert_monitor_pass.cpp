@@ -169,16 +169,15 @@ void insert_monitor_pass::InlineInsertInst( llvm::Module &m, llvm::Function &f, 
           llvm::Value *const_val2 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 2, true);
           llvm::Value *const_val1 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 1, true);  //Create an i32 constant with value 1
 
-	  llvm::Instruction *load = new llvm::LoadInst(i32_type, invokedFn_Val[callseq_num], "test", false, I); //Load the global monitor var
+	  llvm::Instruction *load = new llvm::LoadInst(i32_type, invokedFn_Val[callseq_num], "test", false, I->getIterator()); //Load the global monitor var
 
-	  //llvm::Instruction *icmp = new llvm::ICmpInst(I,llvm::ICmpInst::ICMP_ULT, invokedFn_Val[callseq_num], const_val2); // cmp_res_name);
-	  llvm::Instruction *icmp = new llvm::ICmpInst(I, llvm::ICmpInst::ICMP_ULT, load, const_val2);
+	  llvm::Instruction *icmp = new llvm::ICmpInst(I->getIterator(), llvm::ICmpInst::ICMP_ULT, load, const_val2);
 
           llvm::SelectInst *select =
-          llvm::SelectInst::Create (icmp, const_val1, const_val2, monitor_var_name[callseq_num], I);
+          llvm::SelectInst::Create (icmp, const_val1, const_val2, monitor_var_name[callseq_num], I->getIterator());
           //select->print( llvm::outs() );     std::cout << "\n";
 	  // llvm::Instruction *store =
-            new llvm::StoreInst(select,invokedFn_Val[callseq_num], I); //Store the global monitor var
+            new llvm::StoreInst(select,invokedFn_Val[callseq_num], I->getIterator()); //Store the global monitor var
           //break;
         }
 
@@ -187,14 +186,14 @@ void insert_monitor_pass::InlineInsertInst( llvm::Module &m, llvm::Function &f, 
           //icmp->print( llvm::outs() );     std::cout << "\n";
           llvm::Value *const_val1 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 1, true);
           llvm::Value *const_val2 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 2, true);  //Create an i32 constant with value 1
-	  llvm::Instruction *load = new llvm::LoadInst(i32_type, invokedFn_Val[callseq_num], "test", false, I); //Load the global monitor var
-          llvm::Instruction *icmp = new llvm::ICmpInst(I,llvm::ICmpInst::ICMP_EQ, load, const_val1); // cmp_res_name);
+	  llvm::Instruction *load = new llvm::LoadInst(i32_type, invokedFn_Val[callseq_num], "test", false, I->getIterator()); //Load the global monitor var
+          llvm::Instruction *icmp = new llvm::ICmpInst(I->getIterator(), llvm::ICmpInst::ICMP_EQ, load, const_val1); // cmp_res_name);
 
           llvm::SelectInst *select =
-          llvm::SelectInst::Create (icmp, const_val1, const_val2, monitor_var_name[callseq_num], I);
+          llvm::SelectInst::Create (icmp, const_val1, const_val2, monitor_var_name[callseq_num], I->getIterator());
           //select->print( llvm::outs() );     std::cout << "\n";
 	  //llvm::Instruction *store =
-            new llvm::StoreInst(select,invokedFn_Val[callseq_num], I); //Store the global monitor var
+            new llvm::StoreInst(select,invokedFn_Val[callseq_num], I->getIterator()); //Store the global monitor var
         }
 	InlineInsertInst(m, *fun, b);
       }
@@ -236,9 +235,9 @@ void insert_monitor_pass::insert_assert_call( llvm::Module &m, llvm::Function &f
     llvm::LLVMContext& ctx = m.getContext();
     llvm::Type *i32_type = llvm::IntegerType::getInt32Ty(ctx);
     llvm::Value *const_val1 = llvm::ConstantInt::get(llvm::IntegerType::getInt32Ty(f.getContext()), 1, true);
-    llvm::Instruction *load = new llvm::LoadInst(i32_type, invokedFn_Val[callseq_num], "test1", false, I); //Load the global monitor var
+    llvm::Instruction *load = new llvm::LoadInst(i32_type, invokedFn_Val[callseq_num], "test1", false, I->getIterator()); //Load the global monitor var
     //llvm::Instruction *icmp1 = new llvm::ICmpInst(llvm::ICmpInst::ICMP_EQ, invokedFn_Val[callseq_num], i32_val1, cmp_res_name[callseq_num]);
-    llvm::Instruction *icmp1 = new llvm::ICmpInst(I, llvm::ICmpInst::ICMP_EQ, load, const_val1);
+    llvm::Instruction *icmp1 = new llvm::ICmpInst(I->getIterator(), llvm::ICmpInst::ICMP_EQ, load, const_val1);
 //    //icmp1->print( llvm::outs() );     std::cout << "\n";
 
     llvm::Type *i1_type = llvm::IntegerType::getInt1Ty(ctx);
@@ -250,7 +249,7 @@ void insert_monitor_pass::insert_assert_call( llvm::Module &m, llvm::Function &f
 
     auto assertfunc = m.getOrInsertFunction("__VERIFIER_assert_CallSeqCheck", assert_type, attr_list);
   //llvm::CallInst *call = 
-   llvm::CallInst::Create(assertfunc, icmp1, "assertfunc", I);
+   llvm::CallInst::Create(assertfunc, icmp1, "assertfunc", I->getIterator());
    //call->print( llvm::outs() );     std::cout << "\n";
    //auto assertfunc = m.getOrInsertFunction("__VERIFIER_assert_CallSeqCheck", i1_type);
 	}

@@ -37,15 +37,13 @@ IF(LLVM_DEBUG)
   find_package(LLVM REQUIRED CONFIG NO_DEFAULT_PATH HINTS "${LLVM_DIR}/lib/cmake/llvm/")
   find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "${CLANG_DIR}/lib/cmake/clang/")
 ELSE(LLVM_DEBUG)
-  # change here to modify the relase version of LLVM
-  find_package(LLVM REQUIRED CONFIG)
-  # find_package(Clang 12 REQUIRED CONFIG)
-  # find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/llvm-12/lib/cmake/clang")
- find_package(Clang REQUIRED CONFIG NO_DEFAULT_PATH HINTS "/usr/lib/cmake/clang-20/") # Due to bug in clang
- # find_package(Clang 20 REQUIRED CONFIG)
+  # Ensure we use the correct LLVM version
+  SET(LLVM_DIR "/usr/lib/llvm-${LLVM_VERSION}/lib/cmake/llvm")
+  SET(Clang_DIR "/usr/lib/llvm-${LLVM_VERSION}/lib/cmake/clang")
+  find_package(LLVM REQUIRED CONFIG HINTS ${LLVM_DIR} NO_DEFAULT_PATH)
+  find_package(Clang REQUIRED CONFIG HINTS ${Clang_DIR} NO_DEFAULT_PATH)
   message(STATUS "LLVM INCLUDE DIR - ${LLVM_INCLUDE_DIRS}")
   message(STATUS "CLANG INCLUDE DIR - ${CLANG_INCLUDE_DIRS}")
-  # find_package(Clang REQUIRED clangTooling libClang)
 ENDIF(LLVM_DEBUG)
 
 # set_target_properties(${LLVMBMC} PROPERTIES TYPE "STATIC_LIBRARY")
@@ -53,6 +51,23 @@ ENDIF(LLVM_DEBUG)
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 message(STATUS "Using ClangConfig.cmake in: ${Clang_DIR}")
+
+# Populate llvm_libs with necessary components
+llvm_map_components_to_libnames(llvm_libs
+  Core
+  Support
+  ScalarOpts
+  IPO
+  Linker
+  TransformUtils
+  Analysis
+  BitReader
+  AsmParser
+  MC
+  Passes
+  Option
+  TargetParser
+)
 
 SET(Boost_USE_STATIC_LIBS    OFF)
 SET(Boost_USE_STATIC_RUNTIME OFF)
@@ -94,34 +109,9 @@ else(LLVM_VERSION EQUAL "7.0.0svn")
 endif(LLVM_VERSION EQUAL "7.0.0svn")
 
 # unexplained guard 
-if( LLVM_DEBUG )
-  llvm_map_components_to_libnames(llvm_libs
-    webassemblyasmparser webassemblycodegen
-    veasmparser          vecodegen
-    riscvasmparser       riscvcodegen
-    avrasmparser         avrcodegen
-    aarch64asmparser     aarch64codegen
-    armasmparser         armcodegen
-    mipsasmparser        mipscodegen
-    msp430asmparser      msp430codegen
-    powerpcasmparser     powerpccodegen
-    x86asmparser         x86codegen
-    sparcasmparser       sparccodegen
-    systemzasmparser     systemzcodegen
-    amdgpuasmparser      amdgpucodegen
-    bpfasmparser         bpfcodegen
-    asmprinter
-    hexagoncodegen
-    nvptxcodegen
-    xcorecodegen
-    lanaicodegen
-    objcarcopts
-    )
-endif( LLVM_DEBUG )
-
-message(STATUS "LLVM LIBS : ${llvm_libs}")
-
-SET(clang_libs clangDaemon clangFrontendTool)
+# Use monolithic LLVM and Clang libraries
+SET(llvm_libs LLVM-20)
+SET(clang_libs clang-cpp)
 
 LINK_DIRECTORIES(${LLVM_LIBRARY_DIRS})
 
@@ -133,4 +123,4 @@ add_executable(${LLVMBMC} ${SOURCES})
 
 SET(LIBZ3 z3)
 
-target_link_libraries (${LLVMBMC} ${LIBZ3} ${Boost_LIBRARIES} ${llvm_libs} ${clang_libs})
+target_link_libraries (${LLVMBMC} ${LIBZ3} ${Boost_LIBRARIES} ${clang_libs} ${llvm_libs} pthread dl z)
