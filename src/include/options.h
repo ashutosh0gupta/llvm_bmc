@@ -47,6 +47,7 @@ public:
   // the tool auto detect via looking at the extension of the input file
   bool is_input_c();
   bool is_input_llvm_asm();
+  bool is_input_llvm_ir();
   bool is_input_llvm_bc(); //todo: not fully supported yet
 
 public:

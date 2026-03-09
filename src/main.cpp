@@ -136,6 +136,8 @@ int main(int argc, char** argv) {
     module = c2ir( o, cmts);
   }else if( o.is_input_llvm_asm() ) {
     module = asm2ir( o, cmts);
+  }else if( o.is_input_llvm_ir() ) {
+    module = ir2ir( o, cmts);
   }
   if( module == nullptr ) {
     llvm_bmc_error( "BMC", "failed to parse input successfully!" );

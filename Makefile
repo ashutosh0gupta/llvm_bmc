@@ -4,7 +4,7 @@ LLVMBMC=llvmbmc
 HOME_INSTALLED=~/installed
 BUILDDIR = $(PWD)/build
 SRCDIR = $(PWD)/src
-LLVM_VERSION=20
+LLVM_VERSION=20.1.2
 # LLVM_VERSION=21
 # LLVM_VERSION=3.6.2
 LD=ld.gold
@@ -95,21 +95,23 @@ $(BUILDDIR)/z3/buildd/libz3.so : $(BUILDDIR)/z3/README.md
 
 #$(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/tools/clang/tools/extra/docs/clang-modernize.rst
 #LLVM_HOST=http://releases.llvm.org/
-LLVM_HOST=https://github.com/llvm/llvm-project/releases/download/llvmorg-20.0.0/
+LLVM_HOST=https://github.com/llvm/llvm-project/releases/download/llvmorg-$(LLVM_VERSION)/
 
 # $(HOME_INSTALLED)
 
-$(HOME_INSTALLED)/llvm-project-20.0.0.src/CMakeLists.txt: | $(HOME_INSTALLED)
-	cd $(HOME_INSTALLED);wget $(LLVM_HOST)llvm-project-20.0.0.src.tar.xz
-	cd $(HOME_INSTALLED);wget $(LLVM_HOST)clang-20.0.0.src.tar.xz
-	cd $(HOME_INSTALLED);wget $(LLVM_HOST)cmake-20.0.0.src.tar.xz
-	cd $(HOME_INSTALLED);wget $(LLVM_HOST)clang-tools-extra-20.0.0.src.tar.xz
-	cd $(HOME_INSTALLED);tar -xvJf llvm-project-20.0.0.src.tar.xz
-	cd $(HOME_INSTALLED);tar -xvJf cmake-20.0.0.src.tar.xz
-	cd $(HOME_INSTALLED);rm cmake
-	cd $(HOME_INSTALLED);ls -s cmake-20.0.0 cmake
-	cd $(HOME_INSTALLED);tar -xvJf clang-20.0.0.src.tar.xz -C llvm-project-20.0.0.src/tools/; mv llvm-project-20.0.0.src/tools/clang-20.0.0.src llvm-project-20.0.0.src/tools/clang
-	cd $(HOME_INSTALLED);tar -xvJf clang-tools-extra-20.0.0.src.tar.xz -C llvm-project-20.0.0.src/tools/clang/tools; mv llvm-project-20.0.0.src/tools/clang/tools/clang-tools-extra-20.0.0.src llvm-project-20.0.0.src/tools/clang/tools/extra
+
+
+$(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/CMakeLists.txt: | $(HOME_INSTALLED)
+	cd $(HOME_INSTALLED);wget $(LLVM_HOST)llvm-$(LLVM_VERSION).src.tar.xz
+	cd $(HOME_INSTALLED);wget $(LLVM_HOST)clang-$(LLVM_VERSION).src.tar.xz
+	cd $(HOME_INSTALLED);wget $(LLVM_HOST)cmake-$(LLVM_VERSION).src.tar.xz
+	cd $(HOME_INSTALLED);wget $(LLVM_HOST)clang-tools-extra-$(LLVM_VERSION).src.tar.xz
+	cd $(HOME_INSTALLED);tar -xvJf llvm-$(LLVM_VERSION).src.tar.xz
+	cd $(HOME_INSTALLED);tar -xvJf cmake-$(LLVM_VERSION).src.tar.xz
+	cd $(HOME_INSTALLED);rm -rf cmake
+	cd $(HOME_INSTALLED);ln -s cmake-$(LLVM_VERSION).src cmake
+	cd $(HOME_INSTALLED);tar -xvJf clang-$(LLVM_VERSION).src.tar.xz -C llvm-$(LLVM_VERSION).src/tools/; mv llvm-$(LLVM_VERSION).src/tools/clang-$(LLVM_VERSION).src llvm-$(LLVM_VERSION).src/tools/clang
+	cd $(HOME_INSTALLED);tar -xvJf clang-tools-extra-$(LLVM_VERSION).src.tar.xz -C llvm-$(LLVM_VERSION).src/tools/clang/tools; mv llvm-$(LLVM_VERSION).src/tools/clang/tools/clang-tools-extra-$(LLVM_VERSION).src llvm-$(LLVM_VERSION).src/tools/clang/tools/extra
 
 # probably outdated; things have moved to git
 $(HOME_INSTALLED)/llvm-svn.src/LLVMBuild.txt:
@@ -124,7 +126,7 @@ LLVM_CMAKE_OPTIONS= -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=DEBUG -DLLVM_ENABLE_R
 
 $(HOME_INSTALLED)/llvm-$(LLVM_VERSION)/lib/libLLVMCore.a : $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/CMakeLists.txt
 	cd $(HOME_INSTALLED); mkdir -p llvm-$(LLVM_VERSION).src/build; mkdir -p llvm-$(LLVM_VERSION)
-	cd $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/build;cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=DEBUG  -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DLLVM_ENABLE_RTTI:BOOL=TRUE -DLLVM_ENABLE_LIBEDIT=off -DLLVM_INCLUDE_BENCHMARKS=off -DLLVM_ENABLE_BINDINGS=FALSE -DLLVM_ENABLE_DUMP=TRUE -DCMAKE_INSTALL_PREFIX=../../llvm-$(LLVM_VERSION) -DCMAKE_INSTALL_PACKAGEDIR=lib/cmake ../
+	cd $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/build;cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=DEBUG  -DCMAKE_CXX_COMPILER=g++ -DLLVM_ENABLE_RTTI:BOOL=TRUE -DLLVM_ENABLE_LIBEDIT=off -DLLVM_INCLUDE_BENCHMARKS=off -DLLVM_ENABLE_BINDINGS=FALSE -DLLVM_ENABLE_DUMP=TRUE -DLLVM_INCLUDE_TESTS=off -DCMAKE_INSTALL_PREFIX=../../llvm-$(LLVM_VERSION) -DCMAKE_INSTALL_PACKAGEDIR=lib/cmake ../
 	+make -C $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/build
 	+make -C $(HOME_INSTALLED)/llvm-$(LLVM_VERSION).src/build install
 

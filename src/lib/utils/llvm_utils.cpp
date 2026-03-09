@@ -28,7 +28,8 @@
 #include "llvm/Support/CodeGen.h"
 #include "llvm/TargetParser/Host.h"
 #include "llvm/Support/TargetSelect.h"
-//clang related code
+#include "llvm/IRReader/IRReader.h"
+    //clang related code
 #include <clang/CodeGen/CodeGenAction.h>
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Frontend/CompilerInvocation.h>
@@ -589,6 +590,21 @@ std::unique_ptr<llvm::Module> c2ir( options& o ) {
   comments comments_found;
   return c2ir( o, comments_found );
 }
+
+
+std::unique_ptr<llvm::Module> ir2ir( options& o, comments& cmts ) {
+  const std::string filename = o.get_input_file();
+
+  if ( !boost::filesystem::exists( filename ) ) {
+    llvm_bmc_error( "IR_PARSGING", "failed to find file " << filename );
+    return nullptr;
+  }
+
+  auto& llvm_ctx = o.get_llvm_context();
+  llvm::SMDiagnostic err;
+  return llvm::parseIRFile( filename, err, llvm_ctx );
+}
+
 
 void ir2mf( std::unique_ptr<llvm::Module>& module ) {
   // ???

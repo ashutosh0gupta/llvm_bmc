@@ -140,6 +140,15 @@ bool options::is_input_llvm_asm() {
   return false;
 }
 
+bool options::is_input_llvm_ir() {
+  boost::filesystem::path p(fileName);
+  auto ext = p.extension().string();
+  if( ext == ".ll" ) {
+    return true;
+  }
+  return false;
+}
+
 bool options::parse_cmdline(int argc, char** argv) {
   po::variables_map vm;
   po::options_description config;
