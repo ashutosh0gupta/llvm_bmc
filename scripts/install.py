@@ -390,13 +390,18 @@ Examples:
     # Determine base directory (should be gnat-llvm root)
     script_dir = Path(__file__).parent.resolve()
     base_dir = script_dir
+    build_dir = base_dir / "build"
+    
+    # Create build directory if it doesn't exist
+    build_dir.mkdir(parents=True, exist_ok=True)
     
     print(f"{Colors.HEADER}{Colors.BOLD}")
     print("=" * 60)
     print("  GNAT LLVM Installation Script")
     print("=" * 60)
     print(f"{Colors.ENDC}")
-    print(f"Base directory: {base_dir}\n")
+    print(f"Base directory: {base_dir}")
+    print(f"Build directory: {build_dir}\n")
     
     try:
         # Step 1: Check prerequisites
@@ -406,10 +411,10 @@ Examples:
             sys.exit(1)
         
         # Step 2: Clone repositories
-        clone_repositories(base_dir, skip_if_exists=args.skip_clone)
+        clone_repositories(build_dir, skip_if_exists=args.skip_clone)
         
         # Step 3: Setup GNAT source link
-        setup_gnat_source_link(base_dir)
+        setup_gnat_source_link(build_dir)
         
         # Step 4: LLVM installation
         if not args.skip_llvm:
@@ -419,7 +424,7 @@ Examples:
             print("(Only suitable for core GNAT LLVM development on x86 native)")
             response = input("Build LLVM now? (y/N): ")
             if response.lower() == 'y':
-                build_llvm(base_dir)
+                build_llvm(build_dir)
             else:
                 print("Skipping LLVM build - ensure LLVM 16.0.x is installed via package manager")
         
@@ -427,7 +432,7 @@ Examples:
         print_warning("\nReady to build GNAT LLVM")
         response = input("Continue? (Y/n): ")
         if response.lower() != 'n':
-            build_gnat_llvm(base_dir)
+            build_gnat_llvm(build_dir)
         else:
             print("Build skipped")
             sys.exit(0)
@@ -435,10 +440,11 @@ Examples:
         # Step 6: Optionally build GNAT runtime library (full or bitcode)
         if args.build_gnatlib:
             print_warning("Building full gnatlib (may encounter compatibility issues)...")
-            run_command(['make', 'gnatlib'], cwd=gnat_llvm_dir / 'llvm-interface' if (gnat_llvm_dir / 'llvm-interface').exists() else base_dir)
+            gnat_llvm_dir = build_dir / 'gnat-llvm'
+            run_command(['make', 'gnatlib'], cwd=gnat_llvm_dir / 'llvm-interface' if (gnat_llvm_dir / 'llvm-interface').exists() else build_dir)
         
         if args.build_gnatlib_bc:
-            build_gnatlib_bc(base_dir)
+            build_gnatlib_bc(build_dir)
         
         # Final success message
         print(f"\n{Colors.OKGREEN}{Colors.BOLD}")
