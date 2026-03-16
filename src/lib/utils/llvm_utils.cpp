@@ -2018,9 +2018,9 @@ expr read_const( options& o, const llvm::Value* op ) {
     }
     llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
   }else if( llvm::isa<llvm::ConstantArray>(op) ) {
-    // const llvm::ArrayType* n = c->getType();
-    // unsigned len = n->getNumElements();
-    //return ctx.arraysort();
+    const llvm::ArrayType* n = op->getType();
+    unsigned len = n->getNumElements();
+    // return ctx.arraysort();
     llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
   }else if( llvm::isa<llvm::ConstantStruct>(op) ) {
     // const llvm::StructType* n = c->getType();

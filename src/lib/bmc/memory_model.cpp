@@ -8,9 +8,9 @@ void state_obj::print() {
 
 expr memory_model::get_fresh_name( sort ty, std::string name_str ) {
   // TODO : Restrict access
-  if( ty.is_array() ) {
-    llvm_bmc_error( "bmc", "bad sort is passed!!" );
-  }
+  // if( ty.is_array() ) {
+  //   llvm_bmc_error( "bmc", "bad sort is passed!!" );
+  // }
   auto newExpr = get_fresh_const(solver_ctx, ty, name_str);
   return newExpr;
 }

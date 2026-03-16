@@ -208,7 +208,7 @@ memory_state bmc::populate_mem_state() {
 
     if( el_ty ) {
 
-      if(el_ty->isArrayTy()) continue;
+      // if(el_ty->isArrayTy()) continue;
 
       m_model.ind_in_mem_state[glb] = glbCntr;
 
