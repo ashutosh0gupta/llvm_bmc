@@ -74,7 +74,7 @@ grep -e "c.*]=" -e "c.*[0-9]=" /tmp/clean.tr > ~/tmp/stamps.txt
 - `--skip-clone`: Skip cloning repositories if they already exist
 - `--skip-lTo install the GNAT LLVM toolchain (required for compiling Ada examples):
 ```bash
-python3 scripts/install_1.py
+python3 scripts/install.py
 ```
 
 ## Installation Options:
