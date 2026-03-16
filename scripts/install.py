@@ -387,9 +387,9 @@ Examples:
     
     args = parser.parse_args()
     
-    # Determine base directory (should be gnat-llvm root)
+    # Determine base directory (project root)
     script_dir = Path(__file__).parent.resolve()
-    base_dir = script_dir
+    base_dir = script_dir.parent
     build_dir = base_dir / "build"
     
     # Create build directory if it doesn't exist
