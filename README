@@ -17,8 +17,12 @@ FIXIT.
 Install
 -------
 
+To install the GNAT LLVM toolchain (required for compiling Ada examples):
+```bash
+python3 scripts/install_1.py
+```
 
-$make
+
 
 
 *TODO
@@ -61,7 +65,87 @@ Testing
 
 Running kbound
 
-grep -e "c.*]=" -e "c.*[0-9]=" /tmp/clean.tr > ~/tmp/stamps.txt
+grep -e "c.*]=" -e "c.*[0-9]=" /tmp/clean.tr > ~/tmp/stamps.txt 
+
+
+
+
+# Installation Options:
+- `--skip-clone`: Skip cloning repositories if they already exist
+- `--skip-lTo install the GNAT LLVM toolchain (required for compiling Ada examples):
+```bash
+python3 scripts/install_1.py
+```
+
+## Installation Options:
+- `--skip-clone`: Skip cloning repositories if they already exist
+- `--skip-llvm`: Skip LLVM installation/build step
+- `--build-gnatlib`: Attempt to build full runtime library (may fail)
+- `--build-gnatlib-bc`: Build bitcode for GNAT runtime after main build
+
+To build the LLVM BMC tool itself:
+```bash
+make
+```
+
+
+The script **`convert_examples.py`** compiles Ada files using GNAT LLVM and generates:
+
+- LLVM IR (`.ll`)
+- LLVM bitcode (`.bc`)
+- Assembly (`.s`)
+
+Output files are stored in:
+
+```
+conversions/
+```
+
+---
+
+## Default Usage
+
+Compile all examples from the default directory:
+
+```bash
+python3 convert_examples.py
+```
+
+Default input folder:
+
+```
+examples_1/
+```
+
+---
+
+## Compile a Custom Directory
+
+```bash
+python3 convert_examples.py -d <directory>
+```
+
+Example:
+
+```bash
+python3 convert_examples.py -d examples
+```
+
+---
+
+## Compile a Single Ada File
+
+```bash
+python3 convert_examples.py -f <file.adb>
+```
+
+Example:
+
+```bash
+python3 convert_examples.py -f examples/test.adb
+```
+
+---
 
 
 Open issues of kbound:
