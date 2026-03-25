@@ -1928,7 +1928,7 @@ std::string read_const_str( options& o, const llvm::Value* op ) {
   return "";
 }
 
-expr read_const( options& o, const llvm::Value* op ) {
+expr read_const( options& o, const llvm::Value* op) {
 // expr read_const( const llvm::Value* op, solver_context& ctx ) {
   solver_context& ctx = o.solver_ctx;
   assert( op );
@@ -2017,8 +2017,13 @@ expr read_const( options& o, const llvm::Value* op ) {
       return read_const( o, c );
     }
     llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
-  }else if( llvm::isa<llvm::ConstantArray>(op) ) {
-    // const llvm::ArrayType* n = op->getType();
+  }else if( auto c = llvm::dyn_cast<llvm::ConstantArray>(op) ) {
+    // int curr_offset = offset;
+    // for( unsigned i = 0; i < c->getNumOperands(); ++i ) {
+    //   auto e = read_const( o, c->getOperand(i), curr_offset );
+    //   curr_offset += c->getOperand(i)->size();
+    // }
+    // const llvm::ArrayType* n = c->getType();
     // unsigned len = n->getNumElements();
     // return ctx.arraysort();
     llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
