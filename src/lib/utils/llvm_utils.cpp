@@ -7,6 +7,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <climits>
+#include <z3++.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -2008,7 +2009,13 @@ expr read_const( options& o, const llvm::Value* op) {
     //return ctx.real_val(v);
     //llvm_bmc_error("llvm_utils", "Floating point constant not implemented!!" );
   }else if( llvm::isa<llvm::ConstantAggregateZero>(op) ) {
-    // return ctx.int_val(0);// todo: match types in z3
+    llvm::Type *t = op->getType();
+    if(auto arr_ty = llvm::dyn_cast<llvm::ArrayType>(t)) {
+      sort arr = llvm_to_sort(ctx, arr_ty);
+      expr z3_expr = read_const(o, llvm::ConstantInt::getNullValue(arr_ty->getElementType()));
+      return z3::const_array(arr, z3_expr);
+    }
+    return ctx.int_val(0);// todo: match types in z3
   }else if( llvm::isa<llvm::Instruction>(op) ) {
 
   }else if( auto cexpr = llvm::dyn_cast<llvm::ConstantExpr>(op) ) {
@@ -2016,8 +2023,9 @@ expr read_const( options& o, const llvm::Value* op) {
       auto c = cexpr->getOperand(0);
       return read_const( o, c );
     }
-    llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
+    // llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
   }else if( auto c = llvm::dyn_cast<llvm::ConstantArray>(op) ) {
+
     // int curr_offset = offset;
     // for( unsigned i = 0; i < c->getNumOperands(); ++i ) {
     //   auto e = read_const( o, c->getOperand(i), curr_offset );
@@ -2026,18 +2034,56 @@ expr read_const( options& o, const llvm::Value* op) {
     // const llvm::ArrayType* n = c->getType();
     // unsigned len = n->getNumElements();
     // return ctx.arraysort();
-    llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
-  }else if( llvm::isa<llvm::ConstantStruct>(op) ) {
-    // const llvm::StructType* n = c->getType();
-    llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
-  }else if( llvm::isa<llvm::ConstantVector>(op) ) {
+    const llvm::ArrayType* AT = c->getType();
+    llvm::Type* elem_ty = AT->getElementType();
+    unsigned n = AT->getNumElements();
+
+    sort idx_sort = llvm_to_sort(ctx,AT);
+    expr zero_expr = read_const(o, llvm::ConstantInt::getNullValue(elem_ty));
+    expr arr = z3::const_array(idx_sort, zero_expr);
+    for(unsigned i = 0; i < c->getNumOperands(); ++i) {
+      expr idx = ctx.int_val(i);
+      expr val = read_const(o, c->getOperand(i));
+      arr = z3::store(arr,i,val);
+    }
+    return arr;
+    // llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
+  }else if( auto c = llvm::dyn_cast<llvm::ConstantStruct>(op) ) {
+    return ctx.int_val(0);
+    // llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
+  }else if( auto c = llvm::dyn_cast<llvm::ConstantVector>(op) ) {
     // const llvm::VectorType* n = c->getType();
-    llvm_bmc_error("llvm_utils", "vector constant not implemented!!" );
-  }else if( llvm::isa<llvm::Constant>(op) ) {
+    const llvm::VectorType* VT = c->getType();
+    llvm::Type* elem_ty = VT->getElementType();
+    unsigned n = VT->getElementCount().getKnownMinValue();
+
+
+    sort idx_sort = ctx.int_sort();
+    expr zero_expr = read_const(o, llvm::ConstantInt::getNullValue(elem_ty));
+    expr arr = z3::const_array(idx_sort, zero_expr);
+    for(unsigned i = 0; i < c->getNumOperands(); ++i) {
+      expr idx = ctx.int_val(i);
+      expr val = read_const(o, c->getOperand(i));
+      arr = z3::store(arr,i,val);
+    }
+    return arr;
+    // llvm_bmc_error("llvm_utils", "vector constant not implemented!!" );
+  }else if( auto c = llvm::dyn_cast<llvm::Constant>(op)) {
+    if(auto *ci = llvm::dyn_cast<llvm::ConstantInt>(c)){
+      return ctx.bv_val(readInt(ci), ci->getBitWidth());
+    }
+    else if(auto *cf = llvm::dyn_cast<llvm::ConstantFP>(c)){
+      if(c->getType()->isFloatTy()){
+        return ctx.fpa_val(readFlt(cf));
+      }
+      else{
+        return ctx.fpa_val(readDbl(cf));
+      }
+    }
     // expr e(ctx);
     // return e; // contains no expression;
     llvm_bmc_error("llvm_utils", "non int constants are not implemented!!" );
-    std::cerr << "un recognized constant!";
+    // std::cerr << "un recognized constant!";
     //     // int i = readInt(c);
     //     // return eHandler->mkIntVal( i );
   }
