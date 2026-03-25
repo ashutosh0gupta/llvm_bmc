@@ -183,33 +183,33 @@ public:
 };
 
 
-class heap_model : public array_model_full {
-public:
-  heap_model( options& o ) : array_model_full(o) {
-    memory_arch = HEAP;
-  }
+// class heap_model : public array_model_full {
+// public:
+//   heap_model( options& o ) : array_model_full(o) {
+//     memory_arch = HEAP;
+//   }
 
-  inline
-  void set_access_map( std::map< const llvm::Instruction*, unsigned >& heap_access,
-                       std::map< unsigned, unsigned >& heap_bases_ ) {
-    ary_access_to_index = heap_access;
-    ar_bases = heap_bases_;
-  };
+//   inline
+//   void set_access_map( std::map< const llvm::Instruction*, unsigned >& heap_access,
+//                        std::map< unsigned, unsigned >& heap_bases_ ) {
+//     ary_access_to_index = heap_access;
+//     ar_bases = heap_bases_;
+//   };
 
-  //Virtual defined
-  arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
-  arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
-  arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& );
-  expr join_array_state( std::vector<expr>&,std::vector<unsigned>& prevs,unsigned src );
+//   //Virtual defined
+//   arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
+//   arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
+//   arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& );
+//   expr join_array_state( std::vector<expr>&,std::vector<unsigned>& prevs,unsigned src );
 
-  //Overridden functions
-  void init_state( unsigned );
-  void init_state( unsigned eb, array_state& s );
-  void copy_to_init_state( array_state& );
+//   //Overridden functions
+//   void init_state( unsigned );
+//   void init_state( unsigned eb, array_state& s );
+//   void copy_to_init_state( array_state& );
 
-  std::string M_array_name =  "H";
-  std::map< unsigned, unsigned > ar_bases;
-};
+//   std::string M_array_name =  "H";
+//   std::map< unsigned, unsigned > ar_bases;
+// };
 
 
 
