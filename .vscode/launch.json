@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+        "name": "Launch llvmbmc",
+        "request": "launch",
+        "cwd": "${workspaceFolder}",
+        "type": "cppdbg",
+        "program": "${workspaceFolder}/llvmbmc",
+        "args" : ["examples/mayo2.ll","-f","compute_rhs"]
+    }
+    ],
+
+
+}

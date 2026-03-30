@@ -7,6 +7,9 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <climits>
+#include <llvm-20/llvm/IR/Constants.h>
+#include <llvm-20/llvm/Support/Casting.h>
+#include <z3++.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -1704,7 +1707,7 @@ sort llvm_to_sort( solver_context& c, const llvm::Type* t ) {
   }
   if(t->isStructTy()) {
     // t->print(llvm::outs()); std::cout << "\n";  // << t->getStructName() << "\n";
-    return c.bool_sort();
+    return c.int_sort();
   }
   if(t->isPointerTy()) {
     // t->print(llvm::outs()); std::cout << "\n";  // << t->getPointerElementType() << "\n";
@@ -1928,6 +1931,51 @@ std::string read_const_str( options& o, const llvm::Value* op ) {
   return "";
 }
 
+static z3::expr build_struct_expr(solver_context& ctx,
+                                   const std::string& struct_name,
+                                   z3::sort_vector& field_sorts,
+                                   z3::expr_vector& field_exprs,
+                                   unsigned n) {
+  std::cout << "Building struct: " << struct_name << " with " << n << " fields\n";
+  for(unsigned i = 0; i < n; ++i) {
+      std::cout << "  field " << i << " sort: " << field_sorts[i] << "\n";
+  }
+  std::vector<Z3_symbol> field_syms(n);
+  for (unsigned i = 0; i < n; ++i)
+      field_syms[i] = Z3_mk_string_symbol(ctx, ("field_" + std::to_string(i)).c_str());
+
+  std::vector<Z3_sort> z3_sorts(n);
+  for (unsigned i = 0; i < n; ++i)
+      z3_sorts[i] = (Z3_sort)field_sorts[i];
+
+  std::vector<unsigned> sort_refs(n, 0);
+
+  Z3_symbol ctor_sym  = Z3_mk_string_symbol(ctx, struct_name.c_str());
+  Z3_symbol recog_sym = Z3_mk_string_symbol(ctx, ("is_" + struct_name).c_str());
+
+  Z3_constructor ctor = Z3_mk_constructor(
+      ctx, ctor_sym, recog_sym,
+      n,
+      n > 0 ? field_syms.data() : nullptr,
+      n > 0 ? z3_sorts.data()   : nullptr,
+      n > 0 ? sort_refs.data()  : nullptr
+  );
+
+  Z3_symbol dt_sym = Z3_mk_string_symbol(ctx, struct_name.c_str());
+  Z3_constructor ctor_arr[1] = { ctor };
+  Z3_sort raw_sort = Z3_mk_datatype(ctx, dt_sym, 1, ctor_arr);
+  Z3_del_constructor(ctx, ctor);
+
+  Z3_func_decl raw_ctor_decl = Z3_get_datatype_sort_constructor(ctx, raw_sort, 0);
+  z3::func_decl ctor_decl(ctx, raw_ctor_decl);
+
+  std::cout << "ctor arity after finalization: " << ctor_decl.arity()
+          << " fields: " << n << "\n";
+
+  assert(ctor_decl.arity() == field_exprs.size());
+  return ctor_decl(field_exprs);
+}
+
 expr read_const( options& o, const llvm::Value* op) {
 // expr read_const( const llvm::Value* op, solver_context& ctx ) {
   solver_context& ctx = o.solver_ctx;
@@ -1978,7 +2026,7 @@ expr read_const( options& o, const llvm::Value* op) {
       }
     }
     else if(ty->isStructTy()){
-      return get_fresh_bool(ctx);
+      return get_fresh_int(ctx);
     }
     llvm_bmc_error("llvm_utils", "unsupported type: "<< ty << "!!");
   }//else if( llvm::isa<llvm::ConstantFP>(op) ) {
@@ -2008,7 +2056,30 @@ expr read_const( options& o, const llvm::Value* op) {
     //return ctx.real_val(v);
     //llvm_bmc_error("llvm_utils", "Floating point constant not implemented!!" );
   }else if( llvm::isa<llvm::ConstantAggregateZero>(op) ) {
-    // return ctx.int_val(0);// todo: match types in z3
+    llvm::Type *t = op->getType();
+    if(auto arr_ty = llvm::dyn_cast<llvm::ArrayType>(t)) {
+      sort arr = llvm_to_sort(ctx, arr_ty);
+      expr z3_expr = read_const(o, llvm::ConstantInt::getNullValue(arr_ty->getElementType()));
+      return z3::const_array(arr, z3_expr);
+    }
+    if(auto st_ty = llvm::dyn_cast<llvm::StructType>(t)) {
+      unsigned n = st_ty->getNumElements();
+      std::string struct_name = st_ty->hasName()
+        ? st_ty->getName().str()
+        : "undef_struct_" + std::to_string(reinterpret_cast<uintptr_t>(st_ty));
+
+        z3::expr_vector field_exprs(ctx);
+        z3::sort_vector field_sorts(ctx);
+
+        for(unsigned i = 0; i < n; ++i) {
+            llvm::Type* ft = st_ty->getElementType(i);
+            expr val = read_const(o, llvm::Constant::getNullValue(ft));
+            field_exprs.push_back(val);
+            field_sorts.push_back(val.get_sort()); 
+        }
+        return build_struct_expr(ctx, struct_name, field_sorts, field_exprs, n);
+    }
+    return ctx.int_val(0);// todo: match types in z3
   }else if( llvm::isa<llvm::Instruction>(op) ) {
 
   }else if( auto cexpr = llvm::dyn_cast<llvm::ConstantExpr>(op) ) {
@@ -2016,8 +2087,9 @@ expr read_const( options& o, const llvm::Value* op) {
       auto c = cexpr->getOperand(0);
       return read_const( o, c );
     }
-    llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
+    // llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
   }else if( auto c = llvm::dyn_cast<llvm::ConstantArray>(op) ) {
+
     // int curr_offset = offset;
     // for( unsigned i = 0; i < c->getNumOperands(); ++i ) {
     //   auto e = read_const( o, c->getOperand(i), curr_offset );
@@ -2026,18 +2098,85 @@ expr read_const( options& o, const llvm::Value* op) {
     // const llvm::ArrayType* n = c->getType();
     // unsigned len = n->getNumElements();
     // return ctx.arraysort();
-    llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
-  }else if( llvm::isa<llvm::ConstantStruct>(op) ) {
-    // const llvm::StructType* n = c->getType();
-    llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
-  }else if( llvm::isa<llvm::ConstantVector>(op) ) {
+    const llvm::ArrayType* AT = c->getType();
+    llvm::Type* elem_ty = AT->getElementType();
+    unsigned n = AT->getNumElements();
+
+    sort idx_sort = llvm_to_sort(ctx,AT);
+    expr zero_expr = read_const(o, llvm::ConstantInt::getNullValue(elem_ty));
+    expr arr = z3::const_array(idx_sort, zero_expr);
+    for(unsigned i = 0; i < c->getNumOperands(); ++i) {
+      expr idx = ctx.int_val(i);
+      expr val = read_const(o, c->getOperand(i));
+      arr = z3::store(arr,i,val);
+    }
+    return arr;
+    // llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
+  }else if( auto c = llvm::dyn_cast<llvm::ConstantStruct>(op) ) {
+    const llvm::StructType* st_ty = c->getType();
+    unsigned n = st_ty->getNumElements();
+    if(n == 0) return ctx.int_val(0);
+    std::string struct_name = st_ty->hasName()
+      ? st_ty->getName().str()
+      : "undef_struct_" + std::to_string(reinterpret_cast<uintptr_t>(st_ty));
+
+    z3::expr_vector field_exprs(ctx);
+    z3::sort_vector field_sorts(ctx);
+
+    for(unsigned i = 0; i < n; ++i) {
+        expr val = read_const(o, c->getOperand(i));
+        field_exprs.push_back(val);
+        field_sorts.push_back(val.get_sort()); 
+    }
+    return build_struct_expr(ctx, struct_name, field_sorts, field_exprs, n);
+    
+    // return ctx.int_val(0);
+    // llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
+  }else if( auto c = llvm::dyn_cast<llvm::ConstantVector>(op) ) {
     // const llvm::VectorType* n = c->getType();
-    llvm_bmc_error("llvm_utils", "vector constant not implemented!!" );
-  }else if( llvm::isa<llvm::Constant>(op) ) {
+    const llvm::VectorType* VT = c->getType();
+    llvm::Type* elem_ty = VT->getElementType();
+    unsigned n = VT->getElementCount().getKnownMinValue();
+
+    sort idx_sort = ctx.int_sort();
+    expr zero_expr = read_const(o, llvm::ConstantInt::getNullValue(elem_ty));
+    expr arr = z3::const_array(idx_sort, zero_expr);
+    for(unsigned i = 0; i < c->getNumOperands(); ++i) {
+      expr idx = ctx.int_val(i);
+      expr val = read_const(o, c->getOperand(i));
+      arr = z3::store(arr,i,val);
+    }
+    return arr;
+    // llvm_bmc_error("llvm_utils", "vector constant not implemented!!" );
+  }else if(auto c = llvm::dyn_cast<llvm::ConstantDataSequential>(op)) {
+      llvm::Type* elem_ty = c->getElementType();
+      unsigned n = c->getNumElements();
+
+      sort idx_sort = ctx.int_sort();
+      expr zero_expr = read_const(o, llvm::ConstantInt::getNullValue(elem_ty));
+      expr arr = z3::const_array(idx_sort, zero_expr);
+
+      for (unsigned i = 0; i < n; ++i) {
+          expr val = read_const(o, c->getElementAsConstant(i));
+          arr = z3::store(arr, i, val);
+      }
+      return arr;
+  }else if( auto c = llvm::dyn_cast<llvm::Constant>(op)) {
+    if(auto *ci = llvm::dyn_cast<llvm::ConstantInt>(c)){
+      return ctx.bv_val(readInt(ci), ci->getBitWidth());
+    }
+    else if(auto *cf = llvm::dyn_cast<llvm::ConstantFP>(c)){
+      if(c->getType()->isFloatTy()){
+        return ctx.fpa_val(readFlt(cf));
+      }
+      else{
+        return ctx.fpa_val(readDbl(cf));
+      }
+    }
     // expr e(ctx);
     // return e; // contains no expression;
     llvm_bmc_error("llvm_utils", "non int constants are not implemented!!" );
-    std::cerr << "un recognized constant!";
+    // std::cerr << "un recognized constant!";
     //     // int i = readInt(c);
     //     // return eHandler->mkIntVal( i );
   }
