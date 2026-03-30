@@ -10,11 +10,6 @@
         "args" : ["examples/mayo2.ll","-f","compute_rhs"]
     }
     ],
-  "environment": [
-  {
-    "name": "LSAN_OPTIONS",
-    "value": "detect_leaks=0"
-  }
-]
+
 
 }
