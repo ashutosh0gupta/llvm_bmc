@@ -1,0 +1,6 @@
+CompileFlags:
+  Add: [
+    "-I/usr/lib/llvm-20/include",
+    "-I/usr/lib/llvm-20/include/llvm",
+    "-I/usr/lib/llvm-20/include/llvm-c"
+  ]
