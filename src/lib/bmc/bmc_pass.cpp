@@ -65,6 +65,13 @@ expr switch_sort( options& o, expr& b, sort& s) {
   return switch_int_sort( b, s);
 }
 
+expr _mul_extract( expr e ) {
+  return e.extract(31,0);
+}
+expr _add_extract( expr e ) {
+  return e.extract(31,0);
+}
+
 void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   assert( bop );
   auto op0 = bop->getOperand( 0 );
@@ -86,15 +93,21 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
       b = switch_sort( o, b, s );
     }
   }
-   
+  // if( !matched_sort(a,b) ) {
+  //   std::cout << a << b << "\n";
+  //   std::cout << a.get_sort() << b.get_sort() << "\n"; //
+  //   assert(false);
+  // }
+  
+ 
   unsigned op = bop->getOpcode();
   expr result = solver_ctx.bool_val(true);
   switch( op ) {
     // Fixed point operations
-  case llvm::Instruction::Add : bmc_ds_ptr->m.insert_term_map( bop, bidx, a+b     ); break;
-  case llvm::Instruction::Sub : bmc_ds_ptr->m.insert_term_map( bop, bidx, a-b     ); break;
-  case llvm::Instruction::Mul : bmc_ds_ptr->m.insert_term_map( bop, bidx, a*b     ); break;
-  case llvm::Instruction::And : bmc_ds_ptr->m.insert_term_map( bop, bidx, _bvand(a,b)  ); break;
+  case llvm::Instruction::Add : bmc_ds_ptr->m.insert_term_map( bop, bidx, _add_extract(a+b) ); break;
+  case llvm::Instruction::Sub : bmc_ds_ptr->m.insert_term_map( bop, bidx, _add_extract(a-b) ); break;
+  case llvm::Instruction::Mul : bmc_ds_ptr->m.insert_term_map( bop, bidx, _mul_extract(a*b) ); break;
+  case llvm::Instruction::And : bmc_ds_ptr->m.insert_term_map( bop, bidx, _add_extract(_bvand(a,b))  ); break;
   case llvm::Instruction::Or  : bmc_ds_ptr->m.insert_term_map( bop, bidx,_bvor(a,b) ); break;
   case llvm::Instruction::Xor : bmc_ds_ptr->m.insert_term_map( bop, bidx,_xor(a,b)); break;
   case llvm::Instruction::SDiv: bmc_ds_ptr->m.insert_term_map( bop, bidx, a/b     ); break;
@@ -103,6 +116,7 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   case llvm::Instruction::URem: bmc_ds_ptr->m.insert_term_map( bop, bidx, rem(a,b)); break;
   case llvm::Instruction::LShr: bmc_ds_ptr->m.insert_term_map( bop, bidx, LogShR(a,b)); break;
   case llvm::Instruction::Shl: bmc_ds_ptr->m.insert_term_map( bop, bidx, bv_shl(a,b)); break;
+  case llvm::Instruction::AShr: bmc_ds_ptr->m.insert_term_map( bop, bidx, bv_ashr(a,b)); break;
     // Floating point operations
     // Abstraction choices
     // 1. treat them as unknown non-det functions
@@ -149,6 +163,10 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
    }
   }
 
+  // if( true ) {
+  //   expr v = bmc_ds_ptr->m.get_term(bop);
+  //   std::cout << v << "\n" << v.get_sort() << "\n====\n";
+  // }
 //  std::vector <std::string> bop_names;
 //  std::vector <expr> bop_declarations;
 //  std::string name1 = op0 -> getName();
@@ -696,7 +714,7 @@ void bmc_pass::translateCastInst( unsigned bidx,
       }
     }else if( ok_cast( c_ty, v_ty, 8, 32 ) ) {
       if( o.bit_precise ) {
-        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v.extract(0,8) );
+        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v.extract(7,0) );
       }else{
         expr ex_v = bmc_ds_ptr->m.get_term(v);
         // todo: take care of signed/unsigned
