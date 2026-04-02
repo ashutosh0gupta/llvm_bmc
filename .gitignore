@@ -8,6 +8,9 @@
 ./.z3-trace
 **/__pycache__/
 
+.clangd
+/examples/siddhesh_test/build/
+/examples/siddhesh_test/llvmbmc
 ######## CSEQ ###########
 _cs_*.c
 _cs_*.log

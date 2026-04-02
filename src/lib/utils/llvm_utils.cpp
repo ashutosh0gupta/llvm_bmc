@@ -560,7 +560,9 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
                                              // &args[0], &args[0] + args.size(),
                                             Clang.getDiagnostics());
   Clang.setInvocation(CI);
-  clang::CodeGenAction *Act = new clang::EmitLLVMOnlyAction(&llvm_ctx);
+  // clang::CodeGenAction *Act = new clang::EmitLLVMOnlyAction(&llvm_ctx);
+  std::unique_ptr<clang::CodeGenAction> Act = 
+    std::make_unique<clang::EmitLLVMOnlyAction>(&llvm_ctx);
   try {
     // if (!ExecuteAction(Clang, *Act, cmts.start_comments))
     if (!Clang.ExecuteAction(*Act))
@@ -1969,8 +1971,8 @@ static z3::expr build_struct_expr(solver_context& ctx,
   Z3_func_decl raw_ctor_decl = Z3_get_datatype_sort_constructor(ctx, raw_sort, 0);
   z3::func_decl ctor_decl(ctx, raw_ctor_decl);
 
-  std::cout << "ctor arity after finalization: " << ctor_decl.arity()
-          << " fields: " << n << "\n";
+  // std::cout << "ctor arity after finalization: " << ctor_decl.arity()
+  //         << " fields: " << n << "\n";
 
   assert(ctor_decl.arity() == field_exprs.size());
   return ctor_decl(field_exprs);
