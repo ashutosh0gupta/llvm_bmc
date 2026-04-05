@@ -12,5 +12,5 @@
 (assert (= c_4_Global_M (store c_3_Global_M 2 (select c_3_Global_M 0))))
 (assert (= c_5_Global_M (store c_4_Global_M 3 (select c_4_Global_M 2))))
 (assert (= i_3_ret_val (select c_5_Global_M 3)))
-(assert (not (or (not true) (= (select c_5_Global_M 3) 0))))
+(assert (not (or (not true) (= (select c_5_Global_M 3) (select c_5_Global_M 0)))))
 (check-sat)

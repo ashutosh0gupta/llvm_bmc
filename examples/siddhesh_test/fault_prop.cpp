@@ -11,6 +11,8 @@
 #include <iostream>
 #include <llvm-20/llvm/ADT/SmallVector.h>
 #include <llvm-20/llvm/IR/Function.h>
+#include <llvm-20/llvm/IR/InstrTypes.h>
+#include <llvm-20/llvm/Support/Casting.h>
 #include <llvm-20/llvm/Transforms/Utils/ValueMapper.h>
 #include <memory>
 
@@ -73,23 +75,14 @@ void dump_module(Module &M, const std::string &filename) {
 }
 
 std::unique_ptr<Module> extractFunction(Module &M, Function *F) {
-  LLVMContext &ctx = M.getContext();
-  auto newMod = std::make_unique<Module>(F->getName().str(), ctx);
-  ValueToValueMapTy VMap;
-  Function *newF =
-      Function::Create(F->getFunctionType(), Function::ExternalLinkage,
-                       F->getName(), newMod.get());
-  outs() << newF->getName();
-
-  auto dest = newF->arg_begin();
-  for (const Argument &arg : F->args()) {
-    dest->setName(arg.getName());
-    VMap[&arg] = &*dest++;
+  auto newMod = CloneModule(M);
+  for (auto it = newMod->begin(); it != newMod->end();) {
+    Function &F2 = *it++;
+    if (F2.isDeclaration())
+      continue;
+    if (F2.getName() != F->getName())
+      F2.eraseFromParent();
   }
-  SmallVector<ReturnInst *, 8> ret;
-  CloneFunctionInto(newF, F, VMap, CloneFunctionChangeType::LocalChangesOnly,
-                    ret);
-  outs() << newF->getName();
   return newMod;
 }
 
@@ -112,20 +105,28 @@ int main(int argc, char **argv) {
   }
 
   Function *target = module->getFunction("test");
+  if (!target) {
+    errs() << "Function 'test' not found in input module\n";
+    errs() << "Available functions:\n";
+    for (Function &F : *module) {
+      errs() << "  " << F.getName() << (F.isDeclaration() ? " [decl]" : "")
+             << "\n";
+    }
+    return 1;
+  }
+
   auto funcModule = extractFunction(*module, target);
-  // llvm::outs(*funcModule);
   if (!funcModule) {
-    err.print("error", errs());
+    errs() << "Failed to create extracted module\n";
     return 1;
   }
 
   dump_module(*funcModule, "../original.ll");
   // auto mod = parseIRFile("original.ll", err, ctx);
-  // outs() << *mod;
+  // outs() << *funcModule;
 
+  // TODO : Gives error for llvm_bmc, cant parse funcIR to module.
 
-  // TODO : Gives error for llvm_bmc, cant parse funcIR to module. 
-  
   run_command("../llvmbmc ../original.ll --dump-solver-query -f test");
   run_command("cp /tmp/test.smt2 ../correct.smt2");
 

@@ -18,29 +18,28 @@ define dso_local i32 @test(i32 noundef %0, i32 noundef %1) #0 {
   %10 = load i32, ptr %5, align 4
   store i32 %10, ptr %6, align 4
   %11 = load i32, ptr %6, align 4
-  %12 = icmp eq i32 %11, 0
-  %13 = call zeroext i1 @assert(i1 noundef zeroext %12)
-  %14 = load i32, ptr %6, align 4
-  ret i32 %14
+  %12 = load i32, ptr %3, align 4
+  %13 = icmp eq i32 %11, %12
+  %14 = call zeroext i1 @assert(i1 noundef zeroext %13)
+  %15 = load i32, ptr %6, align 4
+  ret i32 %15
 }
 
 declare zeroext i1 @assert(i1 noundef zeroext) #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @main() #0 {
+define dso_local i32 @solve() #0 {
   %1 = alloca i32, align 4
   %2 = alloca i32, align 4
   %3 = alloca i32, align 4
-  %4 = alloca i32, align 4
-  store i32 0, ptr %1, align 4
+  store i32 2, ptr %1, align 4
   store i32 2, ptr %2, align 4
-  store i32 2, ptr %3, align 4
+  %4 = load i32, ptr %1, align 4
   %5 = load i32, ptr %2, align 4
-  %6 = load i32, ptr %3, align 4
-  %7 = call i32 @test(i32 noundef %5, i32 noundef %6)
-  store i32 %7, ptr %4, align 4
-  %8 = load i32, ptr %4, align 4
-  ret i32 %8
+  %6 = call i32 @test(i32 noundef %4, i32 noundef %5)
+  store i32 %6, ptr %3, align 4
+  %7 = load i32, ptr %3, align 4
+  ret i32 %7
 }
 
 attributes #0 = { noinline nounwind optnone uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }

@@ -3,7 +3,7 @@ bool assert(bool);
 int test(int b, int c) {
   int a = b + c;
   int out = a;
-  assert(out == 0);
+  assert(out == b);
   return out;
 }
 
