@@ -12,33 +12,38 @@ LLVM_BMC_VERIFICATION_FAILED
  Instr   :  %9 = add nsw i32 %7, %8                         
  Replaced: a = undef                                        
  Operands: b=%7  c=%8                                     
-Result  : DIFFERENT                                        
-══════════════════════════════════════════════════════════════
+Result  : NO_LEAKAGE                                       
+
+
  Model   : zero                                             
  Function: test                                             
  Instr   :  %9 = add nsw i32 %7, %8                         
  Replaced: a = i32 0                                        
  Operands: b=%7  c=%8                                     
-Result  : DIFFERENT                                        
-══════════════════════════════════════════════════════════════
+Result  : NO_LEAKAGE                                       
+
+
  Model   : one                                              
  Function: test                                             
  Instr   :  %9 = add nsw i32 %7, %8                         
  Replaced: a = i32 1                                        
  Operands: b=%7  c=%8                                     
-Result  : DIFFERENT                                        
-══════════════════════════════════════════════════════════════
+Result  : NO_LEAKAGE                                       
+
+
  Model   : opB                                              
  Function: test                                             
  Instr   :  %9 = add nsw i32 %7, %8                         
  Replaced: a = %7                                           
  Operands: b=%7  c=%8                                     
-Result  : EQUIVALENT                                       
-══════════════════════════════════════════════════════════════
+Result  : LEAKAGE                                          
+
+
  Model   : opC                                              
  Function: test                                             
  Instr   :  %9 = add nsw i32 %7, %8                         
  Replaced: a = %8                                           
  Operands: b=%7  c=%8                                     
-Result  : DIFFERENT                                        
-══════════════════════════════════════════════════════════════
+Result  : NO_LEAKAGE                                       
+
+

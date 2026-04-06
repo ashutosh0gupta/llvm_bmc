@@ -52,9 +52,9 @@ enum class VerificationResult { Success, Failed, Error };
 const char *verificationResultStr(VerificationResult vr) {
   switch (vr) {
   case VerificationResult::Success:
-    return "EQUIVALENT";
+    return "LEAKAGE";
   case VerificationResult::Failed:
-    return "DIFFERENT";
+    return "NO_LEAKAGE";
   case VerificationResult::Error:
     return "ERROR";
   }
@@ -63,12 +63,12 @@ const char *verificationResultStr(VerificationResult vr) {
 
 // Result of applying one fault model
 struct FaultResult {
-  std::string modelName;          // e.g. "undef", "0", "1", "operand b", "operand c"
-  std::string functionName;       // function where fault was injected
-  std::string originalInstr;      // e.g. "%a = add i32 %b, %c"
-  std::string faultyValueDesc;    // e.g. "undef", "i32 0", "%b"
-  std::string operand0Name;       // name of operand b
-  std::string operand1Name;       // name of operand c
+  std::string modelName;     // e.g. "undef", "0", "1", "operand b", "operand c"
+  std::string functionName;  // function where fault was injected
+  std::string originalInstr; // e.g. "%a = add i32 %b, %c"
+  std::string faultyValueDesc; // e.g. "undef", "i32 0", "%b"
+  std::string operand0Name;    // name of operand b
+  std::string operand1Name;    // name of operand c
   VerificationResult verification;
   std::string llFile;
   std::string smt2File;
@@ -236,17 +236,14 @@ int main(int argc, char **argv) {
   run_command("../llvmbmc ../original.ll --dump-solver-query -f test");
   run_command("cp /tmp/test.smt2 ../correct.smt2");
 
-  // Run all fault models and collect results
   struct FaultEntry {
     FaultModel model;
     const char *name;
   };
 
   FaultEntry faults[] = {
-      {FaultModel::Undef, "undef"},
-      {FaultModel::Zero, "zero"},
-      {FaultModel::One, "one"},
-      {FaultModel::OpB, "opB"},
+      {FaultModel::Undef, "undef"}, {FaultModel::Zero, "zero"},
+      {FaultModel::One, "one"},     {FaultModel::OpB, "opB"},
       {FaultModel::OpC, "opC"},
   };
 
@@ -256,7 +253,6 @@ int main(int argc, char **argv) {
     FaultResult result;
     result.modelName = fe.name;
 
-    // Clone the original module for each fault model
     auto cloned = CloneModule(*funcModule);
 
     LoopAnalysisManager LAM;
@@ -282,15 +278,15 @@ int main(int argc, char **argv) {
 
     dump_module(*cloned, llFile);
 
-    // Run llvmbmc and capture output to determine verification result
     int exitCode = 0;
-    std::string bmcOutput =
-        run_command_capture("../llvmbmc " + llFile + " --dump-solver-query -f test", exitCode);
+    std::string bmcOutput = run_command_capture(
+        "../llvmbmc " + llFile + " --dump-solver-query -f test", exitCode);
     run_command("cp /tmp/test.smt2 " + smt2File);
 
     if (bmcOutput.find("LLVM_BMC_VERIFICATION_SUCCESSFUL") != std::string::npos)
       result.verification = VerificationResult::Success;
-    else if (bmcOutput.find("LLVM_BMC_VERIFICATION_FAILED") != std::string::npos)
+    else if (bmcOutput.find("LLVM_BMC_VERIFICATION_FAILED") !=
+             std::string::npos)
       result.verification = VerificationResult::Failed;
     else
       result.verification = VerificationResult::Error;
@@ -298,45 +294,48 @@ int main(int argc, char **argv) {
     results.push_back(std::move(result));
   }
 
-  // ── Print summary table ──────────────────────────────────────────────
   std::cout << "\n";
-  std::cout << "              Fault Injection Summary                        \n";
+  std::cout
+      << "              Fault Injection Summary                        \n";
 
   for (auto &r : results) {
     std::cout << " Model   : " << r.modelName;
-    for (size_t i = r.modelName.size(); i < 49; ++i) std::cout << ' ';
+    for (size_t i = r.modelName.size(); i < 49; ++i)
+      std::cout << ' ';
     std::cout << "\n";
 
     std::cout << " Function: " << r.functionName;
-    for (size_t i = r.functionName.size(); i < 49; ++i) std::cout << ' ';
+    for (size_t i = r.functionName.size(); i < 49; ++i)
+      std::cout << ' ';
     std::cout << "\n";
 
     std::cout << " Instr   :" << r.originalInstr;
     // originalInstr already has leading space from LLVM print
     size_t instrLen = r.originalInstr.size();
     if (instrLen < 50)
-      for (size_t i = instrLen; i < 50; ++i) std::cout << ' ';
+      for (size_t i = instrLen; i < 50; ++i)
+        std::cout << ' ';
     std::cout << "\n";
 
     std::cout << " Replaced: a = " << r.faultyValueDesc;
-    for (size_t i = r.faultyValueDesc.size(); i < 45; ++i) std::cout << ' ';
+    for (size_t i = r.faultyValueDesc.size(); i < 45; ++i)
+      std::cout << ' ';
     std::cout << "\n";
 
-    std::cout << " Operands: b=" << r.operand0Name
-              << "  c=" << r.operand1Name;
+    std::cout << " Operands: b=" << r.operand0Name << "  c=" << r.operand1Name;
     size_t opLen = 2 + r.operand0Name.size() + 4 + r.operand1Name.size();
-    for (size_t i = opLen; i < 47; ++i) std::cout << ' ';
+    for (size_t i = opLen; i < 47; ++i)
+      std::cout << ' ';
     std::cout << "\n";
 
     std::cout << "Result  : " << verificationResultStr(r.verification);
     size_t vrLen = std::string(verificationResultStr(r.verification)).size();
-    for (size_t i = vrLen; i < 49; ++i) std::cout << ' ';
+    for (size_t i = vrLen; i < 49; ++i)
+      std::cout << ' ';
     std::cout << "\n";
 
-    std::cout << "══════════════════════════════════════════════════════════════\n";
+    std::cout << "\n\n";
   }
-
-  // Replace last separator with bottom border
 
   return 0;
 }
