@@ -1,0 +1,44 @@
+
+Specification that failed the check : 
+(or (not true) (= (select c_5_Global_M 3) (select c_5_Global_M 0))) % [assert at unknown file]
+
+
+LLVM_BMC_VERIFICATION_FAILED
+
+
+              Fault Injection Summary                        
+ Model   : undef                                            
+ Function: test                                             
+ Instr   :  %9 = add nsw i32 %7, %8                         
+ Replaced: a = undef                                        
+ Operands: b=%7  c=%8                                     
+Result  : DIFFERENT                                        
+══════════════════════════════════════════════════════════════
+ Model   : zero                                             
+ Function: test                                             
+ Instr   :  %9 = add nsw i32 %7, %8                         
+ Replaced: a = i32 0                                        
+ Operands: b=%7  c=%8                                     
+Result  : DIFFERENT                                        
+══════════════════════════════════════════════════════════════
+ Model   : one                                              
+ Function: test                                             
+ Instr   :  %9 = add nsw i32 %7, %8                         
+ Replaced: a = i32 1                                        
+ Operands: b=%7  c=%8                                     
+Result  : DIFFERENT                                        
+══════════════════════════════════════════════════════════════
+ Model   : opB                                              
+ Function: test                                             
+ Instr   :  %9 = add nsw i32 %7, %8                         
+ Replaced: a = %7                                           
+ Operands: b=%7  c=%8                                     
+Result  : EQUIVALENT                                       
+══════════════════════════════════════════════════════════════
+ Model   : opC                                              
+ Function: test                                             
+ Instr   :  %9 = add nsw i32 %7, %8                         
+ Replaced: a = %8                                           
+ Operands: b=%7  c=%8                                     
+Result  : DIFFERENT                                        
+══════════════════════════════════════════════════════════════
