@@ -29,7 +29,6 @@ void run_command(const std::string &cmd) {
   }
 }
 
-// Capture stdout+stderr from a command, return output string and exit code
 std::string run_command_capture(const std::string &cmd, int &exitCode) {
   std::string fullCmd = cmd + " 2>&1";
   FILE *pipe = popen(fullCmd.c_str(), "r");
@@ -63,36 +62,31 @@ const char *verificationResultStr(VerificationResult vr) {
 
 // Result of applying one fault model
 struct FaultResult {
-  std::string modelName;     // e.g. "undef", "0", "1", "operand b", "operand c"
-  std::string functionName;  // function where fault was injected
-  std::string originalInstr; // e.g. "%a = add i32 %b, %c"
-  std::string faultyValueDesc; // e.g. "undef", "i32 0", "%b"
-  std::string operand0Name;    // name of operand b
-  std::string operand1Name;    // name of operand c
+  std::string modelName;
+  std::string functionName;
+  std::string originalInstr;
+  std::string faultyValueDesc;
+  std::string operand0Name;
+  std::string operand1Name;
   VerificationResult verification;
   std::string llFile;
   std::string smt2File;
 };
-// Fault models for skipping an add: a = b + c
-// Possible faulty results: undef, 0, 1, b, c
 enum class FaultModel { Undef, Zero, One, OpB, OpC };
 
 class SkipAddPass : public PassInfoMixin<SkipAddPass> {
   FaultModel FM;
   FaultResult *Result; // where to store the result (owned by caller)
 
-  // Helper: get a printable name for an LLVM Value
   static std::string valueName(Value *V) {
     if (V->hasName())
       return "%" + V->getName().str();
-    // Print the value to a string
     std::string s;
     raw_string_ostream os(s);
     V->printAsOperand(os, false);
     return os.str();
   }
 
-  // Helper: print full instruction text
   static std::string instrString(Instruction *I) {
     std::string s;
     raw_string_ostream os(s);
@@ -147,7 +141,6 @@ public:
                 break;
               }
 
-              // Store result metadata before erasing
               if (Result) {
                 Result->functionName = F.getName().str();
                 Result->originalInstr = instrString(binOp);
@@ -295,8 +288,7 @@ int main(int argc, char **argv) {
   }
 
   std::cout << "\n";
-  std::cout
-      << "              Fault Injection Summary                        \n";
+  std::cout << "Fault Injection Summary \n";
 
   for (auto &r : results) {
     std::cout << " Model   : " << r.modelName;
