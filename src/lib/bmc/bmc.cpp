@@ -410,7 +410,7 @@ bool bmc::run_solver_con(spec &spec) {
 
   if( o.dump_solver_query ) {
     dump( o.outDirPath.string(), "test.smt2", s);
-    // std::cout << s;
+    std::cout << s;
   }
   //
 
