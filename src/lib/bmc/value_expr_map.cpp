@@ -61,7 +61,7 @@ expr value_expr_map::get_term( const llvm::Value* op, unsigned c_count ) {
   assert( op );
   //------------------------------------
   // Debug code
-  // if( op->getName() == "and") {
+  // if( op->getName() == "p.02740") {
   //   llvm_bmc_warning( "value expr map", "value of interest visited");
   // }
   //------------------------------------

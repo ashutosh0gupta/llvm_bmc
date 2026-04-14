@@ -797,13 +797,6 @@ expr bv_shl(expr const &a, expr const &b) {
   }
 }
 
-expr bv_ashr(expr const &a, expr const &b) {
-  if (a.is_bv())
-  {
-    return ashr(a, b);
-  }
-}
-
 
 expr neg_and(std::vector<expr> &vec, solver_context &sol_ctx)
 {
