@@ -6,7 +6,7 @@ Specification that failed the check :
 LLVM_BMC_VERIFICATION_FAILED
 
 
-Fault Injection Summary 
+              Fault Injection Summary                        
  Model   : undef                                            
  Function: test                                             
  Instr   :  %9 = add nsw i32 %7, %8                         
