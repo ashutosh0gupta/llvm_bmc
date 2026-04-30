@@ -24,6 +24,7 @@ void value_expr_map::insert_term_map( const llvm::Value* op, unsigned c_count,
   if( it == versions.end() ) {
     // assert( c_count == 0 );
   }else{
+    if( (it->second).back() == c_count ) return;
     assert( (it->second).back() < c_count);
   }
   versions[op].push_back( c_count );
