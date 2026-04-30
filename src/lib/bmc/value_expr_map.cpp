@@ -24,6 +24,7 @@ void value_expr_map::insert_term_map( const llvm::Value* op, unsigned c_count,
   if( it == versions.end() ) {
     // assert( c_count == 0 );
   }else{
+    if( (it->second).back() == c_count ) return;
     assert( (it->second).back() < c_count);
   }
   versions[op].push_back( c_count );
@@ -61,7 +62,7 @@ expr value_expr_map::get_term( const llvm::Value* op, unsigned c_count ) {
   assert( op );
   //------------------------------------
   // Debug code
-  // if( op->getName() == "and") {
+  // if( op->getName() == "p.02740") {
   //   llvm_bmc_warning( "value expr map", "value of interest visited");
   // }
   //------------------------------------

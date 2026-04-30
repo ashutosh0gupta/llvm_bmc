@@ -786,6 +786,11 @@ expr LogShR(expr const &a, expr const &b) {
   if (a.is_bv())
   {
     return lshr(a, b);
+  } else if (a.is_int()) {
+    return a / z3::pw(a.ctx().int_val(2), b);
+  } else {
+    llvm_bmc_error("LogShR", "Shift operations are only supported for bitvectors and integers!");
+    return a; // Dummy return
   }
 }
 
@@ -794,13 +799,11 @@ expr bv_shl(expr const &a, expr const &b) {
   if (a.is_bv())
   {
     return shl(a, b);
-  }
-}
-
-expr bv_ashr(expr const &a, expr const &b) {
-  if (a.is_bv())
-  {
-    return ashr(a, b);
+  } else if (a.is_int()) {
+    return a * z3::pw(a.ctx().int_val(2), b);
+  } else {
+    llvm_bmc_error("bv_shl", "Shift operations are only supported for bitvectors and integers!");
+    return a; // Dummy return
   }
 }
 

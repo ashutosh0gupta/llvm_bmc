@@ -1,0 +1,6 @@
+(declare-fun i_3_ret_val () Int)
+(declare-fun i_1_ () Int)
+(assert true)
+(assert (= i_3_ret_val 0))
+(assert (not (or (not true) (= 0 i_1_))))
+(check-sat)

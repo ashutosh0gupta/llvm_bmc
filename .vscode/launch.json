@@ -7,7 +7,7 @@
         "cwd": "${workspaceFolder}",
         "type": "cppdbg",
         "program": "${workspaceFolder}/llvmbmc",
-        "args" : ["examples/mayo2.ll","-f","compute_rhs"]
+        "args" : ["${workspaceFolder}/fault-prop/loopnFuncSkip/original.ll","-f","lincomb"]
     }
     ],
 

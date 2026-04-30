@@ -105,7 +105,6 @@ expr _xor(expr const &, expr const &);
 expr _bvor(expr const &, expr const &);
 expr _bvand(expr const &, expr const &);
 expr LogShR(expr const &, expr const &);
-expr bv_ashr(expr const &, expr const &);
 expr bv_shl(expr const &, expr const &);
 expr neg_and(std::vector<expr> &vec, solver_context &sol_ctx);
 expr neg_and(std::vector<expr> &vec);

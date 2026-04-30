@@ -261,8 +261,10 @@ expr array_model_full::access_bound_cons( exprs& idxs, exprs& ls) {
   }
   //todo : HACK!!! removing dummy accesses at the end.
   //       check if it is a correct fix
-  while( idxs.size() != ls.size() ){
-    idxs.pop_back();
+  if( ls.size() > 0 ) {
+    while( idxs.size() != ls.size() ){
+      idxs.pop_back();
+    }
   }
   // bounds constraints
   std::vector<expr> temp_vec;
@@ -283,7 +285,7 @@ expr array_model_full::access_bound_cons( exprs& idxs, exprs& ls) {
     }
     pos++;
   }
-  expr bound_guard = _and(temp_vec);
+  expr bound_guard = _and(temp_vec, solver_ctx);
   return bound_guard;
 }
 
@@ -299,7 +301,8 @@ multiple_array_model::array_write( unsigned bidx, const llvm::StoreInst* I,
 
   auto& ls = lengths.at(i);
   auto bound_guard = access_bound_cons(idxs, ls);
-  return arr_write_expr( (new_ar == store( ar_name, idxs, val )),
+  while( idxs.size() > 1 ) idxs.pop_back();
+  return arr_write_expr( (new_ar == store( ar_name, idxs[0], val )),
                          bound_guard, new_ar );
 }
 
@@ -312,7 +315,8 @@ multiple_array_model::array_read( unsigned bidx, const llvm::LoadInst* I,
   expr ar_name = vec.at(i);
   auto& ls = lengths.at(i);
   auto bound_guard = access_bound_cons(idxs, ls);
-  return arr_read_expr( select( ar_name, idxs), bound_guard );
+  while( idxs.size() > 1 ) idxs.pop_back();
+  return arr_read_expr( select( ar_name, idxs[0]), bound_guard );
 }
 
 arr_read_expr
@@ -343,7 +347,8 @@ single_array_model::array_write( unsigned bidx, const llvm::StoreInst* I,
   auto& ls = lengths.at(i);
   auto bound_guard = access_bound_cons(idxs, ls);
   idxs[0] = (idxs[0] + static_cast<int>(ar_bases[i])).simplify();
-  return arr_write_expr( (new_ar == store( ar_name, idxs, val )),
+  while( idxs.size() > 1 ) idxs.pop_back();
+  return arr_write_expr( (new_ar == store( ar_name, idxs[0], val )),
                          bound_guard, new_ar );
 }
 
@@ -359,8 +364,9 @@ single_array_model::array_read( unsigned bidx, const llvm::LoadInst* I,
   auto bound_guard = access_bound_cons(idxs, ls);
 
   idxs[0] = (idxs[0] + static_cast<int>(ar_bases[i])).simplify();
+  while( idxs.size() > 1 ) idxs.pop_back();
 
-  return arr_read_expr( select( ar_name, idxs), bound_guard );
+  return arr_read_expr( select( ar_name, idxs[0]), bound_guard );
 }
 
 arr_read_expr

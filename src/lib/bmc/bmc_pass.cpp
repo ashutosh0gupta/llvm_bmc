@@ -3,6 +3,7 @@
 #include "lib/utils/solver_utils.h"
 // TODO : remove reference to heap model and access of public class variables
 #include "include/array_model.h"
+#include <llvm-20/llvm/Support/raw_ostream.h>
 //#include "include/memory_event.h"
 // #include "include/collect_globals.h"
 
@@ -65,13 +66,6 @@ expr switch_sort( options& o, expr& b, sort& s) {
   return switch_int_sort( b, s);
 }
 
-expr _mul_extract( expr e ) {
-  return e.extract(31,0);
-}
-expr _add_extract( expr e ) {
-  return e.extract(31,0);
-}
-
 void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   assert( bop );
   auto op0 = bop->getOperand( 0 );
@@ -93,21 +87,15 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
       b = switch_sort( o, b, s );
     }
   }
-  // if( !matched_sort(a,b) ) {
-  //   std::cout << a << b << "\n";
-  //   std::cout << a.get_sort() << b.get_sort() << "\n"; //
-  //   assert(false);
-  // }
-  
- 
+   
   unsigned op = bop->getOpcode();
   expr result = solver_ctx.bool_val(true);
   switch( op ) {
     // Fixed point operations
-  case llvm::Instruction::Add : bmc_ds_ptr->m.insert_term_map( bop, bidx, _add_extract(a+b) ); break;
-  case llvm::Instruction::Sub : bmc_ds_ptr->m.insert_term_map( bop, bidx, _add_extract(a-b) ); break;
-  case llvm::Instruction::Mul : bmc_ds_ptr->m.insert_term_map( bop, bidx, _mul_extract(a*b) ); break;
-  case llvm::Instruction::And : bmc_ds_ptr->m.insert_term_map( bop, bidx, _add_extract(_bvand(a,b))  ); break;
+  case llvm::Instruction::Add : bmc_ds_ptr->m.insert_term_map( bop, bidx, a+b     ); break;
+  case llvm::Instruction::Sub : bmc_ds_ptr->m.insert_term_map( bop, bidx, a-b     ); break;
+  case llvm::Instruction::Mul : bmc_ds_ptr->m.insert_term_map( bop, bidx, a*b     ); break;
+  case llvm::Instruction::And : bmc_ds_ptr->m.insert_term_map( bop, bidx, _bvand(a,b)  ); break;
   case llvm::Instruction::Or  : bmc_ds_ptr->m.insert_term_map( bop, bidx,_bvor(a,b) ); break;
   case llvm::Instruction::Xor : bmc_ds_ptr->m.insert_term_map( bop, bidx,_xor(a,b)); break;
   case llvm::Instruction::SDiv: bmc_ds_ptr->m.insert_term_map( bop, bidx, a/b     ); break;
@@ -116,7 +104,6 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
   case llvm::Instruction::URem: bmc_ds_ptr->m.insert_term_map( bop, bidx, rem(a,b)); break;
   case llvm::Instruction::LShr: bmc_ds_ptr->m.insert_term_map( bop, bidx, LogShR(a,b)); break;
   case llvm::Instruction::Shl: bmc_ds_ptr->m.insert_term_map( bop, bidx, bv_shl(a,b)); break;
-  case llvm::Instruction::AShr: bmc_ds_ptr->m.insert_term_map( bop, bidx, bv_ashr(a,b)); break;
     // Floating point operations
     // Abstraction choices
     // 1. treat them as unknown non-det functions
@@ -163,10 +150,6 @@ void bmc_pass::translateBinOp( unsigned bidx, const llvm::BinaryOperator* bop){
    }
   }
 
-  // if( true ) {
-  //   expr v = bmc_ds_ptr->m.get_term(bop);
-  //   std::cout << v << "\n" << v.get_sort() << "\n====\n";
-  // }
 //  std::vector <std::string> bop_names;
 //  std::vector <expr> bop_declarations;
 //  std::string name1 = op0 -> getName();
@@ -347,6 +330,15 @@ void bmc_pass::translateSelectInst( unsigned bidx,
   expr cond = bmc_ds_ptr->m.get_term( sel->getCondition() );
   expr trueVal = bmc_ds_ptr->m.get_term(sel->getTrueValue());
   expr FalseVal = bmc_ds_ptr->m.get_term(sel->getFalseValue());
+
+  if( !cond.is_bool() ) {
+    if( cond.get_sort().is_bv() ) {
+      cond = (cond == cond.ctx().bv_val(1, cond.get_sort().bv_size()));
+    } else {
+      cond = (cond == cond.ctx().int_val(1));
+    }
+  }
+
   expr result = ite(cond, trueVal, FalseVal );
   bmc_ds_ptr->m.insert_term_map( sel, bidx, result );
 }
@@ -707,20 +699,16 @@ void bmc_pass::translateCastInst( unsigned bidx,
         bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v.extract(0,0) );
       }else{
         expr ex_v = bmc_ds_ptr->m.get_term(v);
-        // need to say that the integer was less than 1;
-        bmc_ds_ptr->add_spec( ex_v <= 1 && ex_v >= 0,
-                              spec_reason_t::OUT_OF_RANGE );
-        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v );
+        expr two = solver_ctx.int_val(2);
+        bmc_ds_ptr->m.insert_term_map( cast, bidx, rem(ex_v, two) );
       }
     }else if( ok_cast( c_ty, v_ty, 8, 32 ) ) {
       if( o.bit_precise ) {
-        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v.extract(7,0) );
+        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v.extract(0,8) );
       }else{
         expr ex_v = bmc_ds_ptr->m.get_term(v);
-        // todo: take care of signed/unsigned
-        // bmc_ds_ptr->add_spec( ex_v <= 256 && ex_v >= 0,
-        //                       spec_reason_t::OUT_OF_RANGE );
-        bmc_ds_ptr->m.insert_term_map( cast, bidx, ex_v );
+        expr two_eight = solver_ctx.int_val(256);
+        bmc_ds_ptr->m.insert_term_map( cast, bidx, rem(ex_v, two_eight) );
       }
     }else if( ok_cast( c_ty, v_ty, 16, 32 ) ) {
       if( o.bit_precise ) {
@@ -1145,7 +1133,7 @@ void bmc_pass::translateLoadInst( unsigned bidx,
         bmc_ds_ptr->m.insert_term_map( load, bidx, glb_rd );
     }
   // } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
-  } else if( llvm::isa<const llvm::AllocaInst>(addr) ) {
+  } else if( llvm::isa<const llvm::AllocaInst>(addr) || llvm::isa<const llvm::Argument>(addr) ) {
   // llvm::errs() << "\n3\n";
     // To handle a[0] when a is dynamic sized array
     // expr idx_expr = get_expr_const(solver_ctx,0);
@@ -1297,6 +1285,7 @@ void bmc_pass::translateUnaryInst( unsigned bidx,
   } else if( auto alloca = llvm::dyn_cast<llvm::AllocaInst>(I) ) {
     translateAllocaInst(alloca);
   } else if( auto load = llvm::dyn_cast<llvm::LoadInst>(I) ) {
+    llvm::outs() << *I;
     translateLoadInst(bidx, load);
   } else if (auto extractVal = llvm::dyn_cast<llvm::ExtractValueInst>(I)) {
     // I->print(llvm::outs());
@@ -1410,17 +1399,20 @@ void bmc_pass::translateStoreInst( unsigned bidx,
   }
 }
 
-void bmc_pass::translateGetElementPtrInst(const llvm::GetElementPtrInst* gep) {
+void bmc_pass::translateGetElementPtrInst(unsigned bidx, const llvm::GetElementPtrInst* gep) {
   assert( gep );
   // GEP processed inside load and store inst
   // as gep is always followed these inst
-  auto index = gep->getOperand(2);
-  auto constantIndex = dyn_cast<const llvm::ConstantInt>(index);
+  unsigned num_ops = gep->getNumOperands();
+  auto index = gep->getOperand(num_ops - 1);
+  auto constantIndex = llvm::dyn_cast<const llvm::ConstantInt>(index);
+  if( !constantIndex ) return; // Or handle non-constant index
   int indexValue = constantIndex->getSExtValue();
 
   auto st = gep->getOperand(0);
+  if( bmc_ds_ptr->ary_to_int.find(st) == bmc_ds_ptr->ary_to_int.end() ) return;
   unsigned ar_num = bmc_ds_ptr->ary_to_int.at(st);
-  bmc_ds_ptr->m.insert_term_map( st, get_expr_const(solver_ctx, ar_num + indexValue));
+  bmc_ds_ptr->m.insert_term_map( gep, bidx, get_expr_const(solver_ctx, ar_num + indexValue));
 }
 
 //--------------------------------------
@@ -1515,6 +1507,7 @@ void bmc_pass::translateSwitchInst( unsigned bidx,
   auto num_succs = swch->getNumSuccessors();
   expr cond_val = bmc_ds_ptr->m.get_term( swch->getCondition() );
   std::vector<expr> neg_disj;
+
   for( unsigned i = 1; i < num_succs; i++ ) {
     auto val = bmc_ds_ptr->m.get_term( swch->getOperand(2*i) );
     auto cs = (val == cond_val);
@@ -1698,7 +1691,7 @@ void bmc_pass::translateBlock( unsigned bidx, const bb* b ) {
     } else if( auto store = llvm::dyn_cast<llvm::StoreInst>(I) ) {
       translateStoreInst( bidx, store );
     } else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(I) ) {
-      translateGetElementPtrInst( gep );
+      translateGetElementPtrInst( bidx, gep );
       // Terminator instructions
     } else if( auto br = llvm::dyn_cast<llvm::BranchInst>(I) ) {
       if (flag) {

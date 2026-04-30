@@ -560,7 +560,9 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
                                              // &args[0], &args[0] + args.size(),
                                             Clang.getDiagnostics());
   Clang.setInvocation(CI);
-  clang::CodeGenAction *Act = new clang::EmitLLVMOnlyAction(&llvm_ctx);
+  // clang::CodeGenAction *Act = new clang::EmitLLVMOnlyAction(&llvm_ctx);
+  std::unique_ptr<clang::CodeGenAction> Act = 
+    std::make_unique<clang::EmitLLVMOnlyAction>(&llvm_ctx);
   try {
     // if (!ExecuteAction(Clang, *Act, cmts.start_comments))
     if (!Clang.ExecuteAction(*Act))
@@ -1969,8 +1971,8 @@ static z3::expr build_struct_expr(solver_context& ctx,
   Z3_func_decl raw_ctor_decl = Z3_get_datatype_sort_constructor(ctx, raw_sort, 0);
   z3::func_decl ctor_decl(ctx, raw_ctor_decl);
 
-  std::cout << "ctor arity after finalization: " << ctor_decl.arity()
-          << " fields: " << n << "\n";
+  // std::cout << "ctor arity after finalization: " << ctor_decl.arity()
+  //         << " fields: " << n << "\n";
 
   assert(ctor_decl.arity() == field_exprs.size());
   return ctor_decl(field_exprs);
@@ -2100,7 +2102,7 @@ expr read_const( options& o, const llvm::Value* op) {
     // return ctx.arraysort();
     const llvm::ArrayType* AT = c->getType();
     llvm::Type* elem_ty = AT->getElementType();
-    unsigned n = AT->getNumElements();
+    // unsigned n = AT->getNumElements();
 
     sort idx_sort = llvm_to_sort(ctx,AT);
     expr zero_expr = read_const(o, llvm::ConstantInt::getNullValue(elem_ty));
@@ -2136,7 +2138,7 @@ expr read_const( options& o, const llvm::Value* op) {
     // const llvm::VectorType* n = c->getType();
     const llvm::VectorType* VT = c->getType();
     llvm::Type* elem_ty = VT->getElementType();
-    unsigned n = VT->getElementCount().getKnownMinValue();
+    // unsigned n = VT->getElementCount().getKnownMinValue();
 
     sort idx_sort = ctx.int_sort();
     expr zero_expr = read_const(o, llvm::ConstantInt::getNullValue(elem_ty));
@@ -2403,19 +2405,17 @@ void collect_debug_info( std::unique_ptr<llvm::Module>& module,
 const std::pair<const llvm::Value*, uint64_t>
 get_array_info( const llvm::Value* op) {
 
-  while( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
-    op = cast->getOperand(0);
+  while( true ) {
+    if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
+      op = cast->getOperand(0);
+    } else if( auto gep = llvm::dyn_cast<const llvm::GEPOperator>(op) ) {
+      op = gep->getPointerOperand();
+    } else {
+      break;
+    }
   }
-  if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(op) ) {
-    assert(gep);
-    // auto op_gep_ptr = gep->getPointerOperand();
-    // return get_array_info( op_gep_ptr );
-    uint64_t size = 0;
-    return std::make_pair(gep->getOperand(0), size);
-  }
-  if(auto gep = llvm::dyn_cast<const llvm::GEPOperator>(op)) {
-    return get_array_info(identify_array_in_gep( gep ));
-  }else if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op)) {
+
+  if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op)) {
     // std::string name = glb->getName();
     uint64_t size = 1; // default size for non-array types
 
