@@ -7,7 +7,7 @@
         "cwd": "${workspaceFolder}",
         "type": "cppdbg",
         "program": "${workspaceFolder}/llvmbmc",
-        "args" : ["${workspaceFolder}/fault-prop/loopnFuncSkip/original.ll","-f","lincomb"]
+        "args" : ["${workspaceFolder}/examples/crypto/loopSkip.ll","-f","lincomb", "--dump-solver-query"]
     }
     ],
 

@@ -248,6 +248,11 @@ memory_state bmc::populate_mem_state() {
 
 void bmc::check_all_spec( bmc_ds* bmc_ds_ptr ) {
   std::ostream& os = std::cout;
+  if( bmc_ds_ptr->spec_vec.empty() && o.dump_solver_query ) {
+    src_loc loc;
+    spec s(o.solver_ctx.bool_val(true), spec_reason_t::UNKNOWN, loc);
+    run_solver( s, bmc_ds_ptr);
+  }
   for(spec s : bmc_ds_ptr->spec_vec) {
     if( o.verbosity > 3 ) {
       os << "Solving for specification\n";
@@ -345,6 +350,16 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
 
 void bmc::check_all_spec_con( ) {
   std::ostream& os = std::cout;
+  bool no_spec = true;
+  for( auto& it : func_formula_map ) {
+    if( !it.second->spec_vec.empty() ) no_spec = false;
+  }
+  if( no_spec && o.dump_solver_query ) {
+    src_loc loc;
+    spec s(o.solver_ctx.bool_val(true), spec_reason_t::UNKNOWN, loc);
+    run_solver_con( s );
+  }
+
   for( auto& it : func_formula_map ) {
     for(spec s : it.second->spec_vec) {
         if( run_solver_con( s ) ) {

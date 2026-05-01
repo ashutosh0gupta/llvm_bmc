@@ -70,9 +70,9 @@ for.body.iter0:                                   ; preds = %iter_0_start
   br label %iter_0_end
 
 iter_0_end:                                       ; preds = %for.body.iter0
-  br label %iter_1_start
+  br label %iter_2_start
 
-iter_1_start:                                     ; preds = %iter_0_end
+iter_1_start:                                     ; No predecessors!
   br label %for.body.iter1
 
 for.body.iter1:                                   ; preds = %iter_1_start
@@ -122,7 +122,7 @@ for.body.iter1:                                   ; preds = %iter_1_start
 iter_1_end:                                       ; preds = %for.body.iter1
   br label %iter_2_start
 
-iter_2_start:                                     ; preds = %iter_1_end
+iter_2_start:                                     ; preds = %iter_0_end, %iter_1_end
   br label %for.body.iter2
 
 for.body.iter2:                                   ; preds = %iter_2_start
@@ -131,7 +131,7 @@ for.body.iter2:                                   ; preds = %iter_2_start
     #dbg_value(i8 undef, !80, !DIExpression(), !76)
   %arrayidx.iter2 = getelementptr inbounds nuw i8, ptr %a, i32 2, !dbg !85
   %24 = load i8, ptr %arrayidx.iter2, align 1, !dbg !85
-  %25 = load i8, ptr %add.ptr.iter1, align 1, !dbg !88
+  %25 = load i8, ptr %add.ptr.iter0, align 1, !dbg !88
     #dbg_value(i8 undef, !89, !DIExpression(), !93)
     #dbg_value(i8 undef, !95, !DIExpression(), !93)
   %26 = load volatile i8, ptr @pqmayo_MAYO_1_ref_unsigned_char_blocker, align 1, !dbg !96
@@ -162,10 +162,10 @@ for.body.iter2:                                   ; preds = %iter_2_start
     #dbg_value(i8 undef, !114, !DIExpression(), !93)
     #dbg_value(i8 undef, !115, !DIExpression(), !117)
     #dbg_value(i8 undef, !119, !DIExpression(), !117)
-  %xor1.i.iter2 = xor i8 %35, %xor1.i.iter1, !dbg !120
+  %xor1.i.iter2 = xor i8 %35, %xor1.i.iter0, !dbg !120
     #dbg_value(i8 undef, !80, !DIExpression(), !76)
     #dbg_value(i32 undef, !81, !DIExpression(), !83)
-  %add.ptr.iter2 = getelementptr inbounds nuw i8, ptr %add.ptr.iter1, i32 1, !dbg !121
+  %add.ptr.iter2 = getelementptr inbounds nuw i8, ptr %add.ptr.iter0, i32 1, !dbg !121
     #dbg_value(ptr undef, !77, !DIExpression(), !76)
   br label %iter_2_end
 

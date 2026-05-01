@@ -1285,7 +1285,7 @@ void bmc_pass::translateUnaryInst( unsigned bidx,
   } else if( auto alloca = llvm::dyn_cast<llvm::AllocaInst>(I) ) {
     translateAllocaInst(alloca);
   } else if( auto load = llvm::dyn_cast<llvm::LoadInst>(I) ) {
-    llvm::outs() << *I;
+    // llvm::outs() << *I;
     translateLoadInst(bidx, load);
   } else if (auto extractVal = llvm::dyn_cast<llvm::ExtractValueInst>(I)) {
     // I->print(llvm::outs());
