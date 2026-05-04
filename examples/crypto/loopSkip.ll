@@ -5,422 +5,272 @@ target triple = "arm-unknown-none-eabi"
 
 @pqmayo_MAYO_1_ref_uint32_t_blocker = dso_local local_unnamed_addr global i32 0, align 4, !dbg !0
 @pqmayo_MAYO_1_ref_uint64_t_blocker = dso_local local_unnamed_addr global i64 0, align 8, !dbg !27
-@pqmayo_MAYO_1_ref_unsigned_char_blocker = dso_local global i8 0, align 1, !dbg !31
+@pqmayo_MAYO_1_ref_unsigned_char_blocker = dso_local local_unnamed_addr global i8 0, align 1, !dbg !31
 
 ; Function Attrs: inlinehint nounwind
-define dso_local fastcc zeroext range(i8 0, 16) i8 @lincomb(ptr noundef nonnull %a, ptr noundef nonnull %b, i32 noundef %n, i32 noundef %m) unnamed_addr #0 !dbg !71 {
+define dso_local fastcc void @mul_add_mat_x_m_mat(i32 noundef %m_vec_limbs, ptr noundef nonnull %mat, ptr noundef nonnull %bs_mat, ptr noundef nonnull %acc, i32 noundef %mat_rows, i32 noundef %mat_cols, i32 noundef range(i32 8, 11) %bs_mat_cols) unnamed_addr #0 !dbg !71 {
 entry:
-    #dbg_value(ptr %a, !75, !DIExpression(), !76)
-    #dbg_value(ptr %b, !77, !DIExpression(), !76)
-    #dbg_value(i32 8, !78, !DIExpression(), !76)
-    #dbg_value(i32 1, !79, !DIExpression(), !76)
-    #dbg_value(i8 0, !80, !DIExpression(), !76)
-    #dbg_value(i32 0, !81, !DIExpression(), !83)
+    #dbg_value(i32 5, !77, !DIExpression(), !78)
+    #dbg_value(ptr %mat, !79, !DIExpression(), !78)
+    #dbg_value(ptr %bs_mat, !80, !DIExpression(), !78)
+    #dbg_value(ptr %acc, !81, !DIExpression(), !78)
+    #dbg_value(i32 10, !82, !DIExpression(), !78)
+    #dbg_value(i32 78, !83, !DIExpression(), !78)
+    #dbg_value(i32 %bs_mat_cols, !84, !DIExpression(), !78)
+    #dbg_value(i32 0, !85, !DIExpression(), !87)
+  br label %for.cond1.preheader, !dbg !88
+
+for.cond1.preheader:                              ; preds = %for.inc17, %entry
+  %r.04 = phi i32 [ 0, %entry ], [ %inc18, %for.inc17 ]
+    #dbg_value(i32 %r.04, !85, !DIExpression(), !87)
+    #dbg_value(i32 0, !89, !DIExpression(), !93)
+  br label %for.cond4.preheader, !dbg !94
+
+for.cond4.preheader:                              ; preds = %for.inc15, %for.cond1.preheader
+  %c.03 = phi i32 [ 0, %for.cond1.preheader ], [ %inc, %for.inc15 ]
+    #dbg_value(i32 %c.03, !89, !DIExpression(), !93)
+    #dbg_value(i32 0, !95, !DIExpression(), !99)
+  br label %for.body6, !dbg !100
+
+for.body6:                                        ; preds = %m_vec_mul_add.exit, %for.cond4.preheader
+  %k.02 = phi i32 [ 0, %for.cond4.preheader ], [ %add14, %m_vec_mul_add.exit ]
+    #dbg_value(i32 %k.02, !95, !DIExpression(), !99)
+  %mul = mul nuw nsw i32 %c.03, %bs_mat_cols, !dbg !101
+  %add = add nuw nsw i32 %mul, %k.02, !dbg !104
+  %add.ptr.idx = mul nuw nsw i32 %add, 40, !dbg !105
+  %add.ptr = getelementptr inbounds nuw i8, ptr %bs_mat, i32 %add.ptr.idx, !dbg !105
+  %mul8 = mul nuw nsw i32 %r.04, 78, !dbg !106
+  %0 = getelementptr i8, ptr %mat, i32 %mul8, !dbg !107
+  %arrayidx = getelementptr i8, ptr %0, i32 %c.03, !dbg !107
+  %1 = load i8, ptr %arrayidx, align 1, !dbg !107
+  %mul10 = mul nuw nsw i32 %r.04, %bs_mat_cols, !dbg !108
+  %add11 = add nuw nsw i32 %mul10, %k.02, !dbg !109
+  %add.ptr13.idx = mul nuw nsw i32 %add11, 40, !dbg !110
+  %add.ptr13 = getelementptr inbounds nuw i8, ptr %acc, i32 %add.ptr13.idx, !dbg !110
+    #dbg_value(i32 5, !111, !DIExpression(), !116)
+    #dbg_value(ptr %add.ptr, !118, !DIExpression(), !116)
+    #dbg_value(i8 %1, !119, !DIExpression(), !116)
+    #dbg_value(ptr %add.ptr13, !120, !DIExpression(), !116)
+    #dbg_value(i8 %1, !121, !DIExpression(), !126)
+  %conv.i.i = zext i8 %1 to i32, !dbg !128
+  %mul.i.i = mul i32 %conv.i.i, 134480385, !dbg !129
+    #dbg_value(i32 %mul.i.i, !130, !DIExpression(), !126)
+    #dbg_value(i32 -252645136, !131, !DIExpression(), !126)
+  %and.i.i = and i32 %mul.i.i, -252645136, !dbg !132
+    #dbg_value(i32 %and.i.i, !133, !DIExpression(), !126)
+  %shr.i.i = lshr exact i32 %and.i.i, 4, !dbg !134
+  %shr1.i.i = lshr exact i32 %and.i.i, 3, !dbg !135
+  %2 = xor i32 %shr.i.i, %shr1.i.i, !dbg !136
+  %xor2.i.i = xor i32 %2, %mul.i.i, !dbg !136
+    #dbg_value(i32 %xor2.i.i, !137, !DIExpression(), !116)
+    #dbg_value(i64 1229782938247303441, !138, !DIExpression(), !116)
+    #dbg_value(i32 0, !139, !DIExpression(), !141)
   br label %iter_0_start
 
-for.end:                                          ; preds = %iter_7_end
-  %ret.0.lcssa = phi i8 [ %xor1.i.iter7, %iter_7_end ], !dbg !76
-  ret i8 %ret.0.lcssa, !dbg !84
+m_vec_mul_add.exit:                               ; preds = %iter_4_end
+  %add14 = add nuw nsw i32 %k.02, 1, !dbg !142
+    #dbg_value(i32 %add14, !95, !DIExpression(), !99)
+  %exitcond.not = icmp eq i32 %add14, %bs_mat_cols, !dbg !143
+  br i1 %exitcond.not, label %for.inc15, label %for.body6, !dbg !100, !llvm.loop !144
 
-iter_0_start:                                     ; preds = %entry
-  br label %for.body.iter0
+for.inc15:                                        ; preds = %m_vec_mul_add.exit
+  %inc = add nuw nsw i32 %c.03, 1, !dbg !147
+    #dbg_value(i32 %inc, !89, !DIExpression(), !93)
+  %exitcond1.not = icmp eq i32 %inc, 78, !dbg !148
+  br i1 %exitcond1.not, label %for.inc17, label %for.cond4.preheader, !dbg !94, !llvm.loop !149
 
-for.body.iter0:                                   ; preds = %iter_0_start
-    #dbg_value(i32 undef, !81, !DIExpression(), !83)
-    #dbg_value(ptr undef, !77, !DIExpression(), !76)
-    #dbg_value(i8 undef, !80, !DIExpression(), !76)
-  %arrayidx.iter0 = getelementptr inbounds nuw i8, ptr %a, i32 0, !dbg !85
-  %0 = load i8, ptr %arrayidx.iter0, align 1, !dbg !85
-  %1 = load i8, ptr %b, align 1, !dbg !88
-    #dbg_value(i8 undef, !89, !DIExpression(), !93)
-    #dbg_value(i8 undef, !95, !DIExpression(), !93)
-  %2 = load volatile i8, ptr @pqmayo_MAYO_1_ref_unsigned_char_blocker, align 1, !dbg !96
-  %xor1.i1.iter0 = xor i8 %0, %2, !dbg !97
-    #dbg_value(i8 undef, !89, !DIExpression(), !93)
-  %3 = trunc i8 %xor1.i1.iter0 to i1, !dbg !98
-    #dbg_value(i8 poison, !99, !DIExpression(), !93)
-  %4 = and i8 %xor1.i1.iter0, 2, !dbg !100
-  %mul9.i.iter0 = mul i8 %4, %1, !dbg !101
-  %conv10.i.iter0 = select i1 %3, i8 %1, i8 0, !dbg !98
-  %xor11.i.iter0 = xor i8 %conv10.i.iter0, %mul9.i.iter0, !dbg !102
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-  %5 = and i8 %xor1.i1.iter0, 4, !dbg !103
-  %mul16.i.iter0 = mul i8 %5, %1, !dbg !104
-  %xor18.i.iter0 = xor i8 %mul16.i.iter0, %xor11.i.iter0, !dbg !105
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-  %6 = and i8 %xor1.i1.iter0, 8, !dbg !106
-  %mul23.i.iter0 = mul i8 %6, %1, !dbg !107
-  %xor25.i.iter0 = xor i8 %mul23.i.iter0, %xor18.i.iter0, !dbg !108
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-    #dbg_value(i8 undef, !109, !DIExpression(DW_OP_constu, 18446744073709551600, DW_OP_and, DW_OP_stack_value), !93)
-  %7 = lshr i8 %xor25.i.iter0, 4, !dbg !110
-  %8 = lshr i8 %xor25.i.iter0, 3, !dbg !111
-  %9 = and i8 %8, 14, !dbg !111
-  %10 = xor i8 %7, %9, !dbg !112
-  %xor25.masked.i.iter0 = and i8 %xor25.i.iter0, 15, !dbg !113
-  %11 = xor i8 %10, %xor25.masked.i.iter0, !dbg !113
-    #dbg_value(i8 undef, !114, !DIExpression(), !93)
-    #dbg_value(i8 undef, !115, !DIExpression(), !117)
-    #dbg_value(i8 undef, !119, !DIExpression(), !117)
-  %xor1.i.iter0 = xor i8 %11, 0, !dbg !120
-    #dbg_value(i8 undef, !80, !DIExpression(), !76)
-    #dbg_value(i32 undef, !81, !DIExpression(), !83)
-  %add.ptr.iter0 = getelementptr inbounds nuw i8, ptr %b, i32 1, !dbg !121
-    #dbg_value(ptr undef, !77, !DIExpression(), !76)
+for.inc17:                                        ; preds = %for.inc15
+  %inc18 = add nuw nsw i32 %r.04, 1, !dbg !151
+    #dbg_value(i32 %inc18, !85, !DIExpression(), !87)
+  %exitcond2.not = icmp eq i32 %inc18, 10, !dbg !152
+  br i1 %exitcond2.not, label %for.end19, label %for.cond1.preheader, !dbg !88, !llvm.loop !153
+
+for.end19:                                        ; preds = %for.inc17
+  ret void, !dbg !155
+
+iter_0_start:                                     ; preds = %for.body6
+  br label %for.body.i.iter0
+
+for.body.i.iter0:                                 ; preds = %iter_0_start
+    #dbg_value(i32 undef, !139, !DIExpression(), !141)
+  %arrayidx.i.iter0 = getelementptr inbounds nuw i64, ptr %add.ptr, i32 0, !dbg !156
+  %3 = load i64, ptr %arrayidx.i.iter0, align 8, !dbg !156
+  %and.i.iter0 = and i64 %3, 1229782938247303441, !dbg !159
+  %and1.i.iter0 = and i32 %xor2.i.i, 255, !dbg !160
+  %conv.i.iter0 = zext nneg i32 %and1.i.iter0 to i64, !dbg !161
+  %mul.i.iter0 = mul i64 %and.i.iter0, %conv.i.iter0, !dbg !162
+  %shr.i.iter0 = lshr i64 %3, 1, !dbg !163
+  %and3.i.iter0 = and i64 %shr.i.iter0, 1229782938247303441, !dbg !164
+  %shr4.i.iter0 = lshr i32 %xor2.i.i, 8, !dbg !165
+  %and5.i.iter0 = and i32 %shr4.i.iter0, 15, !dbg !166
+  %conv6.i.iter0 = zext nneg i32 %and5.i.iter0 to i64, !dbg !167
+  %mul7.i.iter0 = mul nuw i64 %and3.i.iter0, %conv6.i.iter0, !dbg !168
+  %xor.i.iter0 = xor i64 %mul.i.iter0, %mul7.i.iter0, !dbg !169
+  %arrayidx8.i.iter0 = getelementptr inbounds nuw i64, ptr %add.ptr, i32 0, !dbg !170
+  %4 = load i64, ptr %arrayidx8.i.iter0, align 8, !dbg !170
+  %shr9.i.iter0 = lshr i64 %4, 2, !dbg !171
+  %and10.i.iter0 = and i64 %shr9.i.iter0, 1229782938247303441, !dbg !172
+  %shr11.i.iter0 = lshr i32 %xor2.i.i, 16, !dbg !173
+  %and12.i.iter0 = and i32 %shr11.i.iter0, 15, !dbg !174
+  %conv13.i.iter0 = zext nneg i32 %and12.i.iter0 to i64, !dbg !175
+  %mul14.i.iter0 = mul nuw i64 %and10.i.iter0, %conv13.i.iter0, !dbg !176
+  %xor15.i.iter0 = xor i64 %xor.i.iter0, %mul14.i.iter0, !dbg !177
+  %arrayidx16.i.iter0 = getelementptr inbounds nuw i64, ptr %add.ptr, i32 0, !dbg !178
+  %5 = load i64, ptr %arrayidx16.i.iter0, align 8, !dbg !178
+  %shr17.i.iter0 = lshr i64 %5, 3, !dbg !179
+  %and18.i.iter0 = and i64 %shr17.i.iter0, 1229782938247303441, !dbg !180
+  %shr19.i.iter0 = lshr i32 %xor2.i.i, 24, !dbg !181
+  %and20.i.iter0 = and i32 %shr19.i.iter0, 15, !dbg !182
+  %conv21.i.iter0 = zext nneg i32 %and20.i.iter0 to i64, !dbg !183
+  %mul22.i.iter0 = mul nuw i64 %and18.i.iter0, %conv21.i.iter0, !dbg !184
+  %xor23.i.iter0 = xor i64 %xor15.i.iter0, %mul22.i.iter0, !dbg !185
+  %arrayidx24.i.iter0 = getelementptr inbounds nuw i64, ptr %add.ptr13, i32 0, !dbg !186
+  %6 = load i64, ptr %arrayidx24.i.iter0, align 8, !dbg !187
+  %xor25.i.iter0 = xor i64 %6, %xor23.i.iter0, !dbg !187
+  store i64 %xor25.i.iter0, ptr %arrayidx24.i.iter0, align 8, !dbg !187
+    #dbg_value(i32 undef, !139, !DIExpression(), !141)
   br label %iter_0_end
 
-iter_0_end:                                       ; preds = %for.body.iter0
+iter_0_end:                                       ; preds = %for.body.i.iter0
   br label %iter_2_start
 
-iter_1_start:                                     ; No predecessors!
-  br label %for.body.iter1
+iter_2_start:                                     ; preds = %iter_0_end
+  br label %for.body.i.iter2
 
-for.body.iter1:                                   ; preds = %iter_1_start
-    #dbg_value(i32 undef, !81, !DIExpression(), !83)
-    #dbg_value(ptr undef, !77, !DIExpression(), !76)
-    #dbg_value(i8 undef, !80, !DIExpression(), !76)
-  %arrayidx.iter1 = getelementptr inbounds nuw i8, ptr %a, i32 1, !dbg !85
-  %12 = load i8, ptr %arrayidx.iter1, align 1, !dbg !85
-  %13 = load i8, ptr %add.ptr.iter0, align 1, !dbg !88
-    #dbg_value(i8 undef, !89, !DIExpression(), !93)
-    #dbg_value(i8 undef, !95, !DIExpression(), !93)
-  %14 = load volatile i8, ptr @pqmayo_MAYO_1_ref_unsigned_char_blocker, align 1, !dbg !96
-  %xor1.i1.iter1 = xor i8 %12, %14, !dbg !97
-    #dbg_value(i8 undef, !89, !DIExpression(), !93)
-  %15 = trunc i8 %xor1.i1.iter1 to i1, !dbg !98
-    #dbg_value(i8 poison, !99, !DIExpression(), !93)
-  %16 = and i8 %xor1.i1.iter1, 2, !dbg !100
-  %mul9.i.iter1 = mul i8 %16, %13, !dbg !101
-  %conv10.i.iter1 = select i1 %15, i8 %13, i8 0, !dbg !98
-  %xor11.i.iter1 = xor i8 %conv10.i.iter1, %mul9.i.iter1, !dbg !102
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-  %17 = and i8 %xor1.i1.iter1, 4, !dbg !103
-  %mul16.i.iter1 = mul i8 %17, %13, !dbg !104
-  %xor18.i.iter1 = xor i8 %mul16.i.iter1, %xor11.i.iter1, !dbg !105
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-  %18 = and i8 %xor1.i1.iter1, 8, !dbg !106
-  %mul23.i.iter1 = mul i8 %18, %13, !dbg !107
-  %xor25.i.iter1 = xor i8 %mul23.i.iter1, %xor18.i.iter1, !dbg !108
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-    #dbg_value(i8 undef, !109, !DIExpression(DW_OP_constu, 18446744073709551600, DW_OP_and, DW_OP_stack_value), !93)
-  %19 = lshr i8 %xor25.i.iter1, 4, !dbg !110
-  %20 = lshr i8 %xor25.i.iter1, 3, !dbg !111
-  %21 = and i8 %20, 14, !dbg !111
-  %22 = xor i8 %19, %21, !dbg !112
-  %xor25.masked.i.iter1 = and i8 %xor25.i.iter1, 15, !dbg !113
-  %23 = xor i8 %22, %xor25.masked.i.iter1, !dbg !113
-    #dbg_value(i8 undef, !114, !DIExpression(), !93)
-    #dbg_value(i8 undef, !115, !DIExpression(), !117)
-    #dbg_value(i8 undef, !119, !DIExpression(), !117)
-  %xor1.i.iter1 = xor i8 %23, %xor1.i.iter0, !dbg !120
-    #dbg_value(i8 undef, !80, !DIExpression(), !76)
-    #dbg_value(i32 undef, !81, !DIExpression(), !83)
-  %add.ptr.iter1 = getelementptr inbounds nuw i8, ptr %add.ptr.iter0, i32 1, !dbg !121
-    #dbg_value(ptr undef, !77, !DIExpression(), !76)
-  br label %iter_1_end
-
-iter_1_end:                                       ; preds = %for.body.iter1
-  br label %iter_2_start
-
-iter_2_start:                                     ; preds = %iter_0_end, %iter_1_end
-  br label %for.body.iter2
-
-for.body.iter2:                                   ; preds = %iter_2_start
-    #dbg_value(i32 undef, !81, !DIExpression(), !83)
-    #dbg_value(ptr undef, !77, !DIExpression(), !76)
-    #dbg_value(i8 undef, !80, !DIExpression(), !76)
-  %arrayidx.iter2 = getelementptr inbounds nuw i8, ptr %a, i32 2, !dbg !85
-  %24 = load i8, ptr %arrayidx.iter2, align 1, !dbg !85
-  %25 = load i8, ptr %add.ptr.iter0, align 1, !dbg !88
-    #dbg_value(i8 undef, !89, !DIExpression(), !93)
-    #dbg_value(i8 undef, !95, !DIExpression(), !93)
-  %26 = load volatile i8, ptr @pqmayo_MAYO_1_ref_unsigned_char_blocker, align 1, !dbg !96
-  %xor1.i1.iter2 = xor i8 %24, %26, !dbg !97
-    #dbg_value(i8 undef, !89, !DIExpression(), !93)
-  %27 = trunc i8 %xor1.i1.iter2 to i1, !dbg !98
-    #dbg_value(i8 poison, !99, !DIExpression(), !93)
-  %28 = and i8 %xor1.i1.iter2, 2, !dbg !100
-  %mul9.i.iter2 = mul i8 %28, %25, !dbg !101
-  %conv10.i.iter2 = select i1 %27, i8 %25, i8 0, !dbg !98
-  %xor11.i.iter2 = xor i8 %conv10.i.iter2, %mul9.i.iter2, !dbg !102
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-  %29 = and i8 %xor1.i1.iter2, 4, !dbg !103
-  %mul16.i.iter2 = mul i8 %29, %25, !dbg !104
-  %xor18.i.iter2 = xor i8 %mul16.i.iter2, %xor11.i.iter2, !dbg !105
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-  %30 = and i8 %xor1.i1.iter2, 8, !dbg !106
-  %mul23.i.iter2 = mul i8 %30, %25, !dbg !107
-  %xor25.i.iter2 = xor i8 %mul23.i.iter2, %xor18.i.iter2, !dbg !108
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-    #dbg_value(i8 undef, !109, !DIExpression(DW_OP_constu, 18446744073709551600, DW_OP_and, DW_OP_stack_value), !93)
-  %31 = lshr i8 %xor25.i.iter2, 4, !dbg !110
-  %32 = lshr i8 %xor25.i.iter2, 3, !dbg !111
-  %33 = and i8 %32, 14, !dbg !111
-  %34 = xor i8 %31, %33, !dbg !112
-  %xor25.masked.i.iter2 = and i8 %xor25.i.iter2, 15, !dbg !113
-  %35 = xor i8 %34, %xor25.masked.i.iter2, !dbg !113
-    #dbg_value(i8 undef, !114, !DIExpression(), !93)
-    #dbg_value(i8 undef, !115, !DIExpression(), !117)
-    #dbg_value(i8 undef, !119, !DIExpression(), !117)
-  %xor1.i.iter2 = xor i8 %35, %xor1.i.iter0, !dbg !120
-    #dbg_value(i8 undef, !80, !DIExpression(), !76)
-    #dbg_value(i32 undef, !81, !DIExpression(), !83)
-  %add.ptr.iter2 = getelementptr inbounds nuw i8, ptr %add.ptr.iter0, i32 1, !dbg !121
-    #dbg_value(ptr undef, !77, !DIExpression(), !76)
+for.body.i.iter2:                                 ; preds = %iter_2_start
+    #dbg_value(i32 undef, !139, !DIExpression(), !141)
+  %arrayidx.i.iter2 = getelementptr inbounds nuw i64, ptr %add.ptr, i32 2, !dbg !156
+  %7 = load i64, ptr %arrayidx.i.iter2, align 8, !dbg !156
+  %and.i.iter2 = and i64 %7, 1229782938247303441, !dbg !159
+  %and1.i.iter2 = and i32 %xor2.i.i, 255, !dbg !160
+  %conv.i.iter2 = zext nneg i32 %and1.i.iter2 to i64, !dbg !161
+  %mul.i.iter2 = mul i64 %and.i.iter2, %conv.i.iter2, !dbg !162
+  %shr.i.iter2 = lshr i64 %7, 1, !dbg !163
+  %and3.i.iter2 = and i64 %shr.i.iter2, 1229782938247303441, !dbg !164
+  %shr4.i.iter2 = lshr i32 %xor2.i.i, 8, !dbg !165
+  %and5.i.iter2 = and i32 %shr4.i.iter2, 15, !dbg !166
+  %conv6.i.iter2 = zext nneg i32 %and5.i.iter2 to i64, !dbg !167
+  %mul7.i.iter2 = mul nuw i64 %and3.i.iter2, %conv6.i.iter2, !dbg !168
+  %xor.i.iter2 = xor i64 %mul.i.iter2, %mul7.i.iter2, !dbg !169
+  %arrayidx8.i.iter2 = getelementptr inbounds nuw i64, ptr %add.ptr, i32 2, !dbg !170
+  %8 = load i64, ptr %arrayidx8.i.iter2, align 8, !dbg !170
+  %shr9.i.iter2 = lshr i64 %8, 2, !dbg !171
+  %and10.i.iter2 = and i64 %shr9.i.iter2, 1229782938247303441, !dbg !172
+  %shr11.i.iter2 = lshr i32 %xor2.i.i, 16, !dbg !173
+  %and12.i.iter2 = and i32 %shr11.i.iter2, 15, !dbg !174
+  %conv13.i.iter2 = zext nneg i32 %and12.i.iter2 to i64, !dbg !175
+  %mul14.i.iter2 = mul nuw i64 %and10.i.iter2, %conv13.i.iter2, !dbg !176
+  %xor15.i.iter2 = xor i64 %xor.i.iter2, %mul14.i.iter2, !dbg !177
+  %arrayidx16.i.iter2 = getelementptr inbounds nuw i64, ptr %add.ptr, i32 2, !dbg !178
+  %9 = load i64, ptr %arrayidx16.i.iter2, align 8, !dbg !178
+  %shr17.i.iter2 = lshr i64 %9, 3, !dbg !179
+  %and18.i.iter2 = and i64 %shr17.i.iter2, 1229782938247303441, !dbg !180
+  %shr19.i.iter2 = lshr i32 %xor2.i.i, 24, !dbg !181
+  %and20.i.iter2 = and i32 %shr19.i.iter2, 15, !dbg !182
+  %conv21.i.iter2 = zext nneg i32 %and20.i.iter2 to i64, !dbg !183
+  %mul22.i.iter2 = mul nuw i64 %and18.i.iter2, %conv21.i.iter2, !dbg !184
+  %xor23.i.iter2 = xor i64 %xor15.i.iter2, %mul22.i.iter2, !dbg !185
+  %arrayidx24.i.iter2 = getelementptr inbounds nuw i64, ptr %add.ptr13, i32 2, !dbg !186
+  %10 = load i64, ptr %arrayidx24.i.iter2, align 8, !dbg !187
+  %xor25.i.iter2 = xor i64 %10, %xor23.i.iter2, !dbg !187
+  store i64 %xor25.i.iter2, ptr %arrayidx24.i.iter2, align 8, !dbg !187
+    #dbg_value(i32 undef, !139, !DIExpression(), !141)
   br label %iter_2_end
 
-iter_2_end:                                       ; preds = %for.body.iter2
+iter_2_end:                                       ; preds = %for.body.i.iter2
   br label %iter_3_start
 
 iter_3_start:                                     ; preds = %iter_2_end
-  br label %for.body.iter3
+  br label %for.body.i.iter3
 
-for.body.iter3:                                   ; preds = %iter_3_start
-    #dbg_value(i32 undef, !81, !DIExpression(), !83)
-    #dbg_value(ptr undef, !77, !DIExpression(), !76)
-    #dbg_value(i8 undef, !80, !DIExpression(), !76)
-  %arrayidx.iter3 = getelementptr inbounds nuw i8, ptr %a, i32 3, !dbg !85
-  %36 = load i8, ptr %arrayidx.iter3, align 1, !dbg !85
-  %37 = load i8, ptr %add.ptr.iter2, align 1, !dbg !88
-    #dbg_value(i8 undef, !89, !DIExpression(), !93)
-    #dbg_value(i8 undef, !95, !DIExpression(), !93)
-  %38 = load volatile i8, ptr @pqmayo_MAYO_1_ref_unsigned_char_blocker, align 1, !dbg !96
-  %xor1.i1.iter3 = xor i8 %36, %38, !dbg !97
-    #dbg_value(i8 undef, !89, !DIExpression(), !93)
-  %39 = trunc i8 %xor1.i1.iter3 to i1, !dbg !98
-    #dbg_value(i8 poison, !99, !DIExpression(), !93)
-  %40 = and i8 %xor1.i1.iter3, 2, !dbg !100
-  %mul9.i.iter3 = mul i8 %40, %37, !dbg !101
-  %conv10.i.iter3 = select i1 %39, i8 %37, i8 0, !dbg !98
-  %xor11.i.iter3 = xor i8 %conv10.i.iter3, %mul9.i.iter3, !dbg !102
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-  %41 = and i8 %xor1.i1.iter3, 4, !dbg !103
-  %mul16.i.iter3 = mul i8 %41, %37, !dbg !104
-  %xor18.i.iter3 = xor i8 %mul16.i.iter3, %xor11.i.iter3, !dbg !105
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-  %42 = and i8 %xor1.i1.iter3, 8, !dbg !106
-  %mul23.i.iter3 = mul i8 %42, %37, !dbg !107
-  %xor25.i.iter3 = xor i8 %mul23.i.iter3, %xor18.i.iter3, !dbg !108
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-    #dbg_value(i8 undef, !109, !DIExpression(DW_OP_constu, 18446744073709551600, DW_OP_and, DW_OP_stack_value), !93)
-  %43 = lshr i8 %xor25.i.iter3, 4, !dbg !110
-  %44 = lshr i8 %xor25.i.iter3, 3, !dbg !111
-  %45 = and i8 %44, 14, !dbg !111
-  %46 = xor i8 %43, %45, !dbg !112
-  %xor25.masked.i.iter3 = and i8 %xor25.i.iter3, 15, !dbg !113
-  %47 = xor i8 %46, %xor25.masked.i.iter3, !dbg !113
-    #dbg_value(i8 undef, !114, !DIExpression(), !93)
-    #dbg_value(i8 undef, !115, !DIExpression(), !117)
-    #dbg_value(i8 undef, !119, !DIExpression(), !117)
-  %xor1.i.iter3 = xor i8 %47, %xor1.i.iter2, !dbg !120
-    #dbg_value(i8 undef, !80, !DIExpression(), !76)
-    #dbg_value(i32 undef, !81, !DIExpression(), !83)
-  %add.ptr.iter3 = getelementptr inbounds nuw i8, ptr %add.ptr.iter2, i32 1, !dbg !121
-    #dbg_value(ptr undef, !77, !DIExpression(), !76)
+for.body.i.iter3:                                 ; preds = %iter_3_start
+    #dbg_value(i32 undef, !139, !DIExpression(), !141)
+  %arrayidx.i.iter3 = getelementptr inbounds nuw i64, ptr %add.ptr, i32 3, !dbg !156
+  %11 = load i64, ptr %arrayidx.i.iter3, align 8, !dbg !156
+  %and.i.iter3 = and i64 %11, 1229782938247303441, !dbg !159
+  %and1.i.iter3 = and i32 %xor2.i.i, 255, !dbg !160
+  %conv.i.iter3 = zext nneg i32 %and1.i.iter3 to i64, !dbg !161
+  %mul.i.iter3 = mul i64 %and.i.iter3, %conv.i.iter3, !dbg !162
+  %shr.i.iter3 = lshr i64 %11, 1, !dbg !163
+  %and3.i.iter3 = and i64 %shr.i.iter3, 1229782938247303441, !dbg !164
+  %shr4.i.iter3 = lshr i32 %xor2.i.i, 8, !dbg !165
+  %and5.i.iter3 = and i32 %shr4.i.iter3, 15, !dbg !166
+  %conv6.i.iter3 = zext nneg i32 %and5.i.iter3 to i64, !dbg !167
+  %mul7.i.iter3 = mul nuw i64 %and3.i.iter3, %conv6.i.iter3, !dbg !168
+  %xor.i.iter3 = xor i64 %mul.i.iter3, %mul7.i.iter3, !dbg !169
+  %arrayidx8.i.iter3 = getelementptr inbounds nuw i64, ptr %add.ptr, i32 3, !dbg !170
+  %12 = load i64, ptr %arrayidx8.i.iter3, align 8, !dbg !170
+  %shr9.i.iter3 = lshr i64 %12, 2, !dbg !171
+  %and10.i.iter3 = and i64 %shr9.i.iter3, 1229782938247303441, !dbg !172
+  %shr11.i.iter3 = lshr i32 %xor2.i.i, 16, !dbg !173
+  %and12.i.iter3 = and i32 %shr11.i.iter3, 15, !dbg !174
+  %conv13.i.iter3 = zext nneg i32 %and12.i.iter3 to i64, !dbg !175
+  %mul14.i.iter3 = mul nuw i64 %and10.i.iter3, %conv13.i.iter3, !dbg !176
+  %xor15.i.iter3 = xor i64 %xor.i.iter3, %mul14.i.iter3, !dbg !177
+  %arrayidx16.i.iter3 = getelementptr inbounds nuw i64, ptr %add.ptr, i32 3, !dbg !178
+  %13 = load i64, ptr %arrayidx16.i.iter3, align 8, !dbg !178
+  %shr17.i.iter3 = lshr i64 %13, 3, !dbg !179
+  %and18.i.iter3 = and i64 %shr17.i.iter3, 1229782938247303441, !dbg !180
+  %shr19.i.iter3 = lshr i32 %xor2.i.i, 24, !dbg !181
+  %and20.i.iter3 = and i32 %shr19.i.iter3, 15, !dbg !182
+  %conv21.i.iter3 = zext nneg i32 %and20.i.iter3 to i64, !dbg !183
+  %mul22.i.iter3 = mul nuw i64 %and18.i.iter3, %conv21.i.iter3, !dbg !184
+  %xor23.i.iter3 = xor i64 %xor15.i.iter3, %mul22.i.iter3, !dbg !185
+  %arrayidx24.i.iter3 = getelementptr inbounds nuw i64, ptr %add.ptr13, i32 3, !dbg !186
+  %14 = load i64, ptr %arrayidx24.i.iter3, align 8, !dbg !187
+  %xor25.i.iter3 = xor i64 %14, %xor23.i.iter3, !dbg !187
+  store i64 %xor25.i.iter3, ptr %arrayidx24.i.iter3, align 8, !dbg !187
+    #dbg_value(i32 undef, !139, !DIExpression(), !141)
   br label %iter_3_end
 
-iter_3_end:                                       ; preds = %for.body.iter3
+iter_3_end:                                       ; preds = %for.body.i.iter3
   br label %iter_4_start
 
 iter_4_start:                                     ; preds = %iter_3_end
-  br label %for.body.iter4
+  br label %for.body.i.iter4
 
-for.body.iter4:                                   ; preds = %iter_4_start
-    #dbg_value(i32 undef, !81, !DIExpression(), !83)
-    #dbg_value(ptr undef, !77, !DIExpression(), !76)
-    #dbg_value(i8 undef, !80, !DIExpression(), !76)
-  %arrayidx.iter4 = getelementptr inbounds nuw i8, ptr %a, i32 4, !dbg !85
-  %48 = load i8, ptr %arrayidx.iter4, align 1, !dbg !85
-  %49 = load i8, ptr %add.ptr.iter3, align 1, !dbg !88
-    #dbg_value(i8 undef, !89, !DIExpression(), !93)
-    #dbg_value(i8 undef, !95, !DIExpression(), !93)
-  %50 = load volatile i8, ptr @pqmayo_MAYO_1_ref_unsigned_char_blocker, align 1, !dbg !96
-  %xor1.i1.iter4 = xor i8 %48, %50, !dbg !97
-    #dbg_value(i8 undef, !89, !DIExpression(), !93)
-  %51 = trunc i8 %xor1.i1.iter4 to i1, !dbg !98
-    #dbg_value(i8 poison, !99, !DIExpression(), !93)
-  %52 = and i8 %xor1.i1.iter4, 2, !dbg !100
-  %mul9.i.iter4 = mul i8 %52, %49, !dbg !101
-  %conv10.i.iter4 = select i1 %51, i8 %49, i8 0, !dbg !98
-  %xor11.i.iter4 = xor i8 %conv10.i.iter4, %mul9.i.iter4, !dbg !102
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-  %53 = and i8 %xor1.i1.iter4, 4, !dbg !103
-  %mul16.i.iter4 = mul i8 %53, %49, !dbg !104
-  %xor18.i.iter4 = xor i8 %mul16.i.iter4, %xor11.i.iter4, !dbg !105
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-  %54 = and i8 %xor1.i1.iter4, 8, !dbg !106
-  %mul23.i.iter4 = mul i8 %54, %49, !dbg !107
-  %xor25.i.iter4 = xor i8 %mul23.i.iter4, %xor18.i.iter4, !dbg !108
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-    #dbg_value(i8 undef, !109, !DIExpression(DW_OP_constu, 18446744073709551600, DW_OP_and, DW_OP_stack_value), !93)
-  %55 = lshr i8 %xor25.i.iter4, 4, !dbg !110
-  %56 = lshr i8 %xor25.i.iter4, 3, !dbg !111
-  %57 = and i8 %56, 14, !dbg !111
-  %58 = xor i8 %55, %57, !dbg !112
-  %xor25.masked.i.iter4 = and i8 %xor25.i.iter4, 15, !dbg !113
-  %59 = xor i8 %58, %xor25.masked.i.iter4, !dbg !113
-    #dbg_value(i8 undef, !114, !DIExpression(), !93)
-    #dbg_value(i8 undef, !115, !DIExpression(), !117)
-    #dbg_value(i8 undef, !119, !DIExpression(), !117)
-  %xor1.i.iter4 = xor i8 %59, %xor1.i.iter3, !dbg !120
-    #dbg_value(i8 undef, !80, !DIExpression(), !76)
-    #dbg_value(i32 undef, !81, !DIExpression(), !83)
-  %add.ptr.iter4 = getelementptr inbounds nuw i8, ptr %add.ptr.iter3, i32 1, !dbg !121
-    #dbg_value(ptr undef, !77, !DIExpression(), !76)
+for.body.i.iter4:                                 ; preds = %iter_4_start
+    #dbg_value(i32 undef, !139, !DIExpression(), !141)
+  %arrayidx.i.iter4 = getelementptr inbounds nuw i64, ptr %add.ptr, i32 4, !dbg !156
+  %15 = load i64, ptr %arrayidx.i.iter4, align 8, !dbg !156
+  %and.i.iter4 = and i64 %15, 1229782938247303441, !dbg !159
+  %and1.i.iter4 = and i32 %xor2.i.i, 255, !dbg !160
+  %conv.i.iter4 = zext nneg i32 %and1.i.iter4 to i64, !dbg !161
+  %mul.i.iter4 = mul i64 %and.i.iter4, %conv.i.iter4, !dbg !162
+  %shr.i.iter4 = lshr i64 %15, 1, !dbg !163
+  %and3.i.iter4 = and i64 %shr.i.iter4, 1229782938247303441, !dbg !164
+  %shr4.i.iter4 = lshr i32 %xor2.i.i, 8, !dbg !165
+  %and5.i.iter4 = and i32 %shr4.i.iter4, 15, !dbg !166
+  %conv6.i.iter4 = zext nneg i32 %and5.i.iter4 to i64, !dbg !167
+  %mul7.i.iter4 = mul nuw i64 %and3.i.iter4, %conv6.i.iter4, !dbg !168
+  %xor.i.iter4 = xor i64 %mul.i.iter4, %mul7.i.iter4, !dbg !169
+  %arrayidx8.i.iter4 = getelementptr inbounds nuw i64, ptr %add.ptr, i32 4, !dbg !170
+  %16 = load i64, ptr %arrayidx8.i.iter4, align 8, !dbg !170
+  %shr9.i.iter4 = lshr i64 %16, 2, !dbg !171
+  %and10.i.iter4 = and i64 %shr9.i.iter4, 1229782938247303441, !dbg !172
+  %shr11.i.iter4 = lshr i32 %xor2.i.i, 16, !dbg !173
+  %and12.i.iter4 = and i32 %shr11.i.iter4, 15, !dbg !174
+  %conv13.i.iter4 = zext nneg i32 %and12.i.iter4 to i64, !dbg !175
+  %mul14.i.iter4 = mul nuw i64 %and10.i.iter4, %conv13.i.iter4, !dbg !176
+  %xor15.i.iter4 = xor i64 %xor.i.iter4, %mul14.i.iter4, !dbg !177
+  %arrayidx16.i.iter4 = getelementptr inbounds nuw i64, ptr %add.ptr, i32 4, !dbg !178
+  %17 = load i64, ptr %arrayidx16.i.iter4, align 8, !dbg !178
+  %shr17.i.iter4 = lshr i64 %17, 3, !dbg !179
+  %and18.i.iter4 = and i64 %shr17.i.iter4, 1229782938247303441, !dbg !180
+  %shr19.i.iter4 = lshr i32 %xor2.i.i, 24, !dbg !181
+  %and20.i.iter4 = and i32 %shr19.i.iter4, 15, !dbg !182
+  %conv21.i.iter4 = zext nneg i32 %and20.i.iter4 to i64, !dbg !183
+  %mul22.i.iter4 = mul nuw i64 %and18.i.iter4, %conv21.i.iter4, !dbg !184
+  %xor23.i.iter4 = xor i64 %xor15.i.iter4, %mul22.i.iter4, !dbg !185
+  %arrayidx24.i.iter4 = getelementptr inbounds nuw i64, ptr %add.ptr13, i32 4, !dbg !186
+  %18 = load i64, ptr %arrayidx24.i.iter4, align 8, !dbg !187
+  %xor25.i.iter4 = xor i64 %18, %xor23.i.iter4, !dbg !187
+  store i64 %xor25.i.iter4, ptr %arrayidx24.i.iter4, align 8, !dbg !187
+    #dbg_value(i32 undef, !139, !DIExpression(), !141)
   br label %iter_4_end
 
-iter_4_end:                                       ; preds = %for.body.iter4
-  br label %iter_5_start
-
-iter_5_start:                                     ; preds = %iter_4_end
-  br label %for.body.iter5
-
-for.body.iter5:                                   ; preds = %iter_5_start
-    #dbg_value(i32 undef, !81, !DIExpression(), !83)
-    #dbg_value(ptr undef, !77, !DIExpression(), !76)
-    #dbg_value(i8 undef, !80, !DIExpression(), !76)
-  %arrayidx.iter5 = getelementptr inbounds nuw i8, ptr %a, i32 5, !dbg !85
-  %60 = load i8, ptr %arrayidx.iter5, align 1, !dbg !85
-  %61 = load i8, ptr %add.ptr.iter4, align 1, !dbg !88
-    #dbg_value(i8 undef, !89, !DIExpression(), !93)
-    #dbg_value(i8 undef, !95, !DIExpression(), !93)
-  %62 = load volatile i8, ptr @pqmayo_MAYO_1_ref_unsigned_char_blocker, align 1, !dbg !96
-  %xor1.i1.iter5 = xor i8 %60, %62, !dbg !97
-    #dbg_value(i8 undef, !89, !DIExpression(), !93)
-  %63 = trunc i8 %xor1.i1.iter5 to i1, !dbg !98
-    #dbg_value(i8 poison, !99, !DIExpression(), !93)
-  %64 = and i8 %xor1.i1.iter5, 2, !dbg !100
-  %mul9.i.iter5 = mul i8 %64, %61, !dbg !101
-  %conv10.i.iter5 = select i1 %63, i8 %61, i8 0, !dbg !98
-  %xor11.i.iter5 = xor i8 %conv10.i.iter5, %mul9.i.iter5, !dbg !102
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-  %65 = and i8 %xor1.i1.iter5, 4, !dbg !103
-  %mul16.i.iter5 = mul i8 %65, %61, !dbg !104
-  %xor18.i.iter5 = xor i8 %mul16.i.iter5, %xor11.i.iter5, !dbg !105
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-  %66 = and i8 %xor1.i1.iter5, 8, !dbg !106
-  %mul23.i.iter5 = mul i8 %66, %61, !dbg !107
-  %xor25.i.iter5 = xor i8 %mul23.i.iter5, %xor18.i.iter5, !dbg !108
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-    #dbg_value(i8 undef, !109, !DIExpression(DW_OP_constu, 18446744073709551600, DW_OP_and, DW_OP_stack_value), !93)
-  %67 = lshr i8 %xor25.i.iter5, 4, !dbg !110
-  %68 = lshr i8 %xor25.i.iter5, 3, !dbg !111
-  %69 = and i8 %68, 14, !dbg !111
-  %70 = xor i8 %67, %69, !dbg !112
-  %xor25.masked.i.iter5 = and i8 %xor25.i.iter5, 15, !dbg !113
-  %71 = xor i8 %70, %xor25.masked.i.iter5, !dbg !113
-    #dbg_value(i8 undef, !114, !DIExpression(), !93)
-    #dbg_value(i8 undef, !115, !DIExpression(), !117)
-    #dbg_value(i8 undef, !119, !DIExpression(), !117)
-  %xor1.i.iter5 = xor i8 %71, %xor1.i.iter4, !dbg !120
-    #dbg_value(i8 undef, !80, !DIExpression(), !76)
-    #dbg_value(i32 undef, !81, !DIExpression(), !83)
-  %add.ptr.iter5 = getelementptr inbounds nuw i8, ptr %add.ptr.iter4, i32 1, !dbg !121
-    #dbg_value(ptr undef, !77, !DIExpression(), !76)
-  br label %iter_5_end
-
-iter_5_end:                                       ; preds = %for.body.iter5
-  br label %iter_6_start
-
-iter_6_start:                                     ; preds = %iter_5_end
-  br label %for.body.iter6
-
-for.body.iter6:                                   ; preds = %iter_6_start
-    #dbg_value(i32 undef, !81, !DIExpression(), !83)
-    #dbg_value(ptr undef, !77, !DIExpression(), !76)
-    #dbg_value(i8 undef, !80, !DIExpression(), !76)
-  %arrayidx.iter6 = getelementptr inbounds nuw i8, ptr %a, i32 6, !dbg !85
-  %72 = load i8, ptr %arrayidx.iter6, align 1, !dbg !85
-  %73 = load i8, ptr %add.ptr.iter5, align 1, !dbg !88
-    #dbg_value(i8 undef, !89, !DIExpression(), !93)
-    #dbg_value(i8 undef, !95, !DIExpression(), !93)
-  %74 = load volatile i8, ptr @pqmayo_MAYO_1_ref_unsigned_char_blocker, align 1, !dbg !96
-  %xor1.i1.iter6 = xor i8 %72, %74, !dbg !97
-    #dbg_value(i8 undef, !89, !DIExpression(), !93)
-  %75 = trunc i8 %xor1.i1.iter6 to i1, !dbg !98
-    #dbg_value(i8 poison, !99, !DIExpression(), !93)
-  %76 = and i8 %xor1.i1.iter6, 2, !dbg !100
-  %mul9.i.iter6 = mul i8 %76, %73, !dbg !101
-  %conv10.i.iter6 = select i1 %75, i8 %73, i8 0, !dbg !98
-  %xor11.i.iter6 = xor i8 %conv10.i.iter6, %mul9.i.iter6, !dbg !102
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-  %77 = and i8 %xor1.i1.iter6, 4, !dbg !103
-  %mul16.i.iter6 = mul i8 %77, %73, !dbg !104
-  %xor18.i.iter6 = xor i8 %mul16.i.iter6, %xor11.i.iter6, !dbg !105
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-  %78 = and i8 %xor1.i1.iter6, 8, !dbg !106
-  %mul23.i.iter6 = mul i8 %78, %73, !dbg !107
-  %xor25.i.iter6 = xor i8 %mul23.i.iter6, %xor18.i.iter6, !dbg !108
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-    #dbg_value(i8 undef, !109, !DIExpression(DW_OP_constu, 18446744073709551600, DW_OP_and, DW_OP_stack_value), !93)
-  %79 = lshr i8 %xor25.i.iter6, 4, !dbg !110
-  %80 = lshr i8 %xor25.i.iter6, 3, !dbg !111
-  %81 = and i8 %80, 14, !dbg !111
-  %82 = xor i8 %79, %81, !dbg !112
-  %xor25.masked.i.iter6 = and i8 %xor25.i.iter6, 15, !dbg !113
-  %83 = xor i8 %82, %xor25.masked.i.iter6, !dbg !113
-    #dbg_value(i8 undef, !114, !DIExpression(), !93)
-    #dbg_value(i8 undef, !115, !DIExpression(), !117)
-    #dbg_value(i8 undef, !119, !DIExpression(), !117)
-  %xor1.i.iter6 = xor i8 %83, %xor1.i.iter5, !dbg !120
-    #dbg_value(i8 undef, !80, !DIExpression(), !76)
-    #dbg_value(i32 undef, !81, !DIExpression(), !83)
-  %add.ptr.iter6 = getelementptr inbounds nuw i8, ptr %add.ptr.iter5, i32 1, !dbg !121
-    #dbg_value(ptr undef, !77, !DIExpression(), !76)
-  br label %iter_6_end
-
-iter_6_end:                                       ; preds = %for.body.iter6
-  br label %iter_7_start
-
-iter_7_start:                                     ; preds = %iter_6_end
-  br label %for.body.iter7
-
-for.body.iter7:                                   ; preds = %iter_7_start
-    #dbg_value(i32 undef, !81, !DIExpression(), !83)
-    #dbg_value(ptr undef, !77, !DIExpression(), !76)
-    #dbg_value(i8 undef, !80, !DIExpression(), !76)
-  %arrayidx.iter7 = getelementptr inbounds nuw i8, ptr %a, i32 7, !dbg !85
-  %84 = load i8, ptr %arrayidx.iter7, align 1, !dbg !85
-  %85 = load i8, ptr %add.ptr.iter6, align 1, !dbg !88
-    #dbg_value(i8 undef, !89, !DIExpression(), !93)
-    #dbg_value(i8 undef, !95, !DIExpression(), !93)
-  %86 = load volatile i8, ptr @pqmayo_MAYO_1_ref_unsigned_char_blocker, align 1, !dbg !96
-  %xor1.i1.iter7 = xor i8 %84, %86, !dbg !97
-    #dbg_value(i8 undef, !89, !DIExpression(), !93)
-  %87 = trunc i8 %xor1.i1.iter7 to i1, !dbg !98
-    #dbg_value(i8 poison, !99, !DIExpression(), !93)
-  %88 = and i8 %xor1.i1.iter7, 2, !dbg !100
-  %mul9.i.iter7 = mul i8 %88, %85, !dbg !101
-  %conv10.i.iter7 = select i1 %87, i8 %85, i8 0, !dbg !98
-  %xor11.i.iter7 = xor i8 %conv10.i.iter7, %mul9.i.iter7, !dbg !102
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-  %89 = and i8 %xor1.i1.iter7, 4, !dbg !103
-  %mul16.i.iter7 = mul i8 %89, %85, !dbg !104
-  %xor18.i.iter7 = xor i8 %mul16.i.iter7, %xor11.i.iter7, !dbg !105
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-  %90 = and i8 %xor1.i1.iter7, 8, !dbg !106
-  %mul23.i.iter7 = mul i8 %90, %85, !dbg !107
-  %xor25.i.iter7 = xor i8 %mul23.i.iter7, %xor18.i.iter7, !dbg !108
-    #dbg_value(i8 undef, !99, !DIExpression(), !93)
-    #dbg_value(i8 undef, !109, !DIExpression(DW_OP_constu, 18446744073709551600, DW_OP_and, DW_OP_stack_value), !93)
-  %91 = lshr i8 %xor25.i.iter7, 4, !dbg !110
-  %92 = lshr i8 %xor25.i.iter7, 3, !dbg !111
-  %93 = and i8 %92, 14, !dbg !111
-  %94 = xor i8 %91, %93, !dbg !112
-  %xor25.masked.i.iter7 = and i8 %xor25.i.iter7, 15, !dbg !113
-  %95 = xor i8 %94, %xor25.masked.i.iter7, !dbg !113
-    #dbg_value(i8 undef, !114, !DIExpression(), !93)
-    #dbg_value(i8 undef, !115, !DIExpression(), !117)
-    #dbg_value(i8 undef, !119, !DIExpression(), !117)
-  %xor1.i.iter7 = xor i8 %95, %xor1.i.iter6, !dbg !120
-    #dbg_value(i8 undef, !80, !DIExpression(), !76)
-    #dbg_value(i32 undef, !81, !DIExpression(), !83)
-  %add.ptr.iter7 = getelementptr inbounds nuw i8, ptr %add.ptr.iter6, i32 1, !dbg !121
-    #dbg_value(ptr undef, !77, !DIExpression(), !76)
-  br label %iter_7_end
-
-iter_7_end:                                       ; preds = %for.body.iter7
-  br label %for.end
+iter_4_end:                                       ; preds = %for.body.i.iter4
+  br label %m_vec_mul_add.exit
 }
 
 attributes #0 = { inlinehint nounwind "no-builtins" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="cortex-m4" "target-features"="+armv7e-m,+dsp,+fp16,+hwdiv,+vfp2sp,+vfp3d16sp,+vfp4d16sp,-thumb-mode" }
@@ -500,54 +350,120 @@ attributes #0 = { inlinehint nounwind "no-builtins" "no-trapping-math"="true" "s
 !68 = !{i32 1, !"wchar_size", i32 4}
 !69 = !{i32 1, !"min_enum_size", i32 4}
 !70 = !{i32 1, !"Code Model", i32 1}
-!71 = distinct !DISubprogram(name: "lincomb", scope: !72, file: !72, line: 70, type: !73, scopeLine: 71, flags: DIFlagPrototyped, spFlags: DISPFlagLocalToUnit | DISPFlagDefinition, unit: !37, retainedNodes: !58)
-!72 = !DIFile(filename: "../../../src/simple_arithmetic.h", directory: "/home/siddhesh/Desktop/MAYO-LLVM/llvm-apps/mayo_pass/build")
+!71 = distinct !DISubprogram(name: "mul_add_mat_x_m_mat", scope: !72, file: !72, line: 61, type: !73, scopeLine: 62, flags: DIFlagPrototyped, spFlags: DISPFlagLocalToUnit | DISPFlagDefinition, unit: !37, retainedNodes: !58)
+!72 = !DIFile(filename: "../../../src/generic/generic_arithmetic.h", directory: "/home/siddhesh/Desktop/MAYO-LLVM/llvm-apps/mayo_pass/build")
 !73 = !DISubroutineType(types: !74)
-!74 = !{!15, !19, !19, !10, !10}
-!75 = !DILocalVariable(name: "a", arg: 1, scope: !71, file: !72, line: 70, type: !19)
-!76 = !DILocation(line: 0, scope: !71)
-!77 = !DILocalVariable(name: "b", arg: 2, scope: !71, file: !72, line: 71, type: !19)
-!78 = !DILocalVariable(name: "n", arg: 3, scope: !71, file: !72, line: 71, type: !10)
-!79 = !DILocalVariable(name: "m", arg: 4, scope: !71, file: !72, line: 71, type: !10)
-!80 = !DILocalVariable(name: "ret", scope: !71, file: !72, line: 72, type: !15)
-!81 = !DILocalVariable(name: "i", scope: !82, file: !72, line: 73, type: !10)
-!82 = distinct !DILexicalBlock(scope: !71, file: !72, line: 73, column: 5)
-!83 = !DILocation(line: 0, scope: !82)
-!84 = !DILocation(line: 76, column: 5, scope: !71)
-!85 = !DILocation(line: 74, column: 27, scope: !86)
-!86 = distinct !DILexicalBlock(scope: !87, file: !72, line: 73, column: 41)
-!87 = distinct !DILexicalBlock(scope: !82, file: !72, line: 73, column: 5)
-!88 = !DILocation(line: 74, column: 33, scope: !86)
-!89 = !DILocalVariable(name: "a", arg: 1, scope: !90, file: !72, line: 9, type: !15)
-!90 = distinct !DISubprogram(name: "mul_f", scope: !72, file: !72, line: 9, type: !91, scopeLine: 9, flags: DIFlagPrototyped, spFlags: DISPFlagLocalToUnit | DISPFlagDefinition, unit: !37, retainedNodes: !58)
-!91 = !DISubroutineType(types: !92)
-!92 = !{!15, !15, !15}
-!93 = !DILocation(line: 0, scope: !90, inlinedAt: !94)
-!94 = distinct !DILocation(line: 74, column: 21, scope: !86)
-!95 = !DILocalVariable(name: "b", arg: 2, scope: !90, file: !72, line: 9, type: !15)
-!96 = !DILocation(line: 14, column: 10, scope: !90, inlinedAt: !94)
-!97 = !DILocation(line: 14, column: 7, scope: !90, inlinedAt: !94)
-!98 = !DILocation(line: 17, column: 17, scope: !90, inlinedAt: !94)
-!99 = !DILocalVariable(name: "p", scope: !90, file: !72, line: 11, type: !15)
-!100 = !DILocation(line: 18, column: 13, scope: !90, inlinedAt: !94)
-!101 = !DILocation(line: 18, column: 17, scope: !90, inlinedAt: !94)
-!102 = !DILocation(line: 18, column: 7, scope: !90, inlinedAt: !94)
-!103 = !DILocation(line: 19, column: 13, scope: !90, inlinedAt: !94)
-!104 = !DILocation(line: 19, column: 17, scope: !90, inlinedAt: !94)
-!105 = !DILocation(line: 19, column: 7, scope: !90, inlinedAt: !94)
-!106 = !DILocation(line: 20, column: 13, scope: !90, inlinedAt: !94)
-!107 = !DILocation(line: 20, column: 17, scope: !90, inlinedAt: !94)
-!108 = !DILocation(line: 20, column: 7, scope: !90, inlinedAt: !94)
-!109 = !DILocalVariable(name: "top_p", scope: !90, file: !72, line: 23, type: !15)
-!110 = !DILocation(line: 24, column: 37, scope: !90, inlinedAt: !94)
-!111 = !DILocation(line: 24, column: 52, scope: !90, inlinedAt: !94)
-!112 = !DILocation(line: 24, column: 43, scope: !90, inlinedAt: !94)
-!113 = !DILocation(line: 24, column: 59, scope: !90, inlinedAt: !94)
-!114 = !DILocalVariable(name: "out", scope: !90, file: !72, line: 24, type: !15)
-!115 = !DILocalVariable(name: "a", arg: 1, scope: !116, file: !72, line: 43, type: !15)
-!116 = distinct !DISubprogram(name: "add_f", scope: !72, file: !72, line: 43, type: !91, scopeLine: 43, flags: DIFlagPrototyped, spFlags: DISPFlagLocalToUnit | DISPFlagDefinition, unit: !37, retainedNodes: !58)
-!117 = !DILocation(line: 0, scope: !116, inlinedAt: !118)
-!118 = distinct !DILocation(line: 74, column: 15, scope: !86)
-!119 = !DILocalVariable(name: "b", arg: 2, scope: !116, file: !72, line: 43, type: !15)
-!120 = !DILocation(line: 44, column: 14, scope: !116, inlinedAt: !118)
-!121 = !DILocation(line: 73, column: 35, scope: !87)
+!74 = !{null, !75, !19, !76, !39, !75, !75, !75}
+!75 = !DIDerivedType(tag: DW_TAG_const_type, baseType: !10)
+!76 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !59, size: 32)
+!77 = !DILocalVariable(name: "m_vec_limbs", arg: 1, scope: !71, file: !72, line: 61, type: !75)
+!78 = !DILocation(line: 0, scope: !71)
+!79 = !DILocalVariable(name: "mat", arg: 2, scope: !71, file: !72, line: 61, type: !19)
+!80 = !DILocalVariable(name: "bs_mat", arg: 3, scope: !71, file: !72, line: 61, type: !76)
+!81 = !DILocalVariable(name: "acc", arg: 4, scope: !71, file: !72, line: 61, type: !39)
+!82 = !DILocalVariable(name: "mat_rows", arg: 5, scope: !71, file: !72, line: 62, type: !75)
+!83 = !DILocalVariable(name: "mat_cols", arg: 6, scope: !71, file: !72, line: 62, type: !75)
+!84 = !DILocalVariable(name: "bs_mat_cols", arg: 7, scope: !71, file: !72, line: 62, type: !75)
+!85 = !DILocalVariable(name: "r", scope: !86, file: !72, line: 64, type: !10)
+!86 = distinct !DILexicalBlock(scope: !71, file: !72, line: 64, column: 5)
+!87 = !DILocation(line: 0, scope: !86)
+!88 = !DILocation(line: 64, column: 5, scope: !86)
+!89 = !DILocalVariable(name: "c", scope: !90, file: !72, line: 65, type: !10)
+!90 = distinct !DILexicalBlock(scope: !91, file: !72, line: 65, column: 9)
+!91 = distinct !DILexicalBlock(scope: !92, file: !72, line: 64, column: 40)
+!92 = distinct !DILexicalBlock(scope: !86, file: !72, line: 64, column: 5)
+!93 = !DILocation(line: 0, scope: !90)
+!94 = !DILocation(line: 65, column: 9, scope: !90)
+!95 = !DILocalVariable(name: "k", scope: !96, file: !72, line: 66, type: !10)
+!96 = distinct !DILexicalBlock(scope: !97, file: !72, line: 66, column: 13)
+!97 = distinct !DILexicalBlock(scope: !98, file: !72, line: 65, column: 44)
+!98 = distinct !DILexicalBlock(scope: !90, file: !72, line: 65, column: 9)
+!99 = !DILocation(line: 0, scope: !96)
+!100 = !DILocation(line: 66, column: 13, scope: !96)
+!101 = !DILocation(line: 67, column: 70, scope: !102)
+!102 = distinct !DILexicalBlock(scope: !103, file: !72, line: 66, column: 54)
+!103 = distinct !DILexicalBlock(scope: !96, file: !72, line: 66, column: 13)
+!104 = !DILocation(line: 67, column: 84, scope: !102)
+!105 = !DILocation(line: 67, column: 51, scope: !102)
+!106 = !DILocation(line: 67, column: 96, scope: !102)
+!107 = !DILocation(line: 67, column: 90, scope: !102)
+!108 = !DILocation(line: 67, column: 136, scope: !102)
+!109 = !DILocation(line: 67, column: 150, scope: !102)
+!110 = !DILocation(line: 67, column: 117, scope: !102)
+!111 = !DILocalVariable(name: "m_vec_limbs", arg: 1, scope: !112, file: !113, line: 31, type: !10)
+!112 = distinct !DISubprogram(name: "m_vec_mul_add", scope: !113, file: !113, line: 31, type: !114, scopeLine: 31, flags: DIFlagPrototyped, spFlags: DISPFlagLocalToUnit | DISPFlagDefinition, unit: !37, retainedNodes: !58)
+!113 = !DIFile(filename: "../../../src/generic/arithmetic_fixed.h", directory: "/home/siddhesh/Desktop/MAYO-LLVM/llvm-apps/mayo_pass/build")
+!114 = !DISubroutineType(types: !115)
+!115 = !{null, !10, !76, !15, !39}
+!116 = !DILocation(line: 0, scope: !112, inlinedAt: !117)
+!117 = distinct !DILocation(line: 67, column: 17, scope: !102)
+!118 = !DILocalVariable(name: "in", arg: 2, scope: !112, file: !113, line: 31, type: !76)
+!119 = !DILocalVariable(name: "a", arg: 3, scope: !112, file: !113, line: 31, type: !15)
+!120 = !DILocalVariable(name: "acc", arg: 4, scope: !112, file: !113, line: 31, type: !39)
+!121 = !DILocalVariable(name: "b", arg: 1, scope: !122, file: !123, line: 129, type: !41)
+!122 = distinct !DISubprogram(name: "mul_table", scope: !123, file: !123, line: 129, type: !124, scopeLine: 129, flags: DIFlagPrototyped, spFlags: DISPFlagLocalToUnit | DISPFlagDefinition, unit: !37, retainedNodes: !58)
+!123 = !DIFile(filename: "../../../src/simple_arithmetic.h", directory: "/home/siddhesh/Desktop/MAYO-LLVM/llvm-apps/mayo_pass/build")
+!124 = !DISubroutineType(types: !125)
+!125 = !{!16, !41}
+!126 = !DILocation(line: 0, scope: !122, inlinedAt: !127)
+!127 = distinct !DILocation(line: 33, column: 20, scope: !112, inlinedAt: !117)
+!128 = !DILocation(line: 130, column: 19, scope: !122, inlinedAt: !127)
+!129 = !DILocation(line: 130, column: 33, scope: !122, inlinedAt: !127)
+!130 = !DILocalVariable(name: "x", scope: !122, file: !123, line: 130, type: !16)
+!131 = !DILocalVariable(name: "high_nibble_mask", scope: !122, file: !123, line: 132, type: !16)
+!132 = !DILocation(line: 134, column: 28, scope: !122, inlinedAt: !127)
+!133 = !DILocalVariable(name: "high_half", scope: !122, file: !123, line: 134, type: !16)
+!134 = !DILocation(line: 135, column: 28, scope: !122, inlinedAt: !127)
+!135 = !DILocation(line: 135, column: 47, scope: !122, inlinedAt: !127)
+!136 = !DILocation(line: 135, column: 34, scope: !122, inlinedAt: !127)
+!137 = !DILocalVariable(name: "tab", scope: !112, file: !113, line: 33, type: !16)
+!138 = !DILocalVariable(name: "lsb_ask", scope: !112, file: !113, line: 35, type: !5)
+!139 = !DILocalVariable(name: "i", scope: !140, file: !113, line: 37, type: !10)
+!140 = distinct !DILexicalBlock(scope: !112, file: !113, line: 37, column: 5)
+!141 = !DILocation(line: 0, scope: !140, inlinedAt: !117)
+!142 = !DILocation(line: 66, column: 48, scope: !103)
+!143 = !DILocation(line: 66, column: 31, scope: !103)
+!144 = distinct !{!144, !100, !145, !146}
+!145 = !DILocation(line: 68, column: 13, scope: !96)
+!146 = !{!"llvm.loop.mustprogress"}
+!147 = !DILocation(line: 65, column: 40, scope: !98)
+!148 = !DILocation(line: 65, column: 27, scope: !98)
+!149 = distinct !{!149, !94, !150, !146}
+!150 = !DILocation(line: 69, column: 9, scope: !90)
+!151 = !DILocation(line: 64, column: 36, scope: !92)
+!152 = !DILocation(line: 64, column: 23, scope: !92)
+!153 = distinct !{!153, !88, !154, !146}
+!154 = !DILocation(line: 70, column: 5, scope: !86)
+!155 = !DILocation(line: 71, column: 1, scope: !71)
+!156 = !DILocation(line: 38, column: 21, scope: !157, inlinedAt: !117)
+!157 = distinct !DILexicalBlock(scope: !158, file: !113, line: 37, column: 43)
+!158 = distinct !DILexicalBlock(scope: !140, file: !113, line: 37, column: 5)
+!159 = !DILocation(line: 38, column: 33, scope: !157, inlinedAt: !117)
+!160 = !DILocation(line: 38, column: 51, scope: !157, inlinedAt: !117)
+!161 = !DILocation(line: 38, column: 46, scope: !157, inlinedAt: !117)
+!162 = !DILocation(line: 38, column: 44, scope: !157, inlinedAt: !117)
+!163 = !DILocation(line: 39, column: 27, scope: !157, inlinedAt: !117)
+!164 = !DILocation(line: 39, column: 33, scope: !157, inlinedAt: !117)
+!165 = !DILocation(line: 39, column: 52, scope: !157, inlinedAt: !117)
+!166 = !DILocation(line: 39, column: 59, scope: !157, inlinedAt: !117)
+!167 = !DILocation(line: 39, column: 46, scope: !157, inlinedAt: !117)
+!168 = !DILocation(line: 39, column: 44, scope: !157, inlinedAt: !117)
+!169 = !DILocation(line: 39, column: 17, scope: !157, inlinedAt: !117)
+!170 = !DILocation(line: 40, column: 21, scope: !157, inlinedAt: !117)
+!171 = !DILocation(line: 40, column: 27, scope: !157, inlinedAt: !117)
+!172 = !DILocation(line: 40, column: 33, scope: !157, inlinedAt: !117)
+!173 = !DILocation(line: 40, column: 52, scope: !157, inlinedAt: !117)
+!174 = !DILocation(line: 40, column: 59, scope: !157, inlinedAt: !117)
+!175 = !DILocation(line: 40, column: 46, scope: !157, inlinedAt: !117)
+!176 = !DILocation(line: 40, column: 44, scope: !157, inlinedAt: !117)
+!177 = !DILocation(line: 40, column: 17, scope: !157, inlinedAt: !117)
+!178 = !DILocation(line: 41, column: 21, scope: !157, inlinedAt: !117)
+!179 = !DILocation(line: 41, column: 27, scope: !157, inlinedAt: !117)
+!180 = !DILocation(line: 41, column: 33, scope: !157, inlinedAt: !117)
+!181 = !DILocation(line: 41, column: 52, scope: !157, inlinedAt: !117)
+!182 = !DILocation(line: 41, column: 59, scope: !157, inlinedAt: !117)
+!183 = !DILocation(line: 41, column: 46, scope: !157, inlinedAt: !117)
+!184 = !DILocation(line: 41, column: 44, scope: !157, inlinedAt: !117)
+!185 = !DILocation(line: 41, column: 17, scope: !157, inlinedAt: !117)
+!186 = !DILocation(line: 38, column: 9, scope: !157, inlinedAt: !117)
+!187 = !DILocation(line: 38, column: 16, scope: !157, inlinedAt: !117)

@@ -34,7 +34,7 @@ bool bmc_fun_pass::runOnFunction( llvm::Function &f ) {
   //
   // Collecting information about the block of function
   //
-  collect_loop_backedges(this, bmc_fun_ptr->loop_ignore_edges,
+  collect_loop_backedges(f, bmc_fun_ptr->loop_ignore_edges,
                          bmc_fun_ptr->rev_loop_ignore_edges);
   bmc_fun_ptr->bb_vec.clear();
   computeTopologicalOrder(f, bmc_fun_ptr->rev_loop_ignore_edges,
