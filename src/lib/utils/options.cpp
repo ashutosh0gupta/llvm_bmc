@@ -46,6 +46,7 @@ void options::get_description_cmd(po::options_description& config,
     ("abstract-float,a", po::bool_switch(&abstract_floats), "Treat floating point operations as unknown functions")
     ("include-dirs,I", po::value< std::vector<std::string> >(&include_dirs), "Location of include files")
     ("specifications,s", po::value(&specFilePath), "Set spec file")
+    ("var-suffix", po::value(&var_suffix), "Suffix for generated variable names (e.g., correct, faulty)")
     ("kbound,k", po::bool_switch(&kbound), "Run k-context bounded verification")
     ("context-bound",  po::value<int>(&ctx_bound)->default_value(10), "Run k-context bounded verification")
     ("sc-thread", po::value< std::vector<std::string> >(&sc_threads), "Thread will have only SC behavior")

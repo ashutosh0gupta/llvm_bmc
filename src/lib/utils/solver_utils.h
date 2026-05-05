@@ -97,6 +97,10 @@ expr get_fresh_const(solver_context &, sort, std::string = "");
 expr get_fresh_float(solver_context &, std::string = "");
 expr get_fresh_double(solver_context &, std::string = "");
 
+// Global variable suffix management
+void set_var_suffix(const std::string &suffix);
+std::string get_var_suffix();
+
 expr _or(std::vector<expr> &, solver_context &);
 expr _or(std::vector<expr> &);
 expr _and(std::vector<expr> &, solver_context &);

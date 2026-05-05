@@ -8,6 +8,19 @@
 #include <stack>
 #include "solver_utils.h"
 
+// Global suffix for variable names (can be set to "correct", "faulty", etc.)
+static std::string g_var_suffix = "";
+
+void set_var_suffix(const std::string &suffix)
+{
+  g_var_suffix = suffix;
+}
+
+std::string get_var_suffix()
+{
+  return g_var_suffix;
+}
+
 expr smt2_parse_string(solver_context &sol_ctx, const char *str)
 {
   // std::cout << "Str is " << str <<"\n";
@@ -677,6 +690,16 @@ expr get_fresh_bv(solver_context &c, unsigned size, std::string suff)
 // creates fresh FOL constants of any sort
 expr get_fresh_const(solver_context &c, sort s, std::string suff)
 {
+  // Prepend global suffix if available
+  std::string global_suff = get_var_suffix();
+  if (!global_suff.empty()) {
+    if (!suff.empty()) {
+      suff = suff + "_" + global_suff;
+    } else {
+      suff = global_suff;
+    }
+  }
+  
   if (s.is_bv())
     return get_fresh_bv(c, s.bv_size(), suff);
   if (s.is_int())

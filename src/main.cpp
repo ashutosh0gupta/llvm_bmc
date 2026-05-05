@@ -1,5 +1,6 @@
 #include "include/options.h"
 #include "include/bmc.h"
+#include "lib/utils/solver_utils.h"
 
 //------------------------------------------
 // todo: remove the following header
@@ -128,6 +129,11 @@ int main(int argc, char** argv) {
   }
 
   if (!o.parse_cmdline(argc, argv)) return 0; // help was called
+
+  // Set the global variable suffix if provided
+  if (!o.var_suffix.empty()) {
+    set_var_suffix(o.var_suffix);
+  }
 
   std::unique_ptr<llvm::Module> module;
   comments cmts;

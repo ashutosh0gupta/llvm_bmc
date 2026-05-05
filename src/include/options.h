@@ -88,6 +88,7 @@ public:
   bool dump_solver_query = 0;
   bool get_solver_model = 0;
   bool witness = 0;
+  std::string var_suffix = ""; // suffix for generated variable names (correct/faulty)
 
   //----------------------------------------
   //generic options
