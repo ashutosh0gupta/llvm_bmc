@@ -7,7 +7,7 @@
         "cwd": "${workspaceFolder}",
         "type": "cppdbg",
         "program": "${workspaceFolder}/llvmbmc",
-        "args" : ["${workspaceFolder}/examples/crypto/original.ll","-f","mat_add", "--dump-solver-query"]
+        "args" : ["${workspaceFolder}/examples/crypto/kyber.ll","-f","pqcrystals_kyber512_ref_indcpa_keypair_derand", "--dump-solver-query", "--var-suffix", "--var-suffix correct"]
     }
     ],
 

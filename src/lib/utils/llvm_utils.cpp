@@ -1,11 +1,11 @@
-#include <limits>
 #include "llvm_utils.h"
 #include "lib/utils/graph_utils.h"
+#include <limits>
 // #include "daikon-inst/comments.h" //todo: move to utils
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem/fstream.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/fstream.hpp>
 #include <climits>
 #include <llvm-20/llvm/IR/Constants.h>
 #include <llvm-20/llvm/Support/Casting.h>
@@ -19,49 +19,48 @@
 // pragam'ed to aviod warnings due to llvm included files
 #include "llvm/IR/DerivedTypes.h"
 // #include "llvm/IR/TypeBuilder.h"
+#include "llvm/Analysis/CFGPrinter.h"
+#include "llvm/AsmParser/Parser.h"
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/LegacyPassManager.h"
-#include "llvm/AsmParser/Parser.h"
-#include "llvm/Support/SourceMgr.h"
-#include "llvm/Analysis/CFGPrinter.h"
-#include "llvm/Passes/PassBuilder.h"
 #include "llvm/IR/Metadata.h"
-#include "llvm/MC/TargetRegistry.h"
-#include "llvm/Target/TargetMachine.h"
-#include "llvm/Support/CodeGen.h"
-#include "llvm/TargetParser/Host.h"
-#include "llvm/Support/TargetSelect.h"
 #include "llvm/IRReader/IRReader.h"
-    //clang related code
+#include "llvm/MC/TargetRegistry.h"
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Support/CodeGen.h"
+#include "llvm/Support/SourceMgr.h"
+#include "llvm/Support/TargetSelect.h"
+#include "llvm/Target/TargetMachine.h"
+#include "llvm/TargetParser/Host.h"
+// clang related code
+#include <clang/Basic/DiagnosticOptions.h>
+#include <clang/Basic/TargetInfo.h>
 #include <clang/CodeGen/CodeGenAction.h>
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Frontend/CompilerInvocation.h>
 #include <clang/Frontend/TextDiagnosticPrinter.h>
-#include <clang/Basic/DiagnosticOptions.h>
-#include <clang/Basic/TargetInfo.h>
 #pragma GCC diagnostic pop
-
 
 #define CLANG_VERSION "14"
 
-void dump( const llvm::Value* v) {
-  if(v)
+void dump(const llvm::Value *v) {
+  if (v)
     v->print(llvm::outs());
   else
     llvm::outs() << "NULL\n";
 }
 
-void dump( const llvm::Type* v) {
-  if(v)
+void dump(const llvm::Type *v) {
+  if (v)
     v->print(llvm::outs());
   else
     llvm::outs() << "NULL\n";
 }
 
-std::string toString( const llvm::Value* v ) {
+std::string toString(const llvm::Value *v) {
   std::string buf;
   llvm::raw_string_ostream os(buf);
-  if(v)
+  if (v)
     v->print(os);
   else
     os << "NULL\n";
@@ -76,57 +75,57 @@ std::string toString( const llvm::Value* v ) {
 //     llvm::outs() << "NULL\n";
 // }
 
-
-void c2bc( const std::string& fileName, const std::string& outName )
-{
+void c2bc(const std::string &fileName, const std::string &outName) {
   // make a system call
   std::ostringstream cmd;
   cmd << "clang-" << CLANG_VERSION
-      << " -emit-llvm -fno-omit-frame-pointer -Xclang -disable-O0-optnone -gdwarf-2 "
+      << " -emit-llvm -fno-omit-frame-pointer -Xclang -disable-O0-optnone "
+         "-gdwarf-2 "
       << fileName << " -o " << outName << " -c";
   // std::cout << cmd.str() << "\n";
-  if( system( cmd.str().c_str() ) != 0 ) exit(1);
+  if (system(cmd.str().c_str()) != 0)
+    exit(1);
 }
 
 // --------------------------------------------------------------------------
 
-void src_loc::print( std::ostream& os ) {
-  if( file == "" ) {
+void src_loc::print(std::ostream &os) {
+  if (file == "") {
     os << "unknown file";
-  }else{
+  } else {
     os << file << ":" << line << ":" << col;
     // os << "l" << line << "_c" << col << "_"<< file;
   }
 }
 
-void src_loc::print_short( std::ostream& os ) {
-  if( file.length() > 15 ) {
-    std::string short_file = file.substr( file.length() - 15 );
+void src_loc::print_short(std::ostream &os) {
+  if (file.length() > 15) {
+    std::string short_file = file.substr(file.length() - 15);
     os << ".." << short_file << ":" << line << ":" << col;
-  }else{
+  } else {
     print(os);
   }
 }
 
 std::string src_loc::position_name() {
-  if( line == 0 && col == 0 )
+  if (line == 0 && col == 0)
     // return pretty_name;
     return file;
-    // return NULL;
+  // return NULL;
   else
     return "_l" + std::to_string(line) + "_c" + std::to_string(col);
 }
 
 std::string src_loc::gen_name() {
-  static std::map< std::pair<unsigned, unsigned>, unsigned > seen_before;
+  static std::map<std::pair<unsigned, unsigned>, unsigned> seen_before;
   auto l_name = position_name();
-  if( line == 0 && col == 0 && l_name != "" ) {
+  if (line == 0 && col == 0 && l_name != "") {
     return l_name;
-  }else{
+  } else {
     auto line_col = std::make_pair(line, col);
-    if( exists( seen_before, line_col ) ) {
-      return l_name + "_u" + std::to_string( seen_before[line_col]++ );
-    }else{
+    if (exists(seen_before, line_col)) {
+      return l_name + "_u" + std::to_string(seen_before[line_col]++);
+    } else {
       seen_before[line_col] = 0;
     }
     return l_name;
@@ -142,89 +141,83 @@ class estimate_loc_pass : public llvm::FunctionPass {
   src_loc ref_end;
   src_loc low_est;
   src_loc up_est;
-  llvm::Instruction* I_low = NULL;
-  llvm::Instruction* I_up = NULL;
+  llvm::Instruction *I_low = NULL;
+  llvm::Instruction *I_up = NULL;
+
 public:
   static char ID;
 
-  llvm::Instruction* get_I_low() { return I_low; }
-  llvm::Instruction* get_I_up() { return I_up; }
+  llvm::Instruction *get_I_low() { return I_low; }
+  llvm::Instruction *get_I_up() { return I_up; }
 
-  src_loc get_low_estimate() {
-    return low_est;
-  }
+  src_loc get_low_estimate() { return low_est; }
 
-  src_loc get_up_estimate() {
-    return up_est;
-  }
+  src_loc get_up_estimate() { return up_est; }
 
 public:
-  estimate_loc_pass( src_loc& loc_, src_loc& ref_end_) :
-    llvm::FunctionPass(ID), ref(loc_),ref_end(ref_end_),
-    low_est( 0,0, loc_.file),
-    up_est( UINT_MAX, UINT_MAX, loc_.file) {
-  };
+  estimate_loc_pass(src_loc &loc_, src_loc &ref_end_)
+      : llvm::FunctionPass(ID), ref(loc_), ref_end(ref_end_),
+        low_est(0, 0, loc_.file), up_est(UINT_MAX, UINT_MAX, loc_.file) {};
   ~estimate_loc_pass() {};
 
   // virtual bool runOnBasicBlock( llvm::BasicBlock &bb ) {
-  virtual bool runOnFunction( llvm::Function &f ) {
-    for( llvm::BasicBlock& bb : f ) {
-    for( llvm::Instruction& I : bb ) {
-      const llvm::DebugLoc d = I.getDebugLoc();
-      if( d ) {
-        unsigned l = d.getLine();
-        unsigned c  = d.getCol();
-        auto f =llvm::cast<llvm::DIScope>(d.getScope())->getFilename().str();
+  virtual bool runOnFunction(llvm::Function &f) {
+    for (llvm::BasicBlock &bb : f) {
+      for (llvm::Instruction &I : bb) {
+        const llvm::DebugLoc d = I.getDebugLoc();
+        if (d) {
+          unsigned l = d.getLine();
+          unsigned c = d.getCol();
+          auto f = llvm::cast<llvm::DIScope>(d.getScope())->getFilename().str();
 
-        src_loc curr(l,c,f);
-        if( f != curr.file ) continue;
-        if( COMPARE_OBJ2(curr, low_est, line, col) ||
-            COMPARE_OBJ2(up_est, curr, line, col) )
-          continue;
-        if( ref_end == curr ||
-            COMPARE_OBJ2(ref_end, curr, line, col)  ) {
-          up_est = curr;
-          I_up = &I;
+          src_loc curr(l, c, f);
+          if (f != curr.file)
+            continue;
+          if (COMPARE_OBJ2(curr, low_est, line, col) ||
+              COMPARE_OBJ2(up_est, curr, line, col))
+            continue;
+          if (ref_end == curr || COMPARE_OBJ2(ref_end, curr, line, col)) {
+            up_est = curr;
+            I_up = &I;
+          }
+          if (ref == curr || COMPARE_OBJ2(curr, ref, line, col)) {
+            low_est = curr;
+            I_low = &I;
+          }
+
+          // {
+          //   std::cerr << "\n";
+          //   dump_triple( low_est );
+          //   dump_triple( ref );
+          //   dump_triple( up_est );
+          //   dump_triple( curr );
+          //   std::cerr << "\n";
+          // }
+
+          // auto curr = std::make_tuple(l,c,f);
+          // if( f != std::get<2>(curr) ) continue;
+          // if( COMPARE_TUPLE2(curr, low_est, 0, 1) ||
+          //     COMPARE_TUPLE2(up_est, curr, 0, 1) )
+          //   continue;
+          // if( ref_end == curr ||
+          //     COMPARE_TUPLE2(ref_end, curr, 0, 1)  ) {
+          //   up_est = curr;
+          //   I_up = &I;
+          // }
+          // if( ref == curr ||
+          //     COMPARE_TUPLE2(curr, ref, 0, 1)  ) {
+          //   low_est = curr;
+          //   I_low = &I;
+          // }
         }
-        if( ref == curr ||
-            COMPARE_OBJ2(curr, ref, line, col)  ) {
-          low_est = curr;
-          I_low = &I;
-        }
-
-
-        // {
-        //   std::cerr << "\n";
-        //   dump_triple( low_est );
-        //   dump_triple( ref );
-        //   dump_triple( up_est );
-        //   dump_triple( curr );
-        //   std::cerr << "\n";
-        // }
-
-        // auto curr = std::make_tuple(l,c,f);
-        // if( f != std::get<2>(curr) ) continue;
-        // if( COMPARE_TUPLE2(curr, low_est, 0, 1) ||
-        //     COMPARE_TUPLE2(up_est, curr, 0, 1) )
-        //   continue;
-        // if( ref_end == curr ||
-        //     COMPARE_TUPLE2(ref_end, curr, 0, 1)  ) {
-        //   up_est = curr;
-        //   I_up = &I;
-        // }
-        // if( ref == curr ||
-        //     COMPARE_TUPLE2(curr, ref, 0, 1)  ) {
-        //   low_est = curr;
-        //   I_low = &I;
-        // }
       }
-    }}
+    }
 
     return false;
   }
-  
+
   virtual void getAnalysisUsage(llvm::AnalysisUsage &au) const {
-      au.setPreservesAll();
+    au.setPreservesAll();
   }
   virtual llvm::StringRef getPassName() const {
     return "estimate location pass: finds estimate of a source location!!";
@@ -233,14 +226,13 @@ public:
 
 char estimate_loc_pass::ID = 0;
 
-
-llvm::Instruction*
-estimate_comment_location( std::unique_ptr<llvm::Module>& module,
-                        src_loc start, src_loc end) {
+llvm::Instruction *
+estimate_comment_location(std::unique_ptr<llvm::Module> &module, src_loc start,
+                          src_loc end) {
   llvm::legacy::PassManager passMan;
-  auto estimate_pass = new estimate_loc_pass( start, end );
-  passMan.add( estimate_pass );
-  passMan.run( *module.get() );
+  auto estimate_pass = new estimate_loc_pass(start, end);
+  passMan.add(estimate_pass);
+  passMan.run(*module.get());
   // {
   //   estimate_pass->get_I_low()->dump();
   //   estimate_pass->get_I_up()->dump();
@@ -251,55 +243,56 @@ estimate_comment_location( std::unique_ptr<llvm::Module>& module,
   // return estimate_pass->get_low_estimate();
 }
 
-void
-estimate_comment_location(std::unique_ptr<llvm::Module>& module,
-                          comments& cmts,
-                          std::map< const bb*, comments>&
-          // std::pair< std::vector<comment>, std::vector<comment> > >&
-          // std::pair< std::vector<std::string>, std::vector<std::string> > >&
-                          bb_comment_map ) {
+void estimate_comment_location(
+    std::unique_ptr<llvm::Module> &module, comments &cmts,
+    std::map<const bb *, comments> &
+        // std::pair< std::vector<comment>, std::vector<comment> > >&
+        // std::pair< std::vector<std::string>, std::vector<std::string> > >&
+        bb_comment_map) {
   // collect all the comments that are written at the same program point
   // std::map< llvm::Instruction*, std::vector<std::string> > comment_map;
-  std::map< llvm::Instruction*, std::vector<comment> > comment_map;
-  std::vector< std::vector< llvm::Instruction* > > Is;
-  for( auto& comment : cmts.start_comments ) {
+  std::map<llvm::Instruction *, std::vector<comment>> comment_map;
+  std::vector<std::vector<llvm::Instruction *>> Is;
+  for (auto &comment : cmts.start_comments) {
     auto start = comment.start;
     auto end = comment.end;
-    llvm::Instruction* I =
-      estimate_comment_location( module, start, end );
-    if( comment_map.find(I) != comment_map.end() ) {
-      auto& c_vec = comment_map.at(I);
+    llvm::Instruction *I = estimate_comment_location(module, start, end);
+    if (comment_map.find(I) != comment_map.end()) {
+      auto &c_vec = comment_map.at(I);
       c_vec.push_back(comment);
-    }else{
+    } else {
       comment_map[I].push_back(comment);
       // maintain ordered instructions in a same block
       bool done = false;
-      for( auto& B_Is : Is ) {
-        if( B_Is[0]->getParent() == I->getParent() ) {
+      for (auto &B_Is : Is) {
+        if (B_Is[0]->getParent() == I->getParent()) {
           unsigned i = 0;
-          for( auto& Io : *B_Is[0]->getParent() ) {
-            if( i == B_Is.size() || &Io == I ) break;
-            if( &Io == B_Is[i] ) i++;
+          for (auto &Io : *B_Is[0]->getParent()) {
+            if (i == B_Is.size() || &Io == I)
+              break;
+            if (&Io == B_Is[i])
+              i++;
           }
-          B_Is.insert( B_Is.begin() + i, I);
+          B_Is.insert(B_Is.begin() + i, I);
           done = true;
         }
       }
-      if( !done ) Is.push_back({I});
+      if (!done)
+        Is.push_back({I});
     }
   }
 
-  for( auto& B_Is : Is ) {
-    //intially all instructions in B_Is have same block
-    for( llvm::Instruction* I : B_Is ) {
-      llvm::BasicBlock* bb = I->getParent();
-      auto& pair = bb_comment_map[bb];
-      llvm::Instruction* first = &(*(bb->begin()));
-      if( bb->getTerminator() == I ) {
+  for (auto &B_Is : Is) {
+    // intially all instructions in B_Is have same block
+    for (llvm::Instruction *I : B_Is) {
+      llvm::BasicBlock *bb = I->getParent();
+      auto &pair = bb_comment_map[bb];
+      llvm::Instruction *first = &(*(bb->begin()));
+      if (bb->getTerminator() == I) {
         pair.end_comments = comment_map[I];
-      }else if( first == I ) {
+      } else if (first == I) {
         pair.start_comments = comment_map[I];
-      }else{
+      } else {
         pair.end_comments = comment_map[I];
         bb->splitBasicBlock(I);
       }
@@ -307,27 +300,25 @@ estimate_comment_location(std::unique_ptr<llvm::Module>& module,
   }
 }
 
-
-void comment::add_comments( const std::vector<std::string>& cmts ) {
-  vec_insert( texts, cmts );
+void comment::add_comments(const std::vector<std::string> &cmts) {
+  vec_insert(texts, cmts);
 }
 
 //
 // clange source to llvm soruce location
 // warning: the code is without several guards (check CGDebugInfo.cpp in clang)
-src_loc
-getLocFromClangSource( const clang::SourceLocation& loc,
-                       const clang::SourceManager& sm) {
+src_loc getLocFromClangSource(const clang::SourceLocation &loc,
+                              const clang::SourceManager &sm) {
   unsigned line = sm.getPresumedLoc(loc).getLine();
   unsigned col = sm.getPresumedLoc(loc).getColumn();
   std::string file = sm.getFilename(loc).str();
-  return src_loc(line,col,file);
+  return src_loc(line, col, file);
 }
 
-//this function is a copy from CompilerInstance::ExecuteActuib
-// bool ExecuteAction( clang::CompilerInstance& CI,
-//                     clang::FrontendAction &Act,
-//                     std::vector< comment >& comments_found) {
+// this function is a copy from CompilerInstance::ExecuteActuib
+//  bool ExecuteAction( clang::CompilerInstance& CI,
+//                      clang::FrontendAction &Act,
+//                      std::vector< comment >& comments_found) {
 
 //   // FIXME: Take this as an argument, once all the APIs we used have moved to
 //   // taking it as an input instead of hard-coding llvm::errs.
@@ -339,7 +330,8 @@ getLocFromClangSource( const clang::SourceLocation& loc,
 //   if (!CI.hasTarget())
 //     return false;
 //   CI.getTarget().adjust(CI.getLangOpts());
-//   CI.getTarget().adjustTargetOptions(CI.getCodeGenOpts(), CI.getTargetOpts());
+//   CI.getTarget().adjustTargetOptions(CI.getCodeGenOpts(),
+//   CI.getTargetOpts());
 
 //   for (const clang::FrontendInputFile &FIF : CI.getFrontendOpts().Inputs) {
 //     // Reset the ID tables if we are reusing the SourceManager and parsing
@@ -353,8 +345,8 @@ getLocFromClangSource( const clang::SourceLocation& loc,
 //       clang::SourceManager& sm = CI.getSourceManager();
 //       auto FID = sm.getMainFileID();
 //       clang::RawCommentList& comment_list = ast_ctx.getRawCommentList();
-//       const std::map< unsigned, clang::RawComment * > * cmts = comment_list.getCommentsInFile(FID);
-//       if( cmts ) {
+//       const std::map< unsigned, clang::RawComment * > * cmts =
+//       comment_list.getCommentsInFile(FID); if( cmts ) {
 //       // for( clang::RawComment* cmnt : comment_list.getComments() ) {
 //         for( auto& pos_cmt_pair : *cmts ) {
 //           clang::RawComment* cmnt = pos_cmt_pair.second;
@@ -369,11 +361,13 @@ getLocFromClangSource( const clang::SourceLocation& loc,
 //             boost::algorithm::trim(cmt);
 //             if(COMMENT_PREFIX == cmt.substr(0, COMMENT_PREFIX_LEN) ) {
 //               auto txt =
-//                 cmt.substr(COMMENT_PREFIX_LEN, cmt.size()-COMMENT_PREFIX_LEN );
+//                 cmt.substr(COMMENT_PREFIX_LEN, cmt.size()-COMMENT_PREFIX_LEN
+//                 );
 //               c.texts.push_back( txt );
-//               c.start = getLocFromClangSource(cmnt->getSourceRange().getBegin(), sm);
-//               c.end = getLocFromClangSource( cmnt->getSourceRange().getEnd(), sm);
-//               comments_found.push_back(c);
+//               c.start =
+//               getLocFromClangSource(cmnt->getSourceRange().getBegin(), sm);
+//               c.end = getLocFromClangSource( cmnt->getSourceRange().getEnd(),
+//               sm); comments_found.push_back(c);
 //             }
 //           }
 //         }
@@ -402,30 +396,29 @@ getLocFromClangSource( const clang::SourceLocation& loc,
 //   return !CI.getDiagnostics().getClient()->getNumErrors();
 // }
 
-// #define CLANG_INCLUDE "/usr/lib/llvm-"##CLANG_VERSION##"/lib/clang/"##CLANG_VERSION##".0.0/include/"
+// #define CLANG_INCLUDE
+// "/usr/lib/llvm-"##CLANG_VERSION##"/lib/clang/"##CLANG_VERSION##".0.0/include/"
 
-//Direct translation via API clang
+// Direct translation via API clang
 
-
-
-std::string exec(const char* cmd) {
-    std::array<char, 128> buffer;
-    std::string result;
-    FILE* pipe = popen(cmd, "r");
-    // std::unique_ptr<FILE> pipe();
-    if (!pipe) {
-        throw std::runtime_error("popen() failed!");
-    }
-    while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
-        result += buffer.data();
-    }
-    pclose(pipe);
-    return result;
+std::string exec(const char *cmd) {
+  std::array<char, 128> buffer;
+  std::string result;
+  FILE *pipe = popen(cmd, "r");
+  // std::unique_ptr<FILE> pipe();
+  if (!pipe) {
+    throw std::runtime_error("popen() failed!");
+  }
+  while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
+    result += buffer.data();
+  }
+  pclose(pipe);
+  return result;
 }
 
-std::vector<std::string> get_system_include_folders( std::string lang ) {
+std::vector<std::string> get_system_include_folders(std::string lang) {
   std::ostringstream cmd;
-  cmd << "gcc -x"<< lang << " /dev/null -E -Wp,-v 2>&1";
+  cmd << "gcc -x" << lang << " /dev/null -E -Wp,-v 2>&1";
   std::string result = exec(cmd.str().c_str());
   std::vector<std::string> dirs;
   // std::cout << result << "\n";
@@ -433,7 +426,7 @@ std::vector<std::string> get_system_include_folders( std::string lang ) {
   auto ss = std::stringstream{result};
 
   for (std::string line; std::getline(ss, line, '\n');) {
-    if( line[0]==' ') {
+    if (line[0] == ' ') {
       size_t start = line.find_first_not_of(" ");
       line = (start == std::string::npos) ? "" : line.substr(start);
       dirs.push_back(line);
@@ -443,24 +436,23 @@ std::vector<std::string> get_system_include_folders( std::string lang ) {
   return dirs;
 }
 
-
-std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
+std::unique_ptr<llvm::Module> c2ir(options &o, comments &cmts) {
   const std::string filename = o.get_input_file();
 
-  if ( !boost::filesystem::exists( filename ) ) {
-    llvm_bmc_error( "CLANG_PARSGING", "failed to find file " << filename );
+  if (!boost::filesystem::exists(filename)) {
+    llvm_bmc_error("CLANG_PARSGING", "failed to find file " << filename);
     return nullptr;
   }
-  llvm::LLVMContext& llvm_ctx = o.get_llvm_context();
+  llvm::LLVMContext &llvm_ctx = o.get_llvm_context();
 
   // auto dirs;
   std::vector<std::string> include_dirs;
-  if(boost::algorithm::ends_with(filename, ".c")) {
-    include_dirs = get_system_include_folders( "c" );
-  }else if(boost::algorithm::ends_with(filename, ".cpp")){
-    include_dirs = get_system_include_folders( "c++" );
-  }else{
-    llvm_bmc_error( "llvm utils", "File type is not recognized!!" );
+  if (boost::algorithm::ends_with(filename, ".c")) {
+    include_dirs = get_system_include_folders("c");
+  } else if (boost::algorithm::ends_with(filename, ".cpp")) {
+    include_dirs = get_system_include_folders("c++");
+  } else {
+    llvm_bmc_error("llvm utils", "File type is not recognized!!");
   }
 
   // for( auto d : dirs){
@@ -478,38 +470,40 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   //   "/usr/include"
   // };
 
-  //standard include directories
-  // include_dirs.push_back("/usr/local/gcc-13.1.0/lib/gcc/x86_64-linux-gnu/13.1.0/include");
-  // include_dirs.push_back("/usr/local/include");
-  // include_dirs.push_back("/usr/local/gcc-13.1.0/include");
-  // include_dirs.push_back("/usr/local/gcc-13.1.0/lib/gcc/x86_64-linux-gnu/13.1.0/include-fixed/x86_64-linux-gnu");
-  // include_dirs.push_back("/usr/local/gcc-13.1.0/lib/gcc/x86_64-linux-gnu/13.1.0/include-fixed");
-  // include_dirs.push_back("/usr/include/x86_64-linux-gnu");
-  // include_dirs.push_back("/usr/include");
+  // standard include directories
+  //  include_dirs.push_back("/usr/local/gcc-13.1.0/lib/gcc/x86_64-linux-gnu/13.1.0/include");
+  //  include_dirs.push_back("/usr/local/include");
+  //  include_dirs.push_back("/usr/local/gcc-13.1.0/include");
+  //  include_dirs.push_back("/usr/local/gcc-13.1.0/lib/gcc/x86_64-linux-gnu/13.1.0/include-fixed/x86_64-linux-gnu");
+  //  include_dirs.push_back("/usr/local/gcc-13.1.0/lib/gcc/x86_64-linux-gnu/13.1.0/include-fixed");
+  //  include_dirs.push_back("/usr/include/x86_64-linux-gnu");
+  //  include_dirs.push_back("/usr/include");
 
+  // include_dirs.push_back( "/usr/include/");               // for features.h,
+  // locale.h, pthread.h include_dirs.push_back( "/usr/include/linux"); // for
+  // stddef.h include_dirs.push_back( "/usr/include/c++/11/");         // for
+  // iostream include_dirs.push_back( "/usr/include/x86_64-linux-gnu/");      //
+  // for wchar.h include_dirs.push_back(
+  // "/usr/include/x86_64-linux-gnu/c++/11/");    // bits/c++config.h
+  // include_dirs.push_back( "/usr/include/c++/11/tr1");      // for stdarg.h,
+  // wchar.h include_dirs.push_back(
+  // "/usr/lib/gcc/x86_64-linux-gnu/11/include/");   // for stdarg.h
+  // include_dirs.push_back( "/usr/lib/llvm-" CLANG_VERSION "/lib/clang/"
+  // CLANG_VERSION ".0.0/include/");  // for stddef.h
 
-  // include_dirs.push_back( "/usr/include/");               // for features.h, locale.h, pthread.h
-  // include_dirs.push_back( "/usr/include/linux");          // for stddef.h
-  // include_dirs.push_back( "/usr/include/c++/11/");         // for iostream
-  // include_dirs.push_back( "/usr/include/x86_64-linux-gnu/");      // for wchar.h
-  // include_dirs.push_back( "/usr/include/x86_64-linux-gnu/c++/11/");    // bits/c++config.h
-  // include_dirs.push_back( "/usr/include/c++/11/tr1");      // for stdarg.h, wchar.h
-  // include_dirs.push_back( "/usr/lib/gcc/x86_64-linux-gnu/11/include/");   // for stdarg.h
-  // include_dirs.push_back( "/usr/lib/llvm-" CLANG_VERSION "/lib/clang/" CLANG_VERSION ".0.0/include/");  // for stddef.h
+  // added by ashwin ~
+  //  include_dirs.push_back("/usr/local/gcc-13.1.0/include/c++/13.1.0");
+  //  include_dirs.push_back("/home/ashwinabraham/gcc-releases-gcc-13.1.0/libstdc++-v3/include/c_compatibility/");
+  //  include_dirs.push_back("/home/ashwinabraham/gcc-releases-gcc-13.1.0/build/gcc/include/");
+  //  include_dirs.push_back("/home/ashwinabraham/gcc-releases-gcc-13.1.0/build/stage1-x86_64-linux-gnu/libstdc++-v3/include/x86_64-linux-gnu/");
 
-  //added by ashwin ~
-  // include_dirs.push_back("/usr/local/gcc-13.1.0/include/c++/13.1.0");
-  // include_dirs.push_back("/home/ashwinabraham/gcc-releases-gcc-13.1.0/libstdc++-v3/include/c_compatibility/");
-  // include_dirs.push_back("/home/ashwinabraham/gcc-releases-gcc-13.1.0/build/gcc/include/");
-  // include_dirs.push_back("/home/ashwinabraham/gcc-releases-gcc-13.1.0/build/stage1-x86_64-linux-gnu/libstdc++-v3/include/x86_64-linux-gnu/");
-
-  // include_dirs.push_back( "/usr/include/c++/11/parallel/");         // for features.h
-  // include_dirs.push_back( "/usr/include/x86_64-linux-gnu/bits/");  // for locale.h
-  // include_dirs.push_back( "/usr/local/include/");
+  // include_dirs.push_back( "/usr/include/c++/11/parallel/");         // for
+  // features.h include_dirs.push_back( "/usr/include/x86_64-linux-gnu/bits/");
+  // // for locale.h include_dirs.push_back( "/usr/local/include/");
 
   // additional include directories
-  for( auto& dir : o.get_include_dirs() ) {
-    include_dirs.push_back( dir );
+  for (auto &dir : o.get_include_dirs()) {
+    include_dirs.push_back(dir);
   }
   // return nullptr;
 
@@ -517,57 +511,62 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   // and clang/lib/Frontend/CompilerInvocation.cpp
   // to find right param names
   std::vector<const char *> args;
-  args.push_back( "-emit-llvm" );
-  args.push_back( "-disable-llvm-passes" );
-  args.push_back( "-debug-info-kind=standalone" );
-  args.push_back( "-dwarf-version=2" );
+  args.push_back("-emit-llvm");
+  args.push_back("-disable-llvm-passes");
+  args.push_back("-debug-info-kind=standalone");
+  args.push_back("-dwarf-version=2");
   // args.push_back( "-dwarf-column-info" );
   // args.push_back( "-mdisable-fp-elim");
-  args.push_back( "-femit-all-decls" );
-  args.push_back( "-funroll-loops" );
-  args.push_back( "-O1" );
-  args.push_back( "-disable-O0-optnone" );
-  args.push_back( "-fcxx-exceptions" );
-  args.push_back( "-fexceptions");
-  args.push_back( "-fgnuc-version=4.2.1" ); // to ensure inclusion of some predefines
-  for( std::string& i_dir : include_dirs ) {
+  args.push_back("-femit-all-decls");
+  args.push_back("-funroll-loops");
+  args.push_back("-O1");
+  args.push_back("-disable-O0-optnone");
+  args.push_back("-fcxx-exceptions");
+  args.push_back("-fexceptions");
+  args.push_back(
+      "-fgnuc-version=4.2.1"); // to ensure inclusion of some predefines
+  for (std::string &i_dir : include_dirs) {
     i_dir = "-I" + i_dir;
-    args.push_back( i_dir.c_str() );
+    args.push_back(i_dir.c_str());
   }
-  args.push_back( filename.c_str() );
+  args.push_back(filename.c_str());
 
   llvm::ArrayRef<const char *> args_arry(args);
 
   clang::CompilerInstance Clang;
   auto diagOpts = new clang::DiagnosticOptions();
-  // Use a text diagnostic printer as the consumer to ensure diagnostics are created
+  // Use a text diagnostic printer as the consumer to ensure diagnostics are
+  // created
   auto diagConsumer = new clang::TextDiagnosticPrinter(llvm::errs(), diagOpts);
   auto vfs = llvm::vfs::createPhysicalFileSystem();
   if (vfs) {
-    // Use the overload that accepts a DiagnosticConsumer to ensure Diagnostics are created
+    // Use the overload that accepts a DiagnosticConsumer to ensure Diagnostics
+    // are created
     Clang.createDiagnostics(*vfs, diagConsumer, /*ShouldOwnClient=*/true);
   } else {
-    // Should not happen, but try to create diagnostics with a default filesystem
+    // Should not happen, but try to create diagnostics with a default
+    // filesystem
     auto real_vfs = llvm::vfs::getRealFileSystem();
     if (real_vfs) {
-      Clang.createDiagnostics(*real_vfs, diagConsumer, /*ShouldOwnClient=*/true);
+      Clang.createDiagnostics(*real_vfs, diagConsumer,
+                              /*ShouldOwnClient=*/true);
     }
   }
 
-  std::shared_ptr<clang::CompilerInvocation> CI(new clang::CompilerInvocation());
-  clang::CompilerInvocation::CreateFromArgs( *CI.get(),
-                                             args_arry,
-                                             // &args[0], &args[0] + args.size(),
+  std::shared_ptr<clang::CompilerInvocation> CI(
+      new clang::CompilerInvocation());
+  clang::CompilerInvocation::CreateFromArgs(*CI.get(), args_arry,
+                                            // &args[0], &args[0] + args.size(),
                                             Clang.getDiagnostics());
   Clang.setInvocation(CI);
   // clang::CodeGenAction *Act = new clang::EmitLLVMOnlyAction(&llvm_ctx);
-  std::unique_ptr<clang::CodeGenAction> Act = 
-    std::make_unique<clang::EmitLLVMOnlyAction>(&llvm_ctx);
+  std::unique_ptr<clang::CodeGenAction> Act =
+      std::make_unique<clang::EmitLLVMOnlyAction>(&llvm_ctx);
   try {
     // if (!ExecuteAction(Clang, *Act, cmts.start_comments))
     if (!Clang.ExecuteAction(*Act))
       return nullptr;
-  }catch (...) {
+  } catch (...) {
     return nullptr;
   }
   std::unique_ptr<llvm::Module> module = Act->takeModule();
@@ -577,45 +576,42 @@ std::unique_ptr<llvm::Module> c2ir( options& o, comments& cmts ) {
   return nullptr;
 }
 
-
-std::unique_ptr<llvm::Module> asm2ir( options& o, comments& cmts ) {
+std::unique_ptr<llvm::Module> asm2ir(options &o, comments &cmts) {
   const std::string filename = o.get_input_file();
 
-  if ( !boost::filesystem::exists( filename ) ) {
-    llvm_bmc_error( "ASM_PARSGING", "failed to find file " << filename );
+  if (!boost::filesystem::exists(filename)) {
+    llvm_bmc_error("ASM_PARSGING", "failed to find file " << filename);
     return nullptr;
   }
 
-  auto& llvm_ctx = o.get_llvm_context();
+  auto &llvm_ctx = o.get_llvm_context();
   llvm::SMDiagnostic err;
-  return llvm::parseAssemblyFile( filename, err, llvm_ctx );
+  return llvm::parseAssemblyFile(filename, err, llvm_ctx);
 }
 
-std::unique_ptr<llvm::Module> c2ir( options& o ) {
+std::unique_ptr<llvm::Module> c2ir(options &o) {
   comments comments_found;
-  return c2ir( o, comments_found );
+  return c2ir(o, comments_found);
 }
 
-
-std::unique_ptr<llvm::Module> ir2ir( options& o, comments& cmts ) {
+std::unique_ptr<llvm::Module> ir2ir(options &o, comments &cmts) {
   const std::string filename = o.get_input_file();
 
-  if ( !boost::filesystem::exists( filename ) ) {
-    llvm_bmc_error( "IR_PARSGING", "failed to find file " << filename );
+  if (!boost::filesystem::exists(filename)) {
+    llvm_bmc_error("IR_PARSGING", "failed to find file " << filename);
     return nullptr;
   }
 
-  auto& llvm_ctx = o.get_llvm_context();
+  auto &llvm_ctx = o.get_llvm_context();
   llvm::SMDiagnostic err;
-  return llvm::parseIRFile( filename, err, llvm_ctx );
+  return llvm::parseIRFile(filename, err, llvm_ctx);
 }
 
-
-void ir2mf( std::unique_ptr<llvm::Module>& module ) {
+void ir2mf(std::unique_ptr<llvm::Module> &module) {
   // ???
 }
 
-void generateAssemblyARM( std::unique_ptr<llvm::Module>& module ) {
+void generateAssemblyARM(std::unique_ptr<llvm::Module> &module) {
 
   llvm::InitializeAllTargets();
   llvm::InitializeAllTargetMCs();
@@ -625,10 +621,11 @@ void generateAssemblyARM( std::unique_ptr<llvm::Module>& module ) {
   // Get the target machine for the ARM64 architecture.
   llvm::Triple triple("aarch64");
   std::string error;
-  const llvm::Target* target = llvm::TargetRegistry::lookupTarget(triple.str(), error);
-  if( !target ) {
-      llvm::outs() << "Error looking up target: " << error << "\n";
-      return;
+  const llvm::Target *target =
+      llvm::TargetRegistry::lookupTarget(triple.str(), error);
+  if (!target) {
+    llvm::outs() << "Error looking up target: " << error << "\n";
+    return;
   }
 
   // Set target-specific options.
@@ -638,9 +635,8 @@ void generateAssemblyARM( std::unique_ptr<llvm::Module>& module ) {
   llvm::CodeGenOptLevel optLevel = llvm::CodeGenOptLevel::Aggressive;
 
   // Create a target machine.
-  llvm::TargetMachine* targetMachine =
-    target->createTargetMachine( triple.str(), "", "", options, relocModel,
-                                 codeModel, optLevel );
+  llvm::TargetMachine *targetMachine = target->createTargetMachine(
+      triple.str(), "", "", options, relocModel, codeModel, optLevel);
 
   // Set up the output stream.
   std::string assembly;
@@ -648,26 +644,25 @@ void generateAssemblyARM( std::unique_ptr<llvm::Module>& module ) {
 
   // Generate assembly code.
   llvm::legacy::PassManager passManager;
-  targetMachine->addPassesToEmitFile( passManager, llvm::outs(),
-                                      nullptr, llvm::CodeGenFileType::AssemblyFile );
-  passManager.run( *module.get() );
+  targetMachine->addPassesToEmitFile(passManager, llvm::outs(), nullptr,
+                                     llvm::CodeGenFileType::AssemblyFile);
+  passManager.run(*module.get());
   output.flush();
 
   // Store the assembly language in the module.
- //  module.setDataLayout(targetMachine->createDataLayout());
- //  module.setTargetTriple(triple.str());
- //  module.setSourceFileName("input.cpp");
- //  module.setModuleInlineAsm(assembly);
- // llvm::outs() << assembly;
+  //  module.setDataLayout(targetMachine->createDataLayout());
+  //  module.setTargetTriple(triple.str());
+  //  module.setSourceFileName("input.cpp");
+  //  module.setModuleInlineAsm(assembly);
+  // llvm::outs() << assembly;
 }
 
-
-void setLLVMConfigViaCommandLineOptions( std::string strs ) {
+void setLLVMConfigViaCommandLineOptions(std::string strs) {
   std::string n = "test";
-  const char* array[2];
+  const char *array[2];
   array[0] = n.c_str();
   array[1] = strs.c_str();
-  llvm::cl::ParseCommandLineOptions( 2, array );
+  llvm::cl::ParseCommandLineOptions(2, array);
 }
 
 // void printSegmentInfo(segment& s) {
@@ -680,88 +675,83 @@ void setLLVMConfigViaCommandLineOptions( std::string strs ) {
 //   printBlockInfo(s.bodyBlocks);
 // }
 
-
-void dump_dot_module( boost::filesystem::path& dump_path,
-                      std::unique_ptr<llvm::Module>& module ) {
+void dump_dot_module(boost::filesystem::path &dump_path,
+                     std::unique_ptr<llvm::Module> &module) {
   std::cerr << "dumping llvm program files in folder:" << dump_path << "\n";
   auto c_path = boost::filesystem::current_path();
-  current_path( dump_path );
+  current_path(dump_path);
 
   // llvm::legacy::PassManager passMan;
   // passMan.add( llvm::createCFGPrinterLegacyPassPass() );
   // passMan.run( *module.get() );
-  
+
   llvm::FunctionPassManager FPM;
   llvm::FunctionAnalysisManager FAM;
   llvm::PassBuilder PB;
   PB.registerFunctionAnalyses(FAM);
-  FPM.addPass( llvm::CFGPrinterPass() );
-  for(llvm::Function& F : *module ){
-    if( !F.empty() )
+  FPM.addPass(llvm::CFGPrinterPass());
+  for (llvm::Function &F : *module) {
+    if (!F.empty())
       FPM.run(F, FAM);
   }
-  
-  current_path( c_path );
+
+  current_path(c_path);
 }
 
-void printBlockInfo(std::vector<llvm::BasicBlock*>& blockList) {
-  for(const llvm::BasicBlock* b : blockList) {
+void printBlockInfo(std::vector<llvm::BasicBlock *> &blockList) {
+  for (const llvm::BasicBlock *b : blockList) {
     b->printAsOperand(llvm::errs(), false);
     std::cout << "\n";
   }
 }
 
-
-std::string getVarName(const llvm::DbgValueInst* dVal ) {
+std::string getVarName(const llvm::DbgValueInst *dVal) {
   // auto var = dVal->getValue();
   auto md = dVal->getVariable();
-  llvm::DIVariable* diMd = llvm::dyn_cast<llvm::DIVariable>(md);
-  return (std::string)( diMd->getName() );
+  llvm::DIVariable *diMd = llvm::dyn_cast<llvm::DIVariable>(md);
+  return (std::string)(diMd->getName());
 }
 
-std::string getVarName(const llvm::DbgDeclareInst* dDecl ) {
+std::string getVarName(const llvm::DbgDeclareInst *dDecl) {
   // auto var = dDecl->getAddress();
   auto md = dDecl->getVariable();
-  llvm::DIVariable* diMd = llvm::dyn_cast<llvm::DIVariable>(md);
-  auto str = (std::string)( diMd->getName() );
+  llvm::DIVariable *diMd = llvm::dyn_cast<llvm::DIVariable>(md);
+  auto str = (std::string)(diMd->getName());
   return str;
 }
 
-
-
-
 bool isInHeader(llvm::Instruction *I, llvm::Loop *L) {
-//  std::cout << "In isInHeader\n";
+  //  std::cout << "In isInHeader\n";
   auto h = L->getHeader();
   auto b = I->getParent();
-  if(h==b) {
-//    std::cout << "In Header\n";
+  if (h == b) {
+    //    std::cout << "In Header\n";
     return true;
   } else {
-//    std::cout << "Not in Header\n";
+    //    std::cout << "Not in Header\n";
     return false;
   }
 }
 
 bool isOutOfLoop(llvm::Instruction *I, llvm::Loop *L) {
-//  std::cout << "In isOutOfLoop\n";
-  if(L==NULL) {
+  //  std::cout << "In isOutOfLoop\n";
+  if (L == NULL) {
     return true;
   }
   auto bb = I->getParent();
-  for( auto b: L->getBlocks() ) {
-    if(b == bb) {
-//      std::cout << "Is in the loop\n";
+  for (auto b : L->getBlocks()) {
+    if (b == bb) {
+      //      std::cout << "Is in the loop\n";
       return false;
     }
   }
-//  std::cout << "Is out of the loop\n";
+  //  std::cout << "Is out of the loop\n";
   return true;
 }
 
 bool isMyLatch(llvm::BasicBlock *b, llvm::Loop *L) {
-//  std::cout << "In isInLatch\n";
-  if(L==NULL) {
+  //  std::cout << "In isInLatch\n";
+  if (L == NULL) {
     return false;
   }
   auto h = L->getLoopLatch();
@@ -769,19 +759,18 @@ bool isMyLatch(llvm::BasicBlock *b, llvm::Loop *L) {
 }
 
 bool isInLatch(llvm::Instruction *I, llvm::Loop *L) {
-  if(L==NULL) {
+  if (L == NULL) {
     return false;
   }
   auto b = I->getParent();
   // return isMyLatch( b, L ); //todo:
   auto h = L->getLoopLatch();
-  if(h==b) {
+  if (h == b) {
     return true;
   } else {
     return false;
   }
 }
-
 
 // Check whether the loop can be analyzed by us.
 bool isSupported(llvm::Loop *L) {
@@ -797,30 +786,33 @@ bool isSupported(llvm::Loop *L) {
 }
 
 // Check if the given basic block is in sub loop of the current loop
-bool isInSubLoop(llvm::BasicBlock *BB, llvm::Loop *CurLoop, llvm::LoopInfo *LI) {
-  if(!CurLoop->contains(BB)) {
-    std::cout << "Check is valid only if the basic block is in the current loop or its sub loop";
+bool isInSubLoop(llvm::BasicBlock *BB, llvm::Loop *CurLoop,
+                 llvm::LoopInfo *LI) {
+  if (!CurLoop->contains(BB)) {
+    std::cout << "Check is valid only if the basic block is in the current "
+                 "loop or its sub loop";
   }
   return LI->getLoopFor(BB) != CurLoop;
 }
 
 // Return the first Basic Block in the Body of the Current Loop
-llvm::BasicBlock* getFirstBodyOfLoop(llvm::Loop *CurLoop){
-  llvm::BasicBlock* head = CurLoop->getHeader();
+llvm::BasicBlock *getFirstBodyOfLoop(llvm::Loop *CurLoop) {
+  llvm::BasicBlock *head = CurLoop->getHeader();
   const auto *TInst = head->getTerminator();
   //  unsigned nbSucc = TInst->getNumSuccessors();
   bool found = false;
   unsigned i = 0;
   llvm::BasicBlock *next = TInst->getSuccessor(i);
-  while(!found) {
-    if(next!=CurLoop->getExitBlock())
-      found=true;
-    else{
+  while (!found) {
+    if (next != CurLoop->getExitBlock())
+      found = true;
+    else {
       i++;
       next = TInst->getSuccessor(i);
     }
   }
-  std::cout << "First body block in the current loop is :" << next->getName().str() << "\n";
+  std::cout << "First body block in the current loop is :"
+            << next->getName().str() << "\n";
   return next;
 }
 
@@ -831,74 +823,84 @@ std::string getFuncNameForDaikon(llvm::Loop *L) {
   return fName;
 }
 
-llvm::Function *printf_prototype( llvm::Module *mod,
-                                  llvm::LLVMContext& glbContext ) {
+llvm::Function *printf_prototype(llvm::Module *mod,
+                                 llvm::LLVMContext &glbContext) {
 
   auto ty_char = llvm::IntegerType::get(glbContext, sizeof(char) * CHAR_BIT);
-  llvm::Type *param_types[] = { llvm::PointerType::getUnqual(ty_char) };
+  llvm::Type *param_types[] = {llvm::PointerType::getUnqual(ty_char)};
   auto ret_type = llvm::IntegerType::get(glbContext, sizeof(int) * CHAR_BIT);
-  auto printf_type = llvm::FunctionType::get(ret_type , param_types, true );
+  auto printf_type = llvm::FunctionType::get(ret_type, param_types, true);
 
   // llvm::FunctionType *printf_type =
   //     llvm::TypeBuilder<int(char *, ...), false>::get(glbContext);
 
-  auto attr_list =  llvm::AttributeList().addAttributeAtIndex(mod->getContext(), 1U, llvm::Attribute::NoAlias);
-  auto a = mod->getOrInsertFunction("printf", printf_type, attr_list );
+  auto attr_list = llvm::AttributeList().addAttributeAtIndex(
+      mod->getContext(), 1U, llvm::Attribute::NoAlias);
+  auto a = mod->getOrInsertFunction("printf", printf_type, attr_list);
   llvm::Function *func = llvm::cast<llvm::Function>(a.getCallee());
 
   return func;
 }
 
-llvm::Function *assume_prototype(llvm::Module *mod, llvm::LLVMContext& glbContext) {
+llvm::Function *assume_prototype(llvm::Module *mod,
+                                 llvm::LLVMContext &glbContext) {
 
   auto ty_int = llvm::IntegerType::get(glbContext, sizeof(int) * CHAR_BIT);
-  llvm::Type *param_types[] = { ty_int };
+  llvm::Type *param_types[] = {ty_int};
   auto ret_type = llvm::Type::getVoidTy(glbContext);
-  auto assume_type = llvm::FunctionType::get(ret_type , param_types, false );
+  auto assume_type = llvm::FunctionType::get(ret_type, param_types, false);
 
   // llvm::FunctionType *assume_type =
   //     llvm::TypeBuilder<void(int), false>::get(glbContext);
 
-  auto attr_list = llvm::AttributeList().addAttributeAtIndex(mod->getContext(), 1U, llvm::Attribute::NoAlias);
+  auto attr_list = llvm::AttributeList().addAttributeAtIndex(
+      mod->getContext(), 1U, llvm::Attribute::NoAlias);
 
-  auto callee = mod->getOrInsertFunction("__llbmc_assume", assume_type, attr_list );
-    llvm::Function *func = llvm::cast<llvm::Function>(callee.getCallee());
-
-  return func;
-}
-
-llvm::Function *assert_prototype(llvm::Module *mod, llvm::LLVMContext& glbContext) {
-
-  auto ty_int = llvm::IntegerType::get(glbContext, sizeof(int) * CHAR_BIT);
-  llvm::Type *param_types[] = { ty_int };
-  auto ret_type = llvm::Type::getVoidTy(glbContext);
-  auto assert_type = llvm::FunctionType::get(ret_type , param_types, false );
-
-  // llvm::FunctionType *assert_type =
-  //     llvm::TypeBuilder<void(int), false>::get(glbContext);
-
-  auto attr_list = llvm::AttributeList().addAttributeAtIndex(mod->getContext(), 1U, llvm::Attribute::NoAlias);
-
-  auto callee = mod->getOrInsertFunction("__llbmc_assert", assert_type, attr_list);
+  auto callee =
+      mod->getOrInsertFunction("__llbmc_assume", assume_type, attr_list);
   llvm::Function *func = llvm::cast<llvm::Function>(callee.getCallee());
 
   return func;
 }
 
-llvm::Constant* geti8StrVal(llvm::Module& M, char const* str, llvm::Twine const& name, llvm::LLVMContext& ctx) {
+llvm::Function *assert_prototype(llvm::Module *mod,
+                                 llvm::LLVMContext &glbContext) {
+
+  auto ty_int = llvm::IntegerType::get(glbContext, sizeof(int) * CHAR_BIT);
+  llvm::Type *param_types[] = {ty_int};
+  auto ret_type = llvm::Type::getVoidTy(glbContext);
+  auto assert_type = llvm::FunctionType::get(ret_type, param_types, false);
+
+  // llvm::FunctionType *assert_type =
+  //     llvm::TypeBuilder<void(int), false>::get(glbContext);
+
+  auto attr_list = llvm::AttributeList().addAttributeAtIndex(
+      mod->getContext(), 1U, llvm::Attribute::NoAlias);
+
+  auto callee =
+      mod->getOrInsertFunction("__llbmc_assert", assert_type, attr_list);
+  llvm::Function *func = llvm::cast<llvm::Function>(callee.getCallee());
+
+  return func;
+}
+
+llvm::Constant *geti8StrVal(llvm::Module &M, char const *str,
+                            llvm::Twine const &name, llvm::LLVMContext &ctx) {
   //  llvm::LLVMContext& ctx = llvm::getGlobalContext();
-  llvm::Constant* strConstant = llvm::ConstantDataArray::getString(ctx, str);
-  llvm::GlobalVariable* GVStr =
-      new llvm::GlobalVariable(M, strConstant->getType(), true,
-                         llvm::GlobalValue::InternalLinkage, strConstant, name);
-  llvm::Constant* zero = llvm::Constant::getNullValue(llvm::IntegerType::getInt32Ty(ctx));
-  llvm::Constant* indices[] = {zero, zero};
-  llvm::Constant* strVal = llvm::ConstantExpr::getGetElementPtr(strConstant->getType(), GVStr, indices, true);
+  llvm::Constant *strConstant = llvm::ConstantDataArray::getString(ctx, str);
+  llvm::GlobalVariable *GVStr = new llvm::GlobalVariable(
+      M, strConstant->getType(), true, llvm::GlobalValue::InternalLinkage,
+      strConstant, name);
+  llvm::Constant *zero =
+      llvm::Constant::getNullValue(llvm::IntegerType::getInt32Ty(ctx));
+  llvm::Constant *indices[] = {zero, zero};
+  llvm::Constant *strVal = llvm::ConstantExpr::getGetElementPtr(
+      strConstant->getType(), GVStr, indices, true);
   return strVal;
 }
 
 void assertSingleNesting(llvm::Loop *L) {
-  if(!L->getSubLoops().empty()) {
+  if (!L->getSubLoops().empty()) {
     L = *L->begin();
     auto it = L->begin();
     it++;
@@ -907,38 +909,37 @@ void assertSingleNesting(llvm::Loop *L) {
   }
 }
 
-void assertNonNesting(llvm::Loop *L) {
-  assert(L->getSubLoops().empty());
-}
+void assertNonNesting(llvm::Loop *L) { assert(L->getSubLoops().empty()); }
 
 bool isIncrOp(llvm::Value *V) {
-  bool isAdd=true;
-  if( llvm::Instruction *I = llvm::dyn_cast<llvm::Instruction>(V) ) {
-    if( auto bop = llvm::dyn_cast<llvm::BinaryOperator>(I) ) {
+  bool isAdd = true;
+  if (llvm::Instruction *I = llvm::dyn_cast<llvm::Instruction>(V)) {
+    if (auto bop = llvm::dyn_cast<llvm::BinaryOperator>(I)) {
       auto op0 = bop->getOperand(0);
       auto op1 = bop->getOperand(1);
       unsigned op = bop->getOpcode();
-      switch( op ) {
-        case llvm::Instruction::Add :
-          isAdd=true;
-          break;
-        case llvm::Instruction::Sub :
-          isAdd=false;
-          break;
-        default:
-          std::cout << "\n\nInvalid operation. Must be + or -\n\n";
-          exit(1);
+      switch (op) {
+      case llvm::Instruction::Add:
+        isAdd = true;
+        break;
+      case llvm::Instruction::Sub:
+        isAdd = false;
+        break;
+      default:
+        std::cout << "\n\nInvalid operation. Must be + or -\n\n";
+        exit(1);
       }
-      if( llvm::ConstantInt *C = llvm::dyn_cast<llvm::ConstantInt>(op0) ) {
-        if(isAdd && C->isNegative()) {
+      if (llvm::ConstantInt *C = llvm::dyn_cast<llvm::ConstantInt>(op0)) {
+        if (isAdd && C->isNegative()) {
           return false;
-        } else if(!isAdd && C->isNegative()) {
+        } else if (!isAdd && C->isNegative()) {
           return true;
         }
-      } else if( llvm::ConstantInt *C = llvm::dyn_cast<llvm::ConstantInt>(op1) ) {
-        if(isAdd && C->isNegative()) {
+      } else if (llvm::ConstantInt *C =
+                     llvm::dyn_cast<llvm::ConstantInt>(op1)) {
+        if (isAdd && C->isNegative()) {
           return false;
-        } else if(!isAdd && C->isNegative()) {
+        } else if (!isAdd && C->isNegative()) {
           return true;
         }
       }
@@ -947,33 +948,41 @@ bool isIncrOp(llvm::Value *V) {
   return true;
 }
 
-llvm::Loop* getNextLoop(std::list<llvm::Loop*> lList, llvm::Loop* L) {
+llvm::Loop *getNextLoop(std::list<llvm::Loop *> lList, llvm::Loop *L) {
   bool flag = false;
-  for(llvm::Loop* lo : lList) {
-    if(flag) {
+  for (llvm::Loop *lo : lList) {
+    if (flag) {
       return lo;
     }
-    if(lo == L) {
+    if (lo == L) {
       flag = true;
     }
   }
   return NULL;
 }
 
-llvm::Value* getArrValueFromZ3Expr(llvm::Value *V, expr e, llvm::IRBuilder<> &irb, llvm::LLVMContext& c, std::map<std::string, llvm::Value*>& exprValMap, std::set<llvm::Value*>& arrSet) {
+llvm::Value *
+getArrValueFromZ3Expr(llvm::Value *V, expr e, llvm::IRBuilder<> &irb,
+                      llvm::LLVMContext &c,
+                      std::map<std::string, llvm::Value *> &exprValMap,
+                      std::set<llvm::Value *> &arrSet) {
   llvm::Value *res = getValueFromZ3Expr(e, irb, c, exprValMap, arrSet);
-  if(V != NULL ) {
+  if (V != NULL) {
     res = irb.CreateGEP(V->getType(), V, res);
-    res = irb.CreateLoad(V->getType(), res); // todo: which getType needs to be passed.
+    res = irb.CreateLoad(V->getType(),
+                         res); // todo: which getType needs to be passed.
     res = irb.CreateSExt(res, llvm::IntegerType::getInt64Ty(c));
     assert(res);
   }
   return res;
 }
 
-llvm::Value* getValueFromZ3Expr(expr e, llvm::IRBuilder<> &irb, llvm::LLVMContext& c, std::map<std::string, llvm::Value*>& exprValMap, std::set<llvm::Value*>& arrSet) {
+llvm::Value *
+getValueFromZ3Expr(expr e, llvm::IRBuilder<> &irb, llvm::LLVMContext &c,
+                   std::map<std::string, llvm::Value *> &exprValMap,
+                   std::set<llvm::Value *> &arrSet) {
   llvm::Value *res = NULL;
-  if(e.is_numeral()) {
+  if (e.is_numeral()) {
     int64_t num;
     if (Z3_get_numeral_int64(e.ctx(), e, &num)) {
       res = llvm::ConstantInt::get(llvm::IntegerType::getInt64Ty(c), num);
@@ -996,103 +1005,101 @@ llvm::Value* getValueFromZ3Expr(expr e, llvm::IRBuilder<> &irb, llvm::LLVMContex
   return res;
 }
 
-llvm::Value* getValueFromZ3SubExpr(expr e, llvm::IRBuilder<> &irb, llvm::LLVMContext& c, std::map<std::string, llvm::Value*>& exprValMap, std::set<llvm::Value*>& arrSet) {
-  std::list<llvm::Value*> argValList;
+llvm::Value *
+getValueFromZ3SubExpr(expr e, llvm::IRBuilder<> &irb, llvm::LLVMContext &c,
+                      std::map<std::string, llvm::Value *> &exprValMap,
+                      std::set<llvm::Value *> &arrSet) {
+  std::list<llvm::Value *> argValList;
 
   unsigned args = e.num_args();
-  for (unsigned i = 0; i<args; i++)
-  {
+  for (unsigned i = 0; i < args; i++) {
     expr arg = e.arg(i);
     argValList.push_back(getValueFromZ3Expr(arg, irb, c, exprValMap, arrSet));
   }
 
   Z3_decl_kind dk = e.decl().decl_kind();
-  std::list<llvm::Value*>::const_iterator argListIt;
+  std::list<llvm::Value *>::const_iterator argListIt;
   argListIt = argValList.begin();
 
   if (dk == Z3_OP_MUL) {
-    llvm::Value* res = *argListIt;
+    llvm::Value *res = *argListIt;
     assert(res);
     argListIt++;
-    for(;argListIt != argValList.end(); argListIt++)
-    {
+    for (; argListIt != argValList.end(); argListIt++) {
       assert(*argListIt);
       res = irb.CreateMul(res, *argListIt);
       assert(res);
     }
     return res;
   } else if (dk == Z3_OP_ADD) {
-    llvm::Value* res = *argListIt;
+    llvm::Value *res = *argListIt;
     assert(res);
     argListIt++;
-    for(;argListIt != argValList.end(); argListIt++)
-    {
+    for (; argListIt != argValList.end(); argListIt++) {
       assert(*argListIt);
       res = irb.CreateAdd(res, *argListIt);
       assert(res);
     }
     return res;
   } else if (dk == Z3_OP_SUB) {
-    llvm::Value* res = *argListIt;
+    llvm::Value *res = *argListIt;
     assert(res);
     argListIt++;
-    for(;argListIt != argValList.end(); argListIt++)
-    {
+    for (; argListIt != argValList.end(); argListIt++) {
       assert(*argListIt);
       res = irb.CreateSub(res, *argListIt);
       assert(res);
     }
     return res;
   } else if (dk == Z3_OP_DIV) {
-    llvm::Value* res = *argListIt;
+    llvm::Value *res = *argListIt;
     assert(res);
     argListIt++;
-    for(;argListIt != argValList.end(); argListIt++)
-    {
+    for (; argListIt != argValList.end(); argListIt++) {
       assert(*argListIt);
       res = irb.CreateSDiv(res, *argListIt);
       assert(res);
     }
     return res;
   } else if (dk == Z3_OP_REM) {
-    llvm::Value* res = *argListIt;
+    llvm::Value *res = *argListIt;
     assert(res);
     argListIt++;
-    for(;argListIt != argValList.end(); argListIt++)
-    {
+    for (; argListIt != argValList.end(); argListIt++) {
       assert(*argListIt);
       res = irb.CreateSRem(res, *argListIt);
       assert(res);
     }
     return res;
   } else if (dk == Z3_OP_UMINUS) {
-    llvm::Value* res = irb.CreateNeg(*argListIt);
+    llvm::Value *res = irb.CreateNeg(*argListIt);
     assert(res);
     return res;
   } else if (dk == Z3_OP_SELECT) {
-    //    std::cout << "\n Found a select statement with " << args << " args \n";
-    llvm::Value* Arr = *argListIt;
+    //    std::cout << "\n Found a select statement with " << args << " args
+    //    \n";
+    llvm::Value *Arr = *argListIt;
     assert(Arr);
     argListIt++;
-    llvm::Value* Ind = *argListIt;
+    llvm::Value *Ind = *argListIt;
     assert(Ind);
-    llvm::Value* res = irb.CreateGEP(Arr->getType(), Arr, Ind);
+    llvm::Value *res = irb.CreateGEP(Arr->getType(), Arr, Ind);
     assert(res);
-    res = irb.CreateLoad(res->getType(), res); //todo: may be we need scalare type
+    res = irb.CreateLoad(res->getType(),
+                         res); // todo: may be we need scalare type
     assert(res);
     res = irb.CreateSExt(res, llvm::IntegerType::getInt64Ty(c));
     assert(res);
     return res;
   } else if (dk == Z3_OP_NOT) {
-    llvm::Value* res = irb.CreateNot(*argListIt);
+    llvm::Value *res = irb.CreateNot(*argListIt);
     assert(res);
     return res;
   } else if (dk == Z3_OP_AND) {
-    llvm::Value* res = *argListIt;
+    llvm::Value *res = *argListIt;
     assert(res);
     argListIt++;
-    for(;argListIt != argValList.end(); argListIt++)
-    {
+    for (; argListIt != argValList.end(); argListIt++) {
       assert(*argListIt);
       res = irb.CreateAnd(res, *argListIt);
       assert(res);
@@ -1101,11 +1108,10 @@ llvm::Value* getValueFromZ3SubExpr(expr e, llvm::IRBuilder<> &irb, llvm::LLVMCon
     assert(res);
     return res;
   } else if (dk == Z3_OP_OR) {
-    llvm::Value* res = *argListIt;
+    llvm::Value *res = *argListIt;
     assert(res);
     argListIt++;
-    for(;argListIt != argValList.end(); argListIt++)
-    {
+    for (; argListIt != argValList.end(); argListIt++) {
       assert(*argListIt);
       res = irb.CreateOr(res, *argListIt);
       assert(res);
@@ -1114,11 +1120,10 @@ llvm::Value* getValueFromZ3SubExpr(expr e, llvm::IRBuilder<> &irb, llvm::LLVMCon
     assert(res);
     return res;
   } else if (dk == Z3_OP_EQ) {
-    llvm::Value* res = *argListIt;
+    llvm::Value *res = *argListIt;
     assert(res);
     argListIt++;
-    for(;argListIt != argValList.end(); argListIt++)
-    {
+    for (; argListIt != argValList.end(); argListIt++) {
       assert(*argListIt);
       res = irb.CreateICmpEQ(res, *argListIt);
       assert(res);
@@ -1127,11 +1132,10 @@ llvm::Value* getValueFromZ3SubExpr(expr e, llvm::IRBuilder<> &irb, llvm::LLVMCon
     assert(res);
     return res;
   } else if (dk == Z3_OP_GE) {
-    llvm::Value* res = *argListIt;
+    llvm::Value *res = *argListIt;
     assert(res);
     argListIt++;
-    for(;argListIt != argValList.end(); argListIt++)
-    {
+    for (; argListIt != argValList.end(); argListIt++) {
       assert(*argListIt);
       res = irb.CreateICmpSGE(res, *argListIt);
       assert(res);
@@ -1140,11 +1144,10 @@ llvm::Value* getValueFromZ3SubExpr(expr e, llvm::IRBuilder<> &irb, llvm::LLVMCon
     assert(res);
     return res;
   } else if (dk == Z3_OP_GT) {
-    llvm::Value* res = *argListIt;
+    llvm::Value *res = *argListIt;
     assert(res);
     argListIt++;
-    for(;argListIt != argValList.end(); argListIt++)
-    {
+    for (; argListIt != argValList.end(); argListIt++) {
       assert(*argListIt);
       res = irb.CreateICmpSGT(res, *argListIt);
       assert(res);
@@ -1153,11 +1156,10 @@ llvm::Value* getValueFromZ3SubExpr(expr e, llvm::IRBuilder<> &irb, llvm::LLVMCon
     assert(res);
     return res;
   } else if (dk == Z3_OP_LE) {
-    llvm::Value* res = *argListIt;
+    llvm::Value *res = *argListIt;
     assert(res);
     argListIt++;
-    for(;argListIt != argValList.end(); argListIt++)
-    {
+    for (; argListIt != argValList.end(); argListIt++) {
       assert(*argListIt);
       res = irb.CreateICmpSLE(res, *argListIt);
       assert(res);
@@ -1166,11 +1168,10 @@ llvm::Value* getValueFromZ3SubExpr(expr e, llvm::IRBuilder<> &irb, llvm::LLVMCon
     assert(res);
     return res;
   } else if (dk == Z3_OP_LT) {
-    llvm::Value* res = *argListIt;
+    llvm::Value *res = *argListIt;
     assert(res);
     argListIt++;
-    for(;argListIt != argValList.end(); argListIt++)
-    {
+    for (; argListIt != argValList.end(); argListIt++) {
       assert(*argListIt);
       res = irb.CreateICmpSLT(res, *argListIt);
       assert(res);
@@ -1180,9 +1181,9 @@ llvm::Value* getValueFromZ3SubExpr(expr e, llvm::IRBuilder<> &irb, llvm::LLVMCon
     return res;
   } else {
     std::string varName = e.decl().name().str();
-    llvm::Value* res = exprValMap.at(varName);
+    llvm::Value *res = exprValMap.at(varName);
     assert(res);
-    if(arrSet.count(res) == 0) {
+    if (arrSet.count(res) == 0) {
       res = irb.CreateSExt(res, llvm::IntegerType::getInt64Ty(c));
       assert(res);
     }
@@ -1190,51 +1191,54 @@ llvm::Value* getValueFromZ3SubExpr(expr e, llvm::IRBuilder<> &irb, llvm::LLVMCon
   }
 }
 
-void collectArr( llvm::Function &f, std::set<llvm::Value*>& arrSet) {
+void collectArr(llvm::Function &f, std::set<llvm::Value *> &arrSet) {
   arrSet.clear();
-  for( auto bbit = f.begin(), end = f.end(); bbit != end; bbit++ ) {
-    llvm::BasicBlock* bb = &(*bbit);
-    for( llvm::Instruction& Iobj : *bb ) {
-      llvm::Instruction* I = &(Iobj);
-      if( auto alloc = llvm::dyn_cast<llvm::AllocaInst>(I) ) {
-        if( alloc->isArrayAllocation() &&
-            !llvm::dyn_cast<llvm::PointerType>(alloc->getType())->getContainedType(0)->isIntegerTy() ) {
-          llvm_bmc_error( "llvm_utils", "only pointers to intergers is allowed!" );
+  for (auto bbit = f.begin(), end = f.end(); bbit != end; bbit++) {
+    llvm::BasicBlock *bb = &(*bbit);
+    for (llvm::Instruction &Iobj : *bb) {
+      llvm::Instruction *I = &(Iobj);
+      if (auto alloc = llvm::dyn_cast<llvm::AllocaInst>(I)) {
+        if (alloc->isArrayAllocation() &&
+            !llvm::dyn_cast<llvm::PointerType>(alloc->getType())
+                 ->getContainedType(0)
+                 ->isIntegerTy()) {
+          llvm_bmc_error("llvm_utils",
+                         "only pointers to intergers is allowed!");
         }
-        arrSet.insert( alloc );
+        arrSet.insert(alloc);
       }
     }
   }
 }
 
-llvm::Type* get_type_of_pointer( const llvm::Value* v ) {
-  assert( llvm::isa<llvm::PointerType>( v->getType() ) );
-  if( auto g = llvm::dyn_cast<llvm::GlobalVariable>(v) ) {
+llvm::Type *get_type_of_pointer(const llvm::Value *v) {
+  assert(llvm::isa<llvm::PointerType>(v->getType()));
+  if (auto g = llvm::dyn_cast<llvm::GlobalVariable>(v)) {
     return g->getValueType();
-  }else if( auto a = llvm::dyn_cast<llvm::AllocaInst>(v) ) {
+  } else if (auto a = llvm::dyn_cast<llvm::AllocaInst>(v)) {
     return a->getAllocatedType();
   }
   // Follow the instructions of https://llvm.org/docs/OpaquePointers.html
   // }else if( auto a = llvm::dyn_cast<llvm::CallInst>(v) ) {
   //   return a->getAllocatedType();
-  //llvm_bmc_error("kbound", "Opaque pointer is found; case is not wrritten!");
+  // llvm_bmc_error("kbound", "Opaque pointer is found; case is not wrritten!");
   // }else if( typ->isPointerTy() ) {
-    // typ = typ->getPointerElementType();
+  // typ = typ->getPointerElementType();
   return NULL;
 }
 
-bool is_assert_call(const llvm::CallInst* call ) {
-  assert( call );
-  llvm::Function* fp = call->getCalledFunction();
-  if( fp != NULL &&
-      (fp->getName() == "_Z6assertb" || fp->getName() == "assert" ) ) {
+bool is_assert_call(const llvm::CallInst *call) {
+  assert(call);
+  llvm::Function *fp = call->getCalledFunction();
+  if (fp != NULL &&
+      (fp->getName() == "_Z6assertb" || fp->getName() == "assert")) {
     return true;
   } else if (fp == NULL) {
-    const llvm::Value * val = call->getCalledOperand();
-    if( auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val) ) {
-      if(CE->isCast()) {
-        if(CE->getOperand(0)->getName() == "assert" ||
-           CE->getOperand(0)->getName() == "_Z6assertb") {
+    const llvm::Value *val = call->getCalledOperand();
+    if (auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val)) {
+      if (CE->isCast()) {
+        if (CE->getOperand(0)->getName() == "assert" ||
+            CE->getOperand(0)->getName() == "_Z6assertb") {
           return true;
         }
       }
@@ -1243,15 +1247,16 @@ bool is_assert_call(const llvm::CallInst* call ) {
   return false;
 }
 
-bool is_assert_loop( llvm::Loop* L ) {
-  bool assert_seen=false;
-  for( auto bb: L->getBlocks() ) {
-    for( auto it = bb->begin(), e = bb->end(); it != e; ++it) {
+bool is_assert_loop(llvm::Loop *L) {
+  bool assert_seen = false;
+  for (auto bb : L->getBlocks()) {
+    for (auto it = bb->begin(), e = bb->end(); it != e; ++it) {
       llvm::Instruction *I = &(*it);
-      if( auto call = llvm::dyn_cast<llvm::CallInst>(I) ) {
-        if(llvm::isa<llvm::DbgValueInst>(I) ||llvm::isa<llvm::DbgDeclareInst>(I)){
+      if (auto call = llvm::dyn_cast<llvm::CallInst>(I)) {
+        if (llvm::isa<llvm::DbgValueInst>(I) ||
+            llvm::isa<llvm::DbgDeclareInst>(I)) {
           // Ignore debug instructions
-        }else{
+        } else {
           assert_seen = assert_seen || is_assert_call(call);
         }
       }
@@ -1260,76 +1265,75 @@ bool is_assert_loop( llvm::Loop* L ) {
   return assert_seen;
 }
 
-bool is_pointer( llvm::Value* v ) {
-  return v->getType()->isPointerTy();
-}
+bool is_pointer(llvm::Value *v) { return v->getType()->isPointerTy(); }
 
 class bb_succ_iter : public llvm::const_succ_iterator {
 public:
-  bb_succ_iter( llvm::const_succ_iterator begin_,
-                llvm::const_succ_iterator end_,
-                std::set<const llvm::BasicBlock*>& back_edges ) :
-    llvm::const_succ_iterator( begin_ ), end(end_), b_edges( back_edges ) {
-    llvm::const_succ_iterator& it = (llvm::const_succ_iterator&)*this;
-    while( it != end && exists( b_edges, (const llvm::BasicBlock*)*it) ) ++it;
+  bb_succ_iter(llvm::const_succ_iterator begin_, llvm::const_succ_iterator end_,
+               std::set<const llvm::BasicBlock *> &back_edges)
+      : llvm::const_succ_iterator(begin_), end(end_), b_edges(back_edges) {
+    llvm::const_succ_iterator &it = (llvm::const_succ_iterator &)*this;
+    while (it != end && exists(b_edges, (const llvm::BasicBlock *)*it))
+      ++it;
   };
 
-  bb_succ_iter( llvm::const_succ_iterator begin_,
-                llvm::const_succ_iterator end_ ) :
-    llvm::const_succ_iterator( begin_ ), end(end_) {};
+  bb_succ_iter(llvm::const_succ_iterator begin_, llvm::const_succ_iterator end_)
+      : llvm::const_succ_iterator(begin_), end(end_) {};
 
-  bb_succ_iter( llvm::const_succ_iterator end_ ) :
-    llvm::const_succ_iterator( end_ ), end( end_ ) {};
+  bb_succ_iter(llvm::const_succ_iterator end_)
+      : llvm::const_succ_iterator(end_), end(end_) {};
 
   llvm::const_succ_iterator end;
-  std::set<const llvm::BasicBlock*> b_edges;
-  bb_succ_iter& operator++() {
-    llvm::const_succ_iterator& it = (llvm::const_succ_iterator&)*this;
-    do{
+  std::set<const llvm::BasicBlock *> b_edges;
+  bb_succ_iter &operator++() {
+    llvm::const_succ_iterator &it = (llvm::const_succ_iterator &)*this;
+    do {
       ++it;
-    }while( it != end && exists( b_edges, (const llvm::BasicBlock*)*it) );
+    } while (it != end && exists(b_edges, (const llvm::BasicBlock *)*it));
     return *this;
   }
 };
 
-void computeTopologicalOrder( llvm::Function &F,
-                              std::map<const llvm::BasicBlock*,std::set<const llvm::BasicBlock*>>& bedges,
-                              std::vector<const llvm::BasicBlock*>& bs,
-                              std::map< const llvm::BasicBlock*, unsigned >& o_map) {
+void computeTopologicalOrder(
+    llvm::Function &F,
+    std::map<const llvm::BasicBlock *, std::set<const llvm::BasicBlock *>>
+        &bedges,
+    std::vector<const llvm::BasicBlock *> &bs,
+    std::map<const llvm::BasicBlock *, unsigned> &o_map) {
 
-  auto f = [&bedges](const llvm::BasicBlock* b) {
-    if( exists( bedges, b ) ) {
-      return bb_succ_iter( llvm::succ_begin(b), llvm::succ_end(b),bedges.at(b));
-    }else{
-      return bb_succ_iter( llvm::succ_begin(b), llvm::succ_end(b));
+  auto f = [&bedges](const llvm::BasicBlock *b) {
+    if (exists(bedges, b)) {
+      return bb_succ_iter(llvm::succ_begin(b), llvm::succ_end(b), bedges.at(b));
+    } else {
+      return bb_succ_iter(llvm::succ_begin(b), llvm::succ_end(b));
     }
   };
 
-  auto e = [](const llvm::BasicBlock* b) { return bb_succ_iter( llvm::succ_end(b) ); };
+  auto e = [](const llvm::BasicBlock *b) {
+    return bb_succ_iter(llvm::succ_end(b));
+  };
 
-  const llvm::BasicBlock* h = &F.getEntryBlock();
+  const llvm::BasicBlock *h = &F.getEntryBlock();
   bs.clear();
   o_map.clear();
-  topological_sort<const llvm::BasicBlock*, bb_succ_iter>( h, f, e, bs, o_map );
+  topological_sort<const llvm::BasicBlock *, bb_succ_iter>(h, f, e, bs, o_map);
 }
 
-
-void collect_loop_backedges(llvm::Loop *L,
-                        std::map< const bb*, bb_set_t>& loop_ignore_edge,
-                        std::map< const bb*, bb_set_t>& rev_loop_ignore_edge) {
+void collect_loop_backedges(
+    llvm::Loop *L, std::map<const bb *, bb_set_t> &loop_ignore_edge,
+    std::map<const bb *, bb_set_t> &rev_loop_ignore_edge) {
   auto h = L->getHeader();
-  llvm::SmallVector<llvm::BasicBlock*,10> LoopLatches;
-  L->getLoopLatches( LoopLatches );
-  for( llvm::BasicBlock* bb : LoopLatches ) {
-    loop_ignore_edge[h].insert( bb );
+  llvm::SmallVector<llvm::BasicBlock *, 10> LoopLatches;
+  L->getLoopLatches(LoopLatches);
+  for (llvm::BasicBlock *bb : LoopLatches) {
+    loop_ignore_edge[h].insert(bb);
     rev_loop_ignore_edge[bb].insert(h);
   }
 }
 
-
-void collect_loop_backedges(llvm::Pass *p,
-                        std::map< const bb*, bb_set_t>& loop_ignore_edge,
-                        std::map< const bb*, bb_set_t>& rev_loop_ignore_edge) {
+void collect_loop_backedges(
+    llvm::Pass *p, std::map<const bb *, bb_set_t> &loop_ignore_edge,
+    std::map<const bb *, bb_set_t> &rev_loop_ignore_edge) {
 
   // Best-effort: do nothing here — prefer calling the Function-based variant
   // (the caller should invoke the Function variant when possible)
@@ -1337,9 +1341,9 @@ void collect_loop_backedges(llvm::Pass *p,
   rev_loop_ignore_edge.clear();
 }
 
-void collect_loop_backedges(llvm::Function &F,
-                        std::map< const bb*, bb_set_t>& loop_ignore_edge,
-                        std::map< const bb*, bb_set_t>& rev_loop_ignore_edge) {
+void collect_loop_backedges(
+    llvm::Function &F, std::map<const bb *, bb_set_t> &loop_ignore_edge,
+    std::map<const bb *, bb_set_t> &rev_loop_ignore_edge) {
   // Compute DominatorTree and LoopInfo for the function locally and then reuse
   // the existing loop-based helper
   llvm::DominatorTree DT;
@@ -1347,40 +1351,42 @@ void collect_loop_backedges(llvm::Function &F,
   llvm::LoopInfo LI;
   LI.analyze(DT);
 
-  std::vector<llvm::Loop*> loops, stack;
-  for(auto I = LI.rbegin(), E = LI.rend(); I != E; ++I) stack.push_back(*I);
-  while( !stack.empty() ) {
+  std::vector<llvm::Loop *> loops, stack;
+  for (auto I = LI.rbegin(), E = LI.rend(); I != E; ++I)
+    stack.push_back(*I);
+  while (!stack.empty()) {
     llvm::Loop *L = stack.back();
     stack.pop_back();
-    loops.push_back( L );
-    for(auto I = L->begin(), E = L->end(); I != E; ++I) stack.push_back(*I);
+    loops.push_back(L);
+    for (auto I = L->begin(), E = L->end(); I != E; ++I)
+      stack.push_back(*I);
   }
   loop_ignore_edge.clear();
   rev_loop_ignore_edge.clear();
-  for( llvm::Loop *L : loops ) {
-    collect_loop_backedges( L, loop_ignore_edge, rev_loop_ignore_edge );
+  for (llvm::Loop *L : loops) {
+    collect_loop_backedges(L, loop_ignore_edge, rev_loop_ignore_edge);
   }
 }
 
-void find_cutpoints( llvm::Pass* P, llvm::Function &f,
-                     std::vector< llvm::BasicBlock* >& cutPoints ) {
+void find_cutpoints(llvm::Pass *P, llvm::Function &f,
+                    std::vector<llvm::BasicBlock *> &cutPoints) {
   cutPoints.clear();
   cutPoints.push_back(&f.getEntryBlock());
-  std::vector<llvm::Loop*> stack;
+  std::vector<llvm::Loop *> stack;
   auto &LIWP = P->getAnalysis<llvm::LoopInfoWrapperPass>();
   auto LI = &LIWP.getLoopInfo();
-  for(auto I = LI->rbegin(), E = LI->rend(); I != E; ++I) stack.push_back(*I);
-  while( !stack.empty() ) {
+  for (auto I = LI->rbegin(), E = LI->rend(); I != E; ++I)
+    stack.push_back(*I);
+  while (!stack.empty()) {
     llvm::Loop *L = stack.back();
     stack.pop_back();
-    cutPoints.push_back( L->getHeader() );
-    for(auto I = L->begin(), E = L->end(); I != E; ++I) stack.push_back(*I);
+    cutPoints.push_back(L->getHeader());
+    for (auto I = L->begin(), E = L->end(); I != E; ++I)
+      stack.push_back(*I);
   }
 }
 
-
-
-//todo : check if we need the following code
+// todo : check if we need the following code
 
 // void create_segments(llvm::Function &f,
 //                      std::vector< llvm::BasicBlock* >& cutPoints,
@@ -1389,10 +1395,12 @@ void find_cutpoints( llvm::Pass* P, llvm::Function &f,
 //   std::map< llvm::BasicBlock*, bool > bbVisited;
 //   std::vector< llvm::BasicBlock* > stack;
 
-//   for (auto fi = f.begin(), fe = f.end(); fi != fe; ++fi)  bbVisited[&(*fi)] = false;
+//   for (auto fi = f.begin(), fe = f.end(); fi != fe; ++fi)  bbVisited[&(*fi)]
+//   = false;
 
 //   for(llvm::BasicBlock* bb : cutPoints) {
-//     for (llvm::succ_iterator sit = succ_begin(bb), set = succ_end(bb); sit != set; ++sit) {
+//     for (llvm::succ_iterator sit = succ_begin(bb), set = succ_end(bb); sit !=
+//     set; ++sit) {
 //       llvm::BasicBlock* b = *sit;
 //       segment s;
 //       s.entryCutPoints.push_back(bb);
@@ -1417,7 +1425,8 @@ void find_cutpoints( llvm::Pass* P, llvm::Function &f,
 //             s.bodyBlocks.push_back(sbb);
 //             bbVisited[sbb] = true;
 //             stack.pop_back();
-//             for (llvm::succ_iterator sit = succ_begin(sbb), set = succ_end(sbb); sit != set; ++sit) {
+//             for (llvm::succ_iterator sit = succ_begin(sbb), set =
+//             succ_end(sbb); sit != set; ++sit) {
 //               llvm::BasicBlock* b = *sit;
 //               if(exists(cutPoints, b)) {
 //                 if(!exists(s.exitCutPoints, b)) {
@@ -1430,7 +1439,8 @@ void find_cutpoints( llvm::Pass* P, llvm::Function &f,
 //                 stack.push_back(b);
 //               }
 //             }
-//             for (llvm::pred_iterator pit = pred_begin(sbb), pet = pred_end(sbb); pit != pet; ++pit) {
+//             for (llvm::pred_iterator pit = pred_begin(sbb), pet =
+//             pred_end(sbb); pit != pet; ++pit) {
 //               llvm::BasicBlock* b = *pit;
 //               if(exists(cutPoints, b)) {
 //                 if(!exists(s.entryCutPoints, b)) {
@@ -1453,63 +1463,62 @@ void find_cutpoints( llvm::Pass* P, llvm::Function &f,
 //   }
 // }
 
-void buildBlockMap(llvm::BasicBlock* bb, std::map<std::string, llvm::Value*>& nameValueMap) {
-  for (llvm::Instruction &II : *bb){
-    llvm::Instruction* I = &II;
-    llvm::Value* var = NULL;
-    llvm::MDNode* md = NULL;
+void buildBlockMap(llvm::BasicBlock *bb,
+                   std::map<std::string, llvm::Value *> &nameValueMap) {
+  for (llvm::Instruction &II : *bb) {
+    llvm::Instruction *I = &II;
+    llvm::Value *var = NULL;
+    llvm::MDNode *md = NULL;
     std::string str;
-    if( llvm::DbgDeclareInst* dDecl =
-        llvm::dyn_cast<llvm::DbgDeclareInst>(I) ) {
+    if (llvm::DbgDeclareInst *dDecl = llvm::dyn_cast<llvm::DbgDeclareInst>(I)) {
       var = dDecl->getAddress();
       md = dDecl->getVariable();
-      llvm::DIVariable* diMd = llvm::dyn_cast<llvm::DIVariable>(md);
-      str = (std::string)( diMd->getName() );
-    } else if( llvm::DbgValueInst* dVal =
-               llvm::dyn_cast<llvm::DbgValueInst>(I)) {
+      llvm::DIVariable *diMd = llvm::dyn_cast<llvm::DIVariable>(md);
+      str = (std::string)(diMd->getName());
+    } else if (llvm::DbgValueInst *dVal =
+                   llvm::dyn_cast<llvm::DbgValueInst>(I)) {
       var = dVal->getValue();
       md = dVal->getVariable();
-      llvm::DIVariable* diMd = llvm::dyn_cast<llvm::DIVariable>(md);
-      str = (std::string)( diMd->getName() );
+      llvm::DIVariable *diMd = llvm::dyn_cast<llvm::DIVariable>(md);
+      str = (std::string)(diMd->getName());
     }
-    if( var ) {
+    if (var) {
       nameValueMap[str] = var;
     }
   }
 }
 
-int readInt( const llvm::ConstantInt* c ) {
-  const llvm::APInt& n = c->getUniqueInteger();
+int readInt(const llvm::ConstantInt *c) {
+  const llvm::APInt &n = c->getUniqueInteger();
   unsigned len = n.getNumWords();
-  if( len > 1 ) llvm_bmc_error("llvm_utils", "long integers not supported!!" );
+  if (len > 1)
+    llvm_bmc_error("llvm_utils", "long integers not supported!!");
   const uint64_t *v = n.getRawData();
   return *v;
 }
 
-float readFlt( const llvm::ConstantFP* c ) {
-  const llvm::APFloat& n = c->getValueAPF();
+float readFlt(const llvm::ConstantFP *c) {
+  const llvm::APFloat &n = c->getValueAPF();
   const float v = n.convertToFloat();
   return v;
 }
 
-
-double readDbl( const llvm::ConstantFP* c ) {
-  const llvm::APFloat& n = c->getValueAPF();
+double readDbl(const llvm::ConstantFP *c) {
+  const llvm::APFloat &n = c->getValueAPF();
   const double v = n.convertToDouble();
   return v;
 }
 
-
-int readReal( const llvm::ConstantFP* c ) {
-  const llvm::APFloat& n = c->getValueAPF();
+int readReal(const llvm::ConstantFP *c) {
+  const llvm::APFloat &n = c->getValueAPF();
   auto int_v = n.bitcastToAPInt();
   const uint64_t *v = int_v.getRawData();
   return *v;
 }
 
 // Remove a loop
-bool deleteLoop(llvm::Loop *L, llvm::DominatorTree &DT, llvm::ScalarEvolution &SE,
-                llvm::LoopInfo &LI) {
+bool deleteLoop(llvm::Loop *L, llvm::DominatorTree &DT,
+                llvm::ScalarEvolution &SE, llvm::LoopInfo &LI) {
 
   llvm::SmallPtrSet<llvm::BasicBlock *, 8> blocks;
   blocks.insert(L->block_begin(), L->block_end());
@@ -1551,7 +1560,7 @@ bool deleteLoop(llvm::Loop *L, llvm::DominatorTree &DT, llvm::ScalarEvolution &S
 
   // Update the dominator tree
   // Remove  blocks that will be deleted from the reference counting scheme
-  llvm::SmallVector<llvm::DomTreeNode*, 8> ChildNodes;
+  llvm::SmallVector<llvm::DomTreeNode *, 8> ChildNodes;
   for (llvm::Loop::block_iterator LBI = L->block_begin(), LE = L->block_end();
        LBI != LE; ++LBI) {
     // Move all of the block's children to be children of the preheader in DT
@@ -1576,49 +1585,51 @@ bool deleteLoop(llvm::Loop *L, llvm::DominatorTree &DT, llvm::ScalarEvolution &S
     LI.removeBlock(BB);
 
   // Update LoopInfo
-// #ifndef LLVM_SVN
-//   LI.markAsRemoved(L);
-// #endif
+  // #ifndef LLVM_SVN
+  //   LI.markAsRemoved(L);
+  // #endif
 
   return true;
 }
 
-std::string demangle( std::string mangled_name ) {
+std::string demangle(std::string mangled_name) {
   std::string mainStr("main");
-  if(mangled_name == mainStr) return mainStr;
+  if (mangled_name == mainStr)
+    return mainStr;
   int status;
-  char * res = abi::__cxa_demangle( mangled_name.c_str(), NULL, NULL, &status );
-  //assert(status == 0);
-  if(res == NULL) return mangled_name; //todo: handle .s naming convention
+  char *res = abi::__cxa_demangle(mangled_name.c_str(), NULL, NULL, &status);
+  // assert(status == 0);
+  if (res == NULL)
+    return mangled_name; // todo: handle .s naming convention
   std::string demangled_name(res);
   free(res);
   std::size_t ind = demangled_name.find('(');
   assert(ind != std::string::npos);
-  std::string demangled_fn_name = demangled_name.substr(0,ind);
+  std::string demangled_fn_name = demangled_name.substr(0, ind);
   return demangled_fn_name;
 }
 
-//todo: streamline getLoc and getLocation
-src_loc
-getLoc( const llvm::Instruction* I ) {
-  if( auto dbg = llvm::dyn_cast<llvm::DbgInfoIntrinsic>(I) ) {
-    if( auto dbgvar = llvm::dyn_cast<llvm::DbgVariableIntrinsic>(dbg) ) {
+// todo: streamline getLoc and getLocation
+src_loc getLoc(const llvm::Instruction *I) {
+  if (auto dbg = llvm::dyn_cast<llvm::DbgInfoIntrinsic>(I)) {
+    if (auto dbgvar = llvm::dyn_cast<llvm::DbgVariableIntrinsic>(dbg)) {
       auto loc = dbgvar->getVariableLocationOp(0);
-      if( auto I_val = llvm::dyn_cast<llvm::Instruction>(loc) ) {
-        if( I_val ) I = I_val;
-      }else if( llvm::dyn_cast<llvm::Constant>(loc) ) {
+      if (auto I_val = llvm::dyn_cast<llvm::Instruction>(loc)) {
+        if (I_val)
+          I = I_val;
+      } else if (llvm::dyn_cast<llvm::Constant>(loc)) {
         // what to do??
       }
-    }else{
+    } else {
       // Now what??
     }
   }
   const llvm::DebugLoc d = I->getDebugLoc();
-  if( d ) {
+  if (d) {
     unsigned l = d.getLine();
-    unsigned c  = d.getCol();
-    auto f =llvm::cast<llvm::DIScope>(d.getScope())->getFilename().str();
-    return src_loc(l,c,f);
+    unsigned c = d.getCol();
+    auto f = llvm::cast<llvm::DIScope>(d.getScope())->getFilename().str();
+    return src_loc(l, c, f);
   }
   return src_loc();
 }
@@ -1630,8 +1641,8 @@ getLoc( const llvm::Instruction* I ) {
 //     unsigned col  = d.getCol();
 //     auto *Scope = llvm::cast<llvm::DIScope>(d.getScope());
 //     std::string fname = Scope->getFilename();
-//     std::string l_name =  fname + ":" + std::to_string(line) + ":" + std::to_string(col);
-//     return l_name;
+//     std::string l_name =  fname + ":" + std::to_string(line) + ":" +
+//     std::to_string(col); return l_name;
 //   }else{
 //     return "";
 //   }
@@ -1642,77 +1653,82 @@ getLoc( const llvm::Instruction* I ) {
 //   return getLocation(I);
 // }
 
-
-std::string getLocRange(const llvm::BasicBlock* b ) {
+std::string getLocRange(const llvm::BasicBlock *b) {
   unsigned minLine = std::numeric_limits<unsigned>::max();
-  unsigned minCol  = std::numeric_limits<unsigned>::max();
+  unsigned minCol = std::numeric_limits<unsigned>::max();
   unsigned maxLine = 0;
-  unsigned maxCol  = 0;
+  unsigned maxCol = 0;
   std::string fname = "";
-  for( const llvm::Instruction& Iobj : *b ) {
-    src_loc loc = getLoc( &(Iobj) );
-    if( loc.file != "" ) {
-      if( fname.empty() )
+  for (const llvm::Instruction &Iobj : *b) {
+    src_loc loc = getLoc(&(Iobj));
+    if (loc.file != "") {
+      if (fname.empty())
         fname = loc.file;
       else {
-        if( fname != loc.file ) {
-          llvm_bmc_error( "llvm_utils","a block is spanning accross files!!");
+        if (fname != loc.file) {
+          llvm_bmc_error("llvm_utils", "a block is spanning accross files!!");
         }
       }
-      if( loc.line < minLine ) {
+      if (loc.line < minLine) {
         minLine = loc.line;
         minCol = loc.col;
-      }else if( loc.line == minLine ) {
-        if( loc.col < minCol )
+      } else if (loc.line == minLine) {
+        if (loc.col < minCol)
           minCol = loc.col;
       }
-      if( loc.line > maxLine ) {
+      if (loc.line > maxLine) {
         maxLine = loc.line;
         maxCol = loc.col;
-      }else if( loc.line == maxLine ) {
-        if( loc.col > maxCol )
+      } else if (loc.line == maxLine) {
+        if (loc.col > maxCol)
           maxCol = loc.col;
       }
     }
   }
-  std::string l_name =  fname + ":"
-    + std::to_string(minLine) + ":"+  std::to_string(minCol) + "-"
-    + std::to_string(maxLine) + ":"+  std::to_string(maxCol);
+  std::string l_name = fname + ":" + std::to_string(minLine) + ":" +
+                       std::to_string(minCol) + "-" + std::to_string(maxLine) +
+                       ":" + std::to_string(maxCol);
 
   return l_name;
 }
 
-sort llvm_to_sort( solver_context& c, const llvm::Type* t ) {
-  assert( t );
-  if( t->isIntegerTy() ) {
-    if( t->isIntegerTy( 16 ) ) return c.int_sort();
-    if( t->isIntegerTy( 32 ) ) return c.int_sort();
-    if( t->isIntegerTy( 64 ) ) return c.int_sort();
-    if( t->isIntegerTy( 8 )  ) return c.int_sort();
+sort llvm_to_sort(solver_context &c, const llvm::Type *t) {
+  assert(t);
+  if (t->isIntegerTy()) {
+    if (t->isIntegerTy(16))
+      return c.int_sort();
+    if (t->isIntegerTy(32))
+      return c.int_sort();
+    if (t->isIntegerTy(64))
+      return c.int_sort();
+    if (t->isIntegerTy(8))
+      return c.int_sort();
   }
-  if( t->isArrayTy() ) {
-    llvm::Type* te = t->getArrayElementType();
+  if (t->isArrayTy()) {
+    llvm::Type *te = t->getArrayElementType();
     sort_vector domains(c);
-    domains.push_back( c.int_sort() );
-    while( te->isArrayTy() ) {
-      domains.push_back( c.int_sort() );
+    domains.push_back(c.int_sort());
+    while (te->isArrayTy()) {
+      domains.push_back(c.int_sort());
       te = te->getArrayElementType();
     }
-    sort z_te = llvm_to_sort( c, te );
+    sort z_te = llvm_to_sort(c, te);
     // std::cout << "Sort is " << z_te << "\n";
-    return c.array_sort( domains, z_te );
+    return c.array_sort(domains, z_te);
   }
-  if( t->isFloatingPointTy() ) {
-     //if( t->isFloatTy() ) return c.fpa_sort<32>();
-     //if( t->isDoubleTy() ) return c.fpa_sort<64>();
-     return c.real_sort();
+  if (t->isFloatingPointTy()) {
+    // if( t->isFloatTy() ) return c.fpa_sort<32>();
+    // if( t->isDoubleTy() ) return c.fpa_sort<64>();
+    return c.real_sort();
   }
-  if(t->isStructTy()) {
-    // t->print(llvm::outs()); std::cout << "\n";  // << t->getStructName() << "\n";
+  if (t->isStructTy()) {
+    // t->print(llvm::outs()); std::cout << "\n";  // << t->getStructName() <<
+    // "\n";
     return c.int_sort();
   }
-  if(t->isPointerTy()) {
-    // t->print(llvm::outs()); std::cout << "\n";  // << t->getPointerElementType() << "\n";
+  if (t->isPointerTy()) {
+    // t->print(llvm::outs()); std::cout << "\n";  // <<
+    // t->getPointerElementType() << "\n";
     return c.int_sort();
   }
   // t->print(llvm::outs());
@@ -1720,25 +1736,30 @@ sort llvm_to_sort( solver_context& c, const llvm::Type* t ) {
   return c.int_sort(); // dummy return
 }
 
-sort ditype_to_sort( solver_context& c, const llvm::DIType* t ) {
-  assert( t );
-  if(auto diBT = llvm::dyn_cast<llvm::DIBasicType>(t) ) {
+sort ditype_to_sort(solver_context &c, const llvm::DIType *t) {
+  assert(t);
+  if (auto diBT = llvm::dyn_cast<llvm::DIBasicType>(t)) {
     auto name = diBT->getName().str();
-    if( name == "int" ) { return c.int_sort();
-    }else if( name ==  "char") { return c.int_sort();
-    }else if( name == "unsigned" ) {return c.int_sort();
-    }else{ assert(false);
+    if (name == "int") {
+      return c.int_sort();
+    } else if (name == "char") {
+      return c.int_sort();
+    } else if (name == "unsigned") {
+      return c.int_sort();
+    } else {
+      assert(false);
       llvm_bmc_error("llvm_utils", "debug sort " + name + " not supported!");
       return c.int_sort(); // dummy return
     }
-  }else if(auto diDT = llvm::dyn_cast<llvm::DIDerivedType>(t) ) {
+  } else if (auto diDT = llvm::dyn_cast<llvm::DIDerivedType>(t)) {
     auto bt = diDT->getBaseType();
     sort typ = c.int_sort();
-    if( bt ) typ = ditype_to_sort( c, bt );
-    if( diDT->getTag() == llvm::dwarf::DW_TAG_pointer_type ) {
+    if (bt)
+      typ = ditype_to_sort(c, bt);
+    if (diDT->getTag() == llvm::dwarf::DW_TAG_pointer_type) {
       sort_vector domains(c);
-      domains.push_back( c.int_sort() );
-      return c.array_sort( domains, typ );
+      domains.push_back(c.int_sort());
+      return c.array_sort(domains, typ);
     }
   }
   // if( t->isArrayTy() ) {
@@ -1759,134 +1780,140 @@ sort ditype_to_sort( solver_context& c, const llvm::DIType* t ) {
   //    return c.real_sort();
   // }
   // if(t->isStructTy()) {
-  //   // t->print(llvm::outs()); std::cout << "\n";  // << t->getStructName() << "\n";
-  //   return c.bool_sort();
+  //   // t->print(llvm::outs()); std::cout << "\n";  // << t->getStructName()
+  //   << "\n"; return c.bool_sort();
   // }
   // if(t->isPointerTy()) {
-  //   // t->print(llvm::outs()); std::cout << "\n";  // << t->getPointerElementType() << "\n";
-  //   return c.int_sort();
+  //   // t->print(llvm::outs()); std::cout << "\n";  // <<
+  //   t->getPointerElementType() << "\n"; return c.int_sort();
   // }
   // // t->print(llvm::outs());
   llvm_bmc_error("llvm_utils", "only int and bool sorts are supported");
   return c.int_sort(); // dummy return
 }
 
-bool has_name( llvm::StringRef str, std::vector<std::string>& names) {
-  for( auto& s : names ) {
-    if(str == s) return true;
+bool has_name(llvm::StringRef str, std::vector<std::string> &names) {
+  for (auto &s : names) {
+    if (str == s)
+      return true;
   }
   return false;
 }
 
-bool match_function_names( const llvm::CallInst* call,
-                           std::vector<std::string>& names ) {
-  assert( call );
+bool match_function_names(const llvm::CallInst *call,
+                          std::vector<std::string> &names) {
+  assert(call);
 
-  llvm::Function* fp = call->getCalledFunction();
-  if( fp != NULL && has_name( fp->getName(), names ) ) {
+  llvm::Function *fp = call->getCalledFunction();
+  if (fp != NULL && has_name(fp->getName(), names)) {
     return true;
   } else if (fp == NULL) {
-    const llvm::Value * val = call->getCalledOperand();
-    if( auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val) ) {
-      if(CE->isCast() && has_name( CE->getOperand(0)->getName(), names)) {
-          return true;
+    const llvm::Value *val = call->getCalledOperand();
+    if (auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val)) {
+      if (CE->isCast() && has_name(CE->getOperand(0)->getName(), names)) {
+        return true;
       }
     }
   }
   return false;
 }
 
-bool is_assert( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z6assertb", "assert",
-                                     "_Z17__VERIFIER_assertb" };
-  return match_function_names( call, names );
+bool is_assert(const llvm::CallInst *call) {
+  std::vector<std::string> names = {"_Z6assertb", "assert",
+                                    "_Z17__VERIFIER_assertb"};
+  return match_function_names(call, names);
 }
 
-bool is_assert_fail( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "__assert_fail" };
-  return match_function_names( call, names );
+bool is_assert_fail(const llvm::CallInst *call) {
+  std::vector<std::string> names = {"__assert_fail"};
+  return match_function_names(call, names);
 }
 
-bool is_nondet( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z22__VERIFIER_nondet_charv",
-                                     "_Z21__VERIFIER_nondet_intv",};
-  return match_function_names( call, names );
+bool is_nondet(const llvm::CallInst *call) {
+  std::vector<std::string> names = {
+      "_Z22__VERIFIER_nondet_charv",
+      "_Z21__VERIFIER_nondet_intv",
+  };
+  return match_function_names(call, names);
 }
 
-bool is_assume( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z6assumeb", "assume", "_Z17__VERIFIER_assumeb" };
-  return match_function_names( call, names );
+bool is_assume(const llvm::CallInst *call) {
+  std::vector<std::string> names = {"_Z6assumeb", "assume",
+                                    "_Z17__VERIFIER_assumeb"};
+  return match_function_names(call, names);
 }
 
-
-bool is_thread_create( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z6pthread_createb", "pthread_create" };
-  return match_function_names( call, names );
+bool is_thread_create(const llvm::CallInst *call) {
+  std::vector<std::string> names = {"_Z6pthread_createb", "pthread_create"};
+  return match_function_names(call, names);
 }
 
-bool is_thread_join( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "_Z6pthread_createb", "pthread_join" };
-  return match_function_names( call, names );
+bool is_thread_join(const llvm::CallInst *call) {
+  std::vector<std::string> names = {"_Z6pthread_createb", "pthread_join"};
+  return match_function_names(call, names);
 }
 
-
-bool is_thread_exit( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "pthread_exit" };
-  return match_function_names(  call,  names );
+bool is_thread_exit(const llvm::CallInst *call) {
+  std::vector<std::string> names = {"pthread_exit"};
+  return match_function_names(call, names);
 }
 
-bool is_lock( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "pthread_mutex_lock" };
-  return match_function_names(  call,  names );
+bool is_lock(const llvm::CallInst *call) {
+  std::vector<std::string> names = {"pthread_mutex_lock"};
+  return match_function_names(call, names);
 }
 
-bool is_unlock( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "pthread_mutex_unlock" };
-  return match_function_names(  call,  names );
+bool is_unlock(const llvm::CallInst *call) {
+  std::vector<std::string> names = {"pthread_mutex_unlock"};
+  return match_function_names(call, names);
 }
 
-bool is_mutex_init( const llvm::CallInst* call ) {
-  std::vector<std::string> names = { "pthread_mutex_init" };
-  return match_function_names(  call,  names );
+bool is_mutex_init(const llvm::CallInst *call) {
+  std::vector<std::string> names = {"pthread_mutex_init"};
+  return match_function_names(call, names);
 }
 
-
-bool is_error(const llvm::CallInst* call) {
-  assert( call );
-  std::vector<std::string> names = { "__VERIFIER_error_" };
-  return match_function_names( call, names );
+bool is_error(const llvm::CallInst *call) {
+  assert(call);
+  std::vector<std::string> names = {"__VERIFIER_error_"};
+  return match_function_names(call, names);
 
   // auto name = get_called_name( call );
   // if( name == "__VERIFIER_error_" ) return true;
   // return false;
 }
 
-bool ignore_special_functions( const llvm::CallInst* call ) {
-  return is_assert( call ) || is_assume( call ) || is_nondet( call )
-    || is_error(call);
+bool ignore_special_functions(const llvm::CallInst *call) {
+  return is_assert(call) || is_assume(call) || is_nondet(call) ||
+         is_error(call);
 }
 
 #define DEFAULT_INDEX_SORT 64
 
-sort llvm_to_bv_sort( solver_context& c, const llvm::Type* t ) {
-  if( t->isIntegerTy() ) {
-    if( t->isIntegerTy( 16 ) ) return c.bv_sort(16);
-    if( t->isIntegerTy( 32 ) ) return c.bv_sort(32);
-    if( t->isIntegerTy( 64 ) ) return c.bv_sort(64);
-    if( t->isIntegerTy( 8 ) ) return c.bv_sort(8);
-    if( t->isIntegerTy( 1 ) ) return c.bv_sort(1);
-  }else if( t->isFunctionTy() ) {
+sort llvm_to_bv_sort(solver_context &c, const llvm::Type *t) {
+  if (t->isIntegerTy()) {
+    if (t->isIntegerTy(16))
+      return c.bv_sort(16);
+    if (t->isIntegerTy(32))
+      return c.bv_sort(32);
+    if (t->isIntegerTy(64))
+      return c.bv_sort(64);
+    if (t->isIntegerTy(8))
+      return c.bv_sort(8);
+    if (t->isIntegerTy(1))
+      return c.bv_sort(1);
+  } else if (t->isFunctionTy()) {
     llvm_bmc_error("llvm_utils", "function sorts are not supported");
-  }else if( t->isStructTy()   ) {
+  } else if (t->isStructTy()) {
     llvm_bmc_error("llvm_utils", "struct sorts are not supported");
-  }else if( t->isPointerTy()  ) {
+  } else if (t->isPointerTy()) {
     llvm_bmc_error("llvm_utils", "pointer sorts are not supported");
-  }else if( t->isArrayTy() || t->isVectorTy() ) {
-    llvm::Type* te = t->getArrayElementType();
+  } else if (t->isArrayTy() || t->isVectorTy()) {
+    llvm::Type *te = t->getArrayElementType();
     sort_vector domains(c);
-    domains.push_back( c.bv_sort(DEFAULT_INDEX_SORT) );
-    while( te->isArrayTy() ) {
-      domains.push_back( c.bv_sort(DEFAULT_INDEX_SORT) );
+    domains.push_back(c.bv_sort(DEFAULT_INDEX_SORT));
+    while (te->isArrayTy()) {
+      domains.push_back(c.bv_sort(DEFAULT_INDEX_SORT));
       te = te->getArrayElementType();
     }
     sort z_te = llvm_to_bv_sort(c, te);
@@ -1897,35 +1924,37 @@ sort llvm_to_bv_sort( solver_context& c, const llvm::Type* t ) {
     //   domains.push_back(domain);
     //   return c.array_sort( domains, range );
     // }
-    return c.array_sort( domains, z_te );
-  }else if( t->isFloatingPointTy() ) {
-     if( t->isFloatTy() ) return c.fpa_sort<32>();
-     if( t->isDoubleTy() ) return c.fpa_sort<64>();
-    //llvm_bmc_error("llvm_utils", "float sorts are not supported");
-  }else if( t->isLabelTy() ) {
+    return c.array_sort(domains, z_te);
+  } else if (t->isFloatingPointTy()) {
+    if (t->isFloatTy())
+      return c.fpa_sort<32>();
+    if (t->isDoubleTy())
+      return c.fpa_sort<64>();
+    // llvm_bmc_error("llvm_utils", "float sorts are not supported");
+  } else if (t->isLabelTy()) {
     llvm_bmc_error("llvm_utils", "label sorts are not supported");
-  }else if( t->isMetadataTy() ) {
+  } else if (t->isMetadataTy()) {
     llvm_bmc_error("llvm_utils", "metadata sorts are not supported");
-  }else if( t->isTokenTy() ) {
+  } else if (t->isTokenTy()) {
     llvm_bmc_error("llvm_utils", "token sorts are not supported");
-  }else if( t->isX86_AMXTy() ) {
+  } else if (t->isX86_AMXTy()) {
     llvm_bmc_error("llvm_utils", "X86_MMX sorts are supported");
   }
   llvm_bmc_error("llvm_utils", "unknown sorts seen!!");
   return c.bv_sort(32); // dummy return
 }
 
-sort llvm_to_sort( options& o, const llvm::Type* t) {
-  if( o.bit_precise ) {
-    return llvm_to_bv_sort( o.solver_ctx, t );
-  }else{
-    return llvm_to_sort( o.solver_ctx, t );
+sort llvm_to_sort(options &o, const llvm::Type *t) {
+  if (o.bit_precise) {
+    return llvm_to_bv_sort(o.solver_ctx, t);
+  } else {
+    return llvm_to_sort(o.solver_ctx, t);
   }
 }
 
-std::string read_const_str( options& o, const llvm::Value* op ) {
-  expr e = read_const( o, op );
-  if( e ) {
+std::string read_const_str(options &o, const llvm::Value *op) {
+  expr e = read_const(o, op);
+  if (e) {
     std::stringstream str_strm;
     str_strm << e;
     return str_strm.str();
@@ -1933,42 +1962,40 @@ std::string read_const_str( options& o, const llvm::Value* op ) {
   return "";
 }
 
-static z3::expr build_struct_expr(solver_context& ctx,
-                                   const std::string& struct_name,
-                                   z3::sort_vector& field_sorts,
-                                   z3::expr_vector& field_exprs,
-                                   unsigned n) {
-  std::cout << "Building struct: " << struct_name << " with " << n << " fields\n";
-  for(unsigned i = 0; i < n; ++i) {
-      std::cout << "  field " << i << " sort: " << field_sorts[i] << "\n";
+static z3::expr build_struct_expr(solver_context &ctx,
+                                  const std::string &struct_name,
+                                  z3::sort_vector &field_sorts,
+                                  z3::expr_vector &field_exprs, unsigned n) {
+  std::cout << "Building struct: " << struct_name << " with " << n
+            << " fields\n";
+  for (unsigned i = 0; i < n; ++i) {
+    std::cout << "  field " << i << " sort: " << field_sorts[i] << "\n";
   }
   std::vector<Z3_symbol> field_syms(n);
   for (unsigned i = 0; i < n; ++i)
-      field_syms[i] = Z3_mk_string_symbol(ctx, ("field_" + std::to_string(i)).c_str());
+    field_syms[i] =
+        Z3_mk_string_symbol(ctx, ("field_" + std::to_string(i)).c_str());
 
   std::vector<Z3_sort> z3_sorts(n);
   for (unsigned i = 0; i < n; ++i)
-      z3_sorts[i] = (Z3_sort)field_sorts[i];
+    z3_sorts[i] = (Z3_sort)field_sorts[i];
 
   std::vector<unsigned> sort_refs(n, 0);
 
-  Z3_symbol ctor_sym  = Z3_mk_string_symbol(ctx, struct_name.c_str());
+  Z3_symbol ctor_sym = Z3_mk_string_symbol(ctx, struct_name.c_str());
   Z3_symbol recog_sym = Z3_mk_string_symbol(ctx, ("is_" + struct_name).c_str());
 
   Z3_constructor ctor = Z3_mk_constructor(
-      ctx, ctor_sym, recog_sym,
-      n,
-      n > 0 ? field_syms.data() : nullptr,
-      n > 0 ? z3_sorts.data()   : nullptr,
-      n > 0 ? sort_refs.data()  : nullptr
-  );
+      ctx, ctor_sym, recog_sym, n, n > 0 ? field_syms.data() : nullptr,
+      n > 0 ? z3_sorts.data() : nullptr, n > 0 ? sort_refs.data() : nullptr);
 
   Z3_symbol dt_sym = Z3_mk_string_symbol(ctx, struct_name.c_str());
-  Z3_constructor ctor_arr[1] = { ctor };
+  Z3_constructor ctor_arr[1] = {ctor};
   Z3_sort raw_sort = Z3_mk_datatype(ctx, dt_sym, 1, ctor_arr);
   Z3_del_constructor(ctx, ctor);
 
-  Z3_func_decl raw_ctor_decl = Z3_get_datatype_sort_constructor(ctx, raw_sort, 0);
+  Z3_func_decl raw_ctor_decl =
+      Z3_get_datatype_sort_constructor(ctx, raw_sort, 0);
   z3::func_decl ctor_decl(ctx, raw_ctor_decl);
 
   // std::cout << "ctor arity after finalization: " << ctor_decl.arity()
@@ -1978,119 +2005,124 @@ static z3::expr build_struct_expr(solver_context& ctx,
   return ctor_decl(field_exprs);
 }
 
-expr read_const( options& o, const llvm::Value* op) {
-// expr read_const( const llvm::Value* op, solver_context& ctx ) {
-  solver_context& ctx = o.solver_ctx;
-  assert( op );
-  if( const llvm::ConstantInt* c = llvm::dyn_cast<llvm::ConstantInt>(op) ) {
-    int i = readInt( c );
+expr read_const(options &o, const llvm::Value *op) {
+  // expr read_const( const llvm::Value* op, solver_context& ctx ) {
+  solver_context &ctx = o.solver_ctx;
+  assert(op);
+  if (const llvm::ConstantInt *c = llvm::dyn_cast<llvm::ConstantInt>(op)) {
+    int i = readInt(c);
     unsigned bw = c->getBitWidth();
-    if( o.bit_precise ){
-      return ctx.bv_val( i, bw );
-    }else {
-      if( bw == 32 || bw == 64 || bw == 8 || bw == 16 ) {
+    if (o.bit_precise) {
+      return ctx.bv_val(i, bw);
+    } else {
+      if (bw == 32 || bw == 64 || bw == 8 || bw == 16) {
         return ctx.int_val(i);
-      }else if(bw == 1 ) {
-        assert( i == 0 || i == 1 );
-        if( i == 1 )
+      } else if (bw == 1) {
+        assert(i == 0 || i == 1);
+        if (i == 1)
           return ctx.bool_val(true);
         else
           return ctx.bool_val(false);
-      }else{
+      } else {
         // c->dump();
-        llvm_bmc_error("llvm_utils", "unrecognized constant!" );
+        llvm_bmc_error("llvm_utils", "unrecognized constant!");
       }
     }
-  }else if( llvm::isa<llvm::ConstantPointerNull>(op) ) {
+  } else if (llvm::isa<llvm::ConstantPointerNull>(op)) {
     // llvm_bmc_error("llvm_utils", "Constant pointer are not implemented!!" );
     // }else if( LLCAST( llvm::ConstantPointerNull, c, op) ) {
     return ctx.int_val(-1);
-  }else if( llvm::isa<llvm::UndefValue>(op) ) {
-    llvm::Type* ty = op->getType();
-    if( auto i_ty = llvm::dyn_cast<llvm::IntegerType>(ty) ) {
+  } else if (llvm::isa<llvm::UndefValue>(op)) {
+    llvm::Type *ty = op->getType();
+    if (auto i_ty = llvm::dyn_cast<llvm::IntegerType>(ty)) {
       int bw = i_ty->getBitWidth();
-      if( o.bit_precise ) {
+      if (o.bit_precise) {
         // todo: add support for signed an unsigned
-        return get_fresh_bv(ctx,bw);
-      }else{
-        if( bw == 32 || bw == 64 || bw == 16 || bw == 8 ) { return get_fresh_int(ctx);
-        }else if( bw == 1  ) { return get_fresh_bool(ctx);
+        return get_fresh_bv(ctx, bw);
+      } else {
+        if (bw == 32 || bw == 64 || bw == 16 || bw == 8) {
+          return get_fresh_int(ctx);
+        } else if (bw == 1) {
+          return get_fresh_bool(ctx);
         }
       }
-    }else if (ty->isFloatingPointTy() ) {
-      if( o.bit_precise ) {
+    } else if (ty->isFloatingPointTy()) {
+      if (o.bit_precise) {
         // todo: add support for signed an unsigned
-        if (ty->isFloatTy() ) {return get_fresh_float(ctx);
-        } else if (ty->isDoubleTy() ) {return get_fresh_double(ctx);
+        if (ty->isFloatTy()) {
+          return get_fresh_float(ctx);
+        } else if (ty->isDoubleTy()) {
+          return get_fresh_double(ctx);
         }
-      }else{
+      } else {
         return get_fresh_real(ctx);
       }
-    }
-    else if(ty->isStructTy()){
+    } else if (ty->isStructTy()) {
       return get_fresh_int(ctx);
     }
-    llvm_bmc_error("llvm_utils", "unsupported type: "<< ty << "!!");
-  }//else if( llvm::isa<llvm::ConstantFP>(op) ) {
-   //const llvm::APFloat& n = c->getValueAPF();
-  if( const llvm::ConstantFP* c = llvm::dyn_cast<llvm::ConstantFP>(op) ) {
-     llvm::Type* ty = op->getType();
-     if (ty->isFloatTy() ) {
-			    if (o.bit_precise) {
- 			     float i = readFlt( c );
-			     return ctx.fpa_val(i);
-			    }
-			    else {
-			     int i = readReal( c );
-			     return ctx.real_val(i);
-			    }
-     } else  if (ty->isDoubleTy() ) {
-			    if (o.bit_precise) {
- 			     double i = readDbl( c );
-			     return ctx.fpa_val(i);
-			    }
-			    else {
-			     int i = readReal( c );
-			     return ctx.real_val(i);
-			    }
-     }
+    llvm_bmc_error("llvm_utils", "unsupported type: " << ty << "!!");
+  } // else if( llvm::isa<llvm::ConstantFP>(op) ) {
+    // const llvm::APFloat& n = c->getValueAPF();
+  if (const llvm::ConstantFP *c = llvm::dyn_cast<llvm::ConstantFP>(op)) {
+    llvm::Type *ty = op->getType();
+    if (ty->isFloatTy()) {
+      if (o.bit_precise) {
+        float i = readFlt(c);
+        return ctx.fpa_val(i);
+      } else {
+        int i = readReal(c);
+        return ctx.real_val(i);
+      }
+    } else if (ty->isDoubleTy()) {
+      if (o.bit_precise) {
+        double i = readDbl(c);
+        return ctx.fpa_val(i);
+      } else {
+        int i = readReal(c);
+        return ctx.real_val(i);
+      }
+    }
     // double v = n.convertToDouble();
-    //return ctx.real_val(v);
-    //llvm_bmc_error("llvm_utils", "Floating point constant not implemented!!" );
-  }else if( llvm::isa<llvm::ConstantAggregateZero>(op) ) {
+    // return ctx.real_val(v);
+    // llvm_bmc_error("llvm_utils", "Floating point constant not implemented!!"
+    // );
+  } else if (llvm::isa<llvm::ConstantAggregateZero>(op)) {
     llvm::Type *t = op->getType();
-    if(auto arr_ty = llvm::dyn_cast<llvm::ArrayType>(t)) {
+    if (auto arr_ty = llvm::dyn_cast<llvm::ArrayType>(t)) {
       sort arr = llvm_to_sort(ctx, arr_ty);
-      expr z3_expr = read_const(o, llvm::ConstantInt::getNullValue(arr_ty->getElementType()));
+      expr z3_expr = read_const(
+          o, llvm::ConstantInt::getNullValue(arr_ty->getElementType()));
       return z3::const_array(arr, z3_expr);
     }
-    if(auto st_ty = llvm::dyn_cast<llvm::StructType>(t)) {
+    if (auto st_ty = llvm::dyn_cast<llvm::StructType>(t)) {
       unsigned n = st_ty->getNumElements();
-      std::string struct_name = st_ty->hasName()
-        ? st_ty->getName().str()
-        : "undef_struct_" + std::to_string(reinterpret_cast<uintptr_t>(st_ty));
+      std::string struct_name =
+          st_ty->hasName()
+              ? st_ty->getName().str()
+              : "undef_struct_" +
+                    std::to_string(reinterpret_cast<uintptr_t>(st_ty));
 
-        z3::expr_vector field_exprs(ctx);
-        z3::sort_vector field_sorts(ctx);
+      z3::expr_vector field_exprs(ctx);
+      z3::sort_vector field_sorts(ctx);
 
-        for(unsigned i = 0; i < n; ++i) {
-            llvm::Type* ft = st_ty->getElementType(i);
-            expr val = read_const(o, llvm::Constant::getNullValue(ft));
-            field_exprs.push_back(val);
-            field_sorts.push_back(val.get_sort()); 
-        }
-        return build_struct_expr(ctx, struct_name, field_sorts, field_exprs, n);
+      for (unsigned i = 0; i < n; ++i) {
+        llvm::Type *ft = st_ty->getElementType(i);
+        expr val = read_const(o, llvm::Constant::getNullValue(ft));
+        field_exprs.push_back(val);
+        field_sorts.push_back(val.get_sort());
+      }
+      return build_struct_expr(ctx, struct_name, field_sorts, field_exprs, n);
     }
-    return ctx.int_val(0);// todo: match types in z3
-  }else if( llvm::isa<llvm::Instruction>(op) ) {
+    return ctx.int_val(0); // todo: match types in z3
+  } else if (llvm::isa<llvm::Instruction>(op)) {
 
-  }else if( auto cexpr = llvm::dyn_cast<llvm::ConstantExpr>(op) ) {
-    if( cexpr->getOpcode() == llvm::Instruction::IntToPtr ) {
+  } else if (auto cexpr = llvm::dyn_cast<llvm::ConstantExpr>(op)) {
+    if (cexpr->getOpcode() == llvm::Instruction::IntToPtr) {
       auto c = cexpr->getOperand(0);
-      return read_const( o, c );
+      return read_const(o, c);
     }
     // llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
-  }else if( auto c = llvm::dyn_cast<llvm::ConstantArray>(op) ) {
+  } else if (auto c = llvm::dyn_cast<llvm::ConstantArray>(op)) {
 
     // int curr_offset = offset;
     // for( unsigned i = 0; i < c->getNumOperands(); ++i ) {
@@ -2100,84 +2132,85 @@ expr read_const( options& o, const llvm::Value* op) {
     // const llvm::ArrayType* n = c->getType();
     // unsigned len = n->getNumElements();
     // return ctx.arraysort();
-    const llvm::ArrayType* AT = c->getType();
-    llvm::Type* elem_ty = AT->getElementType();
+    const llvm::ArrayType *AT = c->getType();
+    llvm::Type *elem_ty = AT->getElementType();
     // unsigned n = AT->getNumElements();
 
-    sort idx_sort = llvm_to_sort(ctx,AT);
+    sort idx_sort = llvm_to_sort(ctx, AT);
     expr zero_expr = read_const(o, llvm::ConstantInt::getNullValue(elem_ty));
     expr arr = z3::const_array(idx_sort, zero_expr);
-    for(unsigned i = 0; i < c->getNumOperands(); ++i) {
+    for (unsigned i = 0; i < c->getNumOperands(); ++i) {
       expr idx = ctx.int_val(i);
       expr val = read_const(o, c->getOperand(i));
-      arr = z3::store(arr,i,val);
+      arr = z3::store(arr, i, val);
     }
     return arr;
     // llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
-  }else if( auto c = llvm::dyn_cast<llvm::ConstantStruct>(op) ) {
-    const llvm::StructType* st_ty = c->getType();
+  } else if (auto c = llvm::dyn_cast<llvm::ConstantStruct>(op)) {
+    const llvm::StructType *st_ty = c->getType();
     unsigned n = st_ty->getNumElements();
-    if(n == 0) return ctx.int_val(0);
-    std::string struct_name = st_ty->hasName()
-      ? st_ty->getName().str()
-      : "undef_struct_" + std::to_string(reinterpret_cast<uintptr_t>(st_ty));
+    if (n == 0)
+      return ctx.int_val(0);
+    std::string struct_name =
+        st_ty->hasName()
+            ? st_ty->getName().str()
+            : "undef_struct_" +
+                  std::to_string(reinterpret_cast<uintptr_t>(st_ty));
 
     z3::expr_vector field_exprs(ctx);
     z3::sort_vector field_sorts(ctx);
 
-    for(unsigned i = 0; i < n; ++i) {
-        expr val = read_const(o, c->getOperand(i));
-        field_exprs.push_back(val);
-        field_sorts.push_back(val.get_sort()); 
+    for (unsigned i = 0; i < n; ++i) {
+      expr val = read_const(o, c->getOperand(i));
+      field_exprs.push_back(val);
+      field_sorts.push_back(val.get_sort());
     }
     return build_struct_expr(ctx, struct_name, field_sorts, field_exprs, n);
-    
+
     // return ctx.int_val(0);
     // llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
-  }else if( auto c = llvm::dyn_cast<llvm::ConstantVector>(op) ) {
+  } else if (auto c = llvm::dyn_cast<llvm::ConstantVector>(op)) {
     // const llvm::VectorType* n = c->getType();
-    const llvm::VectorType* VT = c->getType();
-    llvm::Type* elem_ty = VT->getElementType();
+    const llvm::VectorType *VT = c->getType();
+    llvm::Type *elem_ty = VT->getElementType();
     // unsigned n = VT->getElementCount().getKnownMinValue();
 
     sort idx_sort = ctx.int_sort();
     expr zero_expr = read_const(o, llvm::ConstantInt::getNullValue(elem_ty));
     expr arr = z3::const_array(idx_sort, zero_expr);
-    for(unsigned i = 0; i < c->getNumOperands(); ++i) {
+    for (unsigned i = 0; i < c->getNumOperands(); ++i) {
       expr idx = ctx.int_val(i);
       expr val = read_const(o, c->getOperand(i));
-      arr = z3::store(arr,i,val);
+      arr = z3::store(arr, i, val);
     }
     return arr;
     // llvm_bmc_error("llvm_utils", "vector constant not implemented!!" );
-  }else if(auto c = llvm::dyn_cast<llvm::ConstantDataSequential>(op)) {
-      llvm::Type* elem_ty = c->getElementType();
-      unsigned n = c->getNumElements();
+  } else if (auto c = llvm::dyn_cast<llvm::ConstantDataSequential>(op)) {
+    llvm::Type *elem_ty = c->getElementType();
+    unsigned n = c->getNumElements();
 
-      sort idx_sort = ctx.int_sort();
-      expr zero_expr = read_const(o, llvm::ConstantInt::getNullValue(elem_ty));
-      expr arr = z3::const_array(idx_sort, zero_expr);
+    sort idx_sort = ctx.int_sort();
+    expr zero_expr = read_const(o, llvm::ConstantInt::getNullValue(elem_ty));
+    expr arr = z3::const_array(idx_sort, zero_expr);
 
-      for (unsigned i = 0; i < n; ++i) {
-          expr val = read_const(o, c->getElementAsConstant(i));
-          arr = z3::store(arr, i, val);
-      }
-      return arr;
-  }else if( auto c = llvm::dyn_cast<llvm::Constant>(op)) {
-    if(auto *ci = llvm::dyn_cast<llvm::ConstantInt>(c)){
-      return ctx.bv_val(readInt(ci), ci->getBitWidth());
+    for (unsigned i = 0; i < n; ++i) {
+      expr val = read_const(o, c->getElementAsConstant(i));
+      arr = z3::store(arr, i, val);
     }
-    else if(auto *cf = llvm::dyn_cast<llvm::ConstantFP>(c)){
-      if(c->getType()->isFloatTy()){
+    return arr;
+  } else if (auto c = llvm::dyn_cast<llvm::Constant>(op)) {
+    if (auto *ci = llvm::dyn_cast<llvm::ConstantInt>(c)) {
+      return ctx.bv_val(readInt(ci), ci->getBitWidth());
+    } else if (auto *cf = llvm::dyn_cast<llvm::ConstantFP>(c)) {
+      if (c->getType()->isFloatTy()) {
         return ctx.fpa_val(readFlt(cf));
-      }
-      else{
+      } else {
         return ctx.fpa_val(readDbl(cf));
       }
     }
     // expr e(ctx);
     // return e; // contains no expression;
-    llvm_bmc_error("llvm_utils", "non int constants are not implemented!!" );
+    llvm_bmc_error("llvm_utils", "non int constants are not implemented!!");
     // std::cerr << "un recognized constant!";
     //     // int i = readInt(c);
     //     // return eHandler->mkIntVal( i );
@@ -2186,45 +2219,38 @@ expr read_const( options& o, const llvm::Value* op) {
   return e; // contains no expression;
 }
 
-
-expr llvm_min_val( solver_context& ctx, const llvm::Value* v) {
-  //todo : find max val
+expr llvm_min_val(solver_context &ctx, const llvm::Value *v) {
+  // todo : find max val
   assert(false);
   return ctx.bool_val(true);
 }
 
-expr llvm_max_val( solver_context& ctx, const llvm::Value* v) {
-  //todo : find min val
+expr llvm_max_val(solver_context &ctx, const llvm::Value *v) {
+  // todo : find min val
   assert(false);
   return ctx.bool_val(true);
 }
-
 
 char set_unroll_counts::ID = 0;
 
-set_unroll_counts::set_unroll_counts( options& o_ )
-  : llvm::LoopPass(ID)
-  , o(o_)
-{}
+set_unroll_counts::set_unroll_counts(options &o_) : llvm::LoopPass(ID), o(o_) {}
 
 set_unroll_counts::~set_unroll_counts() {}
 
-bool set_unroll_counts::doInitialization(  llvm::Loop *L,
-                                          llvm::LPPassManager &LPM) {
+bool set_unroll_counts::doInitialization(llvm::Loop *L,
+                                         llvm::LPPassManager &LPM) {
   return false; // did not modify the loop
 }
 
-
-bool set_unroll_counts::runOnLoop( llvm::Loop *L,
-                                   llvm::LPPassManager &LPM ) {
+bool set_unroll_counts::runOnLoop(llvm::Loop *L, llvm::LPPassManager &LPM) {
   SE = &getAnalysis<llvm::ScalarEvolutionWrapperPass>().getSE();
 
   // Computing trip count
   unsigned TripCount = 0;
   // unsigned TripMultiple = 1;
   llvm::BasicBlock *ExitingBlock = L->getLoopLatch();
-  auto& Ctx = ExitingBlock->getContext();
-  
+  auto &Ctx = ExitingBlock->getContext();
+
   if (!ExitingBlock || !L->isLoopExiting(ExitingBlock))
     ExitingBlock = L->getExitingBlock();
   if (ExitingBlock) {
@@ -2232,17 +2258,18 @@ bool set_unroll_counts::runOnLoop( llvm::Loop *L,
     // TripMultiple = SE->getSmallConstantTripMultiple(L, ExitingBlock);
   }
 
-  if( TripCount == 0 ) {
+  if (TripCount == 0) {
     // We donot know the number of iterations according to the static analysis
-    if( !L->getLoopID() ) {
+    if (!L->getLoopID()) {
       // L->getLoopID()->print( llvm::outs() );
 
       llvm::SmallVector<llvm::Metadata *, 4> Args;
       Args.push_back(nullptr);
-      llvm::Metadata *Vals[]
-        = { llvm::MDString::get(Ctx, "llvm.loop.unroll.count"),
-            llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Ctx), o.loop_unroll_count))};
-      Args.push_back( llvm::MDNode::get(Ctx, Vals));
+      llvm::Metadata *Vals[] = {
+          llvm::MDString::get(Ctx, "llvm.loop.unroll.count"),
+          llvm::ConstantAsMetadata::get(llvm::ConstantInt::get(
+              llvm::Type::getInt32Ty(Ctx), o.loop_unroll_count))};
+      Args.push_back(llvm::MDNode::get(Ctx, Vals));
       auto *LoopID = llvm::MDNode::getDistinct(Ctx, Args);
       LoopID->replaceOperandWith(0, LoopID);
       L->setLoopID(LoopID);
@@ -2262,19 +2289,20 @@ llvm::StringRef set_unroll_counts::getPassName() const {
 
 void set_unroll_counts::getAnalysisUsage(llvm::AnalysisUsage &au) const {
   au.setPreservesAll();
-  // // au.addRequired<llvm::LoopInfoWrapperPass>(); // deprecated in LLVM 20 // deprecated in LLVM 20
+  // // au.addRequired<llvm::LoopInfoWrapperPass>(); // deprecated in LLVM 20 //
+  // deprecated in LLVM 20
   au.addRequired<llvm::ScalarEvolutionWrapperPass>();
 }
 
-
-void forced_inliner_pass( std::unique_ptr<llvm::Module>& module ) {
-  for(auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
+void forced_inliner_pass(std::unique_ptr<llvm::Module> &module) {
+  for (auto fit = module->begin(), endit = module->end(); fit != endit; ++fit) {
     // todo: remove dependency on demangle from llvm_utils
     // std::string fname = demangle(fit->getName().str());
-    if( !fit->isDeclaration() ) {
+    if (!fit->isDeclaration()) {
       // function has a body available
       fit->addFnAttr(llvm::Attribute::AlwaysInline);
-      //To ensure all functions are inlined even if the personalities do not match
+      // To ensure all functions are inlined even if the personalities do not
+      // match
       llvm::Constant *FnPersonality = nullptr;
       fit->setPersonalityFn(FnPersonality);
     }
@@ -2282,78 +2310,78 @@ void forced_inliner_pass( std::unique_ptr<llvm::Module>& module ) {
 
   // force inline
   llvm::legacy::PassManager inline_passMan;
-  inline_passMan.add( llvm::createAlwaysInlinerLegacyPass() );
-  inline_passMan.run( *module.get() );
+  inline_passMan.add(llvm::createAlwaysInlinerLegacyPass());
+  inline_passMan.run(*module.get());
 }
 
-void prepare_module(std::unique_ptr<llvm::Module>& module ) {
+void prepare_module(std::unique_ptr<llvm::Module> &module) {
   llvm::legacy::PassManager passMan;
-  passMan.add( llvm::createPromoteMemoryToRegisterPass() );
-  // passMan.add( llvm::createLoopRotatePass() // deprecated in LLVM 20 ); // some params
-  // passMan.add( llvm::createSCCPPass() // deprecated in LLVM 20 );
-  passMan.run( *module.get() );
+  passMan.add(llvm::createPromoteMemoryToRegisterPass());
+  // passMan.add( llvm::createLoopRotatePass() // deprecated in LLVM 20 ); //
+  // some params passMan.add( llvm::createSCCPPass() // deprecated in LLVM 20 );
+  passMan.run(*module.get());
 }
 
-
-const llvm::Value*
-identify_array_in_gep(const llvm::GEPOperator* gep ) {
+const llvm::Value *identify_array_in_gep(const llvm::GEPOperator *gep) {
   auto op_gep_ptr = gep->getPointerOperand();
   //  op_gep_ptr->print( llvm::outs() ); std::cout <<"\n";
-  if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr) ) {
+  if (auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr)) {
     op_gep_ptr = cast->getOperand(0);
   }
 
   // assuming alloc instruction
-  if( auto addr = llvm::dyn_cast<const llvm::AllocaInst>(op_gep_ptr) ) {
+  if (auto addr = llvm::dyn_cast<const llvm::AllocaInst>(op_gep_ptr)) {
     return addr;
   }
 
   // passed pointer in the function
-  if(auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
+  if (auto addr = llvm::dyn_cast<const llvm::Argument>(op_gep_ptr)) {
     return addr;
   }
 
   // accessing global variable
-  if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr)) {
+  if (auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr)) {
     return glb;
   }
- // if(auto sub_gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(op_gep_ptr)) {
- //   return identify_array_in_gep(sub_gep);
- //   // auto sub_op_gep_ptr = sub_gep->getPointerOperand();
- //    // todo: add conditions that all the positions are 0
- //    // gep( gep( glb , 0), 3 ) === *(glb+3) << Good <<<
- //    //
- //    // gep( gep( glb , 1), 3 ) === *(glb+4) << Bad <<<
- //    //
- //    //assert(false); // remove this assert only if the above condition is added;
- //    //if( false ) {
- // }
- if( auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr) ) {
-     // if (sub_gep->hasAllZeroIndices()) {
-      return identify_array_in_gep(sub_gep);
+  // if(auto sub_gep = llvm::dyn_cast<const
+  // llvm::GetElementPtrInst>(op_gep_ptr)) {
+  //   return identify_array_in_gep(sub_gep);
+  //   // auto sub_op_gep_ptr = sub_gep->getPointerOperand();
+  //    // todo: add conditions that all the positions are 0
+  //    // gep( gep( glb , 0), 3 ) === *(glb+3) << Good <<<
+  //    //
+  //    // gep( gep( glb , 1), 3 ) === *(glb+4) << Bad <<<
+  //    //
+  //    //assert(false); // remove this assert only if the above condition is
+  //    added;
+  //    //if( false ) {
+  // }
+  if (auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr)) {
+    // if (sub_gep->hasAllZeroIndices()) {
+    return identify_array_in_gep(sub_gep);
     // }
   }
   gep->dump();
   llvm_bmc_error("bmc", "unseen GEP pattern detected!");
 }
 
-std::pair<const llvm::Value*, uint64_t>
-identify_lpad_struct(const llvm::Value* op, int index) {
-  if( auto lpi = llvm::dyn_cast<const llvm::LandingPadInst>(op) ) {
+std::pair<const llvm::Value *, uint64_t>
+identify_lpad_struct(const llvm::Value *op, int index) {
+  if (auto lpi = llvm::dyn_cast<const llvm::LandingPadInst>(op)) {
     auto predecessor = lpi->getParent()->getSinglePredecessor();
     auto terminator = predecessor->getTerminator();
 
     if (auto invoke = llvm::dyn_cast<const llvm::InvokeInst>(terminator)) {
-      llvm::Function* fp = invoke->getCalledFunction();
+      llvm::Function *fp = invoke->getCalledFunction();
       if (fp != nullptr && fp->getName().starts_with("__cxa_throw")) {
-        llvm::Value* arg;
+        llvm::Value *arg;
         if (index == 0) {
           arg = invoke->getArgOperand(index);
         } else {
           arg = invoke->getArgOperand(index);
-          //TODO : add code to convert it into int for future purpose
+          // TODO : add code to convert it into int for future purpose
         }
-      
+
         uint64_t size = 0;
         // Check if the argument is an array and determine its size
         if (auto arrayTy = llvm::dyn_cast<llvm::ArrayType>(op->getType())) {
@@ -2363,37 +2391,38 @@ identify_lpad_struct(const llvm::Value* op, int index) {
       }
     }
 
-    llvm_bmc_warning("bmc","failed to recognize lpad structure");
+    llvm_bmc_warning("bmc", "failed to recognize lpad structure");
     op->dump();
   }
   return std::make_pair(nullptr, 0);
 }
 
-llvm::DIType*
-find_type_from_debug( const llvm::Value* v,
-                      std::map<const llvm::Value*,const llvm::Instruction*>& dmap) {
+llvm::DIType *find_type_from_debug(
+    const llvm::Value *v,
+    std::map<const llvm::Value *, const llvm::Instruction *> &dmap) {
   auto di = dmap.at(v);
-  if( auto dbg_val = llvm::dyn_cast<llvm::DbgValueInst>(di) ) {
+  if (auto dbg_val = llvm::dyn_cast<llvm::DbgValueInst>(di)) {
     // auto div = ;
     return dbg_val->getVariable()->getType();
   }
   return NULL;
 }
 
-void collect_debug_info( std::unique_ptr<llvm::Module>& module,
-                         std::map<const llvm::Value*,const llvm::Instruction*>& dmap) {
-  const llvm::Module& m = *module.get();
-  for( const llvm::Function& f : m ) {
-    for( const llvm::BasicBlock& bb : f ) {
-      for( const llvm::Instruction& I : bb ) {
-        if( auto dbg = llvm::dyn_cast<llvm::DbgInfoIntrinsic>(&I) ) {
-          if( auto dbg_val = llvm::dyn_cast<llvm::DbgValueInst>(dbg) ) {
-            dmap[ dbg_val->getValue() ] = &I;
-          }else if( auto dbg_var = llvm::dyn_cast<llvm::DbgDeclareInst>(dbg) ) {
-            dmap[ dbg_var->getAddress() ] = &I;
-          }else if( llvm::isa<llvm::DbgLabelInst>(dbg) ) {
-          //   dmap[ dbg_label->getAddress() ] = &I;
-          }else{
+void collect_debug_info(
+    std::unique_ptr<llvm::Module> &module,
+    std::map<const llvm::Value *, const llvm::Instruction *> &dmap) {
+  const llvm::Module &m = *module.get();
+  for (const llvm::Function &f : m) {
+    for (const llvm::BasicBlock &bb : f) {
+      for (const llvm::Instruction &I : bb) {
+        if (auto dbg = llvm::dyn_cast<llvm::DbgInfoIntrinsic>(&I)) {
+          if (auto dbg_val = llvm::dyn_cast<llvm::DbgValueInst>(dbg)) {
+            dmap[dbg_val->getValue()] = &I;
+          } else if (auto dbg_var = llvm::dyn_cast<llvm::DbgDeclareInst>(dbg)) {
+            dmap[dbg_var->getAddress()] = &I;
+          } else if (llvm::isa<llvm::DbgLabelInst>(dbg)) {
+            //   dmap[ dbg_label->getAddress() ] = &I;
+          } else {
             assert(false);
           } // not possible
         }
@@ -2402,55 +2431,76 @@ void collect_debug_info( std::unique_ptr<llvm::Module>& module,
   }
 }
 
-const std::pair<const llvm::Value*, uint64_t>
-get_array_info( const llvm::Value* op) {
+const std::pair<const llvm::Value *, uint64_t>
+get_array_info(const llvm::Value *op) {
 
-  while( true ) {
-    if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
+  while (true) {
+    if (auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op)) {
       op = cast->getOperand(0);
-    } else if( auto gep = llvm::dyn_cast<const llvm::GEPOperator>(op) ) {
+    } else if (auto gep = llvm::dyn_cast<const llvm::GEPOperator>(op)) {
       op = gep->getPointerOperand();
+    // } else if (auto phi = llvm::dyn_cast<const llvm::PHINode>(op)) {
+    //   const llvm::Value *base = nullptr;
+    //   uint64_t size = 0;
+    //   bool first = true;
+    //   for (unsigned i = 0; i < phi->getNumIncomingValues(); ++i) {
+    //     auto in = phi->getIncomingValue(i);
+    //     auto info = get_array_info(in);
+    //     if (!info.first) {
+    //       return std::make_pair(nullptr, 0);
+    //     }
+    //     if (first) {
+    //       base = info.first;
+    //       size = info.second;
+    //       first = false;
+    //     } else if (info.first != base || info.second != size) {
+    //       return std::make_pair(nullptr, 0);
+    //     }
+    //   }
+    //   return std::make_pair(base, size);
     } else {
       break;
     }
   }
 
-  if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op)) {
+  if (auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op)) {
     // std::string name = glb->getName();
     uint64_t size = 1; // default size for non-array types
 
-    llvm::Type* type = glb->getValueType();
-    if (llvm::ArrayType* arrayType = llvm::dyn_cast<llvm::ArrayType>(type)) {
+    llvm::Type *type = glb->getValueType();
+    if (llvm::ArrayType *arrayType = llvm::dyn_cast<llvm::ArrayType>(type)) {
       // llvm::Type* elementType = arrayType->getElementType();
       size = arrayType->getNumElements();
     }
     return std::make_pair(glb, size);
-  }else if( llvm::dyn_cast<const llvm::AllocaInst>(op) ) {
+  } else if (llvm::dyn_cast<const llvm::AllocaInst>(op)) {
     // auto alloc =
     // To handle a[0] when a is dynamic sized array
     auto alloca = llvm::dyn_cast<const llvm::AllocaInst>(op);
     uint64_t size = 0;
-    if (auto arrayTy = llvm::dyn_cast<llvm::ArrayType>(alloca->getAllocatedType())) {
+    if (auto arrayTy =
+            llvm::dyn_cast<llvm::ArrayType>(alloca->getAllocatedType())) {
       size = arrayTy->getNumElements();
     }
 
-    // llvm::errs() << "Alloca var Name = " << alloca->getName() << " Size = " << size << "\n";
-    if(auto addr = llvm::dyn_cast<const llvm::Instruction>(op)) {
+    // llvm::errs() << "Alloca var Name = " << alloca->getName() << " Size = "
+    // << size << "\n";
+    if (auto addr = llvm::dyn_cast<const llvm::Instruction>(op)) {
       // actual allocation in the code
       return std::make_pair(addr, size);
     }
-    
+
     return std::make_pair(op, size);
 
-  }else if( auto addr = llvm::dyn_cast<const llvm::Argument>(op) ) {
+  } else if (auto addr = llvm::dyn_cast<const llvm::Argument>(op)) {
     // passed as an argument
     uint64_t size = 0;
     if (auto arrayTy = llvm::dyn_cast<llvm::ArrayType>(op->getType())) {
       size = arrayTy->getNumElements();
     }
     return std::make_pair(addr, size);
-  }else if( auto cnst = llvm::dyn_cast<const llvm::ConstantExpr>(op) ) {
-    if( auto gep = llvm::dyn_cast<llvm::GEPOperator>(cnst) ) {
+  } else if (auto cnst = llvm::dyn_cast<const llvm::ConstantExpr>(op)) {
+    if (auto gep = llvm::dyn_cast<llvm::GEPOperator>(cnst)) {
       auto const_ptr = gep->getPointerOperand();
       return get_array_info(const_ptr);
     }
@@ -2458,9 +2508,9 @@ get_array_info( const llvm::Value* op) {
     return get_array_info(cistr);
     // cistr->dump();
     // llvm_bmc_error("bmc", "non GEP constant expression!");
-  }else if( auto call = llvm::dyn_cast<const llvm::CallInst>(op) ) {
+  } else if (auto call = llvm::dyn_cast<const llvm::CallInst>(op)) {
     // llvm::errs() << "\n CALL INSTRUCTION \n";
-    llvm::Function* fp = call->getCalledFunction();
+    llvm::Function *fp = call->getCalledFunction();
     if (fp != NULL && fp->getName().starts_with("__cxa_allocate")) {
       // call->print(llvm::outs());std::cout << "RECOGNIZED PATTERN\n";
       return std::make_pair(call, 0);
@@ -2472,7 +2522,7 @@ get_array_info( const llvm::Value* op) {
     // llvm::errs() << *ev << "\n";
     // llvm::errs() << "Type of EVAL is " << *(ev->getType()) << "\n";
     auto evi_op = ev->getAggregateOperand();
-    if( llvm::isa<llvm::PointerType>(ev->getType()) ) {
+    if (llvm::isa<llvm::PointerType>(ev->getType())) {
 
       return identify_lpad_struct(evi_op, 0);
     } else {
@@ -2482,32 +2532,33 @@ get_array_info( const llvm::Value* op) {
     }
     // return ev;
     // return ev->getAggregateOperand();
-  // } else if (auto lpi = llvm::dyn_cast<const llvm::LandingPadInst>(op)) {
-  //   auto predecessor = lpi->getParent()->getSinglePredecessor();
-  //   auto terminator = predecessor->getTerminator();
-  //   // llvm::errs() << "\n\nGOT PREDECESSOR " << *predecessor << "===========";
-  //   llvm::errs() << "\n\nGOT TERMINATOR " << *terminator << "\n===========";
-  //   if (auto invoke = llvm::dyn_cast<const llvm::InvokeInst>(terminator)) {
-  //     // llvm::errs() << "\n\nIN IF";
-  //     llvm::Function* fp = invoke->getCalledFunction();
-  //     llvm::errs() << "\n called function is " << *fp;
-  //     if (fp != nullptr && fp->getName().starts_with("__cxa_throw")) {
-  //       llvm::Value* arg0;
-        
-  //       arg0 = invoke->getArgOperand(0);
-  //       llvm::errs() << "\nDUmping value ";
-  //       arg0->dump();
-  //       llvm::errs() << "\n";
-  //       return arg0;
-  //     }
-  //   } else {
-  //     llvm::errs() << "\n\nIN ELSE";
-  //   }
-  } else if(auto load = llvm::dyn_cast<const llvm::LoadInst>(op)){
+    // } else if (auto lpi = llvm::dyn_cast<const llvm::LandingPadInst>(op)) {
+    //   auto predecessor = lpi->getParent()->getSinglePredecessor();
+    //   auto terminator = predecessor->getTerminator();
+    //   // llvm::errs() << "\n\nGOT PREDECESSOR " << *predecessor <<
+    //   "==========="; llvm::errs() << "\n\nGOT TERMINATOR " << *terminator <<
+    //   "\n==========="; if (auto invoke = llvm::dyn_cast<const
+    //   llvm::InvokeInst>(terminator)) {
+    //     // llvm::errs() << "\n\nIN IF";
+    //     llvm::Function* fp = invoke->getCalledFunction();
+    //     llvm::errs() << "\n called function is " << *fp;
+    //     if (fp != nullptr && fp->getName().starts_with("__cxa_throw")) {
+    //       llvm::Value* arg0;
+
+    //       arg0 = invoke->getArgOperand(0);
+    //       llvm::errs() << "\nDUmping value ";
+    //       arg0->dump();
+    //       llvm::errs() << "\n";
+    //       return arg0;
+    //     }
+    //   } else {
+    //     llvm::errs() << "\n\nIN ELSE";
+    //   }
+  } else if (auto load = llvm::dyn_cast<const llvm::LoadInst>(op)) {
     uint64_t size = 0;
     dump(load);
-    if(llvm::isa<const llvm::Instruction>(load->getOperand(0))) {
-      while(llvm::dyn_cast<const llvm::LoadInst>(load->getOperand(0))){
+    if (llvm::isa<const llvm::Instruction>(load->getOperand(0))) {
+      while (llvm::dyn_cast<const llvm::LoadInst>(load->getOperand(0))) {
         load = llvm::dyn_cast<llvm::LoadInst>(load->getOperand(0));
       }
       dump(load);
@@ -2516,41 +2567,45 @@ get_array_info( const llvm::Value* op) {
     }
 
     return std::make_pair(op, size);
-    
-  } else{
+
+  } else {
     // llvm_bmc_error("bmc", "non array global write/read not supported!");
   }
-  llvm_bmc_warning("bmc","failed to recognize heap access");
-  //op->dump();
+  llvm_bmc_warning("bmc", "failed to recognize heap access");
+  // op->dump();
   return std::make_pair(nullptr, 0);
 }
 // TODO: the following and the above functions make
 //       pointless distinction between array and global
-const llvm::Value* identify_global_in_addr( const llvm::Value* op) {
-  if( auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op) ) {
+const llvm::Value *identify_global_in_addr(const llvm::Value *op) {
+  if (auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op)) {
     op = cast->getOperand(0);
   }
-  if(auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op)) {
+  if (auto glb = llvm::dyn_cast<const llvm::GlobalVariable>(op)) {
     return glb;
   }
-  return get_array_info( op ).first;
+  return get_array_info(op).first;
 }
 
+bool semantic_match(const llvm::Value *op1, const llvm::Value *op2) {
+  if (op1 == op2)
+    return true;
 
-bool semantic_match( const llvm::Value* op1, const llvm::Value* op2) {
-  if( op1 == op2 ) return true;
-
-  if( auto I1 = llvm::dyn_cast<const llvm::Instruction>(op1) ) {
-    if( auto I2 = llvm::dyn_cast<const llvm::Instruction>(op2) ) {
-      if( !I1->isSameOperationAs(I2) ) return false;
-      if( I1->getNumOperands() != I2->getNumOperands() ) return false;
-      if( llvm::isa<const llvm::AllocaInst>(I1) ) return false;
+  if (auto I1 = llvm::dyn_cast<const llvm::Instruction>(op1)) {
+    if (auto I2 = llvm::dyn_cast<const llvm::Instruction>(op2)) {
+      if (!I1->isSameOperationAs(I2))
+        return false;
+      if (I1->getNumOperands() != I2->getNumOperands())
+        return false;
+      if (llvm::isa<const llvm::AllocaInst>(I1))
+        return false;
       bool r = true;
-      for( unsigned i = 0 ; i < I1->getNumOperands(); i++ ) {
-        r = r && semantic_match( I1->getOperand(i), I2->getOperand(i) );
+      for (unsigned i = 0; i < I1->getNumOperands(); i++) {
+        r = r && semantic_match(I1->getOperand(i), I2->getOperand(i));
       }
       return r;
-    }else return false;
+    } else
+      return false;
   }
   return false;
   // if( auto cast1 = llvm::dyn_cast<const llvm::BitCastInst>(op1) ) {
