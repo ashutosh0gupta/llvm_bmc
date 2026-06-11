@@ -1,7 +1,10 @@
+class options;
+
 #ifndef Z3UTILS_H
 #define Z3UTILS_H
 
 #include "utils.h"
+
 #include "include/solver.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
@@ -119,7 +122,8 @@ expr store(expr &, exprs &, expr &);
 
 bool matched_sort(const expr &l, const expr &r);
 expr switch_int_sort(expr &b, sort &s);
-expr switch_bv_sort(expr &b, sort &s);
+expr switch_bv_sort(expr &b, sort &s); 
+
 // expr sbv_to_fpa(expr const& t, sort s);
 int get_numeral_int(const expr &i);
 
@@ -193,13 +197,17 @@ class Z3CompClass
 public:
   z3::context ctx;
   z3::model *m;
-
-  Z3CompClass();
+  Z3CompClass( options& o_ )
+    : o(o_) {} // Dohil
+  // Z3CompClass();
   void Z3compatible(std::string, std::string);
   check_result check_cvc5(solver &, std::string, bool);
   z3::model get_cvc5_model();
   check_result check_boolector(solver &, std::string, bool);
   z3::model get_boolector_model();
+  bool get_isBitPrecise(); // Dohil
+private:
+  options& o; // Dohil 
 };
 
 #endif //Z3COMPCLASS_H

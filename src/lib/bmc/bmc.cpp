@@ -299,7 +299,7 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
   }
 
   check_result result;
-  Z3CompClass z3compObj;
+  Z3CompClass z3compObj(o);
   if( o.use_solver == "z3" ) {
     result = s.check();
   }else if( o.use_solver == "cvc5" ) {
@@ -430,7 +430,7 @@ bool bmc::run_solver_con(spec &spec) {
   //
 
   check_result result;
-  Z3CompClass z3compObj;
+  Z3CompClass z3compObj(o);
   if( o.use_solver == "z3" ) {
     result = s.check();
   }else if( o.use_solver == "cvc5" ) {

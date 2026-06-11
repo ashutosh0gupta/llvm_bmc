@@ -131,7 +131,8 @@ def find_llvm_bin():
         "/usr/lib/llvm-18/bin",
         "/usr/lib/llvm-17/bin",
         "/usr/local/llvm/bin",
-        "/usr/local/bin"
+        "/usr/local/bin",
+        
     ]
 
     for p in possible_paths:

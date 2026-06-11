@@ -12,11 +12,16 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
-#include <llvm-20/llvm/ADT/SmallVector.h>
-#include <llvm-20/llvm/IR/Function.h>
-#include <llvm-20/llvm/IR/InstrTypes.h>
-#include <llvm-20/llvm/Support/Casting.h>
-#include <llvm-20/llvm/Transforms/Utils/ValueMapper.h>
+// #include <llvm-20/llvm/ADT/SmallVector.h>
+// #include <llvm-20/llvm/IR/Function.h>
+// #include <llvm-20/llvm/IR/InstrTypes.h>
+// #include <llvm-20/llvm/Support/Casting.h>
+// #include <llvm-20/llvm/Transforms/Utils/ValueMapper.h>
+#include <llvm/ADT/SmallVector.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/InstrTypes.h>
+#include <llvm/Support/Casting.h>
+#include <llvm/Transforms/Utils/ValueMapper.h>
 #include <memory>
 #include <vector>
 

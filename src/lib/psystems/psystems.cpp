@@ -307,7 +307,9 @@ bool psystems::runOnFunction(llvm::Function &f)
                 // header->dump();
                 for(const llvm::BasicBlock *bb: II->blocks())
                 {
-                    bb->dump();
+                    // bb->dump();
+                    bb->print(llvm::errs(), nullptr, false, true);
+                    llvm::errs() << "\n";
                 }
                 std::optional<AccessRelation> ar = get_ar(II);
                 std::cout << "\nBRUHHH" << std::endl;

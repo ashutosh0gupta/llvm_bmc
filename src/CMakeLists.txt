@@ -46,6 +46,12 @@ ELSE(LLVM_DEBUG)
   message(STATUS "CLANG INCLUDE DIR - ${CLANG_INCLUDE_DIRS}")
 ENDIF(LLVM_DEBUG)
 
+
+set(LLVM_DIR "/usr/lib/llvm20/lib/cmake/llvm")
+set(Clang_DIR "/usr/lib/llvm20/lib/cmake/clang")
+
+# set(CMAKE_PREFIX_PATH "/usr/lib/llvm20")
+
 # set_target_properties(${LLVMBMC} PROPERTIES TYPE "STATIC_LIBRARY")
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
@@ -72,7 +78,8 @@ llvm_map_components_to_libnames(llvm_libs
 SET(Boost_USE_STATIC_LIBS    OFF)
 SET(Boost_USE_STATIC_RUNTIME OFF)
 
-find_package(Boost 1.58.0 COMPONENTS regex program_options system filesystem REQUIRED) 
+# find_package(Boost 1.58.0 COMPONENTS regex program_options system filesystem REQUIRED) 
+find_package(Boost 1.9.1 REQUIRED COMPONENTS regex program_options filesystem OPTIONAL_COMPONENTS system)
 
 IF(Z3_DEBUG)
   LINK_DIRECTORIES("${PROJECT_BINARY_DIR}/../z3/buildd")
@@ -81,7 +88,7 @@ ELSE(Z3_DEBUG)
 ENDIF(Z3_DEBUG)
 
 
-ADD_DEFINITIONS(-std=c++2a -Wall -Wno-comment)
+ADD_DEFINITIONS(-std=c++2a -Wall -Wno-comment -DLLVM_ENABLE_DUMP)
 # ADD_DEFINITIONS(-std=c++14 -Wall)
 
 
@@ -93,6 +100,8 @@ add_definitions(${LLVM_DEFINITIONS})
 include_directories(${LLVM_INCLUDE_DIRS})
 include_directories(${CLANG_INCLUDE_DIRS})
 
+include_directories(/usr/lib/llvm20/include)
+link_directories(/usr/lib/llvm20/lib)
 # IF(LLVM_DEBUG)
 #   # in debug llvm linkers take a lot of time
 #   # For enabling specialized linker; 
@@ -110,8 +119,12 @@ endif(LLVM_VERSION EQUAL "7.0.0svn")
 
 # unexplained guard 
 # Use monolithic LLVM and Clang libraries
+# SET(llvm_libs LLVM-20)
 SET(llvm_libs LLVM-20)
 SET(clang_libs clang-cpp)
+
+# SET(llvm_libs LLVM)
+# SET(clang_libs /usr/lib/llvm20/lib/libclang-cpp.so)
 
 LINK_DIRECTORIES(${LLVM_LIBRARY_DIRS})
 
@@ -123,4 +136,4 @@ add_executable(${LLVMBMC} ${SOURCES})
 
 SET(LIBZ3 z3)
 
-target_link_libraries (${LLVMBMC} ${LIBZ3} ${Boost_LIBRARIES} ${clang_libs} ${llvm_libs} pthread dl z)
+target_link_libraries(${LLVMBMC} ${LIBZ3} ${Boost_LIBRARIES} ${clang_libs} ${llvm_libs} pthread dl z)

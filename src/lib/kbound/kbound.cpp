@@ -946,7 +946,9 @@ void kbound::dump_CallThreadJoin( unsigned bidx, const llvm::CallInst* call){
       break;
   }
   if( j == bmc_obj.sys_spec.threads.size() ) {
-    call->dump();
+    // call->dump();
+    call->print(llvm::errs(), /*IsForDebug=*/true);
+    llvm::errs() << "\n";
     llvm_bmc_error("kbound", "thread values did not match!!");
   }
   auto child_tid = std::to_string(j);
@@ -1046,7 +1048,9 @@ void kbound::dump_LoadInst( unsigned bidx, const llvm::LoadInst* load ) {
   if( gid != "" ) { // Read variable is global, but used locally.
     dump_ld( r, creg, caddr, gid, is_acquire( ord ), false, isLocalUse,loc);
   }else{
-    load->dump();
+    // load->dump();
+    load->print(llvm::errs(), /*IsForDebug=*/true);
+    llvm::errs() << "\n";
     llvm_bmc_error("kbound", "we need to support local global optimization!!");
   }
 }

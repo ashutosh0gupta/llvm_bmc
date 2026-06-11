@@ -3,7 +3,8 @@
 #include "witness.h"
 // TODO : remove reference to heap model and access of public class variables
 #include "include/array_model.h"
-#include <llvm-20/llvm/Support/raw_ostream.h>
+// #include <llvm-20/llvm/Support/raw_ostream.h>
+#include <llvm/Support/raw_ostream.h>
 // #include "include/memory_event.h"
 //  #include "include/collect_globals.h"
 

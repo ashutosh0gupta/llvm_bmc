@@ -7,8 +7,10 @@
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <climits>
-#include <llvm-20/llvm/IR/Constants.h>
-#include <llvm-20/llvm/Support/Casting.h>
+// #include <llvm-20/llvm/IR/Constants.h>
+// #include <llvm-20/llvm/Support/Casting.h>
+#include <llvm/IR/Constants.h>
+#include <llvm/Support/Casting.h>
 #include <z3++.h>
 
 #pragma GCC diagnostic push
@@ -1729,6 +1731,7 @@ sort llvm_to_sort(solver_context &c, const llvm::Type *t) {
   if (t->isPointerTy()) {
     // t->print(llvm::outs()); std::cout << "\n";  // <<
     // t->getPointerElementType() << "\n";
+    // llvm_bmc_error("llvm_utils", "pointer sorts are not supported");
     return c.int_sort();
   }
   // t->print(llvm::outs());
@@ -1799,6 +1802,7 @@ bool has_name(llvm::StringRef str, std::vector<std::string> &names) {
   }
   return false;
 }
+
 
 bool match_function_names(const llvm::CallInst *call,
                           std::vector<std::string> &names) {
@@ -1907,7 +1911,9 @@ sort llvm_to_bv_sort(solver_context &c, const llvm::Type *t) {
   } else if (t->isStructTy()) {
     llvm_bmc_error("llvm_utils", "struct sorts are not supported");
   } else if (t->isPointerTy()) {
-    llvm_bmc_error("llvm_utils", "pointer sorts are not supported");
+    // llvm_bmc_error("llvm_utils", "pointer sorts are not supported");
+    // return c.int_sort();
+    return c.bv_sort(64);
   } else if (t->isArrayTy() || t->isVectorTy()) {
     llvm::Type *te = t->getArrayElementType();
     sort_vector domains(c);
@@ -1946,6 +1952,7 @@ sort llvm_to_bv_sort(solver_context &c, const llvm::Type *t) {
 
 sort llvm_to_sort(options &o, const llvm::Type *t) {
   if (o.bit_precise) {
+    int a_thisisrandom=10;
     return llvm_to_bv_sort(o.solver_ctx, t);
   } else {
     return llvm_to_sort(o.solver_ctx, t);
@@ -2361,7 +2368,9 @@ const llvm::Value *identify_array_in_gep(const llvm::GEPOperator *gep) {
     return identify_array_in_gep(sub_gep);
     // }
   }
-  gep->dump();
+  // gep->dump();
+  gep->print(llvm::errs(), /*IsForDebug=*/true);
+  llvm::errs() << "\n";
   llvm_bmc_error("bmc", "unseen GEP pattern detected!");
 }
 
@@ -2392,7 +2401,9 @@ identify_lpad_struct(const llvm::Value *op, int index) {
     }
 
     llvm_bmc_warning("bmc", "failed to recognize lpad structure");
-    op->dump();
+    // op->dump();
+    op->print(llvm::errs(), /*IsForDebug=*/true);
+    llvm::errs() << "\n";
   }
   return std::make_pair(nullptr, 0);
 }

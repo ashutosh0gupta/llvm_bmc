@@ -1,7 +1,8 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.50)
 
 project(fault_prop)
-set(LLVM_DIR "/usr/lib/llvm-20/lib/cmake/llvm")
+# set(LLVM_DIR "/usr/lib/llvm-20/lib/cmake/llvm")
+set(LLVM_DIR "/usr/lib/llvm20/lib/cmake/llvm")
 
 find_package(LLVM REQUIRED CONFIG)
 

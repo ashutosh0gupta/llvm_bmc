@@ -7,7 +7,27 @@
         "cwd": "${workspaceFolder}",
         "type": "cppdbg",
         "program": "${workspaceFolder}/llvmbmc",
-        "args" : ["${workspaceFolder}/examples/crypto/kyber.ll","-f","pqcrystals_kyber512_ref_indcpa_keypair_derand", "--dump-solver-query", "--var-suffix", "--var-suffix correct"]
+        "environment": [
+        { "name": "LSAN_OPTIONS", "value": "verbosity=1:log_threads=1" }
+        ],
+        // "args" : ["${workspaceFolder}/examples/crypto/kyber.ll","-f","pqcrystals_kyber512_ref_indcpa_keypair_derand", "--dump-solver-query", "--var-suffix", "--var-suffix correct"]
+        // "args": ["-b","-f","mat_add","${workspaceFolder}/examples/crypto/funcSkip.ll"]
+        "args": ["-f","mat_add","${workspaceFolder}/examples/crypto/funcSkip.ll"]
+
+    },
+    {
+        "name": "Launch funcSkip -b",
+        "request": "launch",
+        "cwd": "${workspaceFolder}",
+        "type": "cppdbg",
+        "program": "${workspaceFolder}/llvmbmc",
+        "environment": [
+        { "name": "LSAN_OPTIONS", "value": "verbosity=1:log_threads=1" }
+        ],
+        // "args" : ["${workspaceFolder}/examples/crypto/kyber.ll","-f","pqcrystals_kyber512_ref_indcpa_keypair_derand", "--dump-solver-query", "--var-suffix", "--var-suffix correct"]
+        "args": ["-b","-f","mat_add","${workspaceFolder}/examples/crypto/funcSkip.ll"]
+        // "args": ["-f","mat_add","${workspaceFolder}/examples/crypto/funcSkip.ll"]
+
     }
     ],
 

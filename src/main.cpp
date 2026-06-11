@@ -20,6 +20,10 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/LinkAllPasses.h"
 
+//These headers were also added because of the bug set unroll count
+#include "llvm/InitializePasses.h"
+#include "llvm/PassRegistry.h"
+
 void forced_unroll_pass( options& o,
                      std::unique_ptr<llvm::Module>& module
                      // comments& cmts,
@@ -45,6 +49,14 @@ void forced_unroll_pass( options& o,
   //     }
   //   }
   // }
+
+  // // This code was added to fix the "Pass 'set unroll counts ' is not initialized" bug. This is just a test can delete it and see if it breaks 
+  llvm::PassRegistry& Registry = *llvm::PassRegistry::getPassRegistry();
+  llvm::initializeTransformUtils(Registry);
+  llvm::initializeScalarOpts(Registry);
+  llvm::initializeLoopUnrollPass(Registry);  
+
+
 
   // basic
   llvm::legacy::PassManager passMan_set_count;
