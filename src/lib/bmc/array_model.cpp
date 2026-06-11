@@ -58,11 +58,6 @@ expr single_array_model::join_array_state( std::vector<expr>& conds,
   std::vector<expr> vec;
   auto& m_name = exit_ary_map[src].get_M_name(); // fresh state created
   
-  // sort array_sort = solver_ctx.array_sort( solver_ctx.int_sort(), solver_ctx.int_sort() ); // Dohil - This waas original comment below line
-  // // sort array_sort = solver_ctx.array_sort( solver_ctx.bv_sort(64), solver_ctx.bv_sort(32) );
-  // if(o.bit_precise)
-  //     array_sort = solver_ctx.array_sort( solver_ctx.bv_sort(64), solver_ctx.bv_sort(32) );
-  
   sort array_sort = solver_ctx.array_sort(get_address_sort(),get_data_sort());
 
   auto new_name = get_fresh_const(solver_ctx, array_sort, "Global_M");
@@ -79,13 +74,11 @@ expr single_array_model::join_array_state( std::vector<expr>& conds,
 // collect info about the arrays
 
 sort array_model_full::get_address_sort() {
-  // return solver_ctx.int_sort(); // Dohil - og
   if(o.bit_precise)
     return solver_ctx.bv_sort(64);
   return solver_ctx.int_sort();
 }
 sort array_model_full::get_data_sort() {
-  // return solver_ctx.int_sort(); // Dohil - og
   if(o.bit_precise)
     return solver_ctx.bv_sort(32);
   return solver_ctx.int_sort();
@@ -242,8 +235,7 @@ void single_array_model::init_state( unsigned eb ) {
   array_state& s = exit_ary_map[eb];
   auto& vec = s.get_M_name();
   vec.clear();
-  // sort array_sort = solver_ctx.array_sort( get_address_sort(), solver_ctx.int_sort() ); // Dohil - og
-  // sort array_sort = solver_ctx.array_sort( get_address_sort(), solver_ctx.bv_sort(32) );
+
   sort array_sort = solver_ctx.array_sort(get_address_sort(),get_data_sort());
   auto ar = get_fresh_const(solver_ctx, array_sort, "Global_M");
   vec.push_back( ar );
@@ -357,8 +349,7 @@ single_array_model::array_write( unsigned bidx, const llvm::StoreInst* I,
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
   auto& M_vec = ar_st.get_M_name();
   expr ar_name = M_vec.back();
-  // sort array_sort = solver_ctx.array_sort( get_address_sort(), solver_ctx.int_sort() ); // Dohil - 
-  // sort array_sort = solver_ctx.array_sort( get_address_sort(), solver_ctx.bv_sort(32) );
+
   sort array_sort = solver_ctx.array_sort(get_address_sort(),get_data_sort());
   auto new_ar = get_fresh_const(solver_ctx, array_sort, "Global_" + M_array_name);
   M_vec.clear();

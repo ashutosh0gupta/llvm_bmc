@@ -198,16 +198,15 @@ public:
   z3::context ctx;
   z3::model *m;
   Z3CompClass( options& o_ )
-    : o(o_) {} // Dohil
-  // Z3CompClass();
+    : o(o_) {}
   void Z3compatible(std::string, std::string);
   check_result check_cvc5(solver &, std::string, bool);
   z3::model get_cvc5_model();
   check_result check_boolector(solver &, std::string, bool);
   z3::model get_boolector_model();
-  bool get_isBitPrecise(); // Dohil
+  bool get_isBitPrecise();
 private:
-  options& o; // Dohil 
+  options& o;
 };
 
 #endif //Z3COMPCLASS_H

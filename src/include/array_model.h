@@ -104,7 +104,7 @@ public:
   unsigned get_num_arrays();
   unsigned get_accessed_array( const llvm::Instruction* I );
   sort get_address_sort();
-  sort get_data_sort(); // Dohil - I added this ease
+  sort get_data_sort();
   sort get_solver_array_ty( const llvm::ArrayType* ty );
   sort get_solver_array_ty( const llvm::PointerType* ty );
   std::vector< std::vector<expr> > get_array_lengths();
