@@ -1546,11 +1546,12 @@ void bmc_pass::translateGetElementPtrInst(unsigned bidx,
                                           const llvm::GetElementPtrInst *gep) {
   assert(gep);
   // GEP processed inside load and store inst
-  // as gep is always followed these inst
+  // as gep is always there before the inst
   unsigned num_ops = gep->getNumOperands();
   auto index = gep->getOperand(num_ops - 1);
   auto constantIndex = llvm::dyn_cast<const llvm::ConstantInt>(index);
   if (!constantIndex)
+    // llvm_bmc_error("bmc", "Non-constant indexing!");
     return; // Or handle non-constant index
   int indexValue = constantIndex->getSExtValue();
 
@@ -1560,6 +1561,7 @@ void bmc_pass::translateGetElementPtrInst(unsigned bidx,
   unsigned ar_num = bmc_ds_ptr->ary_to_int.at(st);
   bmc_ds_ptr->m.insert_term_map(
       gep, bidx, get_expr_const(solver_ctx, ar_num + indexValue));
+
 }
 
 //--------------------------------------
