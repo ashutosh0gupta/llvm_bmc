@@ -28,6 +28,17 @@
         "args": ["-b","-f","mat_add","${workspaceFolder}/examples/crypto/funcSkip.ll"]
         // "args": ["-f","mat_add","${workspaceFolder}/examples/crypto/funcSkip.ll"]
 
+    },
+    {
+        "name": "Launch mat_add",
+        "request": "launch",
+        "cwd": "${workspaceFolder}",
+        "type": "cppdbg",
+        "program": "${workspaceFolder}/llvmbmc",
+        "environment": [
+        { "name": "LSAN_OPTIONS", "value": "verbosity=1:log_threads=1" }
+        ],
+        "args": ["-f","main","${workspaceFolder}/examples/crypto/mat_add.ll","--var-suffix","correct","-o","${workspaceFolder}/output_individual"]
     }
     ],
 
