@@ -1918,7 +1918,7 @@ void Z3CompClass::Z3compatible(std::string path, std::string solvertype) {
   solver s(ctx);
   
   z3::sort arr_sort = ctx.array_sort(ctx.int_sort(), ctx.int_sort()); 
-  if(get_isBitPrecise());
+  if(get_isBitPrecise())
     arr_sort = ctx.array_sort(ctx.bv_sort(64), ctx.bv_sort(32));
   
   z3::expr base = expr(ctx);

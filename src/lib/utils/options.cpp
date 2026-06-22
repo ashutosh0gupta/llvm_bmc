@@ -36,6 +36,7 @@ void options::get_description_cmd(po::options_description& config,
     // ("total-loops,t", po::value<int>(&totalLoops)->default_value(1), "Set total number of loops")
     // ("aggregation,a", po::bool_switch(&loop_aggr), "Run aggregation algorithm on loop")
     ("dump-solver-query", po::bool_switch(&dump_solver_query), "Dump the formulas generated")
+    ("smt-only", po::bool_switch(&smt_only), "Do not solve and only give the smt output")
     ("dump-cfg,d", po::bool_switch(&dump_cfg), "Dump the llvm control flow graph")
     ("config,c", po::value<std::string>(), "Set config file")
     ("unwind,u", po::value<int>(&loop_unroll_count)->default_value(1), "Set loop unroll count")

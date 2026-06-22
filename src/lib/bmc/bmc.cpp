@@ -248,10 +248,11 @@ memory_state bmc::populate_mem_state() {
 
 void bmc::check_all_spec( bmc_ds* bmc_ds_ptr ) {
   std::ostream& os = std::cout;
+  bool solved;
   if( bmc_ds_ptr->spec_vec.empty() && o.dump_solver_query ) {
     src_loc loc;
     spec s(o.solver_ctx.bool_val(true), spec_reason_t::UNKNOWN, loc);
-    run_solver( s, bmc_ds_ptr);
+    solved = run_solver( s, bmc_ds_ptr);
   }
   for(spec s : bmc_ds_ptr->spec_vec) {
     if( o.verbosity > 3 ) {
@@ -259,11 +260,13 @@ void bmc::check_all_spec( bmc_ds* bmc_ds_ptr ) {
       s.print( os );
     }
     // expr prop = s.get_formula();
-    if( run_solver( s, bmc_ds_ptr) ) {
+    solved = run_solver( s, bmc_ds_ptr);
+    if( solved ) {
       return;
     } else { } // contine with other specifications
   }
-  os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
+  if(solved)
+    os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
 }
 
 bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
@@ -295,7 +298,11 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
 
   if( o.dump_solver_query ) {
     dump( o.outDirPath.string(), "test.smt2", s);
-    // std::cout << s;
+  }
+
+  if(o.smt_only) {
+    std::cout << "Exiting without solving\n\n"; 
+    return false; // Complement this by also ensuring LLVM BMC successful is replaced with translation successful
   }
 
   check_result result;
@@ -428,6 +435,10 @@ bool bmc::run_solver_con(spec &spec) {
     // std::cout << s;
   }
   //
+  if(o.smt_only) {
+    std::cout << "Exiting without solving\n\n"; 
+    return false; // Complement this by also ensuring LLVM BMC successful is replaced with translation successful
+  }
 
   check_result result;
   Z3CompClass z3compObj(o);

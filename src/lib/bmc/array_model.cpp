@@ -117,7 +117,8 @@ get_array_length( const llvm::ArrayType* a1, std::vector<expr>& lengths) {
   int n1 = a1->getNumElements();
   if(o.bit_precise ) {
     lengths.push_back( solver_ctx.bv_val(n1, 64) ); // todo: why 64?
-  }else{
+  }
+  else {
     lengths.push_back( solver_ctx.int_val(n1) );
   }
   auto T2 = a1->getElementType();
