@@ -1,0 +1,11 @@
+# llvm_bmc bmc Warning - Treating global variables as array
+
+# llvm_bmc bmc Warning - failed to recognize heap access
+
+# llvm_bmc bmc Warning - failed to recognize heap access
+
+# llvm_bmc bmc Warning - failed to recognize heap access
+
+# llvm_bmc bmc Error - Unsupported intrinsics! (triggered at /home/dohil/iitb/mtp/part1/llvm_bmc/src/lib/bmc/bmc_pass.cpp, 637)
+
+llvmbmc: /home/dohil/iitb/mtp/part1/llvm_bmc/src/lib/bmc/bmc_pass.cpp:637: int bmc_pass::translateIntrinsicInst(unsigned int, const llvm::IntrinsicInst*): Assertion `false' failed.

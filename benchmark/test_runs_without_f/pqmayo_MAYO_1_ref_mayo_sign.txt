@@ -1,0 +1,3 @@
+# llvm_bmc llvm_utils Error - non int constants are not implemented!! (triggered at /home/dohil/iitb/mtp/part1/llvm_bmc/src/lib/utils/llvm_utils.cpp, 2220)
+
+llvmbmc: /home/dohil/iitb/mtp/part1/llvm_bmc/src/lib/utils/llvm_utils.cpp:2220: expr read_const(options&, const llvm::Value*): Assertion `false' failed.

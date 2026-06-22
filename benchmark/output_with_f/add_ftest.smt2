@@ -1,0 +1,11 @@
+(declare-fun i_2_b () Int)
+(declare-fun i_1_a () Int)
+(declare-fun i_3_ret_val () Int)
+(assert true)
+(assert (let ((a!1 (- (bv2int (bvxor ((_ int2bv 8) i_1_a) ((_ int2bv 8) i_2_b))) 256)))
+(let ((a!2 (ite (bvslt (bvxor ((_ int2bv 8) i_1_a) ((_ int2bv 8) i_2_b)) #x00)
+                a!1
+                (bv2int (bvxor ((_ int2bv 8) i_1_a) ((_ int2bv 8) i_2_b))))))
+  (= i_3_ret_val a!2))))
+(assert (not true))
+(check-sat)

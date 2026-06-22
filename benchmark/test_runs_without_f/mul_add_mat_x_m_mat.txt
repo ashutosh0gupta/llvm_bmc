@@ -1,0 +1,7 @@
+# llvm_bmc bmc Warning - Treating global variables as array
+
+dumping solver query in:./output/mul_add_mat_x_m_mat/test.smt2
+
+
+LLVM_BMC_VERIFICATION_SUCCESSFUL
+

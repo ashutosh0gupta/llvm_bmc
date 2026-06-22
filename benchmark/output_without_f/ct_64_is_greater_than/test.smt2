@@ -1,0 +1,7 @@
+(declare-fun i_1_pqmayo_MAYO_1_ref_uint64_t_blocker () Int)
+(declare-fun i_2_ret_val () Int)
+(assert (= i_1_pqmayo_MAYO_1_ref_uint64_t_blocker 0))
+(assert true)
+(assert (= i_2_ret_val 0))
+(assert (not true))
+(check-sat)

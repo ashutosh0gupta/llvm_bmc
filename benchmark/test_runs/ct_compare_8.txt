@@ -1,0 +1,4 @@
+# llvm_bmc bmc Warning - Treating global variables as array
+
+terminate called after throwing an instance of 'z3::exception'
+  what():  Sort mismatch at argument #1 for function (declare-fun int2bv (Int) (_ BitVec 8)) supplied sort is Bool

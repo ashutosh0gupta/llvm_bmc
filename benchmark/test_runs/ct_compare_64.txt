@@ -1,0 +1,5 @@
+# llvm_bmc bmc Warning - Treating global variables as array
+
+# llvm_bmc bmc Error - sign extn instruction of unsupported size (triggered at /home/dohil/iitb/mtp/part1/llvm_bmc/src/lib/bmc/bmc_pass.cpp, 892)
+
+llvmbmc: /home/dohil/iitb/mtp/part1/llvm_bmc/src/lib/bmc/bmc_pass.cpp:892: void bmc_pass::translateCastInst(unsigned int, const llvm::CastInst*): Assertion `false' failed.
