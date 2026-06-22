@@ -1,7 +1,0 @@
-# llvm_bmc bmc Warning - Treating global variables as array
-
-dumping solver query in:./output/mayo_generic_m_calculate_PS/test.smt2
-
-
-LLVM_BMC_VERIFICATION_SUCCESSFUL
-

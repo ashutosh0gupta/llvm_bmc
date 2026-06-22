@@ -1,6 +1,0 @@
-(declare-fun i_4_conv () Int)
-(declare-fun i_5_ret_val () Int)
-(assert true)
-(assert (= i_5_ret_val i_4_conv))
-(assert (not true))
-(check-sat)

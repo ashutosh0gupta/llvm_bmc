@@ -1,6 +1,0 @@
-# llvm_bmc bmc Warning - Treating global variables as array
-
-  %call = call ptr @memmove(ptr noundef %out, ptr noundef nonnull %in, i32 noundef 39) #4
-# llvm_bmc bmc Error - function call is not recognized !! (triggered at /home/dohil/iitb/mtp/part1/llvm_bmc/src/lib/bmc/bmc_pass.cpp, 774)
-
-llvmbmc: /home/dohil/iitb/mtp/part1/llvm_bmc/src/lib/bmc/bmc_pass.cpp:774: int bmc_pass::translateCallInst(unsigned int, const llvm::CallInst*): Assertion `false' failed.

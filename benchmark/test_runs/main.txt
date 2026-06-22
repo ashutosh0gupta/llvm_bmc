@@ -1,2 +1,0 @@
-terminate called after throwing an instance of 'z3::exception'
-  what():  Sorts Int and undef_struct_138261001284096 are incompatible

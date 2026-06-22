@@ -1,6 +1,0 @@
-(declare-fun i_8_and20 () Int)
-(declare-fun i_9_ret_val () Int)
-(assert true)
-(assert (= i_9_ret_val i_8_and20))
-(assert (not true))
-(check-sat)

@@ -1,5 +1,0 @@
-(declare-fun i_1_ret_val () Int)
-(assert true)
-(assert (= i_1_ret_val 0))
-(assert (not true))
-(check-sat)
