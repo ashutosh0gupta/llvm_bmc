@@ -296,7 +296,7 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
   // todo: optimization other specs can be added as assume
   //
 
-  if( o.dump_solver_query ) {
+  if( o.dump_solver_query || o.smt_only) {
     dump( o.outDirPath.string(), "test.smt2", s);
   }
 
@@ -430,7 +430,7 @@ bool bmc::run_solver_con(spec &spec) {
   // todo: optimization other specs can be added as assume
   //
 
-  if( o.dump_solver_query ) {
+  if( o.dump_solver_query || o.smt_only) {
     dump( o.outDirPath.string(), "test.smt2", s);
     // std::cout << s;
   }

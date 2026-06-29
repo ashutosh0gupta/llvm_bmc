@@ -1041,13 +1041,10 @@ void bmc_pass::translateAllocaInst(const llvm::AllocaInst *alloca) {
 void bmc_pass::loadFromArrayHelper(unsigned bidx, const llvm::LoadInst *load,
                                    exprs &idx_exprs) {
   // idx_exprs[0] = bmc_ds_ptr->m.get_term(load->getOperand(0));
-  // std::cout<<"THis is a new idx expr HEHE \n";
-  
   
   idx_exprs.insert(idx_exprs.begin(),bmc_ds_ptr->m.get_term(load->getOperand(0)));
   if (auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(load->getOperand(0))) {
     idx_exprs[0] = bmc_ds_ptr->m.get_term(gep->getOperand(0));
-    
     // idx_exprs.insert(idx_exprs.begin(),bmc_ds_ptr->m.get_term(gep->getOperand(0)));
   }
   

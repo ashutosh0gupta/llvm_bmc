@@ -38,7 +38,7 @@
         "environment": [
         { "name": "LSAN_OPTIONS", "value": "verbosity=1:log_threads=1" }
         ],
-        "args": ["-f","main","${workspaceFolder}/examples/crypto/mat_add.ll","--var-suffix","correct","-o","${workspaceFolder}/output_debug","--dump-solver-query","--smt-only"]
+        "args": ["-f","main","${workspaceFolder}/examples/crypto/mat_add.ll","--var-suffix","correct","-o","${workspaceFolder}/output_debug","--dump-solver-query","--smt-only","-b"]
     }
     ],
 
