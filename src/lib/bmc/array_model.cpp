@@ -375,7 +375,8 @@ single_array_model::array_write( unsigned bidx, const llvm::StoreInst* I,
   // std::cout << "val sort   = " << val.get_sort() << "\n";
   // right now whats happening is the val is of different size so we need to extend it to match the range. 
   // The assumption ofc is that issue is only because we are using smaller sized values than the usual byte or word
-  if(ar_name.get_sort().array_range().bv_size()>val.get_sort().bv_size())
+  
+  if(o.bit_precise && ar_name.get_sort().array_range().bv_size()>val.get_sort().bv_size())
     val = z3::zext(val,ar_name.get_sort().array_range().bv_size()-val.get_sort().bv_size());
   return arr_write_expr( (new_ar == store( ar_name, idxs[0], val )),
                          bound_guard, new_ar );

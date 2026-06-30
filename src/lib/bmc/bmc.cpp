@@ -265,7 +265,7 @@ void bmc::check_all_spec( bmc_ds* bmc_ds_ptr ) {
       return;
     } else { } // contine with other specifications
   }
-  if(solved)
+  // if(solved)
     os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
 }
 
