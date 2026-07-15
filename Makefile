@@ -11,7 +11,7 @@ LD=ld.gold
 
 all : release
 
-.PHONY : release debug run clean patch test llvm-svn llvm-up deepclean boolector cvc5
+.PHONY : release debug run clean patch test llvm-svn llvm-up deepclean boolector cvc5 gnat-llvm
 
 release : $(BUILDDIR)/buildr/Makefile
 	+make -C $(BUILDDIR)/buildr
@@ -185,9 +185,19 @@ $(BUILDDIR)/boolector/README.md :
 # script's to install gnat
 #---------------------------------------------------------------------------
 gnat-llvm:
-	# sudo apt install gnat gprbuild llvm-19 clang-19 libclang-19-dev
-	# cd $(BUILDDIR)/;git clone https://github.com/AdaCore/gnat-llvm.git
-	# cd $(BUILDDIR)/gnat-llvm;git clone git://gcc.gnu.org/git/gcc.git llvm-interface/gcc
-	# cd $(BUILDDIR)/gnat-llvm;ln -s gcc/gcc/ada llvm-interface/gnat_src
-	# cd $(BUILDDIR)/gnat-llvm;git clone https://github.com/AdaCore/llvm-bindings.git
-	cd $(BUILDDIR)/gnat-llvm;make LLVM_CONFIG=/usr/bin/llvm-config-19
+	./scripts/install_gnat.sh
+# 	# sudo apt install gnat gprbuild llvm-19 clang-19 libclang-19-dev
+# 	# cd $(BUILDDIR)/;git clone https://github.com/AdaCore/gnat-llvm.git
+# 	# cd $(BUILDDIR)/gnat-llvm;git clone git://gcc.gnu.org/git/gcc.git llvm-interface/gcc
+# 	# cd $(BUILDDIR)/gnat-llvm;ln -s gcc/gcc/ada llvm-interface/gnat_src
+# 	# cd $(BUILDDIR)/gnat-llvm;git clone https://github.com/AdaCore/llvm-bindings.git
+# 	cd $(BUILDDIR)/gnat-llvm;make LLVM_CONFIG=/usr/bin/llvm-config-19
+# 	sudo apt install gnat gprbuild llvm-20 clang-20 libclang-20-dev
+# 	cd $(BUILDDIR) && git clone https://github.com/AdaCore/gnat-llvm.git && \
+# 	cd gnat-llvm && \
+# 	mkdir -p llvm-interface && \
+# 	git clone git://gcc.gnu.org/git/gcc.git llvm-interface/gcc && \
+# 	ln -s gcc/gcc/ada llvm-interface/gnat_src && \
+# 	git clone https://github.com/AdaCore/llvm-bindings.git && \
+
+

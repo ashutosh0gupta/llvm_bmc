@@ -368,11 +368,11 @@ single_array_model::array_write( unsigned bidx, const llvm::StoreInst* I,
   while( idxs.size() > 1 ) idxs.pop_back();
 
   // Printing everything
-  // std::cout << "\nStore debug\n";
-  // std::cout << "arr domain = " << ar_name.get_sort().array_domain() << "\n";
-  // std::cout << "arr range  = " << ar_name.get_sort().array_range()  << "\n";
-  // std::cout << "idx sort   = " << idxs[0].get_sort() << "\n";
-  // std::cout << "val sort   = " << val.get_sort() << "\n";
+  std::cout << "\nStore debug\n";
+  std::cout << "arr domain = " << ar_name.get_sort().array_domain() << "\n";
+  std::cout << "arr range  = " << ar_name.get_sort().array_range()  << "\n";
+  std::cout << "idx sort   = " << idxs[0].get_sort() << "\n";
+  std::cout << "val sort   = " << val.get_sort() << "\n";
   // right now whats happening is the val is of different size so we need to extend it to match the range. 
   // The assumption ofc is that issue is only because we are using smaller sized values than the usual byte or word
   
