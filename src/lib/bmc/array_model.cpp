@@ -117,7 +117,8 @@ get_array_length( const llvm::ArrayType* a1, std::vector<expr>& lengths) {
   int n1 = a1->getNumElements();
   if(o.bit_precise ) {
     lengths.push_back( solver_ctx.bv_val(n1, 64) ); // todo: why 64?
-  }else{
+  }
+  else {
     lengths.push_back( solver_ctx.int_val(n1) );
   }
   auto T2 = a1->getElementType();
@@ -312,7 +313,7 @@ multiple_array_model::array_write( unsigned bidx, const llvm::StoreInst* I,
   auto& ls = lengths.at(i);
   auto bound_guard = access_bound_cons(idxs, ls);
   while( idxs.size() > 1 ) idxs.pop_back();
-  return arr_write_expr( (new_ar == store( ar_name, idxs[0], val )),
+  return arr_write_expr( (new_ar == store( ar_name, idxs[0], val)),
                          bound_guard, new_ar );
 }
 
@@ -355,10 +356,28 @@ single_array_model::array_write( unsigned bidx, const llvm::StoreInst* I,
   M_vec.clear();
   M_vec.push_back(new_ar);
 
+  // I dont know if it can violate the bounds. The fix below needs to be checked. 
+  for(std::size_t i=1;i<idxs.size();i++)
+  {
+    // std::cout<<(idxs[0]+static_cast<int>(ar_bases[i])+idxs[i]).to_string()<<"\n";
+    idxs[0]=(idxs[0]+idxs[i]).simplify();
+  }
   auto& ls = lengths.at(i);
   auto bound_guard = access_bound_cons(idxs, ls);
   idxs[0] = (idxs[0] + static_cast<int>(ar_bases[i])).simplify();
   while( idxs.size() > 1 ) idxs.pop_back();
+
+  // Printing everything
+  // std::cout << "\nStore debug\n";
+  // std::cout << "arr domain = " << ar_name.get_sort().array_domain() << "\n";
+  // std::cout << "arr range  = " << ar_name.get_sort().array_range()  << "\n";
+  // std::cout << "idx sort   = " << idxs[0].get_sort() << "\n";
+  // std::cout << "val sort   = " << val.get_sort() << "\n";
+  // right now whats happening is the val is of different size so we need to extend it to match the range. 
+  // The assumption ofc is that issue is only because we are using smaller sized values than the usual byte or word
+  
+  if(o.bit_precise && ar_name.get_sort().array_range().bv_size()>val.get_sort().bv_size())
+    val = z3::zext(val,ar_name.get_sort().array_range().bv_size()-val.get_sort().bv_size());
   return arr_write_expr( (new_ar == store( ar_name, idxs[0], val )),
                          bound_guard, new_ar );
 }
@@ -370,13 +389,24 @@ single_array_model::array_read( unsigned bidx, const llvm::LoadInst* I,
   auto i = get_accessed_array(I); //ary_access_to_index.at(I);
   auto& vec = ar_st.get_M_name();
   expr ar_name = vec.back();
+  // I dont know if it can violate the bounds. The fix below needs to be checked. 
+  for(std::size_t i=1;i<idxs.size();i++)
+  {
+    // std::cout<<idxs[i].to_string()<<"\n";
+    idxs[0]=(idxs[0]+static_cast<int>(ar_bases[i])+idxs[i]).simplify();
+  }
 
   auto& ls = lengths.at(i);
+
   auto bound_guard = access_bound_cons(idxs, ls);
 
-  idxs[0] = (idxs[0] + static_cast<int>(ar_bases[i])).simplify();
-  while( idxs.size() > 1 ) idxs.pop_back();
+  
+  while( idxs.size() > 1 ){
+    idxs.pop_back();
+  } 
+  
 
+  
   return arr_read_expr( select( ar_name, idxs[0]), bound_guard );
 }
 
@@ -389,9 +419,10 @@ single_array_model::array_read( unsigned bidx, const llvm::ExtractValueInst* I,
   expr ar_name = vec.back();
 
   auto& ls = lengths.at(i);
+
   auto bound_guard = access_bound_cons(idxs, ls);
 
-  idxs[0] = (idxs[0] + static_cast<int>(ar_bases[i])).simplify();
+  // idxs[0] = (idxs[0] + static_cast<int>(ar_bases[i])).simplify();
 
   return arr_read_expr( select( ar_name, idxs), bound_guard );
 }

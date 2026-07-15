@@ -1040,10 +1040,14 @@ void bmc_pass::translateAllocaInst(const llvm::AllocaInst *alloca) {
 // TODO : Add src_loc for instructions in add_spec
 void bmc_pass::loadFromArrayHelper(unsigned bidx, const llvm::LoadInst *load,
                                    exprs &idx_exprs) {
-  idx_exprs[0] = bmc_ds_ptr->m.get_term(load->getOperand(0));
+  // idx_exprs[0] = bmc_ds_ptr->m.get_term(load->getOperand(0));
+  
+  idx_exprs.insert(idx_exprs.begin(),bmc_ds_ptr->m.get_term(load->getOperand(0)));
   if (auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(load->getOperand(0))) {
     idx_exprs[0] = bmc_ds_ptr->m.get_term(gep->getOperand(0));
+    // idx_exprs.insert(idx_exprs.begin(),bmc_ds_ptr->m.get_term(gep->getOperand(0)));
   }
+  
   auto arr_rd = bmc_ds_ptr->array_read(bidx, load, idx_exprs);
   if (o.include_out_of_bound_specs) {
     expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
@@ -1447,7 +1451,8 @@ void bmc_pass::translateUnaryInst(unsigned bidx,
 void bmc_pass::storeToArrayHelper(unsigned bidx, const llvm::StoreInst *store,
                                   const llvm::Value *val, exprs &idxs) {
   auto val_expr = bmc_ds_ptr->m.get_term(val);
-  idxs[0] = bmc_ds_ptr->m.get_term(store->getOperand(1));
+  // std::cout<<idxs[0].to_string()<<" "<<bmc_ds_ptr->m.get_term(store->getOperand(1)).to_string()<<"\n";
+  idxs.insert(idxs.begin(),bmc_ds_ptr->m.get_term(store->getOperand(1)));
   if (auto gep =
           llvm::dyn_cast<llvm::GetElementPtrInst>(store->getOperand(1))) {
     idxs[0] = bmc_ds_ptr->m.get_term(gep->getOperand(0));

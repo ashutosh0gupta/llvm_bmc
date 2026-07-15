@@ -23,3 +23,7 @@ _cs_*.log
 ######## ARMCBMC ###########
 tmp/
 *.tr
+
+#expts
+test_src/
+benchmark/

@@ -1,7 +1,7 @@
 // todo: handle static count variables gracefully
 
 #include "solver_utils.h"
-#include <include/options.h>
+#include "include/options.h"
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -720,7 +720,10 @@ expr implies(expr &e1, expr &e2) { return z3::implies(e1, e2); }
 expr select(expr &e1, exprs &idxs) {
   expr_vector sol_vec(e1.ctx());
   to_sol_vec(idxs, sol_vec);
-  
+  // if(!is_bv)
+  // {
+  //   return z3::select(e1, sol_vec);
+  // }
   // Converting each idx to bv
   sort domainSort = e1.get_sort().array_domain();
   expr_vector coerced(e1.ctx());
@@ -737,6 +740,10 @@ expr select(expr &e1, exprs &idxs) {
 expr store(expr &e1, exprs &idxs, expr &e3) {
   expr_vector sol_vec(e1.ctx());
   to_sol_vec(idxs, sol_vec);
+  // if(!is_bv)
+  // {
+  //   return z3::store(e1, sol_vec, e3);
+  // }
   //Converting each idx to bv
   sort domainSort = e1.get_sort().array_domain();
   sort rangeSort  = e1.get_sort().array_range();
@@ -788,9 +795,9 @@ expr switch_int_sort(expr &b, sort &s) {
     }
     // Try to convert bitvector value to int as a fallback
     return b;
-  } else if (bs.is_int() && s.is_bv()) { 
+  } else if (bs.is_int() && s.is_bv()) {
     return to_expr(b.ctx(),Z3_mk_int2bv(b.ctx(),s.bv_size(),b)); 
-  } else if (bs.is_bv() && bs.is_bv()) { 
+  } else if (bs.is_bv() && s.is_bv()) {
     return switch_bv_sort(b,s);
   } else if (bs.is_int() && s.is_real()) {
     return to_real(b);
@@ -1911,7 +1918,7 @@ void Z3CompClass::Z3compatible(std::string path, std::string solvertype) {
   solver s(ctx);
   
   z3::sort arr_sort = ctx.array_sort(ctx.int_sort(), ctx.int_sort()); 
-  if(get_isBitPrecise());
+  if(get_isBitPrecise())
     arr_sort = ctx.array_sort(ctx.bv_sort(64), ctx.bv_sort(32));
   
   z3::expr base = expr(ctx);

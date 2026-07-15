@@ -1952,7 +1952,6 @@ sort llvm_to_bv_sort(solver_context &c, const llvm::Type *t) {
 
 sort llvm_to_sort(options &o, const llvm::Type *t) {
   if (o.bit_precise) {
-    int a_thisisrandom=10;
     return llvm_to_bv_sort(o.solver_ctx, t);
   } else {
     return llvm_to_sort(o.solver_ctx, t);
