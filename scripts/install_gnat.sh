@@ -1,12 +1,13 @@
 #!/usr/bin/bash
 
-sudo apt install gnat gprbuild llvm-21 clang-21 libclang-21-dev
+# sudo apt install gnat gprbuild llvm-21 clang-21 libclang-21-dev
 
 
 # Cloning Gnat
-git clone https://github.com/AdaCore/gnat-llvm.git
+# git clone https://github.com/AdaCore/gnat-llvm.git
+# git checkout 6153a1d0c817411fc98883a62e822f048d8604a1
+
 cd gnat-llvm
-git checkout 6153a1d0c817411fc98883a62e822f048d8604a1
 
 # Cloning gcc
 git clone git://gcc.gnu.org/git/gcc.git llvm-interface/gcc
