@@ -28,3 +28,4 @@ tmp/
 test_src/
 benchmark/
 output_debug/
+output*
