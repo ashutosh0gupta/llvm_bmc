@@ -1011,16 +1011,30 @@ void bmc_pass::translateAllocaInst(const llvm::AllocaInst *alloca) {
       bmc_ds_ptr->set_array_length(alloca, ls);
       // array_lengths.push_back(val_expr);
     }
-  } else if (llvm::isa<const llvm::ArrayType>(typ)) {
-    int siz = (int)typ->getArrayNumElements();
+  } else if (llvm::isa<const llvm::ArrayType>(typ) || llvm::isa<const llvm::StructType>(typ)) {
+    // int siz = (int)typ->getArrayNumElements();
     // llvm::errs() << "\n\n Alloca inst size " << siz << " instruction " <<
     // *alloca;
+    std::vector<uint64_t> dims;
+    get_type_dims(typ,dims);
     std::vector<expr> ls;
-    if (o.bit_precise)
-      ls.push_back(get_expr_bv_const(solver_ctx, siz, 64)); // todo: why 64
-    else
-      ls.push_back(get_expr_const(solver_ctx, siz));
+    // if (o.bit_precise)
+    //   ls.push_back(get_expr_bv_const(solver_ctx, siz, 64)); // todo: why 64
+    // else
+    //   ls.push_back(get_expr_const(solver_ctx, siz));
+    for (auto d : dims) {
+      if (o.bit_precise)
+        ls.push_back(get_expr_bv_const(solver_ctx, (int)d, 64)); // todo: why 64
+      else
+        ls.push_back(get_expr_const(solver_ctx, (int)d));
+    }
+
     bmc_ds_ptr->set_array_length(alloca, ls);
+
+    if (llvm::isa<const llvm::StructType>(typ)) {
+      unsigned ar_num = bmc_ds_ptr->ary_to_int.at(alloca);
+      bmc_ds_ptr->m.insert_term_map(alloca, get_expr_const(solver_ctx, ar_num));
+    }
     // expr const_expr = get_expr_const(solver_ctx,siz);
     // std::vector<expr> ls; ls.push_back( const_expr);
     // array_lengths.push_back(const_expr);
@@ -1042,10 +1056,13 @@ void bmc_pass::loadFromArrayHelper(unsigned bidx, const llvm::LoadInst *load,
                                    exprs &idx_exprs) {
   // idx_exprs[0] = bmc_ds_ptr->m.get_term(load->getOperand(0));
   
-  idx_exprs.insert(idx_exprs.begin(),bmc_ds_ptr->m.get_term(load->getOperand(0)));
-  if (auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(load->getOperand(0))) {
-    idx_exprs[0] = bmc_ds_ptr->m.get_term(gep->getOperand(0));
-    // idx_exprs.insert(idx_exprs.begin(),bmc_ds_ptr->m.get_term(gep->getOperand(0)));
+  // idx_exprs.insert(idx_exprs.begin(),bmc_ds_ptr->m.get_term(load->getOperand(0)));
+  // if (auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(load->getOperand(0))) {
+  //   idx_exprs[0] = bmc_ds_ptr->m.get_term(gep->getOperand(0));
+  //   // idx_exprs.insert(idx_exprs.begin(),bmc_ds_ptr->m.get_term(gep->getOperand(0)));
+  // }
+  if(idx_exprs.empty()) {
+    idx_exprs.insert(idx_exprs.begin(),o.bit_precise?get_expr_bv_const(solver_ctx,0,64):get_expr_const(solver_ctx,0));
   }
   
   auto arr_rd = bmc_ds_ptr->array_read(bidx, load, idx_exprs);
@@ -1072,7 +1089,7 @@ void bmc_pass::translateGEP(const llvm::GEPOperator *gep, exprs &idxs) {
   // todo: what is the meaning of the second operand in GEP operator?
 
   // assert( gep->getNumIndices() <= 2);
-  assert(gep->getNumIndices() <= 3); // Confirm if correct
+  // assert(gep->getNumIndices() <= 3); // Confirm if correct
   // llvm::Value * idx = NULL;
   // if(gep->getNumOperands() == 2) idx = gep->getOperand(1);
   // else if(gep->getNumOperands() == 3) {
@@ -1082,7 +1099,29 @@ void bmc_pass::translateGEP(const llvm::GEPOperator *gep, exprs &idxs) {
   // else if (gep->getNumOperands() == 4) {
   //   idx = gep->getOperand(3);
   // }
-  unsigned i = gep->getNumOperands() == 2 ? 1 : 2;
+  // unsigned i = gep->getNumOperands() == 2 ? 1 : 2;
+  auto op_gep_ptr = gep->getPointerOperand();
+  // todo: bit cast bug here
+  while (auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr)) {
+    op_gep_ptr = bcast->getOperand(0);
+  }
+  if (auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr)) {
+    translateGEP(sub_gep, idxs);
+  }
+  unsigned i=1;
+  if (gep->getNumOperands() > 2) {
+    bool ptr_level = true;
+    auto base = gep->getPointerOperand();
+    while (auto bc = llvm::dyn_cast<const llvm::BitCastInst>(base))
+      base = bc->getOperand(0);
+    if (auto al = llvm::dyn_cast<const llvm::AllocaInst>(base))
+      ptr_level = (gep->getSourceElementType() == al->getAllocatedType());
+    else if (auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(base))
+      ptr_level = (gep->getSourceElementType() == gv->getValueType());
+    // else: pointer operand is another GEP (chained form) or an Argument
+    // operand(1) is the pointer-level 0 there.
+    if (ptr_level) i = 2;
+  }
   for (; i < gep->getNumOperands(); i++) {
     llvm::Value *idx = gep->getOperand(i);
     auto idx_expr = bmc_ds_ptr->m.get_term(idx);
@@ -1090,22 +1129,30 @@ void bmc_pass::translateGEP(const llvm::GEPOperator *gep, exprs &idxs) {
       // todo: HACK; fix it
       // check if idx is not default bit length then extend it to that length
       sort si = idx_expr.get_sort();
-      if (si.is_bv() && si.bv_size() != 64) {
-        idx_expr = idx_expr.ctx().bv_val(idx_expr, 64);
+      // if (si.is_bv() && si.bv_size() != 64) {
+      //   idx_expr = idx_expr.ctx().bv_val(idx_expr, 64);
+      if(si.is_bv()) {
+        if (si.bv_size() != 64) {
+          idx_expr = idx_expr.ctx().bv_val(idx_expr, 64);
+        }
+      }
+      else {
+        idx_expr = z3::int2bv(64,idx_expr);
+        std::cout<<"Whyy"<<std::endl;
       }
     }
     idxs.push_back(idx_expr);
   }
-  // access multi-dim arrays
-  auto op_gep_ptr = gep->getPointerOperand();
-  // todo: bit cast bug here
-  while (auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr)) {
-    op_gep_ptr = bcast->getOperand(0);
-    // idxs.clear();
-  }
-  if (auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr)) {
-    translateGEP(sub_gep, idxs);
-  }
+  // // access multi-dim arrays
+  // auto op_gep_ptr = gep->getPointerOperand();
+  // // todo: bit cast bug here
+  // while (auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr)) {
+  //   op_gep_ptr = bcast->getOperand(0);
+  //   // idxs.clear();
+  // }
+  // if (auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr)) {
+  //   translateGEP(sub_gep, idxs);
+  // }
 }
 
 //------------------------------------------
@@ -1316,7 +1363,13 @@ void bmc_pass::translateLoadInst(unsigned bidx, const llvm::LoadInst *load) {
     if (ty->isPointerTy()) {
       // expr idx_expr = get_expr_const(solver_ctx,0);
       exprs idxs;
-      idxs.push_back(get_expr_const(solver_ctx, 0));
+      // idxs.push_back(get_expr_const(solver_ctx, 0));
+      if(o.bit_precise) {
+        idxs.push_back(get_expr_bv_const(solver_ctx, 0,64));
+      }
+      else {  
+        idxs.push_back(get_expr_const(solver_ctx, 0));
+      }
       loadFromArrayHelper(bidx, load, idxs);
     }
   } else if (llvm::isa<llvm::LoadInst>(addr)) {
@@ -1452,11 +1505,19 @@ void bmc_pass::storeToArrayHelper(unsigned bidx, const llvm::StoreInst *store,
                                   const llvm::Value *val, exprs &idxs) {
   auto val_expr = bmc_ds_ptr->m.get_term(val);
   // std::cout<<idxs[0].to_string()<<" "<<bmc_ds_ptr->m.get_term(store->getOperand(1)).to_string()<<"\n";
-  idxs.insert(idxs.begin(),bmc_ds_ptr->m.get_term(store->getOperand(1)));
-  if (auto gep =
-          llvm::dyn_cast<llvm::GetElementPtrInst>(store->getOperand(1))) {
-    idxs[0] = bmc_ds_ptr->m.get_term(gep->getOperand(0));
+  // idxs.insert(idxs.begin(),bmc_ds_ptr->m.get_term(store->getOperand(1)));
+  // if (auto gep =
+  //         llvm::dyn_cast<llvm::GetElementPtrInst>(store->getOperand(1))) {
+  //   idxs[0] = bmc_ds_ptr->m.get_term(gep->getOperand(0));
+  // }
+  auto addr = store->getOperand(1);
+  while(auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr)) {
+    addr = bcast->getOperand(0);
   }
+  if(idxs.empty()) {
+    idxs.insert(idxs.begin(),o.bit_precise?get_expr_bv_const(solver_ctx,0,64):get_expr_const(solver_ctx,0));
+  }
+
   auto arr_wrt = bmc_ds_ptr->array_write(bidx, store, idxs, val_expr);
   bmc_ds_ptr->bmc_vec.push_back(arr_wrt.updated_expr);
   if (o.include_out_of_bound_specs) {
@@ -1533,7 +1594,7 @@ void bmc_pass::translateStoreInst(unsigned bidx, const llvm::StoreInst *store) {
     // } else if( auto cons = llvm::dyn_cast<llvm::Constant>(addr) ) {
     llvm_bmc_error("bmc", "constant access to the memory!");
   } else if (llvm::dyn_cast<llvm::LoadInst>(addr)) {
-    std::cout << "new dump";
+    // std::cout << "new dump";
     auto v1 = bmc_ds_ptr->m.get_term(addr);
     exprs idxs;
     if (o.bit_precise)
@@ -1621,7 +1682,7 @@ void bmc_pass::translateBranch(unsigned bidx, const llvm::BranchInst *br) {
     auto cond_sort = cond.get_sort();
     auto exit_sort = exit_bits[0].get_sort();
     if (cond_sort.is_bv() && exit_sort.is_bool()) {
-      expr exitbits_bv = solver_ctx.bv_val(exit_bits[0], 1);
+      expr exitbits_bv = convert_to_bv(exit_bits[0], 1); // This is inefficient. This returns an ite statement. Optimize this
       bmc_ds_ptr->bmc_vec.push_back(cond == exitbits_bv);
     } else
       bmc_ds_ptr->bmc_vec.push_back(cond == exit_bits[0]);
@@ -2275,19 +2336,23 @@ void bmc_pass::populate_array_name_map(llvm::Function *f) {
     auto bb = &(*bbit);
     for (auto it = bb->begin(), e = bb->end(); it != e; ++it) {
       auto I = &(*it);
-      if (auto alloca = llvm::dyn_cast<const llvm::AllocaInst>(I)) {
-        // ary_to_int[I] = arrCntr++;
-        auto typ = alloca->getAllocatedType();
-        if (auto st = llvm::dyn_cast<llvm::StructType>(typ)) {
-          int siz1 = (int)st->getNumElements();
-          // ary_to_int[I] = arrCntr;
-          // arrCntr += siz1;
-          for (int temp = 0; temp < siz1; temp++) {
-            ary_to_int[I + temp] = arrCntr++;
-          }
-        } else {
-          ary_to_int[I] = arrCntr++;
-        }
+      // if (auto alloca = llvm::dyn_cast<const llvm::AllocaInst>(I)) {
+      //   // ary_to_int[I] = arrCntr++;
+      //   auto typ = alloca->getAllocatedType();
+      //   if (auto st = llvm::dyn_cast<llvm::StructType>(typ)) {
+      //     int siz1 = (int)st->getNumElements();
+      //     // ary_to_int[I] = arrCntr;
+      //     // arrCntr += siz1;
+      //     for (int temp = 0; temp < siz1; temp++) {
+      //       ary_to_int[I + temp] = arrCntr++;
+      //     }
+      //   } else {
+      //     ary_to_int[I] = arrCntr++;
+      //   }
+      if (llvm::isa<const llvm::AllocaInst>(I)) {
+        // ary_to_int[I] = arrCntr;
+        // arrCntr += siz1;
+        ary_to_int[I] = arrCntr++;
       } else if (auto call = llvm::dyn_cast<const llvm::CallInst>(I)) {
         llvm::Function *fp = call->getCalledFunction();
         if (fp != NULL && fp->getName().starts_with("__cxa_allocate")) {
@@ -2295,13 +2360,14 @@ void bmc_pass::populate_array_name_map(llvm::Function *f) {
           // I->print(llvm::outs());
           // std::cout << "\nCOLLECTED EXCEPTION PTR AS ARRAY\n\n";
         } else if (fp != NULL && fp->getName().starts_with("_Znwm")) {
-          auto val = call->getOperand(0);
-          auto size = dyn_cast<const llvm::ConstantInt>(val);
-          int sizeValue = size->getSExtValue();
-          int structSize = sizeValue / 4; // For integers
-          for (int temp = 0; temp < structSize; temp++) {
-            ary_to_int[I + temp] = arrCntr++;
-          }
+          // auto val = call->getOperand(0);
+          // auto size = dyn_cast<const llvm::ConstantInt>(val);
+          // int sizeValue = size->getSExtValue();
+          // int structSize = sizeValue / 4; // For integers
+          // for (int temp = 0; temp < structSize; temp++) {
+          //   ary_to_int[I + temp] = arrCntr++;
+          // }
+          ary_to_int[I] = arrCntr++;
         }
       } else {
       } // no errors needed!!

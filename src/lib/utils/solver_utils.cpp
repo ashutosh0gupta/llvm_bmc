@@ -159,9 +159,15 @@ void dump(std::map<unsigned, expr> &es) {
 
 void dump(std::string dump_path, std::string name, solver &s) {
   std::cerr << "dumping solver query in:" << dump_path + name << "\n";
-  std::ofstream dump_file(dump_path + name);
+  std::ofstream dump_file(dump_path + name,std::ios::app);
   dump_file << s;
   dump_file << "(check-sat)\n";
+  dump_file.close();
+}
+
+void dump_array_names(std::string dump_path, std::string name, std::string output) {
+  std::ofstream dump_file(dump_path + name,std::ios::app);
+  dump_file << output;
   dump_file.close();
 }
 
@@ -825,6 +831,28 @@ expr switch_bv_sort(expr &b, sort &s) {
   }
   llvm_bmc_error("z3Utils", "failed to change sort!");
 }
+
+expr convert_to_bv(expr &b,int sz) {
+  sort b_sort=b.get_sort();
+  if(b_sort.is_bv())
+  {
+    return b; // I didnt match the size so that the user can have finer control as to which bits to extract
+  }
+  else if(b_sort.is_int() )
+  {
+    return to_expr(b.ctx(),Z3_mk_int2bv(b.ctx(),sz,b));
+  }
+  else if(b_sort.is_bool())
+  {
+    return ite(b,b.ctx().bv_val(1,sz),b.ctx().bv_val(0,sz));
+  }
+  else
+  {
+    std::cout<<"Error!!!!! \n Converting "<<b_sort<<" to bit vectors"<<std::endl;
+    return b;
+  }
+}
+
 
 bool Z3CompClass::get_isBitPrecise() {
   return o.bit_precise;

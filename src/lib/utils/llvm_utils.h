@@ -239,6 +239,9 @@ public:
 void prepare_module(std::unique_ptr<llvm::Module>& module );
 void forced_inliner_pass(std::unique_ptr<llvm::Module>& module);
 
+void get_type_dims(const llvm::Type*, std::vector<uint64_t>& dims);
+uint64_t get_type_flat_size(const llvm::Type*);
+
 const std::pair<const llvm::Value*, uint64_t>  get_array_info( const llvm::Value* op);
 const llvm::Value* identify_global_in_addr( const llvm::Value* op);
 std::pair<const llvm::Value*, uint64_t> identify_lpad_struct(const llvm::Value* , int);

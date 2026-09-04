@@ -146,6 +146,9 @@ public:
  
   //-------------------------------------------------------
 
+  std::string print_array_ranges();
+  std::string print_array_names();
+  
   void print_formulas( unsigned print_from = 0, unsigned print_spec_from = 0);
 
   void insert_prev_idx( unsigned bidx, unsigned prev_bidx);

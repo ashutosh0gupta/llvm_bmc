@@ -298,6 +298,7 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
 
   if( o.dump_solver_query || o.smt_only) {
     dump( o.outDirPath.string(), "test.smt2", s);
+    dump_array_names(o.outDirPath.string(),"test.smt2",bmc_ds_ptr->print_array_names());
   }
 
   if(o.smt_only) {

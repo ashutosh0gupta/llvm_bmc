@@ -128,6 +128,8 @@ public:
   std::vector< sort > ar_sorts;
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
   std::map<const llvm::Value*,const llvm::Instruction*>* debug_map;
+  std::string initial_mem="",final_mem="";
+  bool is_initial_mem=true;
 };
 
 class single_array_model : public array_model_full {
@@ -183,7 +185,6 @@ public:
   void copy_to_init_state( array_state& );
 };
 
-
 // class heap_model : public array_model_full {
 // public:
 //   heap_model( options& o ) : array_model_full(o) {
@@ -211,7 +212,5 @@ public:
 //   std::string M_array_name =  "H";
 //   std::map< unsigned, unsigned > ar_bases;
 // };
-
-
 
 #endif // TILER_GLB_MODEL_H

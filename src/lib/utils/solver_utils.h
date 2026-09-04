@@ -64,7 +64,7 @@ void dump(expr_vector e);
 void dump(sort e);
 void dump(std::map<unsigned, expr> &es);
 void dump(std::string, std::string, solver &);
-
+void dump_array_names(std::string,std::string, std::string);
 // other is_.. can be found in z3++.h
 bool reportErrNThrow(std::string s, bool th);
 bool has_quantified_formula(exprs es);
@@ -123,7 +123,7 @@ expr store(expr &, exprs &, expr &);
 bool matched_sort(const expr &l, const expr &r);
 expr switch_int_sort(expr &b, sort &s);
 expr switch_bv_sort(expr &b, sort &s); 
-
+expr convert_to_bv(expr &b, int sz);
 // expr sbv_to_fpa(expr const& t, sort s);
 int get_numeral_int(const expr &i);
 

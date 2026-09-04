@@ -1,6 +1,8 @@
 #include "include/bmc_ds.h"
 #include "lib/utils/llvm_utils.h"
 #include "lib/utils/solver_utils.h"
+#include <iostream>
+#include <fstream>
 
 void spec::print(std::ostream& os) {
   os << e << " % [";
@@ -303,6 +305,26 @@ copy_and_stich_segments( bb_vec_t& b_vec,
   prevs.insert( copy.begin(), copy.end() );
 }
 
+std::string bmc_ds::print_array_ranges() {
+  std::ostringstream array_ranges;
+  for( const auto& [ary_val, ary_id] : ary_to_int ) {
+    if( exists( ary_to_base, ary_id ) ) {
+      auto ary_info = get_array_info( ary_val ); 
+      array_ranges<<"\n;; Array "<< ary_val->getName().str()<<" "<< ary_to_base.at(ary_id)<<" "<< ary_to_base.at(ary_id)+ary_info.second-1<<" ";
+    }
+  }
+  array_ranges<<"\n\n";
+  return array_ranges.str();
+}
+
+std::string bmc_ds::print_array_names() {
+  std::ostringstream array_names;
+  array_names<<"\n;; Initial_Memory "<<ar_model_full->initial_mem;
+  array_names<<"\n;; Final_Memory "<<ar_model_full->final_mem;
+  array_names<<"\n\n";
+  return array_names.str();
+}
+
 void bmc_ds::print_formulas(unsigned print_from, unsigned print_spec_from ) {
   std::cout << "Printing the bmc formula\n";
   for( unsigned i=print_from; i < bmc_vec.size(); i++ ) {
@@ -358,6 +380,8 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
           ary_access_to_index[load] = ary_to_int.at( ary_info.first );
 
           if( ary_info.first && !exists( ary_to_base, ary_access_to_index[load] ) ) {
+            // if(o.verbosity>=10)
+            //   std::cout << "Array: "<< ary_info.first->getName().str()<< "  [" << cnt<< "  ," << cnt+ary_info.second-1<< "]"<<std::endl;
             ary_to_base[ary_to_int.at( ary_info.first )] = cnt;
             cnt += ary_info.second;
           } 
@@ -369,6 +393,8 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
         if( ary_info.first && exists( ary_to_int, ary_info.first ) ){
           ary_access_to_index[store] = ary_to_int.at( ary_info.first );
           if( ary_info.first && !exists( ary_to_base, ary_access_to_index[store] ) ) {
+            // if(o.verbosity>=10)
+            //   std::cout << "Array: "<< ary_info.first->getName().str()<< "  [" << cnt<< "  ," << cnt+ary_info.second-1<< "]"<<std::endl;
             ary_to_base[ary_to_int.at( ary_info.first )] = cnt;
             cnt += ary_info.second;
           } 
@@ -415,6 +441,15 @@ init_full_array_model(std::map< const llvm::Instruction*, unsigned >& map ) {
   ar_model_full->set_debug_map( debug_map );
   ar_model_full->set_array_info( ary_to_int);
   ar_model_full->set_access_map( map, ary_to_base );
+
+  // This code is to print the mapping of arrays to global array
+  std::string array_range_info=print_array_ranges();
+  if(o.dump_solver_query || o.smt_only) {
+    std::string name="test.smt2",dump_path = o.outDirPath.string();
+    std::ofstream dump_file(dump_path+name);
+    dump_file<<array_range_info;
+    dump_file.close();
+  }
 }
 
 

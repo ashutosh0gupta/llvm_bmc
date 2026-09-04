@@ -2441,6 +2441,36 @@ void collect_debug_info(
   }
 }
 
+void get_type_dims( const llvm::Type* ty, std::vector<uint64_t>& dims ) {
+  while( auto at = llvm::dyn_cast<const llvm::ArrayType>(ty) ) {
+    dims.push_back( at->getNumElements() );
+    ty = at->getElementType();
+  }
+  if( auto st = llvm::dyn_cast<const llvm::StructType>(ty) ) {
+    dims.push_back( st->getNumElements() );
+    std::vector<uint64_t> mx;
+    for( unsigned k = 0; k < st->getNumElements(); k++ ) {
+      std::vector<uint64_t> fd;
+      get_type_dims( st->getElementType(k), fd );
+      while( !fd.empty() && fd.back() == 1 ) fd.pop_back();
+      if( mx.size() < fd.size() ) mx.resize( fd.size(), 1 );
+      for( unsigned j = 0; j < fd.size(); j++ )
+        if( fd[j] > mx[j] ) mx[j] = fd[j];
+    }
+    for( auto d : mx ) dims.push_back( d );
+    return;
+  }
+  if( dims.empty() ) dims.push_back( 1 );
+}
+
+uint64_t get_type_flat_size( const llvm::Type* ty ) {
+  std::vector<uint64_t> dims;
+  get_type_dims( ty, dims );
+  uint64_t sz = 1;
+  for( auto d : dims ) sz *= d;
+  return sz;
+}
+
 const std::pair<const llvm::Value *, uint64_t>
 get_array_info(const llvm::Value *op) {
 
@@ -2478,20 +2508,22 @@ get_array_info(const llvm::Value *op) {
     uint64_t size = 1; // default size for non-array types
 
     llvm::Type *type = glb->getValueType();
-    if (llvm::ArrayType *arrayType = llvm::dyn_cast<llvm::ArrayType>(type)) {
-      // llvm::Type* elementType = arrayType->getElementType();
-      size = arrayType->getNumElements();
-    }
+    // if (llvm::ArrayType *arrayType = llvm::dyn_cast<llvm::ArrayType>(type)) {
+    //   // llvm::Type* elementType = arrayType->getElementType();
+    //   size = arrayType->getNumElements();
+    // }
+    size=get_type_flat_size(type);
     return std::make_pair(glb, size);
   } else if (llvm::dyn_cast<const llvm::AllocaInst>(op)) {
     // auto alloc =
     // To handle a[0] when a is dynamic sized array
     auto alloca = llvm::dyn_cast<const llvm::AllocaInst>(op);
-    uint64_t size = 0;
-    if (auto arrayTy =
-            llvm::dyn_cast<llvm::ArrayType>(alloca->getAllocatedType())) {
-      size = arrayTy->getNumElements();
-    }
+    // uint64_t size = 0;
+    // if (auto arrayTy =
+    //         llvm::dyn_cast<llvm::ArrayType>(alloca->getAllocatedType())) {
+    //   size = arrayTy->getNumElements();
+    // }
+    uint64_t size = get_type_flat_size(alloca->getAllocatedType());
 
     // llvm::errs() << "Alloca var Name = " << alloca->getName() << " Size = "
     // << size << "\n";
@@ -2504,10 +2536,11 @@ get_array_info(const llvm::Value *op) {
 
   } else if (auto addr = llvm::dyn_cast<const llvm::Argument>(op)) {
     // passed as an argument
-    uint64_t size = 0;
-    if (auto arrayTy = llvm::dyn_cast<llvm::ArrayType>(op->getType())) {
-      size = arrayTy->getNumElements();
-    }
+    // uint64_t size = 0;
+    // if (auto arrayTy = llvm::dyn_cast<llvm::ArrayType>(op->getType())) {
+    //   size = arrayTy->getNumElements();
+    // }
+    uint64_t size = get_type_flat_size(op->getType());
     return std::make_pair(addr, size);
   } else if (auto cnst = llvm::dyn_cast<const llvm::ConstantExpr>(op)) {
     if (auto gep = llvm::dyn_cast<llvm::GEPOperator>(cnst)) {
