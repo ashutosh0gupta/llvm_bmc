@@ -806,7 +806,7 @@ void bmc_pass::translateCastInst(unsigned bidx, const llvm::CastInst *cast) {
       }
     } else if (ok_cast(c_ty, v_ty, 8, 32)) {
       if (o.bit_precise) {
-        bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v.extract(0, 8));
+        bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v.extract(7, 0));
       } else {
         expr ex_v = bmc_ds_ptr->m.get_term(v);
         expr two_eight = solver_ctx.int_val(256);
@@ -856,7 +856,7 @@ void bmc_pass::translateCastInst(unsigned bidx, const llvm::CastInst *cast) {
       sort vs = ex_v.get_sort();
       expr ex_vn = ex_v;
       if (vs.is_bool()) {
-        ex_vn = ex_v.ctx().bv_val(ex_v, 2);
+        ex_vn = convert_to_bv(ex_v, old_size);
       }
       bmc_ds_ptr->m.insert_term_map(cast, bidx,
                                     zext(ex_vn, new_size - old_size));
@@ -1126,20 +1126,7 @@ void bmc_pass::translateGEP(const llvm::GEPOperator *gep, exprs &idxs) {
     llvm::Value *idx = gep->getOperand(i);
     auto idx_expr = bmc_ds_ptr->m.get_term(idx);
     if (o.bit_precise) {
-      // todo: HACK; fix it
-      // check if idx is not default bit length then extend it to that length
-      sort si = idx_expr.get_sort();
-      // if (si.is_bv() && si.bv_size() != 64) {
-      //   idx_expr = idx_expr.ctx().bv_val(idx_expr, 64);
-      if(si.is_bv()) {
-        if (si.bv_size() != 64) {
-          idx_expr = idx_expr.ctx().bv_val(idx_expr, 64);
-        }
-      }
-      else {
-        idx_expr = z3::int2bv(64,idx_expr);
-        std::cout<<"Whyy"<<std::endl;
-      }
+      idx_expr = convert_to_bv(idx_expr, 64);
     }
     idxs.push_back(idx_expr);
   }
@@ -1408,10 +1395,7 @@ void bmc_pass::addEVIExprs(const llvm::ExtractValueInst *evi, exprs &idxs) {
         // llvm::errs() << "\n Operand " << i << " is " << *idx;
         auto idx_expr = bmc_ds_ptr->m.get_term(idx);
         if (o.bit_precise) {
-          sort si = idx_expr.get_sort();
-          if (si.is_bv() && si.bv_size() != 64) {
-            idx_expr = idx_expr.ctx().bv_val(idx_expr, 64);
-          }
+          idx_expr = convert_to_bv(idx_expr, 64);
         }
         idxs.push_back(idx_expr);
       }

@@ -1909,7 +1909,7 @@ sort llvm_to_bv_sort(solver_context &c, const llvm::Type *t) {
   } else if (t->isFunctionTy()) {
     llvm_bmc_error("llvm_utils", "function sorts are not supported");
   } else if (t->isStructTy()) {
-    llvm_bmc_error("llvm_utils", "struct sorts are not supported");
+    return c.bv_sort(32);
   } else if (t->isPointerTy()) {
     // llvm_bmc_error("llvm_utils", "pointer sorts are not supported");
     // return c.int_sort();

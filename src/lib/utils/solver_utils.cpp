@@ -823,7 +823,7 @@ expr switch_bv_sort(expr &b, sort &s) {
       return b;
     } else if (bs.bv_size() < s.bv_size()) {
       // Extend to larger bitvector
-      return b.ctx().bv_val(b, s.bv_size());
+      return sext(b, s.bv_size() - bs.bv_size());
     } else {
       // Shrink to smaller bitvector - extract lower bits
       return b.extract(s.bv_size() - 1, 0);
@@ -836,7 +836,8 @@ expr convert_to_bv(expr &b,int sz) {
   sort b_sort=b.get_sort();
   if(b_sort.is_bv())
   {
-    return b; // I didnt match the size so that the user can have finer control as to which bits to extract
+    sort s = b.ctx().bv_sort(sz);
+    return switch_bv_sort(b, s);
   }
   else if(b_sort.is_int() )
   {
@@ -846,11 +847,7 @@ expr convert_to_bv(expr &b,int sz) {
   {
     return ite(b,b.ctx().bv_val(1,sz),b.ctx().bv_val(0,sz));
   }
-  else
-  {
-    std::cout<<"Error!!!!! \n Converting "<<b_sort<<" to bit vectors"<<std::endl;
-    return b;
-  }
+  llvm_bmc_error("z3Utils", "failed to convert sort to bit vector!");
 }
 
 
