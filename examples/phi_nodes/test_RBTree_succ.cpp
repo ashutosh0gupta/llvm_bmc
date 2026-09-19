@@ -12,22 +12,13 @@ struct RBNode {
     RBNode* parent;
 };
 
-RBNode* fun(RBNode* current1, RBNode* current2, int limit) {
-    // RBNode* current1 = root->left;
-    // RBNode* current2 = root->right;
-
+RBNode* fun(RBNode* RBNode_1, 
+        RBNode* RBNode_2, int limit) {
     RBNode* selected = nullptr;
-
-    for (int i = 0; i < limit; ++i) {
-        if (i%2 == 0) {
-            selected = current1;
-        } else {
-            selected = current2;
-        }
+    for(int i=0; i<limit; i++){
+        selected = (i%2==0)? RBNode_1 : RBNode_2;
     }
-
-    assert(selected == current1);  // always false to force phi node
-
+    assert(selected == RBNode_1);
     return selected;
 }
 
@@ -40,10 +31,12 @@ int main() {
     root->left = leftChild;
     root->right = rightChild;
 
+    // assert(root->left->parent == root);  // always false to force phi node
+
     // int cond;
     // std::cin >> cond;
 
-    RBNode* selected = fun(root->left, root->right, 7);
+    RBNode* selected = fun(root->left, root->right, 31);
 
     return 0;
 }

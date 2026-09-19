@@ -165,6 +165,9 @@ void bmc::init() {
 
   std::regex structRegex("^struct\\..*"); // matches any name starting with "struct."
 
+  // module->print(llvm::outs(), nullptr);
+  // llvm::outs()<<"\n\n";
+
   for (llvm::StructType* structTy : module->getIdentifiedStructTypes()) {
       if (!structTy->hasName()) continue;
 
@@ -292,13 +295,16 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
   }
 
   //add function encoding
+  // llvm::outs() << "\n\nAdding function encoding\n";
+  // llvm::outs() << "\n\n";
   for(expr e : bmc_ds_ptr->bmc_vec) {
-    llvm::outs()<<e.to_string()<<"\n";
+    // llvm::outs()<<e.to_string()<<"\n";
     s.add(e);
   }
 
   //add assertion
   s.add( !spec.get_formula() );
+  llvm::outs()<<"Adding specification assertion:\n"<<spec.get_formula().to_string()<<"\n\n";
 
   //
   // todo: optimization other specs can be added as assume

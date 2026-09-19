@@ -279,11 +279,13 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
   assert( phi );
 
     if (phi->getType()->isPointerTy()) {
-      llvm::outs() << "\n\n\n\n---------------------------------------Constraint generation for pointer phi nodes-----------------------------------------------\n\n";
+      llvm::outs() << "\n\nConstraint generation for pointer phi nodes:\n";
     expr phi_idx = bmc_ds_ptr->m.insert_new_def(phi);
 
     std::vector<expr> phi_cons;
     std::vector<unsigned> incoming_indices;
+
+    llvm::outs() << *phi << "\n";
 
     for (unsigned i = 0; i < phi->getNumIncomingValues(); ++i) {
       llvm::Value* incoming_val = phi->getIncomingValue(i);
@@ -291,30 +293,30 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
       expr incoming_idx = get_expr_const(solver_ctx, 0);
 
       // Handle function pointers
-      if (auto func = llvm::dyn_cast<llvm::Function>(incoming_val)) {
-        // For function pointers, assign a unique index if not already assigned
-        auto incoming_it = ary_to_int.find(incoming_val);
-        if (incoming_it == ary_to_int.end()) {
-          llvm::outs() << "Incoming value: " << *incoming_val << "\n";
-          llvm_bmc_error("bmc", "(Function ptr)Incoming PHI value has no array index!");
-        } else {
-          incoming_idx = get_expr_const(solver_ctx, incoming_it->second);
-        }
-      }
-      // Handle null pointers
-      else if (auto cnull = llvm::dyn_cast<llvm::ConstantPointerNull>(incoming_val)) {
-        llvm::outs() << "incoming_val is null\n";
-        incoming_idx = get_expr_const(solver_ctx, -1);
-      }
+      // if (auto func = llvm::dyn_cast<llvm::Function>(incoming_val)) {
+      //   // For function pointers, assign a unique index if not already assigned
+      //   auto incoming_it = ary_to_int.find(incoming_val);
+      //   if (incoming_it == ary_to_int.end()) {
+      //     llvm::outs() << "Incoming value: " << *incoming_val << "\n";
+      //     // llvm_bmc_error("bmc", "(Function ptr)Incoming PHI value has no array index!");
+      //   } else {
+      //     incoming_idx = bmc_ds_ptr->m.get_term(incoming_val);
+      //   }
+      // }
+      // // Handle null pointers
+      // else if (auto cnull = llvm::dyn_cast<llvm::ConstantPointerNull>(incoming_val)) {
+      //   llvm::outs() << "incoming_val is null\n";
+      //   incoming_idx = get_expr_const(solver_ctx, -1);
+      // }
       // Handle other pointer values
-      else {
-        auto incoming_it = ary_to_int.find(incoming_val);
-        if (incoming_it == ary_to_int.end()) {
-          llvm::outs() << "Incoming value: " << *incoming_val << "\n";
-          llvm_bmc_error("bmc", "Incoming PHI value has no array index!");
-        }
-        incoming_idx = get_expr_const(solver_ctx, incoming_it->second);
-      }
+      // else {
+        // auto incoming_it = ary_to_int.find(incoming_val);
+        // if (incoming_it == ary_to_int.end()) {
+        //   llvm::outs() << "Incoming value: " << *incoming_val << "\n";
+        //   llvm_bmc_error("bmc", "Incoming PHI value has no array index!");
+        // }
+        incoming_idx = bmc_ds_ptr->m.get_term(incoming_val);
+      // }
 
       for (unsigned pre_bidx : bmc_ds_ptr->pred_idxs[bidx]) {
         if (incoming_bb == bmc_ds_ptr->bb_vec[pre_bidx]) {
@@ -325,6 +327,7 @@ void bmc_pass::translatePhiNode( unsigned bidx, const llvm::PHINode* phi ) {
     }
 
       expr conj = _and(phi_cons, solver_ctx);
+      llvm::outs() << "Generated constraints: " << conj.to_string() << "\n";
       bmc_ds_ptr->bmc_vec.push_back(conj);
       return;
     }
@@ -421,14 +424,14 @@ void bmc_pass::assume_to_bmc(unsigned bidx, const llvm::CallInst* call) {
 void bmc_pass::assert_to_spec(unsigned bidx, const llvm::CallInst* call) {
   assert( call );
 
-  llvm::outs() << "\n\n\n\n\n\n\n\n\n\n";
-  llvm::outs() << "assert: " << *call << "\n";
-  llvm::outs() << "assert arg: " << *call->getArgOperand(0) << "\n";
+  // llvm::outs() << "\n\n\n\n\n\n\n\n\n\n";
+  // llvm::outs() << "assert: " << *call << "\n";
+  // llvm::outs() << "assert arg: " << *call->getArgOperand(0) << "\n";
 
   expr assert_path_bit = bmc_ds_ptr->get_path_bit(bidx);
   expr assert_term = bmc_ds_ptr->m.get_term( call->getArgOperand(0) );
 
-  llvm::outs() << "assert_term: " << assert_term.to_string() << "\n";
+  // llvm::outs() << "assert_term: " << assert_term.to_string() << "\n";
 
   spec_reason_t reason = spec_reason_t::ASSERT;
   src_loc loc = getLoc( call );
@@ -772,7 +775,7 @@ int bmc_pass::translateCallInst( unsigned bidx,
     bmc_ds_ptr->m.insert_term_map(call, bidx, ret_expr);
     
   // You can optionally log:
-  llvm_bmc_warning("bmc", "Symbolically handled unknown function");
+  // llvm_bmc_warning("bmc", "Symbolically handled unknown function");
   }
   return 0;
 }
@@ -1657,7 +1660,7 @@ void bmc_pass::translateGetElementPtrInst(unsigned bidx, const llvm::GetElementP
         expr totalExpr = expr_base + indexExpr;
         llvm::outs() << "Total expression in GEP: " << totalExpr.to_string() << "\n";
 
-        bmc_ds_ptr->m.insert_term_map( gep, expr_base );
+        bmc_ds_ptr->m.insert_term_map( gep, totalExpr );
   }
     
     // if (secIndex == 0 && baseName == "call") {
@@ -1740,10 +1743,10 @@ void bmc_pass::translateBranch( unsigned bidx,
     auto cond_sort = cond.get_sort();
     auto exit_sort = exit_bits[0].get_sort();
 
-    llvm::errs() << "Condition expression: " << cond.to_string() << "\n";
-    llvm::errs() << "Exit bits: ["
-                 << exit_bits[0].to_string() << ", " 
-                 << exit_bits[1].to_string() << "]\n";
+    // llvm::errs() << "Condition expression: " << cond.to_string() << "\n";
+    // llvm::errs() << "Exit bits: ["
+    //              << exit_bits[0].to_string() << ", " 
+    //              << exit_bits[1].to_string() << "]\n";
 
     if (cond_sort.is_bv() && exit_sort.is_bool()) {    	
 	    expr exitbits_bv = solver_ctx.bv_val(exit_bits[0],1);
@@ -1755,8 +1758,8 @@ void bmc_pass::translateBranch( unsigned bidx,
     }else{ 
 	    bmc_ds_ptr->bmc_vec.push_back( cond == exit_bits[0] );
 
-      llvm::errs() << "Adding Bool constraint: " 
-                   << ( cond == exit_bits[0] ).to_string() << "\n";
+      // llvm::errs() << "Adding Bool constraint: " 
+      //              << ( cond == exit_bits[0] ).to_string() << "\n";
     }
   }else{
     // for unconditional branch, there is no need of constraints
@@ -1774,8 +1777,8 @@ void bmc_pass::translateRetInst(const llvm::ReturnInst *ret ) {
     expr ret_val = get_fresh_const(solver_ctx, ret_term.get_sort(), "ret_val");
     bmc_ds_ptr->bmc_vec.push_back( ret_val == ret_term );
 
-    llvm::errs() << "Return value equality: "
-             << (ret_val == ret_term).to_string() << "\n";
+    // llvm::errs() << "Return value equality: "
+            //  << (ret_val == ret_term).to_string() << "\n";
 
   } else {
     //todo : handle all cases

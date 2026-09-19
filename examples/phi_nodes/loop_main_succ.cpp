@@ -5,10 +5,9 @@ bool assert(bool);
 int main(){
     int p1 = 0;
     int p2 = 1;
-    int *current = &p1;
-    int i = 0;
+    int *current;
+    int i = 7;
     int limit = 6;
-    int a=0;
     while (i < limit) {
         if (i % 2 == 0) {
             current = &p1;

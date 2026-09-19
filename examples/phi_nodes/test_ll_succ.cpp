@@ -8,23 +8,11 @@ struct Node {
 };
 
 Node* fun(Node* node_1, Node* node_2, int limit) {
-    // Node* current1 = head;
-    // Node* current2 = head->next;
-
     Node* selected = nullptr;
-    int i = 0;
-
-    while( i < limit) {
-        if (i %2 == 0) {
-            selected = node_1;
-        } else {
-            selected = node_2;
-        }
-        i++;
+    for(int i=0; i<limit; i++){
+        selected = (i%2==0)? node_1 : node_2;
     }
-
     assert(selected == node_2);
-
     return selected;
 }
 
@@ -42,10 +30,7 @@ int main() {
 
     Node* head = node1;
 
-    // int cond;
-    // std::cin >> cond;
-
-    Node* selected = fun(head, node3, 6);
+    Node* selected = fun(head, node3,  10);
 
     return 0;
 }

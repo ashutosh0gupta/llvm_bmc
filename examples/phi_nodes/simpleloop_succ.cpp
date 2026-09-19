@@ -1,11 +1,9 @@
 #include <iostream>
 bool assert(bool);
 
-
 int find_value(int* p1, int* p2, int limit) {
     int* current = p1;
     int i = 0;
-
     while (i < limit) {
         if (i % 2 == 0) {
             current = p1;
@@ -14,18 +12,13 @@ int find_value(int* p1, int* p2, int limit) {
         }
         i++;
     }
-
     assert(current != p2);
-
     return *current;
 }
 
 int main() {
     int p1 = 0;
     int p2 = 1;
-
-    int result = find_value(&p1, &p2, 6);
-
-
+    int result = find_value(&p1, &p2, 7);
     return 0;
 }

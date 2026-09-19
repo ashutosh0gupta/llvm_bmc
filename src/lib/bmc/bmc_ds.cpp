@@ -351,7 +351,7 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
       auto I = &(*it);
       // std::cout << "CURRENT INSTRUCTION IS -";
       I->print(llvm::outs());
-      std::cout <<"\n\n";
+      std::cout <<"\n";
       if( auto load = llvm::dyn_cast<const llvm::LoadInst>(I) ) {
         auto ary_info  = get_array_info( load->getPointerOperand() );
         if( ary_info.first && exists( ary_to_int, ary_info.first )) {
