@@ -1,3 +1,5 @@
+#include<algorithm>
+#include<cctype>
 #include<string>
 #include "include/options.h"
 #include "lib/utils/utils.h"
@@ -40,7 +42,9 @@ void options::get_description_cmd(po::options_description& config,
     ("dump-cfg,d", po::bool_switch(&dump_cfg), "Dump the llvm control flow graph")
     ("config,c", po::value<std::string>(), "Set config file")
     ("unwind,u", po::value<int>(&loop_unroll_count)->default_value(1), "Set loop unroll count")
+    ("unwind-assertions", po::value<bool>(&unwind_assertions)->default_value(true), "Report loops that the unroll bound did not finish (set false to allow bounded-only results)")
     ("use-bv,b", po::bool_switch(&bit_precise), "Use bit-vectors to represent numbers!")
+    ("memory-granularity", po::value<int>(&mem_cell_bits)->default_value(32), "Size of a memory cell in bits (8, 32 or 64); only used with -b")
     ("bounds-check,n", po::bool_switch(&include_out_of_bound_specs), "Enable array-index-out-of-bounds check")
     ("overflow-check,l", po::bool_switch(&include_overflow_specs), "Enable over/underflow check")
     ("unreach-check", po::bool_switch(&include_unreach_specs), "Enable unreachable instructions check")
@@ -76,6 +80,13 @@ void options::interpret_options(po::variables_map& vm) {
   if (vm.count("input")) {
     boost::filesystem::path cf( filePath);
     fileName = cf.filename().string();
+    if (is_input_ada() &&
+        (vm.count("function") == 0 || vm["function"].defaulted())) {
+      std::string stem = cf.stem().string();
+      std::transform(stem.begin(), stem.end(), stem.begin(),
+                      [](unsigned char c){ return std::tolower(c); });
+      funcName = "_ada_" + stem;
+    }
   }
   if (vm.count("unwind")) {
     unwind = true;
@@ -101,6 +112,15 @@ void options::interpret_options(po::variables_map& vm) {
   }
   if( sc_threads.size() > 0 && arm_thread != "" ) {
     llvm_bmc_error("config options", "sc-thread and arm-thread options are incompatible.");
+  }
+  if (mem_cell_bits != 8 && mem_cell_bits != 32 && mem_cell_bits != 64) {
+    llvm_bmc_error("config options", "memory granularity " << mem_cell_bits
+                   << " is not supported, use 8, 32 or 64.");
+  }
+  if (vm.count("memory-granularity") && !vm["memory-granularity"].defaulted()
+      && !bit_precise) {
+    llvm_bmc_warning("config options", "memory granularity is only used with -b; "
+                     "in integer mode a cell holds an unbounded integer");
   }
 }
 
@@ -146,6 +166,15 @@ bool options::is_input_llvm_ir() {
   boost::filesystem::path p(fileName);
   auto ext = p.extension().string();
   if( ext == ".ll" ) {
+    return true;
+  }
+  return false;
+}
+
+bool options::is_input_ada() {
+  boost::filesystem::path p(fileName);
+  auto ext = p.extension().string();
+  if (ext == ".adb" || ext == ".ads") {
     return true;
   }
   return false;

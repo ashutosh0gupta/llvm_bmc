@@ -75,7 +75,8 @@ sort array_model_full::get_address_sort() {
 }
 sort array_model_full::get_data_sort() {
   if (o.bit_precise)
-    return solver_ctx.bv_sort(32);
+    // return solver_ctx.bv_sort(32);
+    return solver_ctx.bv_sort(o.mem_cell_bits);
   return solver_ctx.int_sort();
 }
 
@@ -123,14 +124,10 @@ void array_model_full::get_array_length(const llvm::ArrayType *a1,
 std::vector<expr> array_model_full::get_array_length(const llvm::Value *arr) {
   // https://llvm.org/docs/OpaquePointers.html
   std::vector<expr> idxs;
-  // if( llvm::isa< const llvm::AllocaInst >(arr) ) {
-  //   // since we can know symbol for the length of the array
-  //   // at the time of translatation we place a dummy
+  const llvm::Type* dim_ty = nullptr;
+  if (auto al = llvm::dyn_cast<const llvm::AllocaInst>(arr)) {
   //   idxs.push_back( solver_ctx.int_val(1) );
   //   return idxs;
-  // } // This dummy insert causes issues later on if not handled correctly
-  const llvm::Type *dim_ty = nullptr;
-  if (auto al = llvm::dyn_cast<const llvm::AllocaInst>(arr)) {
     dim_ty = al->getAllocatedType();
   } else if (auto g = llvm::dyn_cast<llvm::GlobalVariable>(arr)) {
     dim_ty = g->getValueType();
@@ -138,13 +135,12 @@ std::vector<expr> array_model_full::get_array_length(const llvm::Value *arr) {
   if (dim_ty) {
     std::vector<uint64_t> dims;
     get_type_dims(dim_ty, dims);
-    for (auto d : dims) {
+    // for (auto d : dims) {
+    for (auto d : dims)
       idxs.push_back(o.bit_precise ? solver_ctx.bv_val((uint64_t)d, 64)
                                    : solver_ctx.int_val((uint64_t)d));
-    }
     return idxs;
   }
-
   if (llvm::isa<llvm::PointerType>(arr->getType())) {
     //   auto T1 = pty->getPointerElementType();
     //   if( auto a1 = llvm::dyn_cast<llvm::ArrayType>(T1) ) {
@@ -198,6 +194,7 @@ void array_model_full::set_array_info(
     // }
   }
 }
+
 
 expr array_model_full::get_fresh_ary_name(unsigned i) {
   sort ar_sort = ar_sorts.at(i);
@@ -272,6 +269,7 @@ unsigned array_model_full::get_accessed_array(const llvm::Instruction *I) {
   }
 }
 
+
 expr array_model_full::access_bound_cons(exprs &idxs, exprs &ls) {
   // if( idxs.size() < ls.size() ) {
   //   assert( false );
@@ -294,7 +292,6 @@ expr array_model_full::access_bound_cons(exprs &idxs, exprs &ls) {
     assert(idxs.size() == ls.size());
   }
   // bounds constraints
-
   std::vector<expr> temp_vec;
   unsigned pos = 0;
   for (auto &l : ls) {
@@ -317,11 +314,16 @@ expr array_model_full::access_bound_cons(exprs &idxs, exprs &ls) {
   return bound_guard;
 }
 
-arr_write_expr multiple_array_model::array_write(unsigned bidx,
-                                                 const llvm::StoreInst *I,
+arr_write_expr
+multiple_array_model::array_write(unsigned bidx, const llvm::StoreInst* I,
+                               exprs& idxs, expr& val) {
+  return array_write_id(bidx, get_accessed_array(I), idxs, val);
+}
+
+arr_write_expr
+multiple_array_model::array_write_id(unsigned bidx, unsigned i,
                                                  exprs &idxs, expr &val) {
   array_state &ar_st = get_state(bidx);
-  auto i = get_accessed_array(I); // ary_access_to_index.at(I);
   auto &vec = ar_st.get_name_vec();
   expr ar_name = vec.at(i);
   expr new_ar = get_fresh_ary_name(i);
@@ -338,8 +340,13 @@ arr_write_expr multiple_array_model::array_write(unsigned bidx,
 arr_read_expr multiple_array_model::array_read(unsigned bidx,
                                                const llvm::LoadInst *I,
                                                exprs &idxs) {
+  return array_read_id(bidx, get_accessed_array(I), idxs, I->getType());
+}
+
+arr_read_expr
+multiple_array_model::array_read_id(unsigned bidx, unsigned i, exprs& idxs,
+                                     const llvm::Type* ty) {
   array_state &ar_st = get_state(bidx);
-  auto i = get_accessed_array(I); // ary_access_to_index.at(I);
   auto &vec = ar_st.get_name_vec();
   expr ar_name = vec.at(i);
   auto &ls = lengths.at(i);
@@ -364,9 +371,52 @@ arr_read_expr multiple_array_model::array_read(unsigned bidx,
 arr_write_expr single_array_model::array_write(unsigned bidx,
                                                const llvm::StoreInst *I,
                                                exprs &idxs, expr &val) {
+  return array_write_id(bidx, get_accessed_array(I), idxs, val);
+}
 
+unsigned single_array_model::get_slot_cells(unsigned i) {
+  if (!o.bit_precise) return 1;
+  auto it = ar_slot_cells.find(i);
+  return it == ar_slot_cells.end() ? 1 : it->second;
+}
+
+expr single_array_model::slot_address(unsigned i, exprs& idxs, exprs& ls) {
+  expr lin = idxs[0];
+  for (std::size_t k = 1; k < idxs.size(); k++)
+    lin = (lin * ls[k] + idxs[k]).simplify();
+  unsigned cells = get_slot_cells(i);
+  if (cells > 1)
+    lin = (lin * static_cast<int>(cells)).simplify();
+  return (lin + static_cast<int>(ar_bases.at(i))).simplify();
+}
+
+expr single_array_model::cell_address(expr& addr, unsigned k) {
+  if (k == 0) return addr;
+  return (addr + static_cast<int>(k)).simplify();
+}
+
+expr single_array_model::value_to_bits(expr& val) {
+  if (val.is_fpa()) return val.mk_to_ieee_bv();
+  if (val.is_bool())
+    return ite(val, solver_ctx.bv_val(1,1), solver_ctx.bv_val(0,1));
+  if (!val.is_bv())
+    llvm_bmc_error("array_model", "value of this type can not be written in the memory");
+  return val;
+}
+
+expr single_array_model::bits_to_value(expr& bits, const llvm::Type* ty) {
+  if (!ty) return bits;
+  unsigned w = scalar_bits(ty);
+  expr v = w < bits.get_sort().bv_size() ? bits.extract(w-1, 0) : bits;
+  if (ty->isFloatingPointTy())
+    return v.mk_from_ieee_bv(llvm_to_bv_sort(solver_ctx, ty));
+  return v;
+}
+
+arr_write_expr
+single_array_model::array_write_id(unsigned bidx, unsigned i,
+                                    exprs& idxs, expr& val) {
   array_state &ar_st = get_state(bidx);
-  auto i = get_accessed_array(I); // ary_access_to_index.at(I);
   auto &M_vec = ar_st.get_M_name();
   expr ar_name = M_vec.back();
 
@@ -376,73 +426,88 @@ arr_write_expr single_array_model::array_write(unsigned bidx,
   M_vec.clear();
   M_vec.push_back(new_ar);
   final_mem = new_ar.to_string();
-  // I dont know if it can violate the bounds. The fix below needs to be
-  // checked. for(std::size_t i=1;i<idxs.size();i++)
-  // {
-  //   //
-  //   std::cout<<(idxs[0]+static_cast<int>(ar_bases[i])+idxs[i]).to_string()<<"\n";
-  //   idxs[0]=(idxs[0]+idxs[i]).simplify();
-  // }
+  // for (std::size_t k = 1; k < idxs.size(); k++) {
+  // lin = (lin + static_cast<int>(ar_bases.at(i)))
+  // idxs.clear();
+  // idxs.push_back(lin);
+  // if (o.bit_precise &&
+      // ar_name.get_sort().array_range().bv_size() > val.get_sort().bv_size())
+    // val = z3::zext(val, ar_name.get_sort().array_range().bv_size() -
+                            // val.get_sort().bv_size());
+
   auto &ls = lengths.at(i);
   auto bound_guard = access_bound_cons(idxs, ls);
-  // idxs[0] = (idxs[0] + static_cast<int>(ar_bases[i])).simplify();
-  // while( idxs.size() > 1 ) idxs.pop_back();
+  expr addr = slot_address(i, idxs, ls);
 
-  expr lin = idxs[0];
-  for (std::size_t k = 1; k < idxs.size(); k++) {
-    lin = (lin * ls[k] + idxs[k]).simplify();
-  }
-
-  lin = (lin + static_cast<int>(ar_bases.at(i)))
-            .simplify(); // I have used at here so that it doesnt end up
-                         // silently failing or something. ig you can replace
-                         // this with [] but use caution.
-  idxs.clear();
-  idxs.push_back(lin);
-  while (idxs.size() > 1)
-    idxs.pop_back();
-
-  if (o.bit_precise &&
-      ar_name.get_sort().array_range().bv_size() > val.get_sort().bv_size())
-    val = z3::zext(val, ar_name.get_sort().array_range().bv_size() -
-                            val.get_sort().bv_size());
-  return arr_write_expr((new_ar == store(ar_name, idxs[0], val)), bound_guard,
-                        new_ar);
+  // for (std::size_t k = 1; k < idxs.size(); k++) {
+  // lin = (lin + static_cast<int>(ar_bases.at(i))).simplify();
+  // idxs.clear();
+  // idxs.push_back(lin);
+  // while (idxs.size() > 1) {
+  if (!o.bit_precise) {
+    if (val.is_real())
+      llvm_bmc_error("array_model", "floats in memory are not supported in integer mode, use -b");
+    expr v = val.is_bool() ?
+      ite(val, solver_ctx.int_val(1), solver_ctx.int_val(0)) : val;
+    return arr_write_expr((new_ar == store(ar_name, addr, v)),
+                           bound_guard, new_ar);
 }
 
-arr_read_expr single_array_model::array_read(unsigned bidx,
-                                             const llvm::LoadInst *I,
-                                             exprs &idxs) {
-  array_state &ar_st = get_state(bidx);
-  auto i = get_accessed_array(I); // ary_access_to_index.at(I);
-  auto &vec = ar_st.get_M_name();
+  expr bits = value_to_bits(val);
+  unsigned w = get_data_sort().bv_size();
+  unsigned n = (bits.get_sort().bv_size() + w - 1)/w;
+  if (n > get_slot_cells(i))
+    llvm_bmc_error("array_model", "value is wider than the memory of the array");
+  if (n*w > bits.get_sort().bv_size())
+    bits = z3::zext(bits, n*w - bits.get_sort().bv_size());
+  expr M = ar_name;
+  for (unsigned k = 0; k < n; k++) {
+    expr cell = n == 1 ? bits : bits.extract((k+1)*w-1, k*w);
+    M = store(M, cell_address(addr,k), cell);
+  }
+  return arr_write_expr((new_ar == M), bound_guard, new_ar);
+}
+
+arr_read_expr
+single_array_model::array_read(unsigned bidx, const llvm::LoadInst* I,
+                              exprs& idxs) {
+  return array_read_id(bidx, get_accessed_array(I), idxs, I->getType());
+}
+
+arr_read_expr
+single_array_model::array_read_id(unsigned bidx, unsigned i, exprs& idxs,
+                                   const llvm::Type* ty) {
+  array_state& ar_st = get_state(bidx);
+  auto& vec = ar_st.get_M_name();
   expr ar_name = vec.back();
-  // // I dont know if it can violate the bounds. The fix below needs to be
-  // checked. for(std::size_t i=1;i<idxs.size();i++)
-  // {
-  //   // std::cout<<idxs[i].to_string()<<"\n";
-  //   idxs[0]=(idxs[0]+static_cast<int>(ar_bases[i])+idxs[i]).simplify();
-  // }
 
-  auto &ls = lengths.at(i);
+  auto& ls = lengths.at(i);
   auto bound_guard = access_bound_cons(idxs, ls);
+  expr addr = slot_address(i, idxs, ls);
 
-  expr lin = idxs[0];
-  for (std::size_t k = 1; k < idxs.size(); k++) {
-    lin = (lin * ls[k] + idxs[k]).simplify();
+  if (!o.bit_precise) {
+    if (ty && ty->isFloatingPointTy())
+      llvm_bmc_error("array_model", "floats in memory are not supported in integer mode, use -b");
+    expr v = select(ar_name, addr);
+    if (ty && ty->isIntegerTy(1)) v = (v == 1);
+    return arr_read_expr(v, bound_guard);
   }
-  lin = (lin + static_cast<int>(ar_bases.at(i))).simplify();
-  idxs.clear();
-  idxs.push_back(lin);
 
-  while (idxs.size() > 1) {
-    idxs.pop_back();
-  }
-  return arr_read_expr(select(ar_name, idxs[0]), bound_guard);
+  unsigned w = get_data_sort().bv_size();
+  unsigned bits = ty ? scalar_bits(ty) : w;
+  if (bits == 0)
+    llvm_bmc_error("array_model", "value of this type can not be read from the memory");
+  unsigned n = (bits + w - 1)/w;
+  if (n > get_slot_cells(i))
+    llvm_bmc_error("array_model", "value is wider than the memory of the array");
+  expr cells = select(ar_name, addr);
+  for (unsigned k = 1; k < n; k++)
+    cells = concat(select(ar_name, cell_address(addr,k)), cells);
+  return arr_read_expr(bits_to_value(cells, ty), bound_guard);
 }
 
-arr_read_expr single_array_model::array_read(unsigned bidx,
-                                             const llvm::ExtractValueInst *I,
+arr_read_expr
+single_array_model::array_read(unsigned bidx, const llvm::ExtractValueInst* I,
                                              exprs &idxs) {
   array_state &ar_st = get_state(bidx);
   auto i = get_accessed_array(I); // ary_access_to_index.at(I);
@@ -485,6 +550,8 @@ void array_model_full::dump_ary_access_to_index() {
     std::cout << "-->" << pr.second << "\n";
   }
 }
+
+
 
 //=======================================================================
 

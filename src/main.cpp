@@ -58,26 +58,18 @@ void forced_unroll_pass( options& o,
 
 
 
-  // basic
-  llvm::legacy::PassManager passMan_set_count;
-  passMan_set_count.add( new set_unroll_counts(o) ); // analyzing loops for unrolling
-  passMan_set_count.run( *module.get() );
-
-  llvm::legacy::PassManager passMan_unroll;
-  if( o.unwind && o.llvm_unroll ) {
-    // Work around due to a bug in interface since LLVM 4.0 =======
-    // setting unroll count via commmand line parsing
-    // std::string ustr = "-unroll-count=" + std::to_string(o.loop_unroll_count);
-    // setLLVMConfigViaCommandLineOptions( ustr );
-    // ============================================================
-    passMan_unroll.add( llvm::createLoopUnrollPass( 2,
-                                             false, //OnlyWhenForced
-                                             false, // ForgetAllSCEV
-                                             30000,  // threshold
-                                             o.loop_unroll_count // Count
-                                             ) );
-  }
-  passMan_unroll.run( *module.get() );
+  // llvm::legacy::PassManager passMan_set_count;
+  // passMan_set_count.add( new set_unroll_counts(o) ); // analyzing loops for unrolling
+  // passMan_set_count.run( *module.get() );
+  // llvm::legacy::PassManager passMan_unroll;
+  // if( o.unwind && o.llvm_unroll ) {
+    // passMan_unroll.add( llvm::createLoopUnrollPass( 2,
+                                             // false, //OnlyWhenForced
+                                             // false, // ForgetAllSCEV
+                                             // 30000,  // threshold
+                                             // o.loop_unroll_count // Count
+  // passMan_unroll.run( *module.get() );
+  bounded_unroll_pass(o, module);
 
 }
 
@@ -103,6 +95,8 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
   }
   estimate_comment_location( module, cmts, bb_cmt_map );
   forced_inliner_pass( module );
+  cleanup_after_inline_pass(module);
+
 
   //Analyse IR
   // points_to_analysis(o, module);
@@ -156,6 +150,8 @@ int main(int argc, char** argv) {
     module = asm2ir( o, cmts);
   }else if( o.is_input_llvm_ir() ) {
     module = ir2ir( o, cmts);
+  }else if( o.is_input_ada() ) {
+    module = ada2ir( o, cmts);
   }
   if( module == nullptr ) {
     llvm_bmc_error( "BMC", "failed to parse input successfully!" );

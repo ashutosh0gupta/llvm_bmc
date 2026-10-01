@@ -49,11 +49,13 @@ public:
   bool is_input_llvm_asm();
   bool is_input_llvm_ir();
   bool is_input_llvm_bc(); //todo: not fully supported yet
+  bool is_input_ada();
 
 public:
   //todo: some of following show become private
   //---------------------------------------
   solver_context& solver_ctx;
+  std::map<std::string, z3::func_decl> struct_ctors;
   memory_cons mem_enc; // todo: we all allocating here do we really need to allocate here?
 
   //---------------------------------------
@@ -68,6 +70,7 @@ public:
   boost::filesystem::path outDirPath;
   int mode = 0;
   int loopNum = 0;
+  bool unwind_assertions = true;
   int totalLoops = 0;
   bool loop_aggr = false;
 
@@ -106,6 +109,7 @@ public:
   bool include_unreach_specs=false;
   array_model_t ar_model = FULL;
   bool bit_precise = false; // model integers as true "int" or bit vectors
+  int mem_cell_bits = 32;
   bool check_spec = false;
   bool abstract_floats = false; //abstract away floating point computations
   //----------------------------------------

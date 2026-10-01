@@ -627,11 +627,13 @@ expr _xor(expr const &a, expr const &b) {
     return a ^ b;
   } else {
     if (a.is_int()) {
-      auto a_bv = int2bv(8, a);
-      auto b_bv = int2bv(8, b);
-      auto res = a_bv ^ b_bv;
-      auto res_bv = bv2int(res, true);
-      return res_bv;
+      // auto a_bv = int2bv(8, a);
+      // auto b_bv = int2bv(8, b);
+      // auto res = a_bv ^ b_bv;
+      // auto res_bv = bv2int(res, true);
+      // return res_bv;
+      llvm_bmc_error("_xor", "integer xor needs the bit width, use int_bitop");
+      return a;
     } else {
       expr_vector sol_vec(a.ctx());
       sol_vec.push_back(a);
@@ -649,24 +651,37 @@ expr _xor(expr const &a, expr const &b) {
 expr _bvor(expr const &a, expr const &b) {
   if (a.is_bool()) {
     return a || b;
-  } else {
+  } else if (a.is_bv()) {
     return a | b;
   }
+  llvm_bmc_error("_bvor", "integer or needs the bit width, use int_bitop");
+  return a;
 }
 
 expr _bvand(expr const &a, expr const &b) {
   if (a.is_bool()) {
     return a && b;
-  } else {
+  } else if (a.is_bv()) {
     return a & b;
   }
+  llvm_bmc_error("_bvand", "integer and needs the bit width, use int_bitop");
+  return a;
+}
+
+static expr int_pow2_of(expr const &b) {
+  uint64_t n;
+  if (b.is_numeral() && b.is_numeral_u64(n) && n <= 64)
+    return pow2_int(b.ctx(), n);
+  expr p = z3::pw(b.ctx().int_val(2), b);
+  return to_expr(b.ctx(), Z3_mk_real2int(b.ctx(), p));
 }
 
 expr LogShR(expr const &a, expr const &b) {
   if (a.is_bv()) {
     return lshr(a, b);
   } else if (a.is_int()) {
-    return a / z3::pw(a.ctx().int_val(2), b);
+    // return a / z3::pw(a.ctx().int_val(2), b);
+    return a / int_pow2_of(b);
   } else {
     llvm_bmc_error(
         "LogShR",
@@ -679,13 +694,127 @@ expr bv_shl(expr const &a, expr const &b) {
   if (a.is_bv()) {
     return shl(a, b);
   } else if (a.is_int()) {
-    return a * z3::pw(a.ctx().int_val(2), b);
+    // return a * z3::pw(a.ctx().int_val(2), b);
+    return a * int_pow2_of(b);
   } else {
     llvm_bmc_error(
         "bv_shl",
         "Shift operations are only supported for bitvectors and integers!");
     return a; // Dummy return
   }
+}
+
+expr ArithShR(expr const &a, expr const &b) {
+  if (a.is_bv()) {
+    return ashr(a, b);
+  } else if (a.is_int()) {
+    // return a / z3::pw(a.ctx().int_val(2), b);
+    return a / int_pow2_of(b);
+  } else {
+    llvm_bmc_error(
+        "ArithShR",
+        "Shift operations are only supported for bitvectors and integers!");
+    return a; // Dummy return
+  }
+}
+
+expr bv_sdiv(expr const &a, expr const &b) {
+  if (a.is_bv()) {
+    return a / b;
+  } else if (a.is_int() || a.is_real()) {
+    return a / b;
+  } else {
+    llvm_bmc_error("bv_sdiv", "division needs bitvectors or numbers!");
+    return a;
+  }
+}
+
+expr bv_udiv(expr const &a, expr const &b) {
+  if (a.is_bv()) {
+    return z3::udiv(a, b);
+  } else if (a.is_int() || a.is_real()) {
+    return a / b;
+  } else {
+    llvm_bmc_error("bv_udiv", "division needs bitvectors or numbers!");
+    return a;
+  }
+}
+
+expr bv_srem(expr const &a, expr const &b) {
+  if (a.is_bv()) {
+    return z3::srem(a, b);
+  } else if (a.is_int()) {
+    return rem(a, b);
+  } else {
+    llvm_bmc_error("bv_srem", "remainder needs bitvectors or integers!");
+    return a;
+  }
+}
+
+expr bv_urem(expr const &a, expr const &b) {
+  if (a.is_bv()) {
+    return z3::urem(a, b);
+  } else if (a.is_int()) {
+    return rem(a, b);
+  } else {
+    llvm_bmc_error("bv_urem", "remainder needs bitvectors or integers!");
+    return a;
+  }
+}
+
+expr pow2_int(z3::context &c, unsigned w) {
+  if (w > 64)
+    llvm_bmc_error("solver_utils", "integers wider than 64 bits are not supported");
+  unsigned __int128 v = (unsigned __int128)1 << w;
+  std::string s;
+  do {
+    s.insert(s.begin(), char('0' + (int)(v % 10)));
+    v /= 10;
+  } while (v != 0);
+  return c.int_val(s.c_str());
+}
+
+expr int_as_unsigned(expr const &x, unsigned w) {
+  return ite(x < 0, x + pow2_int(x.ctx(), w), x);
+}
+
+expr int_as_signed(expr const &x, unsigned w) {
+  return ite(x >= pow2_int(x.ctx(), w - 1), x - pow2_int(x.ctx(), w), x);
+}
+
+expr int_wrap(expr const &x, unsigned w) {
+  return int_as_signed(mod(x, pow2_int(x.ctx(), w)), w);
+}
+
+expr int_sdiv(expr const &a, expr const &b) {
+  expr q = z3::abs(a) / z3::abs(b);
+  return ite((a >= 0) == (b >= 0), q, -q);
+}
+
+expr int_srem(expr const &a, expr const &b) { return a - b * int_sdiv(a, b); }
+
+expr int_udiv(expr const &a, expr const &b, unsigned w) {
+  return int_as_signed(int_as_unsigned(a, w) / int_as_unsigned(b, w), w);
+}
+
+expr int_urem(expr const &a, expr const &b, unsigned w) {
+  return int_as_signed(mod(int_as_unsigned(a, w), int_as_unsigned(b, w)), w);
+}
+
+expr int_bitop(expr const &a, expr const &b, unsigned w, char op) {
+  expr x = z3::int2bv(w, a);
+  expr y = z3::int2bv(w, b);
+  expr r = op == '&' ? (x & y) : op == '|' ? (x | y) : (x ^ y);
+  return z3::bv2int(r, true);
+}
+
+expr int_lshr(expr const &a, expr const &b, unsigned w) {
+  return int_as_signed(int_as_unsigned(a, w) / int_pow2_of(b), w);
+}
+
+expr int_ashr(expr const &a, expr const &b) { return a / int_pow2_of(b); }
+expr int_shl(expr const &a, expr const &b, unsigned w) {
+  return int_wrap(a * int_pow2_of(b), w);
 }
 
 expr neg_and(std::vector<expr> &vec, solver_context &sol_ctx) {
@@ -849,7 +978,6 @@ expr convert_to_bv(expr &b,int sz) {
   }
   llvm_bmc_error("z3Utils", "failed to convert sort to bit vector!");
 }
-
 
 bool Z3CompClass::get_isBitPrecise() {
   return o.bit_precise;

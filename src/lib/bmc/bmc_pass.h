@@ -57,6 +57,13 @@ private:
   int translateCallInst( unsigned, const llvm::CallInst* );
   // void translateIntrinsicInst( unsigned, const llvm::IntrinsicInst* );
   int translateIntrinsicInst( unsigned, const llvm::IntrinsicInst* );
+  void translateFloatAbs(unsigned, const llvm::Instruction*, const llvm::Value*);
+  void translateCopySign(unsigned, const llvm::Instruction*, const llvm::Value*,
+                          const llvm::Value*);
+  void translateAtan(unsigned, const llvm::CallInst*);
+  void translateSqrt(unsigned, const llvm::CallInst*);
+  void translateMemIntrinsic(unsigned, const llvm::MemIntrinsic*);
+  void seed_global_arrays();
   void translateDebugInfo( unsigned, const llvm::DbgInfoIntrinsic* );
   void translateCastInst( unsigned, const llvm::CastInst*);
   void translateAllocaInst(const llvm::AllocaInst*);

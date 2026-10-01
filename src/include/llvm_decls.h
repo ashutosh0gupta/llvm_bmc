@@ -54,9 +54,14 @@ public:
 
 std::unique_ptr<llvm::Module> c2ir( options&,  comments& );
 std::unique_ptr<llvm::Module> asm2ir( options&,  comments& );
+std::unique_ptr<llvm::Module> ada2ir(options&,  comments&);
 std::unique_ptr<llvm::Module> ir2ir( options&,  comments& );
 
 void c2bc( const std::string&, const std::string& );
+// void ada2bc(const std::string&, const std::string&);
+// void ada2bc( const std::string&, const std::string& );
+void ada2bc(const std::string&, const std::string&,
+             const std::vector<std::string>&);
 
 void generateAssemblyARM( std::unique_ptr<llvm::Module>& module );
 

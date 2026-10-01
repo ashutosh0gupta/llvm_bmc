@@ -102,6 +102,10 @@ include_directories(${CLANG_INCLUDE_DIRS})
 
 include_directories(/usr/lib/llvm20/include)
 link_directories(/usr/lib/llvm20/lib)
+
+SET(GNAT_LLVM_BIN "/home/dohil/iitb/mtp/part1/gnat-llvm/llvm-interface/bin"
+    CACHE STRING "Directory containing gnat-llvm's llvm-gcc")
+add_definitions(-DGNAT_LLVM_BIN="${GNAT_LLVM_BIN}")
 # IF(LLVM_DEBUG)
 #   # in debug llvm linkers take a lot of time
 #   # For enabling specialized linker; 

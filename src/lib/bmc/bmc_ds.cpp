@@ -1,6 +1,7 @@
 #include "include/bmc_ds.h"
 #include "lib/utils/llvm_utils.h"
 #include "lib/utils/solver_utils.h"
+#include "llvm/IR/IntrinsicInst.h"
 #include <iostream>
 #include <fstream>
 
@@ -8,12 +9,14 @@ void spec::print(std::ostream& os) {
   os << e << " % [";
   switch( reason ) {
   case UNKNOWN : os << "unknown "; break;
+  case UNREACHABLE : os << "unreachable code at "; break;
   case SPEC_FILE : os << "property at "; break;
   case COMMENT : os << "comment at "; break;
   case ASSERT : os << "assert at "; break;
   case OUT_OF_BOUND : os << "array out of bound at "; break;
   case OUT_OF_RANGE : os << "(under/over)flow at "; break;
   case ASSUME : os << "assume at "; break;
+  case UNWIND_BOUND : os << "loop not fully unrolled (raise -u) at "; break;
   default:
     llvm_bmc_error("spec", "unsupported reason found!!");
   }
@@ -310,7 +313,9 @@ std::string bmc_ds::print_array_ranges() {
   for( const auto& [ary_val, ary_id] : ary_to_int ) {
     if( exists( ary_to_base, ary_id ) ) {
       auto ary_info = get_array_info( ary_val ); 
-      array_ranges<<"\n;; Array "<< ary_val->getName().str()<<" "<< ary_to_base.at(ary_id)<<" "<< ary_to_base.at(ary_id)+ary_info.second-1<<" ";
+      // array_ranges<<"\n;; Array "<< ary_val->getName().str()<<" "<< ary_to_base.at(ary_id)<<" "<< ary_to_base.at(ary_id)+ary_info.second-1<<" ";
+      unsigned cells = exists(ary_to_cells, ary_id) ? ary_to_cells.at(ary_id) : 1;
+      array_ranges<<"\n;; Array "<< ary_val->getName().str()<<" "<< ary_to_base.at(ary_id)<<" "<< ary_to_base.at(ary_id)+ary_info.second*cells-1<<" ";
     }
   }
   array_ranges<<"\n\n";
@@ -324,6 +329,7 @@ std::string bmc_ds::print_array_names() {
   array_names<<"\n\n";
   return array_names.str();
 }
+
 
 void bmc_ds::print_formulas(unsigned print_from, unsigned print_spec_from ) {
   std::cout << "Printing the bmc formula\n";
@@ -362,59 +368,99 @@ expr bmc_ds::join_state( std::vector<expr>& cs,
 //----------------------------------------------------------------------------
 // manage array model
 
+static const llvm::Type* declared_type(const llvm::Value* base) {
+  if (auto g = llvm::dyn_cast<const llvm::GlobalVariable>(base))
+    return g->getValueType();
+  if (auto a = llvm::dyn_cast<const llvm::AllocaInst>(base))
+    return a->getAllocatedType();
+  return nullptr;
+}
+
+static void check_access_type(const llvm::Value* base,
+                               const llvm::Type* acc_ty) {
+  unsigned bits = scalar_bits(acc_ty);
+  if (bits == 0) return;
+  auto dec_ty = declared_type(base);
+  if (dec_ty && max_leaf_bits(dec_ty) > 0 && !has_leaf_of_bits(dec_ty, bits))
+    llvm_bmc_error("bmc", "array " << base->getName().str()
+                    << " is accessed as a " << bits
+                    << " bit value, which is not one of its element types");
+}
+
 void bmc_ds::init_array_model( array_model_t ar_model_local,
                                array_state& s ) {
   unsigned bidx = 0;
   unsigned int cnt = 0;
+  unsigned cell_bits = o.bit_precise ? ar_model_full->get_data_sort().bv_size() : 0;
+  std::vector< unsigned > order;
+  std::map< unsigned, uint64_t > sizes;
+
+  auto note = [&](const llvm::Value* ptr, const llvm::Type* acc_ty,
+                   const llvm::Instruction* I) {
+    auto ary_info = get_array_info(ptr);
+    if (!ary_info.first || !exists(ary_to_int, ary_info.first)) return;
+    unsigned id = ary_to_int.at(ary_info.first);
+    if (I) ary_access_to_index[I] = id;
+    if (!exists(ary_to_base, id) && !exists(sizes, id)) {
+      sizes[id] = ary_info.second;
+      order.push_back(id);
+    }
+    unsigned bits = 0;
+    if (auto dec_ty = declared_type(ary_info.first))
+      bits = max_leaf_bits(dec_ty);
+    if (acc_ty) {
+      check_access_type(ary_info.first, acc_ty);
+      unsigned a = scalar_bits(acc_ty);
+      if (a > bits) bits = a;
+    }
+    unsigned cells = 1;
+    if (cell_bits > 0 && bits > cell_bits)
+      cells = (bits + cell_bits - 1)/cell_bits;
+    if (cells > ary_to_cells[id]) ary_to_cells[id] = cells;
+  };
+
   for( const bb* bb : bb_vec ) {
     if( bb == NULL ) continue;
     if( bidx++ < processed_bidx ) continue;
     for( auto it = bb->begin(), e = bb->end(); it != e; ++it) {
       auto I = &(*it);
-      // std::cout << "CURRENT INSTRUCTION IS -";
-      // I->print(llvm::outs());
-      // std::cout <<"\n";
       if( auto load = llvm::dyn_cast<const llvm::LoadInst>(I) ) {
-        auto ary_info  = get_array_info( load->getPointerOperand() );
-        if( ary_info.first && exists( ary_to_int, ary_info.first )) {
-          ary_access_to_index[load] = ary_to_int.at( ary_info.first );
-
-          if( ary_info.first && !exists( ary_to_base, ary_access_to_index[load] ) ) {
-            // if(o.verbosity>=10)
-            //   std::cout << "Array: "<< ary_info.first->getName().str()<< "  [" << cnt<< "  ," << cnt+ary_info.second-1<< "]"<<std::endl;
-            ary_to_base[ary_to_int.at( ary_info.first )] = cnt;
-            cnt += ary_info.second;
+        // auto ary_info  = get_array_info( load->getPointerOperand() );
+        // if( ary_info.first && exists( ary_to_int, ary_info.first )) {
+          // ary_access_to_index[load] = ary_to_int.at( ary_info.first );
+          // if( ary_info.first && !exists( ary_to_base, ary_access_to_index[load] ) ) {
+            // ary_to_base[ary_to_int.at( ary_info.first )] = cnt;
+            // cnt += ary_info.second;
+        note(load->getPointerOperand(), load->getType(), load);
+      }else if (auto store = llvm::dyn_cast<const llvm::StoreInst>(I)) {
+        note(store->getPointerOperand(),
+              store->getValueOperand()->getType(), store);
           } 
-        }else{
-          // llvm_bmc_error("bmc", "Cound not identify array");
-        }
-      }else if( auto store = llvm::dyn_cast<const llvm::StoreInst>(I) ) {
-        auto ary_info  = get_array_info( store->getPointerOperand() );
-        if( ary_info.first && exists( ary_to_int, ary_info.first ) ){
-          ary_access_to_index[store] = ary_to_int.at( ary_info.first );
-          if( ary_info.first && !exists( ary_to_base, ary_access_to_index[store] ) ) {
-            // if(o.verbosity>=10)
-            //   std::cout << "Array: "<< ary_info.first->getName().str()<< "  [" << cnt<< "  ," << cnt+ary_info.second-1<< "]"<<std::endl;
-            ary_to_base[ary_to_int.at( ary_info.first )] = cnt;
-            cnt += ary_info.second;
-          } 
-        }else{
-          // llvm_bmc_error("bmc", "Cound not identify array");
-        }
+        // auto ary_info  = get_array_info( store->getPointerOperand() );
+        // if( ary_info.first && exists( ary_to_int, ary_info.first ) ){
+          // ary_access_to_index[store] = ary_to_int.at( ary_info.first );
+          // if( ary_info.first && !exists( ary_to_base, ary_access_to_index[store] ) ) {
+            // ary_to_base[ary_to_int.at( ary_info.first )] = cnt;
+            // cnt += ary_info.second;
+      else if (auto mi = llvm::dyn_cast<const llvm::MemIntrinsic>(I)) {
+        note(mi->getRawDest(), nullptr, nullptr);
+        if (auto mt = llvm::dyn_cast<const llvm::MemTransferInst>(mi))
+          note(mt->getRawSource(), nullptr, nullptr);
       }
       else if (auto eval = llvm::dyn_cast<const llvm::ExtractValueInst>(I)) {
-        auto ary_info = get_array_info( eval);
-        if( ary_info.first && exists( ary_to_int, ary_info.first ) ) {
-          ary_access_to_index[eval] = ary_to_int.at( ary_info.first );
-          if( ary_info.first && !exists( ary_to_base, ary_access_to_index[eval] ) ) {
-            ary_to_base[ary_to_int.at( ary_info.first )] = cnt;
-            cnt += ary_info.second;
-        } else {
-          // DO NOTHING
+        // auto ary_info = get_array_info( eval);
+        // if( ary_info.first && exists( ary_to_int, ary_info.first ) ) {
+          // ary_access_to_index[eval] = ary_to_int.at( ary_info.first );
+          // if( ary_info.first && !exists( ary_to_base, ary_access_to_index[eval] ) ) {
+            // ary_to_base[ary_to_int.at( ary_info.first )] = cnt;
+            // cnt += ary_info.second;
+        note(eval, nullptr, eval);
         }
       }
       }
-    }
+  for (unsigned id : order) {
+    ary_to_base[id] = cnt;
+    cnt += sizes.at(id)*ary_to_cells[id];
   }
   std::map< const llvm::Instruction*, unsigned >& map = ary_access_to_index;
   if(ar_model_local == FULL) {
@@ -440,7 +486,8 @@ init_full_array_model(std::map< const llvm::Instruction*, unsigned >& map ) {
   //todo : move to array model code
   ar_model_full->set_debug_map( debug_map );
   ar_model_full->set_array_info( ary_to_int);
-  ar_model_full->set_access_map( map, ary_to_base );
+  // ar_model_full->set_access_map( map, ary_to_base );
+  ar_model_full->set_access_map(map, ary_to_base, ary_to_cells);
 
   // This code is to print the mapping of arrays to global array
   std::string array_range_info=print_array_ranges();
@@ -450,6 +497,7 @@ init_full_array_model(std::map< const llvm::Instruction*, unsigned >& map ) {
     dump_file<<array_range_info;
     dump_file.close();
   }
+
 }
 
 
@@ -479,6 +527,27 @@ bmc_ds::array_write( unsigned bidx, const llvm::StoreInst* I,
   case FULL : return ar_model_full->array_write( bidx, I, idxs, val ); break;
   default: llvm_bmc_error( "bmc","array model incomplete implementation!!" );
   }
+}
+
+arr_write_expr bmc_ds::array_write_id(unsigned bidx, unsigned ary,
+                                       exprs& idxs, expr& val) {
+  if (ar_model_init != FULL)
+    llvm_bmc_error("bmc","array model incomplete implementation!!");
+  return ar_model_full->array_write_id(bidx, ary, idxs, val);
+}
+
+arr_read_expr bmc_ds::array_read_id(unsigned bidx, unsigned ary, exprs& idxs,
+                                     const llvm::Type* ty) {
+  if (ar_model_init != FULL)
+    llvm_bmc_error("bmc","array model incomplete implementation!!");
+  return ar_model_full->array_read_id(bidx, ary, idxs, ty);
+}
+
+bool bmc_ds::array_id(const llvm::Value* ptr, unsigned& id) {
+  auto info = get_array_info(ptr);
+  if (!info.first || !exists(ary_to_int, info.first)) return false;
+  id = ary_to_int.at(info.first);
+  return true;
 }
 
 arr_read_expr bmc_ds::array_read( unsigned bidx, const llvm::LoadInst* I,

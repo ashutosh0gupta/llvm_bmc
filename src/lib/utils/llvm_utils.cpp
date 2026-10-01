@@ -1,5 +1,18 @@
 #include "llvm_utils.h"
 #include "lib/utils/graph_utils.h"
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Transforms/InstCombine/InstCombine.h"
+#include "llvm/Transforms/Scalar/SROA.h"
+#include "llvm/Transforms/Utils/Mem2Reg.h"
+#include "llvm/Analysis/AssumptionCache.h"
+#include "llvm/Analysis/OptimizationRemarkEmitter.h"
+#include "llvm/Analysis/ScalarEvolution.h"
+#include "llvm/Analysis/TargetLibraryInfo.h"
+#include "llvm/Analysis/TargetTransformInfo.h"
+#include "llvm/TargetParser/Triple.h"
+#include "llvm/Transforms/Utils/LCSSA.h"
+#include "llvm/Transforms/Utils/LoopSimplify.h"
+#include "llvm/Transforms/Utils/UnrollLoop.h"
 #include <limits>
 // #include "daikon-inst/comments.h" //todo: move to utils
 #include <boost/algorithm/string.hpp>
@@ -45,6 +58,13 @@
 
 #define CLANG_VERSION "14"
 
+#ifndef GNAT_LLVM_BIN
+#define GNAT_LLVM_BIN "/home/dohil/iitb/mtp/part1/gnat-llvm/llvm-interface/bin"
+#endif
+
+#include <cmath>
+#include <cstdlib>
+
 void dump(const llvm::Value *v) {
   if (v)
     v->print(llvm::outs());
@@ -84,6 +104,7 @@ void c2bc(const std::string &fileName, const std::string &outName) {
       << " -emit-llvm -fno-omit-frame-pointer -Xclang -disable-O0-optnone "
          "-gdwarf-2 "
       << fileName << " -o " << outName << " -c";
+  // cmd << "llvm-gcc -c -S -gnatp -emit-llvm "
   // std::cout << cmd.str() << "\n";
   if (system(cmd.str().c_str()) != 0)
     exit(1);
@@ -596,6 +617,12 @@ std::unique_ptr<llvm::Module> c2ir(options &o) {
   return c2ir(o, comments_found);
 }
 
+    // llvm_bmc_error("ADA_PARSGING", "failed to find file " << filename);
+  // boost::filesystem::path src_path(filename);
+  // std::string ir_filename =
+      // (src_path.parent_path() / (src_path.stem().string() + ".ll")).string();
+  // ada2bc(filename,ir_filename);
+  // return llvm::parseIRFile(ir_filename, err, llvm_ctx);
 std::unique_ptr<llvm::Module> ir2ir(options &o, comments &cmts) {
   const std::string filename = o.get_input_file();
 
@@ -607,6 +634,51 @@ std::unique_ptr<llvm::Module> ir2ir(options &o, comments &cmts) {
   auto &llvm_ctx = o.get_llvm_context();
   llvm::SMDiagnostic err;
   return llvm::parseIRFile(filename, err, llvm_ctx);
+}
+
+// void ada2bc(const std::string &fileName, const std::string &outName) {
+void ada2bc(const std::string &fileName, const std::string &outName,
+            const std::vector<std::string> &dirs) {
+  const char *gnat_bin = getenv("GNAT_LLVM_BIN");
+  std::ostringstream cmd;
+  cmd << (gnat_bin ? gnat_bin : GNAT_LLVM_BIN)
+      << "/llvm-gcc -S -emit-llvm -gnatp -gnata -c";
+  for (auto &d : dirs)
+    cmd << " -I" << d;
+  cmd << " " << fileName << " -o " << outName;
+  if (system(cmd.str().c_str()) != 0)
+    llvm_bmc_error("ADA_PARSING", "gnat-llvm failed on " << fileName);
+}
+
+std::unique_ptr<llvm::Module> ada2ir(options &o, comments &cmts) {
+  const std::string filename = o.get_input_file();
+
+  if (!boost::filesystem::exists(filename)) {
+    llvm_bmc_error("ADA_PARSING", "failed to find file " << filename);
+    return nullptr;
+  }
+
+  boost::filesystem::path src(filename);
+  boost::filesystem::path out = o.outDirPath;
+  out /= src.stem().string() + ".ll";
+
+  // ada2bc(filename, out.string());
+  std::vector<std::string> dirs = o.get_include_dirs();
+  dirs.push_back(src.parent_path().empty() ? "." : src.parent_path().string());
+  ada2bc(filename, out.string(), dirs);
+
+  auto &llvm_ctx = o.get_llvm_context();
+  llvm::SMDiagnostic err;
+  auto module = llvm::parseIRFile(out.string(), err, llvm_ctx);
+  if (module == nullptr)
+    err.print("llvmbmc", llvm::errs());
+
+  boost::filesystem::path ali = out;
+  ali.replace_extension(".ali");
+  boost::system::error_code ec;
+  boost::filesystem::remove(ali, ec);
+
+  return module;
 }
 
 void ir2mf(std::unique_ptr<llvm::Module> &module) {
@@ -1490,13 +1562,22 @@ void buildBlockMap(llvm::BasicBlock *bb,
   }
 }
 
-int readInt(const llvm::ConstantInt *c) {
-  const llvm::APInt &n = c->getUniqueInteger();
-  unsigned len = n.getNumWords();
-  if (len > 1)
+// int readInt(const llvm::ConstantInt *c) {
+  // const llvm::APInt &n = c->getUniqueInteger();
+  // unsigned len = n.getNumWords();
+  // if (len > 1)
+int64_t readSInt(const llvm::ConstantInt *c) {
+  if (c->getBitWidth() > 64)
     llvm_bmc_error("llvm_utils", "long integers not supported!!");
-  const uint64_t *v = n.getRawData();
-  return *v;
+  // const uint64_t *v = n.getRawData();
+  // return *v;
+  return c->getSExtValue();
+}
+
+uint64_t readUInt(const llvm::ConstantInt *c) {
+  if (c->getBitWidth() > 64)
+    llvm_bmc_error("llvm_utils", "long integers not supported!!");
+  return c->getZExtValue();
 }
 
 float readFlt(const llvm::ConstantFP *c) {
@@ -1511,11 +1592,41 @@ double readDbl(const llvm::ConstantFP *c) {
   return v;
 }
 
-int readReal(const llvm::ConstantFP *c) {
+// int readReal(const llvm::ConstantFP *c) {
+void warn_real_floats() {
+  static bool warned = false;
+  if (warned)
+    return;
+  warned = true;
+  llvm_bmc_warning("llvm_utils", "floats are modelled as mathematical reals "
+                                 "(no rounding, NaN, infinity or overflow), "
+                                 "use -b for IEEE semantics");
+}
+
+expr readReal(solver_context &ctx, const llvm::ConstantFP *c) {
   const llvm::APFloat &n = c->getValueAPF();
-  auto int_v = n.bitcastToAPInt();
-  const uint64_t *v = int_v.getRawData();
-  return *v;
+  // auto int_v = n.bitcastToAPInt();
+  // const uint64_t *v = int_v.getRawData();
+  // return *v;
+  warn_real_floats();
+  if (!n.isFinite())
+    llvm_bmc_error("llvm_utils", "NaN/Inf constant has no real value, use -b");
+  if (n.isZero())
+    return ctx.real_val(0);
+  int e = 0;
+  double m = std::frexp(n.convertToDouble(), &e);
+  int64_t mant = (int64_t)std::ldexp(m, 53);
+  int k = e - 53;
+  bool neg = mant < 0;
+  llvm::APInt num(1200, neg ? -mant : mant);
+  llvm::APInt den(1200, 1);
+  if (k >= 0)
+    num = num.shl(k);
+  else
+    den = den.shl(-k);
+  std::string str = (neg ? "-" : "") + llvm::toString(num, 10, false) + "/" +
+                    llvm::toString(den, 10, false);
+  return ctx.real_val(str.c_str());
 }
 
 // Remove a loop
@@ -1697,13 +1808,12 @@ std::string getLocRange(const llvm::BasicBlock *b) {
 sort llvm_to_sort(solver_context &c, const llvm::Type *t) {
   assert(t);
   if (t->isIntegerTy()) {
-    if (t->isIntegerTy(16))
-      return c.int_sort();
-    if (t->isIntegerTy(32))
-      return c.int_sort();
-    if (t->isIntegerTy(64))
-      return c.int_sort();
-    if (t->isIntegerTy(8))
+    // if (t->isIntegerTy(16))
+    // if (t->isIntegerTy(32))
+    // if (t->isIntegerTy(64))
+    // if (t->isIntegerTy(8))
+    if (t->isIntegerTy(1))
+      return c.bool_sort();
       return c.int_sort();
   }
   if (t->isArrayTy()) {
@@ -1719,8 +1829,7 @@ sort llvm_to_sort(solver_context &c, const llvm::Type *t) {
     return c.array_sort(domains, z_te);
   }
   if (t->isFloatingPointTy()) {
-    // if( t->isFloatTy() ) return c.fpa_sort<32>();
-    // if( t->isDoubleTy() ) return c.fpa_sort<64>();
+    warn_real_floats();
     return c.real_sort();
   }
   if (t->isStructTy()) {
@@ -1896,16 +2005,14 @@ bool ignore_special_functions(const llvm::CallInst *call) {
 
 sort llvm_to_bv_sort(solver_context &c, const llvm::Type *t) {
   if (t->isIntegerTy()) {
-    if (t->isIntegerTy(16))
-      return c.bv_sort(16);
-    if (t->isIntegerTy(32))
-      return c.bv_sort(32);
-    if (t->isIntegerTy(64))
-      return c.bv_sort(64);
-    if (t->isIntegerTy(8))
-      return c.bv_sort(8);
-    if (t->isIntegerTy(1))
-      return c.bv_sort(1);
+    // if (t->isIntegerTy(16))
+      // return c.bv_sort(16);
+    // if (t->isIntegerTy(32))
+    // if (t->isIntegerTy(64))
+    // if (t->isIntegerTy(8))
+      // return c.bv_sort(8);
+      // return c.bv_sort(1);
+    return c.bv_sort(t->getIntegerBitWidth());
   } else if (t->isFunctionTy()) {
     llvm_bmc_error("llvm_utils", "function sorts are not supported");
   } else if (t->isStructTy()) {
@@ -1950,7 +2057,69 @@ sort llvm_to_bv_sort(solver_context &c, const llvm::Type *t) {
   return c.bv_sort(32); // dummy return
 }
 
+sort index_sort(options &o) {
+  return o.bit_precise ? o.solver_ctx.bv_sort(DEFAULT_INDEX_SORT)
+                       : o.solver_ctx.int_sort();
+}
+
+expr index_val(options &o, uint64_t i) {
+  return o.bit_precise ? o.solver_ctx.bv_val(i, DEFAULT_INDEX_SORT)
+                       : o.solver_ctx.int_val((int)i);
+}
+
+
+std::string struct_sort_name(const llvm::StructType *st) {
+  return st->hasName() ? st->getName().str()
+                       : "undef_struct_" +
+                             std::to_string(reinterpret_cast<uintptr_t>(st));
+}
+
+z3::func_decl struct_ctor(options &o, const llvm::StructType *st) {
+  solver_context &ctx = o.solver_ctx;
+  std::string key = struct_sort_name(st) + (o.bit_precise ? "#bv" : "#int");
+  auto it = o.struct_ctors.find(key);
+  if (it != o.struct_ctors.end())
+    return it->second;
+
+  unsigned n = st->getNumElements();
+  z3::sort_vector field_sorts(ctx);
+  for (unsigned i = 0; i < n; ++i)
+    field_sorts.push_back(llvm_to_sort(o, st->getElementType(i)));
+
+  std::vector<Z3_symbol> field_syms(n);
+  std::vector<Z3_sort> z3_sorts(n);
+  std::vector<unsigned> sort_refs(n, 0);
+  for (unsigned i = 0; i < n; ++i) {
+    field_syms[i] =
+        Z3_mk_string_symbol(ctx, ("field_" + std::to_string(i)).c_str());
+    z3_sorts[i] = (Z3_sort)field_sorts[i];
+  }
+
+  std::string name = struct_sort_name(st);
+  Z3_symbol ctor_sym = Z3_mk_string_symbol(ctx, name.c_str());
+  Z3_symbol recog_sym = Z3_mk_string_symbol(ctx, ("is_" + name).c_str());
+  Z3_constructor ctor = Z3_mk_constructor(
+      ctx, ctor_sym, recog_sym, n, n > 0 ? field_syms.data() : nullptr,
+      n > 0 ? z3_sorts.data() : nullptr, n > 0 ? sort_refs.data() : nullptr);
+  Z3_symbol dt_sym = Z3_mk_string_symbol(ctx, name.c_str());
+  Z3_constructor ctor_arr[1] = {ctor};
+  Z3_sort raw_sort = Z3_mk_datatype(ctx, dt_sym, 1, ctor_arr);
+  Z3_del_constructor(ctx, ctor);
+
+  z3::func_decl decl(ctx, Z3_get_datatype_sort_constructor(ctx, raw_sort, 0));
+  o.struct_ctors.emplace(key, decl);
+  return decl;
+}
+
 sort llvm_to_sort(options &o, const llvm::Type *t) {
+  if (auto st = llvm::dyn_cast<const llvm::StructType>(t)) {
+    if (st->getNumElements() > 0)
+      return struct_ctor(o, st).range();
+  }
+  if (auto at = llvm::dyn_cast<const llvm::ArrayType>(t)) {
+    return o.solver_ctx.array_sort(index_sort(o),
+                                   llvm_to_sort(o, at->getElementType()));
+  }
   if (o.bit_precise) {
     return llvm_to_bv_sort(o.solver_ctx, t);
   } else {
@@ -1968,70 +2137,49 @@ std::string read_const_str(options &o, const llvm::Value *op) {
   return "";
 }
 
-static z3::expr build_struct_expr(solver_context &ctx,
-                                  const std::string &struct_name,
-                                  z3::sort_vector &field_sorts,
-                                  z3::expr_vector &field_exprs, unsigned n) {
-  std::cout << "Building struct: " << struct_name << " with " << n
-            << " fields\n";
-  for (unsigned i = 0; i < n; ++i) {
-    std::cout << "  field " << i << " sort: " << field_sorts[i] << "\n";
-  }
-  std::vector<Z3_symbol> field_syms(n);
-  for (unsigned i = 0; i < n; ++i)
-    field_syms[i] =
-        Z3_mk_string_symbol(ctx, ("field_" + std::to_string(i)).c_str());
-
-  std::vector<Z3_sort> z3_sorts(n);
-  for (unsigned i = 0; i < n; ++i)
-    z3_sorts[i] = (Z3_sort)field_sorts[i];
-
-  std::vector<unsigned> sort_refs(n, 0);
-
-  Z3_symbol ctor_sym = Z3_mk_string_symbol(ctx, struct_name.c_str());
-  Z3_symbol recog_sym = Z3_mk_string_symbol(ctx, ("is_" + struct_name).c_str());
-
-  Z3_constructor ctor = Z3_mk_constructor(
-      ctx, ctor_sym, recog_sym, n, n > 0 ? field_syms.data() : nullptr,
-      n > 0 ? z3_sorts.data() : nullptr, n > 0 ? sort_refs.data() : nullptr);
-
-  Z3_symbol dt_sym = Z3_mk_string_symbol(ctx, struct_name.c_str());
-  Z3_constructor ctor_arr[1] = {ctor};
-  Z3_sort raw_sort = Z3_mk_datatype(ctx, dt_sym, 1, ctor_arr);
-  Z3_del_constructor(ctx, ctor);
-
-  Z3_func_decl raw_ctor_decl =
-      Z3_get_datatype_sort_constructor(ctx, raw_sort, 0);
-  z3::func_decl ctor_decl(ctx, raw_ctor_decl);
-
-  // std::cout << "ctor arity after finalization: " << ctor_decl.arity()
-  //         << " fields: " << n << "\n";
-
-  assert(ctor_decl.arity() == field_exprs.size());
-  return ctor_decl(field_exprs);
-}
-
+// static z3::expr build_struct_expr(solver_context &ctx,
+                                  // const std::string &struct_name,
+                                  // z3::sort_vector &field_sorts,
+                                  // z3::expr_vector &field_exprs, unsigned n) {
+  // std::cout << "Building struct: " << struct_name << " with " << n
+            // << " fields\n";
+    // std::cout << "  field " << i << " sort: " << field_sorts[i] << "\n";
+  // Z3_symbol ctor_sym = Z3_mk_string_symbol(ctx, struct_name.c_str());
+  // Z3_symbol recog_sym = Z3_mk_string_symbol(ctx, ("is_" + struct_name).c_str());
+  // Z3_symbol dt_sym = Z3_mk_string_symbol(ctx, struct_name.c_str());
+  // Z3_func_decl raw_ctor_decl =
+      // Z3_get_datatype_sort_constructor(ctx, raw_sort, 0);
+  // z3::func_decl ctor_decl(ctx, raw_ctor_decl);
+  // assert(ctor_decl.arity() == field_exprs.size());
+  // return ctor_decl(field_exprs);
 expr read_const(options &o, const llvm::Value *op) {
   // expr read_const( const llvm::Value* op, solver_context& ctx ) {
   solver_context &ctx = o.solver_ctx;
   assert(op);
   if (const llvm::ConstantInt *c = llvm::dyn_cast<llvm::ConstantInt>(op)) {
-    int i = readInt(c);
+    // int i = readInt(c);
     unsigned bw = c->getBitWidth();
     if (o.bit_precise) {
-      return ctx.bv_val(i, bw);
+      // return ctx.bv_val(i, bw);
+      if (bw > 64)
+        return ctx.bv_val(llvm::toString(c->getValue(), 10, false).c_str(), bw);
+      return ctx.bv_val(readUInt(c), bw);
     } else {
-      if (bw == 32 || bw == 64 || bw == 8 || bw == 16) {
-        return ctx.int_val(i);
-      } else if (bw == 1) {
-        assert(i == 0 || i == 1);
-        if (i == 1)
+      // if (bw == 32 || bw == 64 || bw == 8 || bw == 16) {
+        // return ctx.int_val(i);
+      // } else if (bw == 1) {
+        // assert(i == 0 || i == 1);
+        // if (i == 1)
+      if (bw == 1) {
+        if (readUInt(c) == 1)
           return ctx.bool_val(true);
         else
           return ctx.bool_val(false);
+      } else if (bw > 64) {
+        return ctx.int_val(llvm::toString(c->getValue(), 10, true).c_str());
       } else {
-        // c->dump();
-        llvm_bmc_error("llvm_utils", "unrecognized constant!");
+        // llvm_bmc_error("llvm_utils", "unrecognized constant!");
+        return ctx.int_val(readSInt(c));
       }
     }
   } else if (llvm::isa<llvm::ConstantPointerNull>(op)) {
@@ -2046,11 +2194,12 @@ expr read_const(options &o, const llvm::Value *op) {
         // todo: add support for signed an unsigned
         return get_fresh_bv(ctx, bw);
       } else {
-        if (bw == 32 || bw == 64 || bw == 16 || bw == 8) {
-          return get_fresh_int(ctx);
-        } else if (bw == 1) {
+        // if (bw == 32 || bw == 64 || bw == 16 || bw == 8) {
+        // } else if (bw == 1) {
+        if (bw == 1) {
           return get_fresh_bool(ctx);
         }
+        return get_fresh_int(ctx);
       }
     } else if (ty->isFloatingPointTy()) {
       if (o.bit_precise) {
@@ -2071,53 +2220,48 @@ expr read_const(options &o, const llvm::Value *op) {
     // const llvm::APFloat& n = c->getValueAPF();
   if (const llvm::ConstantFP *c = llvm::dyn_cast<llvm::ConstantFP>(op)) {
     llvm::Type *ty = op->getType();
-    if (ty->isFloatTy()) {
-      if (o.bit_precise) {
-        float i = readFlt(c);
-        return ctx.fpa_val(i);
-      } else {
-        int i = readReal(c);
-        return ctx.real_val(i);
-      }
-    } else if (ty->isDoubleTy()) {
-      if (o.bit_precise) {
-        double i = readDbl(c);
-        return ctx.fpa_val(i);
-      } else {
-        int i = readReal(c);
-        return ctx.real_val(i);
-      }
-    }
-    // double v = n.convertToDouble();
-    // return ctx.real_val(v);
-    // llvm_bmc_error("llvm_utils", "Floating point constant not implemented!!"
-    // );
+        // float i = readFlt(c);
+        // return ctx.fpa_val(i);
+        // int i = readReal(c);
+        // return ctx.real_val(i);
+        // double i = readDbl(c);
+        // return ctx.fpa_val(i);
+        // int i = readReal(c);
+        // return ctx.real_val(i);
+    if (!ty->isFloatTy() && !ty->isDoubleTy())
+      llvm_bmc_error("llvm_utils", "only float and double constants are supported");
+    if (!o.bit_precise)
+      return readReal(ctx, c);
+    if (ty->isFloatTy())
+      return ctx.fpa_val(readFlt(c));
+    return ctx.fpa_val(readDbl(c));
   } else if (llvm::isa<llvm::ConstantAggregateZero>(op)) {
     llvm::Type *t = op->getType();
     if (auto arr_ty = llvm::dyn_cast<llvm::ArrayType>(t)) {
-      sort arr = llvm_to_sort(ctx, arr_ty);
+      // sort arr = llvm_to_sort(ctx, arr_ty);
       expr z3_expr = read_const(
           o, llvm::ConstantInt::getNullValue(arr_ty->getElementType()));
-      return z3::const_array(arr, z3_expr);
+      // return z3::const_array(arr, z3_expr);
+      return z3::const_array(index_sort(o), z3_expr);
     }
     if (auto st_ty = llvm::dyn_cast<llvm::StructType>(t)) {
       unsigned n = st_ty->getNumElements();
-      std::string struct_name =
-          st_ty->hasName()
-              ? st_ty->getName().str()
-              : "undef_struct_" +
-                    std::to_string(reinterpret_cast<uintptr_t>(st_ty));
-
+      // std::string struct_name =
+          // st_ty->hasName()
+              // ? st_ty->getName().str()
+                    // std::to_string(reinterpret_cast<uintptr_t>(st_ty));
+      if (n == 0)
+        return ctx.int_val(0);
       z3::expr_vector field_exprs(ctx);
-      z3::sort_vector field_sorts(ctx);
-
-      for (unsigned i = 0; i < n; ++i) {
-        llvm::Type *ft = st_ty->getElementType(i);
-        expr val = read_const(o, llvm::Constant::getNullValue(ft));
-        field_exprs.push_back(val);
-        field_sorts.push_back(val.get_sort());
-      }
-      return build_struct_expr(ctx, struct_name, field_sorts, field_exprs, n);
+        // llvm::Type *ft = st_ty->getElementType(i);
+        // expr val = read_const(o, llvm::Constant::getNullValue(ft));
+        // field_exprs.push_back(val);
+        // field_sorts.push_back(val.get_sort());
+      // return build_struct_expr(ctx, struct_name, field_sorts, field_exprs, n);
+      for (unsigned i = 0; i < n; ++i)
+        field_exprs.push_back(
+            read_const(o, llvm::Constant::getNullValue(st_ty->getElementType(i))));
+      return struct_ctor(o, st_ty)(field_exprs);
     }
     return ctx.int_val(0); // todo: match types in z3
   } else if (llvm::isa<llvm::Instruction>(op)) {
@@ -2142,13 +2286,15 @@ expr read_const(options &o, const llvm::Value *op) {
     llvm::Type *elem_ty = AT->getElementType();
     // unsigned n = AT->getNumElements();
 
-    sort idx_sort = llvm_to_sort(ctx, AT);
+    // sort idx_sort = llvm_to_sort(ctx, AT);
     expr zero_expr = read_const(o, llvm::ConstantInt::getNullValue(elem_ty));
-    expr arr = z3::const_array(idx_sort, zero_expr);
+    // expr arr = z3::const_array(idx_sort, zero_expr);
+    expr arr = z3::const_array(index_sort(o), zero_expr);
     for (unsigned i = 0; i < c->getNumOperands(); ++i) {
-      expr idx = ctx.int_val(i);
+      // expr idx = ctx.int_val(i);
       expr val = read_const(o, c->getOperand(i));
-      arr = z3::store(arr, i, val);
+      // arr = z3::store(arr, i, val);
+      arr = z3::store(arr, index_val(o, i), val);
     }
     return arr;
     // llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
@@ -2157,21 +2303,17 @@ expr read_const(options &o, const llvm::Value *op) {
     unsigned n = st_ty->getNumElements();
     if (n == 0)
       return ctx.int_val(0);
-    std::string struct_name =
-        st_ty->hasName()
-            ? st_ty->getName().str()
-            : "undef_struct_" +
-                  std::to_string(reinterpret_cast<uintptr_t>(st_ty));
-
+    // std::string struct_name =
+        // st_ty->hasName()
+            // ? st_ty->getName().str()
+                  // std::to_string(reinterpret_cast<uintptr_t>(st_ty));
     z3::expr_vector field_exprs(ctx);
-    z3::sort_vector field_sorts(ctx);
-
-    for (unsigned i = 0; i < n; ++i) {
-      expr val = read_const(o, c->getOperand(i));
-      field_exprs.push_back(val);
-      field_sorts.push_back(val.get_sort());
-    }
-    return build_struct_expr(ctx, struct_name, field_sorts, field_exprs, n);
+      // field_exprs.push_back(val);
+      // field_sorts.push_back(val.get_sort());
+    // return build_struct_expr(ctx, struct_name, field_sorts, field_exprs, n);
+    for (unsigned i = 0; i < n; ++i)
+      field_exprs.push_back(read_const(o, c->getOperand(i)));
+    return struct_ctor(o, st_ty)(field_exprs);
 
     // return ctx.int_val(0);
     // llvm_bmc_error("llvm_utils", "case for constant not implemented!!" );
@@ -2181,13 +2323,15 @@ expr read_const(options &o, const llvm::Value *op) {
     llvm::Type *elem_ty = VT->getElementType();
     // unsigned n = VT->getElementCount().getKnownMinValue();
 
-    sort idx_sort = ctx.int_sort();
+    // sort idx_sort = ctx.int_sort();
     expr zero_expr = read_const(o, llvm::ConstantInt::getNullValue(elem_ty));
-    expr arr = z3::const_array(idx_sort, zero_expr);
+    // expr arr = z3::const_array(idx_sort, zero_expr);
+    expr arr = z3::const_array(index_sort(o), zero_expr);
     for (unsigned i = 0; i < c->getNumOperands(); ++i) {
-      expr idx = ctx.int_val(i);
+      // expr idx = ctx.int_val(i);
       expr val = read_const(o, c->getOperand(i));
-      arr = z3::store(arr, i, val);
+      // arr = z3::store(arr, i, val);
+      arr = z3::store(arr, index_val(o, i), val);
     }
     return arr;
     // llvm_bmc_error("llvm_utils", "vector constant not implemented!!" );
@@ -2195,24 +2339,25 @@ expr read_const(options &o, const llvm::Value *op) {
     llvm::Type *elem_ty = c->getElementType();
     unsigned n = c->getNumElements();
 
-    sort idx_sort = ctx.int_sort();
+    // sort idx_sort = ctx.int_sort();
     expr zero_expr = read_const(o, llvm::ConstantInt::getNullValue(elem_ty));
-    expr arr = z3::const_array(idx_sort, zero_expr);
+    // expr arr = z3::const_array(idx_sort, zero_expr);
+    expr arr = z3::const_array(index_sort(o), zero_expr);
 
     for (unsigned i = 0; i < n; ++i) {
       expr val = read_const(o, c->getElementAsConstant(i));
-      arr = z3::store(arr, i, val);
+      // arr = z3::store(arr, i, val);
+      arr = z3::store(arr, index_val(o, i), val);
     }
     return arr;
   } else if (auto c = llvm::dyn_cast<llvm::Constant>(op)) {
     if (auto *ci = llvm::dyn_cast<llvm::ConstantInt>(c)) {
-      return ctx.bv_val(readInt(ci), ci->getBitWidth());
-    } else if (auto *cf = llvm::dyn_cast<llvm::ConstantFP>(c)) {
-      if (c->getType()->isFloatTy()) {
-        return ctx.fpa_val(readFlt(cf));
-      } else {
-        return ctx.fpa_val(readDbl(cf));
-      }
+      // return ctx.bv_val(readInt(ci), ci->getBitWidth());
+    // } else if (auto *cf = llvm::dyn_cast<llvm::ConstantFP>(c)) {
+      // if (c->getType()->isFloatTy()) {
+        // return ctx.fpa_val(readFlt(cf));
+        // return ctx.fpa_val(readDbl(cf));
+      return ctx.bv_val(readUInt(ci), ci->getBitWidth());
     }
     // expr e(ctx);
     // return e; // contains no expression;
@@ -2318,6 +2463,105 @@ void forced_inliner_pass(std::unique_ptr<llvm::Module> &module) {
   llvm::legacy::PassManager inline_passMan;
   inline_passMan.add(llvm::createAlwaysInlinerLegacyPass());
   inline_passMan.run(*module.get());
+}
+
+void bounded_unroll_pass(options &o, std::unique_ptr<llvm::Module> &module) {
+  bool unroll = o.llvm_unroll;
+  llvm::TargetLibraryInfoImpl tlii(llvm::Triple(module->getTargetTriple()));
+  llvm::TargetTransformInfo tti(module->getDataLayout());
+  for (llvm::Function &f : *module) {
+    if (f.isDeclaration())
+      continue;
+    {
+      llvm::LoopAnalysisManager lam;
+      llvm::FunctionAnalysisManager fam;
+      llvm::CGSCCAnalysisManager cgam;
+      llvm::ModuleAnalysisManager mam;
+      llvm::PassBuilder pb;
+      pb.registerModuleAnalyses(mam);
+      pb.registerCGSCCAnalyses(cgam);
+      pb.registerFunctionAnalyses(fam);
+      pb.registerLoopAnalyses(lam);
+      pb.crossRegisterProxies(lam, fam, cgam, mam);
+      llvm::FunctionPassManager fpm;
+      fpm.addPass(llvm::LoopSimplifyPass());
+      fpm.addPass(llvm::LCSSAPass());
+      fpm.run(f, fam);
+    }
+    if (!unroll)
+      continue;
+    llvm::DominatorTree dt(f);
+    llvm::LoopInfo li(dt);
+    llvm::AssumptionCache ac(f);
+    llvm::TargetLibraryInfo tli(tlii);
+    llvm::ScalarEvolution se(f, tli, ac, dt, li);
+    llvm::OptimizationRemarkEmitter ore(&f);
+    llvm::SmallVector<llvm::Loop *, 8> loops = li.getLoopsInPreorder();
+    for (auto it = loops.rbegin(); it != loops.rend(); ++it) {
+      llvm::Loop *l = *it;
+      unsigned tc = se.getSmallConstantTripCount(l);
+      uint64_t size = 0;
+      for (llvm::BasicBlock *b : l->blocks())
+        size += b->size();
+      bool complete = tc != 0 && (uint64_t)tc * size <= 30000;
+      unsigned count = complete ? tc : o.loop_unroll_count;
+      if (!complete && count < 2)
+        continue;
+      llvm::UnrollLoopOptions ulo;
+      ulo.Count = count;
+      ulo.Force = true;
+      ulo.Runtime = false;
+      ulo.AllowExpensiveTripCount = true;
+      ulo.UnrollRemainder = false;
+      ulo.ForgetAllSCEV = true;
+      ulo.SCEVExpansionBudget = 0;
+      unsigned line = l->getStartLoc() ? l->getStartLoc().getLine() : 0;
+      auto res = llvm::UnrollLoop(l, ulo, &li, &se, &dt, &ac, &tti, &ore, true);
+      if (res == llvm::LoopUnrollResult::Unmodified)
+        llvm_bmc_warning("llvm_utils", "could not unroll the loop at line "
+                                           << line
+                                           << ", only one iteration is modelled");
+    }
+  }
+}
+
+
+void cleanup_after_inline_pass(std::unique_ptr<llvm::Module> &module) {
+  bool has_ptr_int_cast = false;
+  for (auto &f : *module.get()) {
+    for (auto &b : f) {
+      for (auto &i : b) {
+        if (llvm::isa<llvm::PtrToIntInst>(&i) ||
+            llvm::isa<llvm::IntToPtrInst>(&i)) {
+          has_ptr_int_cast = true;
+          break;
+        }
+      }
+      if (has_ptr_int_cast) break;
+    }
+    if (has_ptr_int_cast) break;
+  }
+  if (!has_ptr_int_cast)
+    return;
+
+  llvm::PassBuilder PB;
+  llvm::LoopAnalysisManager LAM;
+  llvm::FunctionAnalysisManager FAM;
+  llvm::CGSCCAnalysisManager CGAM;
+  llvm::ModuleAnalysisManager MAM;
+  PB.registerModuleAnalyses(MAM);
+  PB.registerCGSCCAnalyses(CGAM);
+  PB.registerFunctionAnalyses(FAM);
+  PB.registerLoopAnalyses(LAM);
+  PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+  llvm::ModulePassManager MPM;
+  llvm::FunctionPassManager FPM;
+  FPM.addPass(llvm::SROAPass(llvm::SROAOptions::ModifyCFG));
+  FPM.addPass(llvm::InstCombinePass());
+  FPM.addPass(llvm::PromotePass());
+  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM)));
+  MPM.run(*module.get(), MAM);
 }
 
 void prepare_module(std::unique_ptr<llvm::Module> &module) {
@@ -2471,6 +2715,62 @@ uint64_t get_type_flat_size( const llvm::Type* ty ) {
   return sz;
 }
 
+unsigned scalar_bits(const llvm::Type* ty) {
+  if (ty->isIntegerTy()) return ty->getIntegerBitWidth();
+  if (ty->isFloatingPointTy()) return ty->getPrimitiveSizeInBits();
+  if (ty->isPointerTy()) return DEFAULT_INDEX_SORT;
+  return 0;
+}
+
+unsigned max_leaf_bits(const llvm::Type* ty) {
+  if (auto at = llvm::dyn_cast<const llvm::ArrayType>(ty))
+    return max_leaf_bits(at->getElementType());
+  if (auto st = llvm::dyn_cast<const llvm::StructType>(ty)) {
+    unsigned mx = 0;
+    for (unsigned k = 0; k < st->getNumElements(); k++) {
+      unsigned b = max_leaf_bits(st->getElementType(k));
+      if (b > mx) mx = b;
+    }
+    return mx;
+  }
+  return scalar_bits(ty);
+}
+
+bool byte_offset_to_indices(const llvm::Type* ty, uint64_t off,
+                             const llvm::DataLayout& dl,
+                             std::vector<uint64_t>& idxs) {
+  while (true) {
+    if (auto at = llvm::dyn_cast<const llvm::ArrayType>(ty)) {
+      auto e_ty = at->getElementType();
+      uint64_t esz = dl.getTypeAllocSize(e_ty);
+      if (esz == 0) return false;
+      idxs.push_back(off/esz);
+      off = off%esz;
+      ty = e_ty;
+    } else if (auto st = llvm::dyn_cast<llvm::StructType>(const_cast<llvm::Type*>(ty))) {
+      if (off >= dl.getTypeAllocSize(st)) return false;
+      auto sl = dl.getStructLayout(st);
+      unsigned f = sl->getElementContainingOffset(off);
+      idxs.push_back(f);
+      off -= sl->getElementOffset(f);
+      ty = st->getElementType(f);
+    } else {
+      return off == 0;
+    }
+  }
+}
+
+bool has_leaf_of_bits(const llvm::Type* ty, unsigned bits) {
+  if (auto at = llvm::dyn_cast<const llvm::ArrayType>(ty))
+    return has_leaf_of_bits(at->getElementType(), bits);
+  if (auto st = llvm::dyn_cast<const llvm::StructType>(ty)) {
+    for (unsigned k = 0; k < st->getNumElements(); k++)
+      if (has_leaf_of_bits(st->getElementType(k), bits)) return true;
+    return false;
+  }
+  return scalar_bits(ty) == bits;
+}
+
 const std::pair<const llvm::Value *, uint64_t>
 get_array_info(const llvm::Value *op) {
 
@@ -2508,21 +2808,12 @@ get_array_info(const llvm::Value *op) {
     uint64_t size = 1; // default size for non-array types
 
     llvm::Type *type = glb->getValueType();
-    // if (llvm::ArrayType *arrayType = llvm::dyn_cast<llvm::ArrayType>(type)) {
-    //   // llvm::Type* elementType = arrayType->getElementType();
-    //   size = arrayType->getNumElements();
-    // }
     size=get_type_flat_size(type);
     return std::make_pair(glb, size);
   } else if (llvm::dyn_cast<const llvm::AllocaInst>(op)) {
     // auto alloc =
     // To handle a[0] when a is dynamic sized array
     auto alloca = llvm::dyn_cast<const llvm::AllocaInst>(op);
-    // uint64_t size = 0;
-    // if (auto arrayTy =
-    //         llvm::dyn_cast<llvm::ArrayType>(alloca->getAllocatedType())) {
-    //   size = arrayTy->getNumElements();
-    // }
     uint64_t size = get_type_flat_size(alloca->getAllocatedType());
 
     // llvm::errs() << "Alloca var Name = " << alloca->getName() << " Size = "
@@ -2536,10 +2827,6 @@ get_array_info(const llvm::Value *op) {
 
   } else if (auto addr = llvm::dyn_cast<const llvm::Argument>(op)) {
     // passed as an argument
-    // uint64_t size = 0;
-    // if (auto arrayTy = llvm::dyn_cast<llvm::ArrayType>(op->getType())) {
-    //   size = arrayTy->getNumElements();
-    // }
     uint64_t size = get_type_flat_size(op->getType());
     return std::make_pair(addr, size);
   } else if (auto cnst = llvm::dyn_cast<const llvm::ConstantExpr>(op)) {

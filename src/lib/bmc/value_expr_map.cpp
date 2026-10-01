@@ -20,6 +20,9 @@ void value_expr_map::insert_term_map(const llvm::Value *op, expr e) {
 void value_expr_map::insert_term_map(const llvm::Value *op, unsigned c_count,
                                      expr e) {
   assert(op);
+  if (static_cast<Z3_ast>(e) == nullptr)
+    llvm_bmc_error("value_expr_map", "empty term built for value "
+                                         << op->getName().str());
   auto it = versions.find(op);
   if (it == versions.end()) {
     // assert( c_count == 0 );
@@ -44,6 +47,14 @@ expr value_expr_map::insert_new_def(const llvm::Value *op) {
   auto it = versions.find(op);
   unsigned count = (it == versions.end()) ? 0 : versions[op].back() + 1;
   return insert_new_def(op, count);
+}
+
+bool value_expr_map::has_term(const llvm::Value *op) {
+  assert(op);
+  expr c = read_constant(op);
+  if (c)
+    return true;
+  return versions.find(op) != versions.end();
 }
 
 expr value_expr_map::get_term(const llvm::Value *op) {
@@ -93,8 +104,17 @@ expr value_expr_map::get_earlier_term(const llvm::Value *op, unsigned c_count) {
         break;
       }
     }
-    return read_term(op, c_count);
+    // return read_term(op, c_count);
+    expr e = read_term(op, c_count);
+    if (e)
+      return e;
   }
+  op->print(llvm::errs());
+  llvm::errs() << "\n";
+  llvm_bmc_error("value_expr_map",
+                 "no term for the value coming in on this path!!");
+  expr e(ctx);
+  return e;
 }
 
 expr value_expr_map::create_fresh_name(const llvm::Value *op) {

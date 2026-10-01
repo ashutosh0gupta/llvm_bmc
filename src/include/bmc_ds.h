@@ -18,7 +18,8 @@ enum spec_reason_t{
   ASSERT,       // property occured in code
   OUT_OF_BOUND, // out of range access to arrays
   OUT_OF_RANGE, // overflow/underflow
-  ASSUME        // assumption/pre-condition in code
+  ASSUME,       // assumption/pre-condition in code
+  UNWIND_BOUND
 };
 
 
@@ -36,6 +37,7 @@ public:
 
   //checkers
   bool is_unreach() {return reason == UNREACHABLE; }
+  bool is_unwind() {return reason == UNWIND_BOUND; }
   
   //printers
   void dump();
@@ -92,12 +94,16 @@ public:
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
   std::map< const llvm::Value*, unsigned >& ary_to_int;
   std::map< unsigned, unsigned > ary_to_base;
+  std::map< unsigned, unsigned > ary_to_cells;
 
   void set_array_length( const llvm::Value*, std::vector<expr>& );
   arr_write_expr array_write( unsigned, const llvm::StoreInst*,exprs&, expr& );
   arr_read_expr array_read( unsigned, const llvm::LoadInst*, exprs& );
   arr_read_expr array_read( unsigned, const llvm::ExtractValueInst*, exprs&);
   arr_read_expr array_read( unsigned, const llvm::CallInst*, exprs&);
+  arr_write_expr array_write_id(unsigned, unsigned, exprs&, expr&);
+  arr_read_expr array_read_id(unsigned, unsigned, exprs&, const llvm::Type*);
+  bool array_id(const llvm::Value*, unsigned&);
   expr join_array_state( std::vector<expr>&,
                          std::vector<unsigned>&, unsigned );
 
@@ -148,7 +154,6 @@ public:
 
   std::string print_array_ranges();
   std::string print_array_names();
-  
   void print_formulas( unsigned print_from = 0, unsigned print_spec_from = 0);
 
   void insert_prev_idx( unsigned bidx, unsigned prev_bidx);

@@ -143,6 +143,19 @@ void bmc::run_bmc_pass() {
     // if( threads.size() == 1) {
     //   o.funcName = threads[0].entry_function;
     // }
+    bool found = false;
+    std::string candidates;
+    for (auto& f : *module.get()) {
+      if (f.isDeclaration()) continue;
+      std::string fname = demangle(f.getName().str());
+      if (fname == o.funcName) { found = true; break; }
+      candidates += "  " + fname + "\n";
+    }
+    if (!found) {
+      llvm_bmc_error("bmc", "entry function \"" << o.funcName
+                      << "\" not found in the module. Defined functions:\n"
+                      << candidates);
+    }
     passMan.add( new bmc_fun_pass(o, o.solver_ctx,*this));
     passMan.run( *module.get() );
   }

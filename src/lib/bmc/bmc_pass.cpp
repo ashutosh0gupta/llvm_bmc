@@ -63,6 +63,22 @@ expr switch_sort(options &o, expr &b, sort &s) {
   return switch_int_sort(b, s);
 }
 
+static bool is_logical_op(unsigned op) {
+  return op == llvm::Instruction::And || op == llvm::Instruction::Or ||
+         op == llvm::Instruction::Xor;
+}
+
+static void warn_no_wraparound(const llvm::Instruction *I) {
+  static bool warned = false;
+  if (warned)
+    return;
+  warned = true;
+  unsigned line = I->getDebugLoc() ? I->getDebugLoc().getLine() : 0;
+  llvm_bmc_warning("bmc", "integer mode does not model wrap-around; "
+                          "arithmetic that may wrap found at line "
+                              << line << ", use -b for exact results");
+}
+
 void bmc_pass::translateBinOp(unsigned bidx, const llvm::BinaryOperator *bop) {
   assert(bop);
   auto op0 = bop->getOperand(0);
@@ -76,12 +92,88 @@ void bmc_pass::translateBinOp(unsigned bidx, const llvm::BinaryOperator *bop) {
   // if something is int. Our translation may incorrectly identify
   // sort of some constant number. The following code corrects the mismatch
   if (!matched_sort(a, b)) {
+    auto bv1_to_bool = [&](expr &x) {
+      if (x.is_bv() && x.get_sort().bv_size() == 1)
+        x = (x == solver_ctx.bv_val(1, 1));
+    };
+    if (a.is_bool())
+      bv1_to_bool(b);
+    else if (b.is_bool())
+      bv1_to_bool(a);
+  }
+  if (!matched_sort(a, b)) {
     if (is_const(a)) {
       auto s = b.get_sort();
       a = switch_sort(o, a, s);
     } else if (is_const(b)) {
       auto s = a.get_sort();
       b = switch_sort(o, b, s);
+    }
+  }
+
+  if (a.is_real())
+    warn_real_floats();
+  if (!o.bit_precise && a.is_bool() && b.is_bool() &&
+      bop->getType()->isIntegerTy(1) && !is_logical_op(bop->getOpcode())) {
+    expr ia = ite(a, solver_ctx.int_val(1), solver_ctx.int_val(0));
+    expr ib = ite(b, solver_ctx.int_val(1), solver_ctx.int_val(0));
+    expr r = ia;
+    switch (bop->getOpcode()) {
+    case llvm::Instruction::Add: r = ia + ib; break;
+    case llvm::Instruction::Sub: r = ia - ib; break;
+    case llvm::Instruction::Mul: r = ia * ib; break;
+    case llvm::Instruction::SDiv: r = int_sdiv(ia, ib); break;
+    case llvm::Instruction::SRem: r = int_srem(ia, ib); break;
+    case llvm::Instruction::UDiv: r = int_udiv(ia, ib, 1); break;
+    case llvm::Instruction::URem: r = int_urem(ia, ib, 1); break;
+    default:
+      LLVM_DUMP(bop);
+      llvm_bmc_error("bmc", "this operation on a one bit value is not supported in integer mode, use -b");
+    }
+    bmc_ds_ptr->m.insert_term_map(bop, bidx, int_wrap(r, 1) == 1);
+    return;
+  }
+  if (!o.bit_precise && a.is_int() && bop->getType()->isIntegerTy()) {
+    unsigned w = bop->getType()->getIntegerBitWidth();
+    switch (bop->getOpcode()) {
+    case llvm::Instruction::And:
+      bmc_ds_ptr->m.insert_term_map(bop, bidx, int_bitop(a, b, w, '&'));
+      return;
+    case llvm::Instruction::Or:
+      bmc_ds_ptr->m.insert_term_map(bop, bidx, int_bitop(a, b, w, '|'));
+      return;
+    case llvm::Instruction::Xor:
+      bmc_ds_ptr->m.insert_term_map(bop, bidx, int_bitop(a, b, w, '^'));
+      return;
+    case llvm::Instruction::SDiv:
+      bmc_ds_ptr->m.insert_term_map(bop, bidx, int_sdiv(a, b));
+      return;
+    case llvm::Instruction::SRem:
+      bmc_ds_ptr->m.insert_term_map(bop, bidx, int_srem(a, b));
+      return;
+    case llvm::Instruction::UDiv:
+      bmc_ds_ptr->m.insert_term_map(bop, bidx, int_udiv(a, b, w));
+      return;
+    case llvm::Instruction::URem:
+      bmc_ds_ptr->m.insert_term_map(bop, bidx, int_urem(a, b, w));
+      return;
+    case llvm::Instruction::LShr:
+      bmc_ds_ptr->m.insert_term_map(bop, bidx, int_lshr(a, b, w));
+      return;
+    case llvm::Instruction::AShr:
+      bmc_ds_ptr->m.insert_term_map(bop, bidx, int_ashr(a, b));
+      return;
+    case llvm::Instruction::Shl:
+      bmc_ds_ptr->m.insert_term_map(bop, bidx, int_shl(a, b, w));
+      return;
+    case llvm::Instruction::Add:
+    case llvm::Instruction::Sub:
+    case llvm::Instruction::Mul:
+      if (!bop->hasNoSignedWrap())
+        warn_no_wraparound(bop);
+      break;
+    default:
+      break;
     }
   }
 
@@ -108,19 +200,24 @@ void bmc_pass::translateBinOp(unsigned bidx, const llvm::BinaryOperator *bop) {
     bmc_ds_ptr->m.insert_term_map(bop, bidx, _xor(a, b));
     break;
   case llvm::Instruction::SDiv:
-    bmc_ds_ptr->m.insert_term_map(bop, bidx, a / b);
+    bmc_ds_ptr->m.insert_term_map(bop, bidx, bv_sdiv(a, b));
     break;
   case llvm::Instruction::UDiv:
-    bmc_ds_ptr->m.insert_term_map(bop, bidx, a / b);
+    bmc_ds_ptr->m.insert_term_map(bop, bidx, bv_udiv(a, b));
     break;
   case llvm::Instruction::SRem:
-    bmc_ds_ptr->m.insert_term_map(bop, bidx, rem(a, b));
+    // bmc_ds_ptr->m.insert_term_map(bop, bidx, rem(a, b));
+    bmc_ds_ptr->m.insert_term_map(bop, bidx, bv_srem(a, b));
     break;
   case llvm::Instruction::URem:
-    bmc_ds_ptr->m.insert_term_map(bop, bidx, rem(a, b));
+    // bmc_ds_ptr->m.insert_term_map(bop, bidx, rem(a, b));
+    bmc_ds_ptr->m.insert_term_map(bop, bidx, bv_urem(a, b));
     break;
   case llvm::Instruction::LShr:
     bmc_ds_ptr->m.insert_term_map(bop, bidx, LogShR(a, b));
+    break;
+  case llvm::Instruction::AShr:
+    bmc_ds_ptr->m.insert_term_map(bop, bidx, ArithShR(a, b));
     break;
   case llvm::Instruction::Shl:
     bmc_ds_ptr->m.insert_term_map(bop, bidx, bv_shl(a, b));
@@ -302,6 +399,14 @@ void bmc_pass::translateCmpInst(unsigned bidx, const llvm::CmpInst *cmp) {
 
   // construct expression for comparision
   llvm::CmpInst::Predicate pred = cmp->getPredicate();
+  if (llvm::CmpInst::isUnsigned(pred) && l.is_int() &&
+      lhs->getType()->isIntegerTy()) {
+    unsigned w = lhs->getType()->getIntegerBitWidth();
+    l = int_as_unsigned(l, w);
+    r = int_as_unsigned(r, w);
+  }
+  bool fp = l.is_fpa();
+  expr unord = fp ? (l.mk_is_nan() || r.mk_is_nan()) : solver_ctx.bool_val(false);
   expr cnd(solver_ctx);
   switch (pred) {
   // Integer compare instructions
@@ -312,16 +417,16 @@ void bmc_pass::translateCmpInst(unsigned bidx, const llvm::CmpInst *cmp) {
     cnd = (l != r);
     break;
   case llvm::CmpInst::ICMP_UGT:
-    cnd = (l > r);
+    cnd = l.is_bv() ? z3::ugt(l, r) : (l > r);
     break;
   case llvm::CmpInst::ICMP_UGE:
-    cnd = (l >= r);
+    cnd = l.is_bv() ? z3::uge(l, r) : (l >= r);
     break;
   case llvm::CmpInst::ICMP_ULT:
-    cnd = (l < r);
+    cnd = l.is_bv() ? z3::ult(l, r) : (l < r);
     break;
   case llvm::CmpInst::ICMP_ULE:
-    cnd = (l <= r);
+    cnd = l.is_bv() ? z3::ule(l, r) : (l <= r);
     break;
   case llvm::CmpInst::ICMP_SGT:
     cnd = (l > r);
@@ -337,10 +442,10 @@ void bmc_pass::translateCmpInst(unsigned bidx, const llvm::CmpInst *cmp) {
     break;
   // Added FP compare instructions
   case llvm::CmpInst::FCMP_OEQ:
-    cnd = (l == r);
+    cnd = fp ? z3::fp_eq(l, r) : (l == r);
     break;
   case llvm::CmpInst::FCMP_ONE:
-    cnd = (l != r);
+    cnd = fp ? (!unord && !z3::fp_eq(l, r)) : (l != r);
     break;
   case llvm::CmpInst::FCMP_OGT:
     cnd = (l > r);
@@ -355,22 +460,28 @@ void bmc_pass::translateCmpInst(unsigned bidx, const llvm::CmpInst *cmp) {
     cnd = (l <= r);
     break;
   case llvm::CmpInst::FCMP_UEQ:
-    cnd = (l == r);
+    cnd = fp ? (unord || z3::fp_eq(l, r)) : (l == r);
     break;
   case llvm::CmpInst::FCMP_UNE:
-    cnd = (l != r);
+    cnd = fp ? !z3::fp_eq(l, r) : (l != r);
     break;
   case llvm::CmpInst::FCMP_UGT:
-    cnd = (l > r);
+    cnd = unord || (l > r);
     break;
   case llvm::CmpInst::FCMP_UGE:
-    cnd = (l >= r);
+    cnd = unord || (l >= r);
     break;
   case llvm::CmpInst::FCMP_ULT:
-    cnd = (l < r);
+    cnd = unord || (l < r);
     break;
   case llvm::CmpInst::FCMP_ULE:
-    cnd = (l <= r);
+    cnd = unord || (l <= r);
+    break;
+  case llvm::CmpInst::FCMP_ORD:
+    cnd = !unord;
+    break;
+  case llvm::CmpInst::FCMP_UNO:
+    cnd = unord;
     break;
   default: {
     llvm_bmc_error("bmc", "unsupported predicate in compare " << pred << "!!");
@@ -422,6 +533,15 @@ void bmc_pass::translatePhiNode(unsigned bidx, const llvm::PHINode *phi) {
       expr prev_var = bmc_ds_ptr->m.get_earlier_term(v_, pre_bidx);
       // expr prev_var = bmc_ds_ptr->m.get_term( v_ );
       expr path_cond = extend_path(bidx, pre_bidx);
+      if (!z3::eq(prev_var.get_sort(), new_var.get_sort())) {
+        sort s = new_var.get_sort();
+        if (s.is_bool() && prev_var.is_bv())
+          prev_var = (prev_var == solver_ctx.bv_val(1, prev_var.get_sort().bv_size()));
+        else if (s.is_bv() && prev_var.is_bool())
+          prev_var = convert_to_bv(prev_var, s.bv_size());
+        else
+          prev_var = switch_sort(o, prev_var, s);
+      }
       phi_cons.push_back(implies(path_cond, new_var == prev_var));
     }
   }
@@ -454,6 +574,9 @@ void bmc_pass::assume_to_bmc(unsigned bidx, const llvm::CallInst *call) {
   expr assume_term = bmc_ds_ptr->m.get_term(call->getArgOperand(0));
   expr assume_bit = get_fresh_bool(solver_ctx, "assume");
   bmc_ds_ptr->set_path_bit(bidx, assume_bit);
+  if (!assume_term.is_bool()) {
+    assume_term = (assume_term != 0);
+  }
   bmc_ds_ptr->bmc_vec.push_back(assume_bit == (assume_path_bit && assume_term));
 }
 
@@ -516,20 +639,30 @@ void bmc_pass::translateNondet(unsigned bidx, const llvm::CallInst *call) {
   assert(call);
 
   llvm::Function *fp = call->getCalledFunction();
+  llvm::Type *rty = (fp != NULL) ? fp->getReturnType() : call->getType();
+  if (rty == NULL || !rty->isIntegerTy()) {
+    llvm_bmc_error("bmc", "nondet must return an integer type!");
+    return;
+  }
+  unsigned bw = rty->getIntegerBitWidth();
   if (o.bit_precise) {
-    llvm_bmc_error("bmc", "not det for bitprecise not implemented!");
+    // llvm_bmc_error("bmc", "not det for bitprecise not implemented!");
+    bmc_ds_ptr->m.insert_term_map(call, bidx,
+                                  get_fresh_bv(solver_ctx, bw, "nondet"));
+  } else if (bw == 1) {
+    bmc_ds_ptr->m.insert_term_map(call, bidx,
+                                  get_fresh_bool(solver_ctx, "nondet"));
   } else {
-    if (fp != NULL && (fp->getReturnType()->isIntegerTy(32) ||
-                       fp->getReturnType()->isIntegerTy(64) ||
-                       fp->getReturnType()->isIntegerTy(8))) {
-      expr nondet_int = get_fresh_int(solver_ctx, "nondet");
-      bmc_ds_ptr->m.insert_term_map(call, bidx, nondet_int);
-    } else if (fp != NULL && (fp->getReturnType()->isIntegerTy(1))) {
-      expr nondet_bit = get_fresh_bool(solver_ctx, "nondet");
-      bmc_ds_ptr->m.insert_term_map(call, bidx, nondet_bit);
-    } else {
-      llvm_bmc_error("bmc", "Unsupported nondet type!");
-    }
+    // if (fp != NULL && (fp->getReturnType()->isIntegerTy(32) ||
+                       // fp->getReturnType()->isIntegerTy(64) ||
+                       // fp->getReturnType()->isIntegerTy(8))) {
+      // expr nondet_int = get_fresh_int(solver_ctx, "nondet");
+      // bmc_ds_ptr->m.insert_term_map(call, bidx, nondet_int);
+    // } else if (fp != NULL && (fp->getReturnType()->isIntegerTy(1))) {
+      // expr nondet_bit = get_fresh_bool(solver_ctx, "nondet");
+      // bmc_ds_ptr->m.insert_term_map(call, bidx, nondet_bit);
+    bmc_ds_ptr->m.insert_term_map(call, bidx,
+                                  get_fresh_int(solver_ctx, "nondet"));
   }
 }
 
@@ -569,6 +702,198 @@ void bmc_pass::translateDebugInfo(unsigned bidx,
   } // not possible
 }
 
+static llvm::Type *whole_array_elem(const llvm::Value *p,
+                                    std::vector<uint64_t> &dims) {
+  const llvm::Value *base = p->stripPointerCasts();
+  llvm::Type *ty = nullptr;
+  if (auto a = llvm::dyn_cast<llvm::AllocaInst>(base))
+    ty = a->getAllocatedType();
+  else if (auto g = llvm::dyn_cast<llvm::GlobalVariable>(base))
+    ty = g->getValueType();
+  if (!ty)
+    return nullptr;
+  dims.clear();
+  while (auto at = llvm::dyn_cast<llvm::ArrayType>(ty)) {
+    dims.push_back(at->getNumElements());
+    ty = at->getElementType();
+  }
+  if (dims.empty())
+    dims.push_back(1);
+  if (!ty->isIntegerTy() && !ty->isFloatingPointTy())
+    return nullptr;
+  return ty;
+}
+
+void bmc_pass::translateMemIntrinsic(unsigned bidx,
+                                     const llvm::MemIntrinsic *mi) {
+  auto len_c = llvm::dyn_cast<llvm::ConstantInt>(mi->getLength());
+  if (!len_c)
+    llvm_bmc_error("bmc", "memset/memcpy with a non-constant length is not supported");
+  if (llvm::isa<llvm::MemMoveInst>(mi))
+    llvm_bmc_error("bmc", "memmove is not supported");
+  const llvm::DataLayout &dl = mi->getModule()->getDataLayout();
+  std::vector<uint64_t> ddims, sdims;
+  llvm::Type *dty = whole_array_elem(mi->getRawDest(), ddims);
+  auto cell = [&](const std::vector<uint64_t> &dims, uint64_t k) {
+    exprs idx(dims.size(), index_val(o, 0));
+    for (size_t d = dims.size(); d-- > 0;) {
+      idx[d] = index_val(o, k % dims[d]);
+      k /= dims[d];
+    }
+    return idx;
+  };
+  unsigned did;
+  if (!dty || !bmc_ds_ptr->array_id(mi->getRawDest()->stripPointerCasts(), did))
+    llvm_bmc_error("bmc", "memset/memcpy target must be a whole array of scalars");
+  uint64_t esz = dl.getTypeAllocSize(dty);
+  uint64_t len = len_c->getZExtValue();
+  if (len % esz != 0)
+    llvm_bmc_error("bmc", "memset/memcpy length is not a whole number of elements");
+  uint64_t n = len / esz;
+  expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+
+  std::vector<expr> vals;
+  if (auto ms = llvm::dyn_cast<llvm::MemSetInst>(mi)) {
+    auto byte = llvm::dyn_cast<llvm::ConstantInt>(ms->getValue());
+    if (!byte)
+      llvm_bmc_error("bmc", "memset with a non-constant byte is not supported");
+    llvm::Constant *c = nullptr;
+    if (dty->isIntegerTy(8))
+      c = llvm::ConstantInt::get(dty, byte->getZExtValue());
+    else if (byte->isZero())
+      c = llvm::Constant::getNullValue(dty);
+    else
+      llvm_bmc_error("bmc", "memset of a non-zero byte into wider elements is not supported");
+    for (uint64_t k = 0; k < n; k++)
+      vals.push_back(read_const(o, c));
+  } else {
+    auto mt = llvm::cast<llvm::MemTransferInst>(mi);
+    llvm::Type *sty = whole_array_elem(mt->getRawSource(), sdims);
+    unsigned sid;
+    if (!sty || sty != dty ||
+        !bmc_ds_ptr->array_id(mt->getRawSource()->stripPointerCasts(), sid))
+      llvm_bmc_error("bmc", "memcpy needs whole arrays of the same scalar type");
+    for (uint64_t k = 0; k < n; k++) {
+      exprs idx = cell(sdims, k);
+      auto rd = bmc_ds_ptr->array_read_id(bidx, sid, idx, sty);
+      if (o.include_out_of_bound_specs)
+        bmc_ds_ptr->add_spec(!path_bit || rd.size_bound_guard,
+                             spec_reason_t::OUT_OF_BOUND);
+      vals.push_back(rd.return_val);
+    }
+  }
+  for (uint64_t k = 0; k < n; k++) {
+    exprs idx = cell(ddims, k);
+    auto wr = bmc_ds_ptr->array_write_id(bidx, did, idx, vals[k]);
+    bmc_ds_ptr->bmc_vec.push_back(wr.updated_expr);
+    if (o.include_out_of_bound_specs)
+      bmc_ds_ptr->add_spec(!path_bit || wr.size_bound_guard,
+                           spec_reason_t::OUT_OF_BOUND);
+  }
+}
+
+static bool is_fabs_name(llvm::StringRef n) {
+  return n == "fabs" || n == "fabsf" || n == "fabsl";
+}
+
+static bool is_copysign_name(llvm::StringRef n) {
+  return n == "copysign" || n == "copysignf" || n == "copysignl" ||
+         n == "system__fat_flt__attr_float__copy_sign" ||
+         n == "system__fat_lflt__attr_long_float__copy_sign" ||
+         n == "system__fat_llf__attr_long_long_float__copy_sign";
+}
+
+static bool is_sqrt_name(llvm::StringRef n) {
+  return n == "sqrt" || n == "sqrtf" || n == "sqrtl" ||
+         (n.starts_with("ada__numerics__") && n.ends_with("__sqrt"));
+}
+
+static bool is_atan_name(llvm::StringRef n) {
+  return n == "atan" || n == "atanf" || n == "atanl" ||
+         n == "ada__numerics__aux_short_float__atan" ||
+         n == "ada__numerics__aux_float__atan" ||
+         n == "ada__numerics__aux_long_float__atan" ||
+         n == "ada__numerics__aux_long_long_float__atan";
+}
+
+static expr float_is_negative(expr const &x) {
+  if (x.is_fpa())
+    return to_expr(x.ctx(), Z3_mk_fpa_is_negative(x.ctx(), x));
+  return x < 0;
+}
+
+void bmc_pass::translateFloatAbs(unsigned bidx, const llvm::Instruction *I,
+                                 const llvm::Value *arg) {
+  expr x = bmc_ds_ptr->m.get_term(arg);
+  if (o.abstract_floats)
+    bmc_ds_ptr->m.insert_term_map(
+        I, bidx, bmc_ds_ptr->m_model.get_fresh_name(x.get_sort(), "fp_abst"));
+  else
+    bmc_ds_ptr->m.insert_term_map(I, bidx, z3::abs(x));
+}
+
+void bmc_pass::translateCopySign(unsigned bidx, const llvm::Instruction *I,
+                                 const llvm::Value *mag,
+                                 const llvm::Value *sgn) {
+  expr m = bmc_ds_ptr->m.get_term(mag);
+  expr sg = bmc_ds_ptr->m.get_term(sgn);
+  if (o.abstract_floats) {
+    bmc_ds_ptr->m.insert_term_map(
+        I, bidx, bmc_ds_ptr->m_model.get_fresh_name(m.get_sort(), "fp_abst"));
+    return;
+  }
+  expr a = z3::abs(m);
+  bmc_ds_ptr->m.insert_term_map(I, bidx, ite(float_is_negative(sg), -a, a));
+}
+
+void bmc_pass::translateAtan(unsigned bidx, const llvm::CallInst *call) {
+  llvm_bmc_warning("bmc", "atan is over-approximated at line "
+                              << (call->getDebugLoc()
+                                      ? call->getDebugLoc().getLine()
+                                      : 0)
+                              << ", a FAILED result may be spurious");
+  expr x = bmc_ds_ptr->m.get_term(call->getArgOperand(0));
+  expr r = bmc_ds_ptr->m_model.get_fresh_name(x.get_sort(), "atan");
+  expr facts(solver_ctx);
+  if (x.is_fpa()) {
+    expr h = call->getType()->isFloatTy()
+                 ? solver_ctx.fpa_val((float)1.5707963705062866)
+                 : solver_ctx.fpa_val(1.5707963267948966);
+    expr xnan = x.mk_is_nan();
+    expr zero = solver_ctx.fpa_val(0.0f);
+    if (!call->getType()->isFloatTy())
+      zero = solver_ctx.fpa_val(0.0);
+    expr ordinary = (x > zero) == (r > zero) && (x < zero) == (r < zero) &&
+                    implies(x.mk_is_zero(), r == x) &&
+                    z3::abs(r) <= z3::abs(x) && z3::abs(r) <= h;
+    facts = ite(xnan, r.mk_is_nan(), !r.mk_is_nan() && ordinary);
+  } else {
+    expr h = solver_ctx.real_val("15707963268/10000000000");
+    expr zero = solver_ctx.real_val(0);
+    facts = (x > zero) == (r > zero) && (x < zero) == (r < zero) && z3::abs(r) <= z3::abs(x) &&
+            z3::abs(r) <= h;
+  }
+  expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+  bmc_ds_ptr->bmc_vec.push_back(implies(path_bit, facts));
+  bmc_ds_ptr->m.insert_term_map(call, bidx, r);
+}
+
+void bmc_pass::translateSqrt(unsigned bidx, const llvm::CallInst *call) {
+  expr x = bmc_ds_ptr->m.get_term(call->getArgOperand(0));
+  if (x.is_fpa()) {
+    expr rm = to_expr(solver_ctx, Z3_mk_fpa_rne(solver_ctx));
+    expr r = to_expr(solver_ctx, Z3_mk_fpa_sqrt(solver_ctx, rm, x));
+    bmc_ds_ptr->m.insert_term_map(call, bidx, r);
+    return;
+  }
+  expr r = bmc_ds_ptr->m_model.get_fresh_name(x.get_sort(), "sqrt");
+  expr zero = solver_ctx.real_val(0);
+  expr facts = implies(x >= zero, r >= zero && r * r == x);
+  expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+  bmc_ds_ptr->bmc_vec.push_back(implies(path_bit, facts));
+  bmc_ds_ptr->m.insert_term_map(call, bidx, r);
+}
+
 int bmc_pass::translateIntrinsicInst(unsigned bidx,
                                      const llvm::IntrinsicInst *I) {
   assert(I);
@@ -583,8 +908,13 @@ int bmc_pass::translateIntrinsicInst(unsigned bidx,
     // do nothing
   } else if (I->getIntrinsicID() == llvm::Intrinsic::lifetime_end) {
     // do nothing
-  } else if (I->getIntrinsicID() == llvm::Intrinsic::memcpy) {
-    // do nothing - to be confirmed
+  // } else if (I->getIntrinsicID() == llvm::Intrinsic::memcpy) {
+  } else if (auto mi = llvm::dyn_cast<llvm::MemIntrinsic>(I)) {
+    translateMemIntrinsic(bidx, mi);
+  } else if (I->getIntrinsicID() == llvm::Intrinsic::fabs) {
+    translateFloatAbs(bidx, I, I->getArgOperand(0));
+  } else if (I->getIntrinsicID() == llvm::Intrinsic::copysign) {
+    translateCopySign(bidx, I, I->getArgOperand(0), I->getArgOperand(1));
   } else if (I->getIntrinsicID() == llvm::Intrinsic::eh_typeid_for) {
     // llvm::errs() << "\n\nMATCHED INTRINSIC ID " << *I << "\n\n";
     auto predecessor =
@@ -690,14 +1020,33 @@ int bmc_pass::translateCallInst(unsigned bidx, const llvm::CallInst *call) {
     assume_to_bmc(bidx, call);
   } else if (is_nondet(call)) {
     translateNondet(bidx, call);
+  } else if (fp != NULL && is_fabs_name(fp->getName())) {
+    translateFloatAbs(bidx, call, call->getArgOperand(0));
+  } else if (fp != NULL && is_copysign_name(fp->getName())) {
+    translateCopySign(bidx, call, call->getArgOperand(0),
+                      call->getArgOperand(1));
+  } else if (fp != NULL && is_sqrt_name(fp->getName())) {
+    translateSqrt(bidx, call);
+  } else if (fp != NULL && is_atan_name(fp->getName())) {
+    translateAtan(bidx, call);
   } else if (fp != NULL &&
-             ((fp->getName() == "fabsf") || (fp->getName() == "fabs"))) {
-    auto arg = fp->getArg(0);
-    expr AbsArg = bmc_ds_ptr->m.get_term(arg);
-    bmc_ds_ptr->m.insert_term_map(call, bidx, AbsArg);
-  } else if (fp != NULL && fp->getName().starts_with(
-                               "__gnat")) { // Do nothing - to be confirmed
-    // std::cout << "These are Ada Runtime functions\n";
+             // ((fp->getName() == "fabsf") || (fp->getName() == "fabs"))) {
+    // expr AbsArg = bmc_ds_ptr->m.get_term(arg);
+    // bmc_ds_ptr->m.insert_term_map(call, bidx, AbsArg);
+             fp->getName() == "system__assertions__raise_assert_failure") {
+    src_loc rf_loc = getLoc(call);
+    bmc_ds_ptr->add_spec(!bmc_ds_ptr->get_path_bit(bidx),
+                         spec_reason_t::ASSERT, rf_loc);
+    bmc_ds_ptr->set_path_bit(bidx, solver_ctx.bool_val(false));
+  } else if (fp != NULL &&
+             (fp->getName() == "__gnat_raise_exception" ||
+              fp->getName().starts_with("__gnat_rcheck_"))) {
+    bmc_ds_ptr->add_spec(!bmc_ds_ptr->get_path_bit(bidx),
+                         spec_reason_t::UNREACHABLE);
+    bmc_ds_ptr->set_path_bit(bidx, solver_ctx.bool_val(false));
+  } else if (fp != NULL && fp->getName().starts_with("__gnat")) {
+    llvm_bmc_warning("bmc", "ignoring Ada runtime call "
+                                << fp->getName().str());
   } else if (fp != NULL && fp->getName().starts_with("__VERIFIER")) {
     if (fp->getName().starts_with("__VERIFIER_nondet_")) {
       translateNondet(bidx, call);
@@ -771,7 +1120,12 @@ int bmc_pass::translateCallInst(unsigned bidx, const llvm::CallInst *call) {
   } else {
     call->print(llvm::outs());
     std::cout << "\n";
-    llvm_bmc_error("bmc", "function call is not recognized !!");
+    // llvm_bmc_error("bmc", "function call is not recognized !!");
+    llvm::Function *fn = call->getCalledFunction();
+    std::string what = fn ? fn->getName().str() : "an indirect call";
+    if (fn && fn->isDeclaration())
+      what += " with no body";
+    llvm_bmc_error("bmc", "function call " << what << " is not recognized !!");
   }
   return 0;
 }
@@ -779,13 +1133,11 @@ int bmc_pass::translateCallInst(unsigned bidx, const llvm::CallInst *call) {
 //--------------------------------------
 // translate unary instructions
 
-inline bool ok_cast(llvm::Type *n_ty, llvm::Type *o_ty, unsigned n_w,
-                    unsigned o_w) {
-  unsigned new_width = n_ty->getIntegerBitWidth();
-  unsigned old_width = o_ty->getIntegerBitWidth();
-  return n_w == new_width && o_w == old_width;
-}
-
+// inline bool ok_cast(llvm::Type *n_ty, llvm::Type *o_ty, unsigned n_w,
+                    // unsigned o_w) {
+  // unsigned new_width = n_ty->getIntegerBitWidth();
+  // unsigned old_width = o_ty->getIntegerBitWidth();
+  // return n_w == new_width && o_w == old_width;
 // TODO : Try to remove warnings for empty bodies
 void bmc_pass::translateCastInst(unsigned bidx, const llvm::CastInst *cast) {
   assert(cast);
@@ -794,169 +1146,173 @@ void bmc_pass::translateCastInst(unsigned bidx, const llvm::CastInst *cast) {
   auto c_ty = cast->getType();
   assert(v);
   auto v_ty = v->getType();
+  if (llvm::isa<llvm::TruncInst>(cast) || llvm::isa<llvm::ZExtInst>(cast) ||
+      llvm::isa<llvm::SExtInst>(cast)) {
+    expr ex_v = bmc_ds_ptr->m.get_term(v);
+    unsigned new_size = c_ty->getIntegerBitWidth();
+    unsigned old_size = v_ty->getIntegerBitWidth();
+    bool is_signed = llvm::isa<llvm::SExtInst>(cast);
+    expr res(solver_ctx);
+    if (o.bit_precise) {
+      if (ex_v.is_bool())
+        ex_v = convert_to_bv(ex_v, old_size);
+      if (llvm::isa<llvm::TruncInst>(cast))
+        res = ex_v.extract(new_size - 1, 0);
+      else if (is_signed)
+        res = sext(ex_v, new_size - old_size);
+      else
+        res = zext(ex_v, new_size - old_size);
+    } else {
+      if (ex_v.is_bool())
+        ex_v = ite(ex_v, solver_ctx.int_val(is_signed ? -1 : 1),
+                   solver_ctx.int_val(0));
+      else if (old_size == 1)
+        ex_v = is_signed ? int_as_signed(mod(ex_v, 2), 1) : mod(ex_v, 2);
   if (llvm::isa<llvm::TruncInst>(cast)) {
-    expr ex_v = bmc_ds_ptr->m.get_term(v);
-    if (ok_cast(c_ty, v_ty, 1, 8)) {
-      if (o.bit_precise) {
-        bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v.extract(0, 0));
+    // if (ok_cast(c_ty, v_ty, 1, 8)) {
+        // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v.extract(0, 0));
+        if (new_size == 1)
+          res = (mod(ex_v, 2) == 1);
+        else
+          res = int_wrap(ex_v, new_size);
+      } else if (is_signed || old_size == 1) {
+        res = ex_v;
       } else {
-        expr ex_v = bmc_ds_ptr->m.get_term(v);
-        expr two = solver_ctx.int_val(2);
-        bmc_ds_ptr->m.insert_term_map(cast, bidx, rem(ex_v, two));
-      }
-    } else if (ok_cast(c_ty, v_ty, 8, 32)) {
-      if (o.bit_precise) {
-        bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v.extract(7, 0));
-      } else {
-        expr ex_v = bmc_ds_ptr->m.get_term(v);
-        expr two_eight = solver_ctx.int_val(256);
-        bmc_ds_ptr->m.insert_term_map(cast, bidx, rem(ex_v, two_eight));
-      }
-    } else if (ok_cast(c_ty, v_ty, 16, 32)) {
-      if (o.bit_precise) {
-        bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v.extract(15, 0));
-      } else {
-        expr ex_v = bmc_ds_ptr->m.get_term(v);
-        // todo: take care of signed/unsigned
-        // bmc_ds_ptr->add_spec( ex_v <= 2^16 && ex_v >= 0,
-        //                       spec_reason_t::OUT_OF_RANGE );
-        bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v);
-      }
-    } else if (ok_cast(c_ty, v_ty, 8, 64)) {
-      if (o.bit_precise) {
-        bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v.extract(7, 0));
-      } else {
-        expr ex_v = bmc_ds_ptr->m.get_term(v);
-        expr two_eight = solver_ctx.int_val(256);
-        bmc_ds_ptr->m.insert_term_map(cast, bidx, rem(ex_v, two_eight));
-      }
-    } else if (ok_cast(c_ty, v_ty, 32, 64)) {
-      if (o.bit_precise) {
-        bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v.extract(31, 0));
-      } else {
-        expr ex_v = bmc_ds_ptr->m.get_term(v);
-        bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v);
-      }
-    } else if (ok_cast(c_ty, v_ty, 8, 16)) {
-      if (o.bit_precise) {
-        bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v.extract(7, 0));
-      } else {
-        expr ex_v = bmc_ds_ptr->m.get_term(v);
-        expr two_eight = solver_ctx.int_val(256);
-        bmc_ds_ptr->m.insert_term_map(cast, bidx, rem(ex_v, two_eight));
-      }
-    } else {
-      llvm_bmc_error("bmc", "unexpected sized TruncInst found!");
-    }
-  } else if (llvm::isa<llvm::ZExtInst>(cast)) {
-    expr ex_v = bmc_ds_ptr->m.get_term(v);
-    if (o.bit_precise) {
-      unsigned new_size = c_ty->getIntegerBitWidth();
-      unsigned old_size = v->getType()->getIntegerBitWidth();
-      sort vs = ex_v.get_sort();
-      expr ex_vn = ex_v;
-      if (vs.is_bool()) {
-        ex_vn = convert_to_bv(ex_v, old_size);
-      }
-      bmc_ds_ptr->m.insert_term_map(cast, bidx,
-                                    zext(ex_vn, new_size - old_size));
-    } else {
-      // Current policy allow extensions [ 1 -> 8, 8->32, 1->32, 32->64, 8->16,
-      // 8->64, 16->32, 16->64]
-      if (ok_cast(c_ty, v_ty, 8, 1) || ok_cast(c_ty, v_ty, 32, 1) ||
-          ok_cast(c_ty, v_ty, 64, 32) || ok_cast(c_ty, v_ty, 32, 8) ||
-          ok_cast(c_ty, v_ty, 64, 8) || ok_cast(c_ty, v_ty, 16, 8) ||
-          ok_cast(c_ty, v_ty, 32, 16) || ok_cast(c_ty, v_ty, 64, 16)) {
-        bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v);
-      } else {
-        llvm_bmc_error("bmc", "zero extn instruction of unsupported size");
+        // expr two = solver_ctx.int_val(2);
+        // bmc_ds_ptr->m.insert_term_map(cast, bidx, rem(ex_v, two));
+    // } else if (ok_cast(c_ty, v_ty, 8, 32)) {
+        // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v.extract(7, 0));
+        // expr two_eight = solver_ctx.int_val(256);
+        // bmc_ds_ptr->m.insert_term_map(cast, bidx, rem(ex_v, two_eight));
+    // } else if (ok_cast(c_ty, v_ty, 16, 32)) {
+        // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v.extract(15, 0));
+    // } else if (ok_cast(c_ty, v_ty, 8, 64)) {
+        // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v.extract(7, 0));
+        // expr two_eight = solver_ctx.int_val(256);
+        // bmc_ds_ptr->m.insert_term_map(cast, bidx, rem(ex_v, two_eight));
+    // } else if (ok_cast(c_ty, v_ty, 32, 64)) {
+        // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v.extract(31, 0));
+    // } else if (ok_cast(c_ty, v_ty, 8, 16)) {
+        // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v.extract(7, 0));
+        // expr two_eight = solver_ctx.int_val(256);
+        // bmc_ds_ptr->m.insert_term_map(cast, bidx, rem(ex_v, two_eight));
+      // llvm_bmc_error("bmc", "unexpected sized TruncInst found!");
+  // } else if (llvm::isa<llvm::ZExtInst>(cast)) {
+      // unsigned old_size = v->getType()->getIntegerBitWidth();
+      // sort vs = ex_v.get_sort();
+      // expr ex_vn = ex_v;
+      // if (vs.is_bool()) {
+        // ex_vn = convert_to_bv(ex_v, old_size);
+                                    // zext(ex_vn, new_size - old_size));
+      // if (ok_cast(c_ty, v_ty, 8, 1) || ok_cast(c_ty, v_ty, 32, 1) ||
+          // ok_cast(c_ty, v_ty, 64, 32) || ok_cast(c_ty, v_ty, 32, 8) ||
+          // ok_cast(c_ty, v_ty, 64, 8) || ok_cast(c_ty, v_ty, 16, 8) ||
+          // ok_cast(c_ty, v_ty, 32, 16) || ok_cast(c_ty, v_ty, 64, 16)) {
+        // llvm_bmc_error("bmc", "zero extn instruction of unsupported size");
+        res = int_as_unsigned(ex_v, old_size);
       }
     }
-  } else if (llvm::isa<llvm::SExtInst>(cast)) {
-    expr ex_v = bmc_ds_ptr->m.get_term(v);
-    if (o.bit_precise) {
-      unsigned new_size = c_ty->getIntegerBitWidth();
-      unsigned old_size = v->getType()->getIntegerBitWidth();
-      bmc_ds_ptr->m.insert_term_map(cast, bidx,
-                                    sext(ex_v, new_size - old_size));
-    } else {
-      // Current policy allow extensions [ 1 -> 8, 1->32, 32->64, 8->32, 8->64,
-      // 16->32, 16->64]
-      if (ok_cast(c_ty, v_ty, 8, 1) || ok_cast(c_ty, v_ty, 32, 1) ||
-          ok_cast(c_ty, v_ty, 64, 32) || ok_cast(c_ty, v_ty, 32, 8) ||
-          ok_cast(c_ty, v_ty, 64, 8) || ok_cast(c_ty, v_ty, 64, 16) ||
-          ok_cast(c_ty, v_ty, 32, 16)) {
-        bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v);
-      } else {
-        // cast->print( llvm::outs());
-        llvm_bmc_error("bmc", "sign extn instruction of unsupported size");
-      }
-    }
-    // }else if( auto bitCast = llvm::dyn_cast<llvm::BitCastInst>(cast) ) {
+  // } else if (llvm::isa<llvm::SExtInst>(cast)) {
+      // unsigned old_size = v->getType()->getIntegerBitWidth();
+                                    // sext(ex_v, new_size - old_size));
+      // if (ok_cast(c_ty, v_ty, 8, 1) || ok_cast(c_ty, v_ty, 32, 1) ||
+          // ok_cast(c_ty, v_ty, 64, 32) || ok_cast(c_ty, v_ty, 32, 8) ||
+          // ok_cast(c_ty, v_ty, 64, 8) || ok_cast(c_ty, v_ty, 64, 16) ||
+          // ok_cast(c_ty, v_ty, 32, 16)) {
+        // llvm_bmc_error("bmc", "sign extn instruction of unsupported size");
+    bmc_ds_ptr->m.insert_term_map(cast, bidx, res);
   } else if (llvm::isa<llvm::BitCastInst>(cast)) {
     llvm_bmc_warning("bmc", "Ignoring a bit cast! Be careful");
     // llvm_bmc_error("bmc", "cast instruction is not recognized !!");
-  } else if (llvm::isa<llvm::UIToFPInst>(cast)) {
+  // } else if (llvm::isa<llvm::UIToFPInst>(cast)) {
+  } else if (llvm::isa<llvm::UIToFPInst>(cast) ||
+             llvm::isa<llvm::SIToFPInst>(cast)) {
     expr ex_v = bmc_ds_ptr->m.get_term(v);
+    bool is_signed = llvm::isa<llvm::SIToFPInst>(cast);
+    unsigned w = v_ty->getIntegerBitWidth();
+    expr res(solver_ctx);
     if (o.bit_precise) {
-      expr ex_v_float = ubv_to_fpa(ex_v, solver_ctx.fpa_sort<32>());
-      bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_float);
+      // expr ex_v_float = ubv_to_fpa(ex_v, solver_ctx.fpa_sort<32>());
+      // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_float);
+      if (ex_v.is_bool())
+        ex_v = convert_to_bv(ex_v, w);
+      sort fs = llvm_to_bv_sort(solver_ctx, c_ty);
+      res = is_signed ? sbv_to_fpa(ex_v, fs) : ubv_to_fpa(ex_v, fs);
     } else {
-      // unsigned int_size = v->getType()->getIntegerBitWidth();
-      // expr ex_bv = int2bv(int_size, ex_v);
-      // expr ex_v_float = sbv_to_fpa(ex_bv, solver_ctx.fpa_sort<32>() );
-      expr ex_v_real = to_real(ex_v);
-      bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_real);
+      // expr ex_v_real = to_real(ex_v);
+      // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_real);
+      if (ex_v.is_bool())
+        ex_v = ite(ex_v, solver_ctx.int_val(is_signed ? -1 : 1),
+                   solver_ctx.int_val(0));
+      else if (!is_signed)
+        ex_v = int_as_unsigned(ex_v, w);
+      res = to_real(ex_v);
     }
-
-    // sort s1 = ex_v.get_sort();  sort s2 = ex_v_float.get_sort();
-    // std::cout << "s1 is " << s1 << " s2 is " << s2 << "\n";
-  } else if (llvm::isa<llvm::SIToFPInst>(cast)) {
+  // } else if (llvm::isa<llvm::SIToFPInst>(cast)) {
+    bmc_ds_ptr->m.insert_term_map(cast, bidx, res);
+  } else if (llvm::isa<llvm::FPToUIInst>(cast) ||
+             llvm::isa<llvm::FPToSIInst>(cast)) {
     expr ex_v = bmc_ds_ptr->m.get_term(v);
+    bool is_signed = llvm::isa<llvm::FPToSIInst>(cast);
+    unsigned w = c_ty->getIntegerBitWidth();
+    expr res(solver_ctx);
     if (o.bit_precise) {
-      expr ex_v_float = sbv_to_fpa(ex_v, solver_ctx.fpa_sort<32>());
-      bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_float);
+      // expr ex_v_float = sbv_to_fpa(ex_v, solver_ctx.fpa_sort<32>());
+      // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_float);
+      Z3_ast rtz = Z3_mk_fpa_rtz(solver_ctx);
+      res = to_expr(solver_ctx, is_signed
+                                    ? Z3_mk_fpa_to_sbv(solver_ctx, rtz, ex_v, w)
+                                    : Z3_mk_fpa_to_ubv(solver_ctx, rtz, ex_v, w));
     } else {
-      expr ex_v_real = to_real(ex_v);
-      bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_real);
+      // expr ex_v_real = to_real(ex_v);
+      // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_real);
+      auto floor = [&](expr const &x) {
+        return to_expr(solver_ctx, Z3_mk_real2int(solver_ctx, x));
+      };
+      expr t = ite(ex_v >= 0, floor(ex_v), -floor(-ex_v));
+      res = is_signed ? t : int_as_signed(t, w);
+      if (w == 1)
+        res = (res != 0);
     }
-  } else if (llvm::isa<llvm::FPToUIInst>(cast)) {
+  // } else if (llvm::isa<llvm::FPToUIInst>(cast)) {
+    bmc_ds_ptr->m.insert_term_map(cast, bidx, res);
+  } else if (llvm::isa<llvm::FPExtInst>(cast) ||
+             llvm::isa<llvm::FPTruncInst>(cast)) {
     expr ex_v = bmc_ds_ptr->m.get_term(v);
-    expr ex_v_u16 = fpa_to_ubv(ex_v, 16);
-    if (o.bit_precise) {
-      bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_u16);
+    // expr ex_v_u16 = fpa_to_ubv(ex_v, 16);
+      // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_u16);
+    if (o.bit_precise)
+      bmc_ds_ptr->m.insert_term_map(
+          cast, bidx, fpa_to_fpa(ex_v, llvm_to_bv_sort(solver_ctx, c_ty)));
+    else
+      bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v);
+  } else if (llvm::isa<llvm::PtrToIntInst>(cast) ||
+             llvm::isa<llvm::IntToPtrInst>(cast)) {
+    if (bmc_ds_ptr->m.has_term(v)) {
+      bmc_ds_ptr->m.insert_term_map(cast, bidx, bmc_ds_ptr->m.get_term(v));
     } else {
-      expr ex_v_int = bv2int(ex_v_u16, false);
-      bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_int);
-    }
-  } else if (llvm::isa<llvm::FPToSIInst>(cast)) {
-    expr ex_v = bmc_ds_ptr->m.get_term(v);
-    expr ex_v_s16 = fpa_to_sbv(ex_v, 16);
-    if (o.bit_precise) {
-      bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_s16);
-    } else {
-      expr ex_v_int = bv2int(ex_v_s16, false);
-      bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_int);
-    }
-  } else if (llvm::isa<llvm::FPExtInst>(cast)) {
-    expr ex_v = bmc_ds_ptr->m.get_term(v);
-    expr ex_v_f64 = fpa_to_fpa(ex_v, solver_ctx.fpa_sort<64>());
-    if (o.bit_precise) {
-      bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_f64);
-    } else {
-      expr ex_v_int = round_fpa_to_closest_integer(ex_v);
-      expr ex_v_real = to_real(ex_v_int);
-      bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_real);
-    }
-  } else if (llvm::isa<llvm::FPTruncInst>(cast)) {
-    expr ex_v = bmc_ds_ptr->m.get_term(v);
-    expr ex_v_f32 = fpa_to_fpa(ex_v, solver_ctx.fpa_sort<32>());
-    if (o.bit_precise) {
-      bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_f32);
-    } else {
-      expr ex_v_int = round_fpa_to_closest_integer(ex_v);
-      expr ex_v_real = to_real(ex_v_int);
-      bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_real);
+      // expr ex_v_int = bv2int(ex_v_u16, false);
+      // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_int);
+  // } else if (llvm::isa<llvm::FPToSIInst>(cast)) {
+    // expr ex_v_s16 = fpa_to_sbv(ex_v, 16);
+      // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_s16);
+      // expr ex_v_int = bv2int(ex_v_s16, false);
+      // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_int);
+  // } else if (llvm::isa<llvm::FPExtInst>(cast)) {
+    // expr ex_v_f64 = fpa_to_fpa(ex_v, solver_ctx.fpa_sort<64>());
+      // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_f64);
+      // expr ex_v_int = round_fpa_to_closest_integer(ex_v);
+      // expr ex_v_real = to_real(ex_v_int);
+      // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_real);
+  // } else if (llvm::isa<llvm::FPTruncInst>(cast)) {
+    // expr ex_v_f32 = fpa_to_fpa(ex_v, solver_ctx.fpa_sort<32>());
+      // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_f32);
+      // expr ex_v_int = round_fpa_to_closest_integer(ex_v);
+      // expr ex_v_real = to_real(ex_v_int);
+      // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_real);
+      LLVM_DUMP(cast);
+      llvm_bmc_error("bmc", "pointer<->integer cast on a value with no address "
+                            "term; needs the linear-address pointer model");
     }
   } else {
     // BMC_UNSUPPORTED_INSTRUCTIONS( FPTruncInst,       cast);
@@ -965,8 +1321,8 @@ void bmc_pass::translateCastInst(unsigned bidx, const llvm::CastInst *cast) {
     // BMC_UNSUPPORTED_INSTRUCTIONS( SIToFPInst,        cast);
     // BMC_UNSUPPORTED_INSTRUCTIONS( FPToUIInst,        cast);
     // BMC_UNSUPPORTED_INSTRUCTIONS( FPToSIInst,        cast);
-    BMC_UNSUPPORTED_INSTRUCTIONS(IntToPtrInst, cast);
-    BMC_UNSUPPORTED_INSTRUCTIONS(PtrToIntInst, cast);
+    // BMC_UNSUPPORTED_INSTRUCTIONS(IntToPtrInst, cast);
+    // BMC_UNSUPPORTED_INSTRUCTIONS(PtrToIntInst, cast);
     BMC_UNSUPPORTED_INSTRUCTIONS(AddrSpaceCastInst, cast);
     LLVM_DUMP(cast);
     llvm_bmc_error("bmc", "cast instruction is not recognized !!");
@@ -1011,17 +1367,11 @@ void bmc_pass::translateAllocaInst(const llvm::AllocaInst *alloca) {
       bmc_ds_ptr->set_array_length(alloca, ls);
       // array_lengths.push_back(val_expr);
     }
-  } else if (llvm::isa<const llvm::ArrayType>(typ) || llvm::isa<const llvm::StructType>(typ)) {
-    // int siz = (int)typ->getArrayNumElements();
-    // llvm::errs() << "\n\n Alloca inst size " << siz << " instruction " <<
-    // *alloca;
+  } else if (llvm::isa<const llvm::ArrayType>(typ) ||
+             llvm::isa<const llvm::StructType>(typ)) {
     std::vector<uint64_t> dims;
     get_type_dims(typ,dims);
     std::vector<expr> ls;
-    // if (o.bit_precise)
-    //   ls.push_back(get_expr_bv_const(solver_ctx, siz, 64)); // todo: why 64
-    // else
-    //   ls.push_back(get_expr_const(solver_ctx, siz));
     for (auto d : dims) {
       if (o.bit_precise)
         ls.push_back(get_expr_bv_const(solver_ctx, (int)d, 64)); // todo: why 64
@@ -1057,10 +1407,6 @@ void bmc_pass::loadFromArrayHelper(unsigned bidx, const llvm::LoadInst *load,
   // idx_exprs[0] = bmc_ds_ptr->m.get_term(load->getOperand(0));
   
   // idx_exprs.insert(idx_exprs.begin(),bmc_ds_ptr->m.get_term(load->getOperand(0)));
-  // if (auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(load->getOperand(0))) {
-  //   idx_exprs[0] = bmc_ds_ptr->m.get_term(gep->getOperand(0));
-  //   // idx_exprs.insert(idx_exprs.begin(),bmc_ds_ptr->m.get_term(gep->getOperand(0)));
-  // }
   if(idx_exprs.empty()) {
     idx_exprs.insert(idx_exprs.begin(),o.bit_precise?get_expr_bv_const(solver_ctx,0,64):get_expr_const(solver_ctx,0));
   }
@@ -1088,18 +1434,6 @@ void bmc_pass::extractValFromArrayHelper(
 void bmc_pass::translateGEP(const llvm::GEPOperator *gep, exprs &idxs) {
   // todo: what is the meaning of the second operand in GEP operator?
 
-  // assert( gep->getNumIndices() <= 2);
-  // assert(gep->getNumIndices() <= 3); // Confirm if correct
-  // llvm::Value * idx = NULL;
-  // if(gep->getNumOperands() == 2) idx = gep->getOperand(1);
-  // else if(gep->getNumOperands() == 3) {
-  //   // assert( gep->getOperand(1) == 0);
-  //   idx = gep->getOperand(2);
-  // }
-  // else if (gep->getNumOperands() == 4) {
-  //   idx = gep->getOperand(3);
-  // }
-  // unsigned i = gep->getNumOperands() == 2 ? 1 : 2;
   auto op_gep_ptr = gep->getPointerOperand();
   // todo: bit cast bug here
   while (auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr)) {
@@ -1108,6 +1442,35 @@ void bmc_pass::translateGEP(const llvm::GEPOperator *gep, exprs &idxs) {
   if (auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr)) {
     translateGEP(sub_gep, idxs);
   }
+
+  const llvm::Type *base_ty = nullptr;
+  if (auto al = llvm::dyn_cast<const llvm::AllocaInst>(op_gep_ptr))
+    base_ty = al->getAllocatedType();
+  else if (auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr))
+    base_ty = gv->getValueType();
+  if (base_ty && base_ty->isAggregateType() && gep->getNumIndices() == 1 &&
+      scalar_bits(gep->getSourceElementType()) > 0) {
+    const llvm::DataLayout &dl =
+        bmc_ds_ptr->bb_vec[0]->getModule()->getDataLayout();
+    uint64_t esz = dl.getTypeAllocSize(gep->getSourceElementType());
+    std::vector<uint64_t> dims;
+    get_type_dims(base_ty, dims);
+    auto at = llvm::dyn_cast<const llvm::ArrayType>(base_ty);
+    bool by_element = at && dims.size() == 1 &&
+                      esz == dl.getTypeAllocSize(at->getElementType());
+    if (!by_element) {
+      auto off_c = llvm::dyn_cast<llvm::ConstantInt>(gep->getOperand(1));
+      std::vector<uint64_t> flat;
+      if (!off_c ||
+          !byte_offset_to_indices(base_ty, off_c->getZExtValue()*esz, dl, flat))
+        llvm_bmc_error("bmc", "byte offset into an array can not be turned into "
+                              "an element index");
+      for (auto k : flat)
+        idxs.push_back(index_val(o, k));
+      return;
+    }
+  }
+
   unsigned i=1;
   if (gep->getNumOperands() > 2) {
     bool ptr_level = true;
@@ -1118,7 +1481,6 @@ void bmc_pass::translateGEP(const llvm::GEPOperator *gep, exprs &idxs) {
       ptr_level = (gep->getSourceElementType() == al->getAllocatedType());
     else if (auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(base))
       ptr_level = (gep->getSourceElementType() == gv->getValueType());
-    // else: pointer operand is another GEP (chained form) or an Argument
     // operand(1) is the pointer-level 0 there.
     if (ptr_level) i = 2;
   }
@@ -1130,16 +1492,6 @@ void bmc_pass::translateGEP(const llvm::GEPOperator *gep, exprs &idxs) {
     }
     idxs.push_back(idx_expr);
   }
-  // // access multi-dim arrays
-  // auto op_gep_ptr = gep->getPointerOperand();
-  // // todo: bit cast bug here
-  // while (auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(op_gep_ptr)) {
-  //   op_gep_ptr = bcast->getOperand(0);
-  //   // idxs.clear();
-  // }
-  // if (auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr)) {
-  //   translateGEP(sub_gep, idxs);
-  // }
 }
 
 //------------------------------------------
@@ -1278,6 +1630,14 @@ void bmc_pass::translateLoadInst(unsigned bidx, const llvm::LoadInst *load) {
     exprs idxs;
     translateGEP(gop, idxs);
     loadFromArrayHelper(bidx, load, idxs);
+  } else if (llvm::isa<const llvm::GlobalVariable>(addr) &&
+             llvm::cast<llvm::GlobalVariable>(addr)
+                 ->getValueType()
+                 ->isAggregateType()) {
+    exprs idxs;
+    idxs.push_back(o.bit_precise ? get_expr_bv_const(solver_ctx, 0, 64)
+                                 : get_expr_const(solver_ctx, 0));
+    loadFromArrayHelper(bidx, load, idxs);
     // gop is more general than gep
     // }else if( auto gep = llvm::dyn_cast<llvm::GetElementPtrInst>(addr) ) {
     //   // TODO : Add more general support to parse gep instruction when
@@ -1350,7 +1710,6 @@ void bmc_pass::translateLoadInst(unsigned bidx, const llvm::LoadInst *load) {
     if (ty->isPointerTy()) {
       // expr idx_expr = get_expr_const(solver_ctx,0);
       exprs idxs;
-      // idxs.push_back(get_expr_const(solver_ctx, 0));
       if(o.bit_precise) {
         idxs.push_back(get_expr_bv_const(solver_ctx, 0,64));
       }
@@ -1475,6 +1834,14 @@ void bmc_pass::translateUnaryInst(unsigned bidx,
   } else if (auto extractVal = llvm::dyn_cast<llvm::ExtractValueInst>(I)) {
     // I->print(llvm::outs());
     translateExtractValueInst(bidx, extractVal);
+  } else if (auto uop = llvm::dyn_cast<llvm::UnaryOperator>(I);
+             uop && uop->getOpcode() == llvm::Instruction::FNeg) {
+    expr a = bmc_ds_ptr->m.get_term(uop->getOperand(0));
+    if (o.abstract_floats)
+      bmc_ds_ptr->m.insert_term_map(
+          uop, bidx, bmc_ds_ptr->m_model.get_fresh_name(a.get_sort(), "fp_abst"));
+    else
+      bmc_ds_ptr->m.insert_term_map(uop, bidx, -a);
   } else {
     BMC_UNSUPPORTED_INSTRUCTIONS(VAArgInst, I);
     BMC_UNSUPPORTED_INSTRUCTIONS(ExtractValueInst, I);
@@ -1490,17 +1857,18 @@ void bmc_pass::storeToArrayHelper(unsigned bidx, const llvm::StoreInst *store,
   auto val_expr = bmc_ds_ptr->m.get_term(val);
   // std::cout<<idxs[0].to_string()<<" "<<bmc_ds_ptr->m.get_term(store->getOperand(1)).to_string()<<"\n";
   // idxs.insert(idxs.begin(),bmc_ds_ptr->m.get_term(store->getOperand(1)));
-  // if (auto gep =
-  //         llvm::dyn_cast<llvm::GetElementPtrInst>(store->getOperand(1))) {
-  //   idxs[0] = bmc_ds_ptr->m.get_term(gep->getOperand(0));
-  // }
+
   auto addr = store->getOperand(1);
   while(auto bcast = llvm::dyn_cast<const llvm::BitCastInst>(addr)) {
     addr = bcast->getOperand(0);
   }
+
+  // }
+  // }
   if(idxs.empty()) {
     idxs.insert(idxs.begin(),o.bit_precise?get_expr_bv_const(solver_ctx,0,64):get_expr_const(solver_ctx,0));
   }
+
 
   auto arr_wrt = bmc_ds_ptr->array_write(bidx, store, idxs, val_expr);
   bmc_ds_ptr->bmc_vec.push_back(arr_wrt.updated_expr);
@@ -1540,6 +1908,14 @@ void bmc_pass::translateStoreInst(unsigned bidx, const llvm::StoreInst *store) {
   if (auto gop = llvm::dyn_cast<llvm::GEPOperator>(addr)) {
     exprs idxs;
     translateGEP(gop, idxs);
+    storeToArrayHelper(bidx, store, val, idxs);
+  } else if (llvm::isa<const llvm::GlobalVariable>(addr) &&
+             llvm::cast<llvm::GlobalVariable>(addr)
+                 ->getValueType()
+                 ->isAggregateType()) {
+    exprs idxs;
+    idxs.push_back(o.bit_precise ? get_expr_bv_const(solver_ctx, 0, 64)
+                                 : get_expr_const(solver_ctx, 0));
     storeToArrayHelper(bidx, store, val, idxs);
   } else if (auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(addr)) {
     //    llvm_bmc_error("bmc", "non array global write/read not supported!");
@@ -1673,6 +2049,17 @@ void bmc_pass::translateBranch(unsigned bidx, const llvm::BranchInst *br) {
   } else {
     // for unconditional branch, there is no need of constraints
     // bmc_ds_ptr->bmc_vec.push_back( exit_bit );
+  }
+
+  if (o.unwind_assertions) {
+    const bb *cur = bmc_ds_ptr->bb_vec[bidx];
+    src_loc uw_loc = getLoc(br);
+    for (unsigned i = 0; i < br->getNumSuccessors(); i++) {
+      if (bmc_ds_ptr->ignore_edge(br->getSuccessor(i), cur)) {
+        bmc_ds_ptr->add_spec(!bmc_ds_ptr->get_exit_branch_path(bidx, i),
+                             spec_reason_t::UNWIND_BOUND, uw_loc);
+      }
+    }
   }
 }
 
@@ -2011,6 +2398,58 @@ expr bmc_pass::extend_path(unsigned bidx, unsigned pre_bidx) {
   return bmc_ds_ptr->get_exit_branch_path(pre_bidx, idx_succ);
 }
 
+static void flatten_initializer(
+    options &o, const llvm::Constant *c, exprs prefix,
+    std::vector<std::pair<exprs, const llvm::Constant *>> &out) {
+  llvm::Type *t = c->getType();
+  unsigned n = 0;
+  if (auto at = llvm::dyn_cast<llvm::ArrayType>(t))
+    n = at->getNumElements();
+  else if (auto st = llvm::dyn_cast<llvm::StructType>(t))
+    n = st->getNumElements();
+  else {
+    out.push_back({prefix, c});
+    return;
+  }
+  for (unsigned k = 0; k < n; k++) {
+    auto e = c->getAggregateElement(k);
+    if (!e || llvm::isa<llvm::UndefValue>(e))
+      continue;
+    exprs p = prefix;
+    p.push_back(index_val(o, k));
+    flatten_initializer(o, e, p, out);
+  }
+}
+
+void bmc_pass::seed_global_arrays() {
+  const llvm::Module *m = bmc_ds_ptr->bb_vec[0]->getModule();
+  for (const llvm::GlobalVariable &g : m->globals()) {
+    if (!g.getValueType()->isAggregateType() || !g.hasUniqueInitializer())
+      continue;
+    unsigned id;
+    if (!bmc_ds_ptr->array_id(&g, id) || !exists(bmc_ds_ptr->ary_to_base, id))
+      continue;
+    std::vector<uint64_t> dims;
+    get_type_dims(g.getValueType(), dims);
+    std::vector<std::pair<exprs, const llvm::Constant *>> cells;
+    flatten_initializer(o, g.getInitializer(), {}, cells);
+    for (auto &cell : cells) {
+      if (!cell.second->getType()->isIntegerTy() &&
+          !cell.second->getType()->isFloatingPointTy()) {
+        llvm_bmc_warning("bmc", "initializer of " << g.getName().str()
+                                    << " has a non-scalar element; it is left unconstrained");
+        continue;
+      }
+      exprs idx = cell.first;
+      while (idx.size() < dims.size())
+        idx.push_back(index_val(o, 0));
+      expr val = read_const(o, cell.second);
+      auto wr = bmc_ds_ptr->array_write_id(0, id, idx, val);
+      bmc_ds_ptr->bmc_vec.push_back(wr.updated_expr);
+    }
+  }
+}
+
 void bmc_pass::do_bmc() {
   assert(bmc_ds_ptr);
 
@@ -2033,6 +2472,8 @@ void bmc_pass::do_bmc() {
 
   // init_array_model( bmc_ds_ptr->bb_vec, bmc_ds_ptr->eb );
   init_path_exit_bit(bmc_ds_ptr->bb_vec);
+  if (bmc_ds_ptr->processed_bidx == 0 && !bmc_ds_ptr->bb_vec.empty())
+    seed_global_arrays();
   unsigned bidx = 0;
   for (const bb *src : bmc_ds_ptr->bb_vec) {
 
@@ -2320,19 +2761,6 @@ void bmc_pass::populate_array_name_map(llvm::Function *f) {
     auto bb = &(*bbit);
     for (auto it = bb->begin(), e = bb->end(); it != e; ++it) {
       auto I = &(*it);
-      // if (auto alloca = llvm::dyn_cast<const llvm::AllocaInst>(I)) {
-      //   // ary_to_int[I] = arrCntr++;
-      //   auto typ = alloca->getAllocatedType();
-      //   if (auto st = llvm::dyn_cast<llvm::StructType>(typ)) {
-      //     int siz1 = (int)st->getNumElements();
-      //     // ary_to_int[I] = arrCntr;
-      //     // arrCntr += siz1;
-      //     for (int temp = 0; temp < siz1; temp++) {
-      //       ary_to_int[I + temp] = arrCntr++;
-      //     }
-      //   } else {
-      //     ary_to_int[I] = arrCntr++;
-      //   }
       if (llvm::isa<const llvm::AllocaInst>(I)) {
         // ary_to_int[I] = arrCntr;
         // arrCntr += siz1;
@@ -2344,13 +2772,6 @@ void bmc_pass::populate_array_name_map(llvm::Function *f) {
           // I->print(llvm::outs());
           // std::cout << "\nCOLLECTED EXCEPTION PTR AS ARRAY\n\n";
         } else if (fp != NULL && fp->getName().starts_with("_Znwm")) {
-          // auto val = call->getOperand(0);
-          // auto size = dyn_cast<const llvm::ConstantInt>(val);
-          // int sizeValue = size->getSExtValue();
-          // int structSize = sizeValue / 4; // For integers
-          // for (int temp = 0; temp < structSize; temp++) {
-          //   ary_to_int[I + temp] = arrCntr++;
-          // }
           ary_to_int[I] = arrCntr++;
         }
       } else {

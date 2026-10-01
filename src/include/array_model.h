@@ -84,10 +84,13 @@ public:
   }
   
   //Virtuals
-  virtual void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access, std::map< unsigned, unsigned >& array_start_add ) = 0;
+  // virtual void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access, std::map< unsigned, unsigned >& array_start_add ) = 0;
+  virtual void set_access_map(std::map< const llvm::Instruction*, unsigned >& array_access, std::map< unsigned, unsigned >& array_start_add, std::map< unsigned, unsigned >& array_slot_cells) = 0;
   virtual arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val ) = 0;
   virtual arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& ) = 0;
   virtual arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& ) = 0;
+  virtual arr_write_expr array_write_id(unsigned bidx, unsigned ary, exprs& idx, expr& val) = 0;
+  virtual arr_read_expr array_read_id(unsigned bidx, unsigned ary, exprs&, const llvm::Type* ty) = 0;
   virtual void init_state( unsigned ) = 0;
   virtual void init_state( unsigned eb, array_state& s ) = 0;
   virtual void copy_to_init_state( array_state& ) = 0;
@@ -140,15 +143,20 @@ public:
 
   inline
   void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access,
-   std::map< unsigned, unsigned >& array_start_add ) {
+   // std::map< unsigned, unsigned >& array_start_add ) {
+   std::map< unsigned, unsigned >& array_start_add,
+   std::map< unsigned, unsigned >& array_slot_cells) {
     ary_access_to_index = array_access;
     ar_bases = array_start_add;
+    ar_slot_cells = array_slot_cells;
   };
 
   //Virtual defined
   arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
   arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
   arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& );
+  arr_write_expr array_write_id(unsigned bidx, unsigned ary, exprs& idx, expr& val);
+  arr_read_expr array_read_id(unsigned bidx, unsigned ary, exprs&, const llvm::Type* ty);
   expr join_array_state( std::vector<expr>&,std::vector<unsigned>& prevs,unsigned src );
 
   //Overridden functions
@@ -156,8 +164,16 @@ public:
   void init_state( unsigned eb, array_state& s );
   void copy_to_init_state( array_state& );
 
+  //Misc
+  unsigned get_slot_cells(unsigned ary);
+  expr slot_address(unsigned ary, exprs& idxs, exprs& ls);
+  expr cell_address(expr& addr, unsigned k);
+  expr value_to_bits(expr& val);
+  expr bits_to_value(expr& bits, const llvm::Type* ty);
+
   std::string M_array_name =  "M";
   std::map< unsigned, unsigned > ar_bases;
+  std::map< unsigned, unsigned > ar_slot_cells;
 
 };
 
@@ -169,7 +185,9 @@ public:
 
   inline
   void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access,
-   std::map< unsigned, unsigned >& array_start_add ) {
+   // std::map< unsigned, unsigned >& array_start_add ) {
+   std::map< unsigned, unsigned >& array_start_add,
+   std::map< unsigned, unsigned >& array_slot_cells) {
     ary_access_to_index = array_access;
   };
 
@@ -177,6 +195,8 @@ public:
   arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val );
   arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& );
   arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& );
+  arr_write_expr array_write_id(unsigned bidx, unsigned ary, exprs& idx, expr& val);
+  arr_read_expr array_read_id(unsigned bidx, unsigned ary, exprs&, const llvm::Type* ty);
   expr join_array_state( std::vector<expr>&,std::vector<unsigned>& prevs,unsigned src );
 
   //Misc
@@ -184,6 +204,7 @@ public:
   void init_state( unsigned eb, array_state& s );
   void copy_to_init_state( array_state& );
 };
+
 
 // class heap_model : public array_model_full {
 // public:
@@ -212,5 +233,7 @@ public:
 //   std::string M_array_name =  "H";
 //   std::map< unsigned, unsigned > ar_bases;
 // };
+
+
 
 #endif // TILER_GLB_MODEL_H

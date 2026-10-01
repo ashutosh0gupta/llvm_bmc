@@ -185,7 +185,10 @@ void find_cutpoints(llvm::Pass* P, llvm::Function &f, std::vector< llvm::BasicBl
 // void create_segments(llvm::Function &f,
 //                      std::vector< llvm::BasicBlock* >& cutPoints,
 //                      std::vector< segment >& segVec);
-int readInt( const llvm::ConstantInt* );
+// int readInt( const llvm::ConstantInt* );
+void warn_real_floats();
+int64_t readSInt(const llvm::ConstantInt*);
+uint64_t readUInt(const llvm::ConstantInt*);
 float readFlt( const llvm::ConstantFP* );
 double readDbl( const llvm::ConstantFP* );
 void buildBlockMap(llvm::BasicBlock*, std::map<std::string, llvm::Value*>&);
@@ -206,6 +209,10 @@ sort ditype_to_sort( solver_context& c, const llvm::DIType* t );
 sort llvm_to_sort( solver_context& , const llvm::Type* );
 sort llvm_to_bv_sort( solver_context& , const llvm::Type* );
 sort llvm_to_sort( options& , const llvm::Type* );
+sort index_sort(options&);
+expr index_val(options&, uint64_t);
+std::string struct_sort_name(const llvm::StructType*);
+z3::func_decl struct_ctor(options&, const llvm::StructType*);
 // expr read_const( const llvm::Value*, solver_context& );
 expr read_const( options&, const llvm::Value*);
 std::string read_const_str( options& o, const llvm::Value* op );
@@ -238,9 +245,17 @@ public:
 // passes for transforming the modules
 void prepare_module(std::unique_ptr<llvm::Module>& module );
 void forced_inliner_pass(std::unique_ptr<llvm::Module>& module);
+void cleanup_after_inline_pass(std::unique_ptr<llvm::Module>& module);
+void bounded_unroll_pass(options& o, std::unique_ptr<llvm::Module>& module);
 
 void get_type_dims(const llvm::Type*, std::vector<uint64_t>& dims);
 uint64_t get_type_flat_size(const llvm::Type*);
+unsigned scalar_bits(const llvm::Type*);
+unsigned max_leaf_bits(const llvm::Type*);
+bool     has_leaf_of_bits(const llvm::Type*, unsigned bits);
+bool     byte_offset_to_indices(const llvm::Type*, uint64_t off,
+                                 const llvm::DataLayout&,
+                                 std::vector<uint64_t>& idxs);
 
 const std::pair<const llvm::Value*, uint64_t>  get_array_info( const llvm::Value* op);
 const llvm::Value* identify_global_in_addr( const llvm::Value* op);

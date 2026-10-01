@@ -17,6 +17,7 @@ public:
   expr insert_new_def( const llvm::Value* );
   expr read_constant( const llvm::Value* );
   expr read_term( const llvm::Value*, unsigned );
+  bool has_term(const llvm::Value*);
   expr get_earlier_term( const llvm::Value*, unsigned );
   expr get_term( const llvm::Value*, unsigned );
   expr get_term( const llvm::Value* op );
