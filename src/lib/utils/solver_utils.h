@@ -122,7 +122,7 @@ expr pow2_int(z3::context &, unsigned);
 expr int_as_unsigned(expr const &, unsigned);
 expr int_as_signed(expr const &, unsigned);
 expr int_wrap(expr const &, unsigned);
-expr int_sdiv(expr const &, expr const &);
+expr int_sdiv(expr const &, expr const &, unsigned);
 expr int_srem(expr const &, expr const &);
 expr int_udiv(expr const &, expr const &, unsigned);
 expr int_urem(expr const &, expr const &, unsigned);

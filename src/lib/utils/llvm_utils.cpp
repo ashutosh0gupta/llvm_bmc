@@ -3,6 +3,7 @@
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Transforms/InstCombine/InstCombine.h"
 #include "llvm/Transforms/Scalar/SROA.h"
+#include "llvm/Transforms/Scalar/TailRecursionElimination.h"
 #include "llvm/Transforms/Utils/Mem2Reg.h"
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/OptimizationRemarkEmitter.h"
@@ -470,7 +471,8 @@ std::unique_ptr<llvm::Module> c2ir(options &o, comments &cmts) {
 
   // auto dirs;
   std::vector<std::string> include_dirs;
-  if (boost::algorithm::ends_with(filename, ".c")) {
+  if (boost::algorithm::ends_with(filename, ".c") ||
+      boost::algorithm::ends_with(filename, ".i")) {
     include_dirs = get_system_include_folders("c");
   } else if (boost::algorithm::ends_with(filename, ".cpp")) {
     include_dirs = get_system_include_folders("c++");
@@ -673,10 +675,11 @@ std::unique_ptr<llvm::Module> ada2ir(options &o, comments &cmts) {
   if (module == nullptr)
     err.print("llvmbmc", llvm::errs());
 
-  boost::filesystem::path ali = out;
-  ali.replace_extension(".ali");
-  boost::system::error_code ec;
-  boost::filesystem::remove(ali, ec);
+  // the W lines of the .ali name the units this one withs
+  // boost::filesystem::path ali = out;
+  // ali.replace_extension(".ali");
+  // boost::system::error_code ec;
+  // boost::filesystem::remove(ali, ec);
 
   return module;
 }
@@ -2016,7 +2019,8 @@ sort llvm_to_bv_sort(solver_context &c, const llvm::Type *t) {
   } else if (t->isFunctionTy()) {
     llvm_bmc_error("llvm_utils", "function sorts are not supported");
   } else if (t->isStructTy()) {
-    return c.bv_sort(32);
+    // return c.bv_sort(32);
+    llvm_bmc_error("llvm_utils", "struct sorts are not supported");
   } else if (t->isPointerTy()) {
     // llvm_bmc_error("llvm_utils", "pointer sorts are not supported");
     // return c.int_sort();
@@ -2115,6 +2119,8 @@ sort llvm_to_sort(options &o, const llvm::Type *t) {
   if (auto st = llvm::dyn_cast<const llvm::StructType>(t)) {
     if (st->getNumElements() > 0)
       return struct_ctor(o, st).range();
+    // a struct with no fields holds nothing and read_const gives it a 0
+    return o.bit_precise ? o.solver_ctx.bv_sort(32) : o.solver_ctx.int_sort();
   }
   if (auto at = llvm::dyn_cast<const llvm::ArrayType>(t)) {
     return o.solver_ctx.array_sort(index_sort(o),
@@ -2503,9 +2509,9 @@ void bounded_unroll_pass(options &o, std::unique_ptr<llvm::Module> &module) {
       uint64_t size = 0;
       for (llvm::BasicBlock *b : l->blocks())
         size += b->size();
-      bool complete = tc != 0 && (uint64_t)tc * size <= 30000;
-      unsigned count = complete ? tc : o.loop_unroll_count;
-      if (!complete && count < 2)
+      bool exact_tc = tc != 0 && (uint64_t)tc * size <= 30000;
+      unsigned count = exact_tc ? tc : o.loop_unroll_count;
+      if (!exact_tc && count < 2)
         continue;
       llvm::UnrollLoopOptions ulo;
       ulo.Count = count;
@@ -2526,22 +2532,18 @@ void bounded_unroll_pass(options &o, std::unique_ptr<llvm::Module> &module) {
 }
 
 
-void cleanup_after_inline_pass(std::unique_ptr<llvm::Module> &module) {
-  bool has_ptr_int_cast = false;
-  for (auto &f : *module.get()) {
-    for (auto &b : f) {
-      for (auto &i : b) {
+static bool has_ptr_int_cast(const llvm::Module &m) {
+  for (auto &f : m)
+    for (auto &b : f)
+      for (auto &i : b)
         if (llvm::isa<llvm::PtrToIntInst>(&i) ||
-            llvm::isa<llvm::IntToPtrInst>(&i)) {
-          has_ptr_int_cast = true;
-          break;
-        }
-      }
-      if (has_ptr_int_cast) break;
-    }
-    if (has_ptr_int_cast) break;
-  }
-  if (!has_ptr_int_cast)
+            llvm::isa<llvm::IntToPtrInst>(&i))
+          return true;
+  return false;
+}
+
+void cleanup_after_inline_pass(std::unique_ptr<llvm::Module> &module) {
+  if (!has_ptr_int_cast(*module.get()))
     return;
 
   llvm::PassBuilder PB;
@@ -2570,6 +2572,27 @@ void prepare_module(std::unique_ptr<llvm::Module> &module) {
   // passMan.add( llvm::createLoopRotatePass() // deprecated in LLVM 20 ); //
   // some params passMan.add( llvm::createSCCPPass() // deprecated in LLVM 20 );
   passMan.run(*module.get());
+
+  // Self recursion whose call is in tail position, or is an accumulator over an
+  // associative operation, becomes a loop here. The unroller and the unwinding
+  // assertion then cover it like any other loop. Nothing else would: LLVM's
+  // inliner refuses to inline a function into itself.
+  llvm::PassBuilder PB;
+  llvm::LoopAnalysisManager LAM;
+  llvm::FunctionAnalysisManager FAM;
+  llvm::CGSCCAnalysisManager CGAM;
+  llvm::ModuleAnalysisManager MAM;
+  PB.registerModuleAnalyses(MAM);
+  PB.registerCGSCCAnalyses(CGAM);
+  PB.registerFunctionAnalyses(FAM);
+  PB.registerLoopAnalyses(LAM);
+  PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+  llvm::ModulePassManager MPM;
+  llvm::FunctionPassManager FPM;
+  FPM.addPass(llvm::TailCallElimPass());
+  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM)));
+  MPM.run(*module.get(), MAM);
 }
 
 const llvm::Value *identify_array_in_gep(const llvm::GEPOperator *gep) {

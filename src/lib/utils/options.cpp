@@ -147,7 +147,8 @@ bool options::is_input_c() {
   boost::filesystem::path p(fileName);
   auto ext = p.extension().string();
   // std::cerr << ext;
-  if( ext == ".c" || ext == ".C" || ext == ".cpp" ) {
+  // .i is C that has already been through the preprocessor
+  if( ext == ".c" || ext == ".C" || ext == ".cpp" || ext == ".i" ) {
     return true;
   }
   return false;

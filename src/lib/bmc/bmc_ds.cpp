@@ -315,7 +315,11 @@ std::string bmc_ds::print_array_ranges() {
       auto ary_info = get_array_info( ary_val ); 
       // array_ranges<<"\n;; Array "<< ary_val->getName().str()<<" "<< ary_to_base.at(ary_id)<<" "<< ary_to_base.at(ary_id)+ary_info.second-1<<" ";
       unsigned cells = exists(ary_to_cells, ary_id) ? ary_to_cells.at(ary_id) : 1;
-      array_ranges<<"\n;; Array "<< ary_val->getName().str()<<" "<< ary_to_base.at(ary_id)<<" "<< ary_to_base.at(ary_id)+ary_info.second*cells-1<<" ";
+      uint64_t base = ary_to_base.at(ary_id);
+      uint64_t slots = ary_info.second*cells;
+      // an array of no elements owns no cell, so base+slots-1 would wrap round
+      // array_ranges<<"\n;; Array "<< ary_val->getName().str()<<" "<< ary_to_base.at(ary_id)<<" "<< ary_to_base.at(ary_id)+ary_info.second*cells-1<<" ";
+      array_ranges<<"\n;; Array "<< ary_val->getName().str()<<" "<< base<<" "<< (slots ? base+slots-1 : base)<<" ";
     }
   }
   array_ranges<<"\n\n";

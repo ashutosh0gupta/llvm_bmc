@@ -786,12 +786,19 @@ expr int_wrap(expr const &x, unsigned w) {
   return int_as_signed(mod(x, pow2_int(x.ctx(), w)), w);
 }
 
-expr int_sdiv(expr const &a, expr const &b) {
+static expr int_quot(expr const &a, expr const &b) {
   expr q = z3::abs(a) / z3::abs(b);
   return ite((a >= 0) == (b >= 0), q, -q);
 }
 
-expr int_srem(expr const &a, expr const &b) { return a - b * int_sdiv(a, b); }
+expr int_sdiv(expr const &a, expr const &b, unsigned w) {
+  // the smallest value over -1 is the one quotient that does not fit w bits
+  expr lo = -pow2_int(a.ctx(), w - 1);
+  return ite(a == lo && b == -1, lo, int_quot(a, b));
+}
+
+// the untruncated quotient, so that the wrapped case above keeps lo rem -1 at 0
+expr int_srem(expr const &a, expr const &b) { return a - b * int_quot(a, b); }
 
 expr int_udiv(expr const &a, expr const &b, unsigned w) {
   return int_as_signed(int_as_unsigned(a, w) / int_as_unsigned(b, w), w);

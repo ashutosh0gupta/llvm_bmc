@@ -122,7 +122,7 @@ void bmc_pass::translateBinOp(unsigned bidx, const llvm::BinaryOperator *bop) {
     case llvm::Instruction::Add: r = ia + ib; break;
     case llvm::Instruction::Sub: r = ia - ib; break;
     case llvm::Instruction::Mul: r = ia * ib; break;
-    case llvm::Instruction::SDiv: r = int_sdiv(ia, ib); break;
+    case llvm::Instruction::SDiv: r = int_sdiv(ia, ib, 1); break;
     case llvm::Instruction::SRem: r = int_srem(ia, ib); break;
     case llvm::Instruction::UDiv: r = int_udiv(ia, ib, 1); break;
     case llvm::Instruction::URem: r = int_urem(ia, ib, 1); break;
@@ -130,7 +130,10 @@ void bmc_pass::translateBinOp(unsigned bidx, const llvm::BinaryOperator *bop) {
       LLVM_DUMP(bop);
       llvm_bmc_error("bmc", "this operation on a one bit value is not supported in integer mode, use -b");
     }
-    bmc_ds_ptr->m.insert_term_map(bop, bidx, int_wrap(r, 1) == 1);
+    // int_wrap signs the one bit value, so a set bit comes back as -1
+    // bmc_ds_ptr->m.insert_term_map(bop, bidx, int_wrap(r, 1) == 1);
+    bmc_ds_ptr->m.insert_term_map(bop, bidx,
+                                  mod(r, solver_ctx.int_val(2)) == 1);
     return;
   }
   if (!o.bit_precise && a.is_int() && bop->getType()->isIntegerTy()) {
@@ -146,7 +149,7 @@ void bmc_pass::translateBinOp(unsigned bidx, const llvm::BinaryOperator *bop) {
       bmc_ds_ptr->m.insert_term_map(bop, bidx, int_bitop(a, b, w, '^'));
       return;
     case llvm::Instruction::SDiv:
-      bmc_ds_ptr->m.insert_term_map(bop, bidx, int_sdiv(a, b));
+      bmc_ds_ptr->m.insert_term_map(bop, bidx, int_sdiv(a, b, w));
       return;
     case llvm::Instruction::SRem:
       bmc_ds_ptr->m.insert_term_map(bop, bidx, int_srem(a, b));
@@ -640,8 +643,28 @@ void bmc_pass::translateNondet(unsigned bidx, const llvm::CallInst *call) {
 
   llvm::Function *fp = call->getCalledFunction();
   llvm::Type *rty = (fp != NULL) ? fp->getReturnType() : call->getType();
-  if (rty == NULL || !rty->isIntegerTy()) {
-    llvm_bmc_error("bmc", "nondet must return an integer type!");
+  // if (rty == NULL || !rty->isIntegerTy()) {
+  //   llvm_bmc_error("bmc", "nondet must return an integer type!");
+  if (rty == NULL || (!rty->isIntegerTy() && !rty->isFloatingPointTy())) {
+    llvm_bmc_error("bmc", "nondet must return an integer or a float!");
+    return;
+  }
+  if (rty->isFloatingPointTy()) {
+    // the value read_const builds for an undef float: a real in integer mode,
+    // an ieee value of the right width under -b
+    expr r(solver_ctx);
+    if (!o.bit_precise) {
+      warn_real_floats();
+      r = get_fresh_real(solver_ctx, "nondet");
+    } else if (rty->isFloatTy()) {
+      r = get_fresh_float(solver_ctx, "nondet");
+    } else if (rty->isDoubleTy()) {
+      r = get_fresh_double(solver_ctx, "nondet");
+    } else {
+      llvm_bmc_error("bmc", "only float and double nondets are supported");
+      return;
+    }
+    bmc_ds_ptr->m.insert_term_map(call, bidx, r);
     return;
   }
   unsigned bw = rty->getIntegerBitWidth();
@@ -1047,6 +1070,20 @@ int bmc_pass::translateCallInst(unsigned bidx, const llvm::CallInst *call) {
   } else if (fp != NULL && fp->getName().starts_with("__gnat")) {
     llvm_bmc_warning("bmc", "ignoring Ada runtime call "
                                 << fp->getName().str());
+  } else if (fp != NULL && fp->getName() == "__assert_fail") {
+    // A C assert() that failed lowers to a branch into this. Reaching it IS
+    // the assertion failing; the arguments are the message strings and must
+    // not be translated.
+    src_loc af_loc = getLoc(call);
+    bmc_ds_ptr->add_spec(!bmc_ds_ptr->get_path_bit(bidx), spec_reason_t::ASSERT,
+                         af_loc);
+    bmc_ds_ptr->set_path_bit(bidx, solver_ctx.bool_val(false));
+  } else if (fp != NULL && fp->getName() == "abort") {
+    // Execution does not continue past an abort, so the path is cut. No
+    // property is attached: an abort is not by itself an error, and it is how
+    // an assumption is written when there is no assume to call
+    // ("if(!cond){abort();}"), where reaching it is the expected behaviour.
+    bmc_ds_ptr->set_path_bit(bidx, solver_ctx.bool_val(false));
   } else if (fp != NULL && fp->getName().starts_with("__VERIFIER")) {
     if (fp->getName().starts_with("__VERIFIER_nondet_")) {
       translateNondet(bidx, call);
@@ -1395,6 +1432,10 @@ void bmc_pass::translateAllocaInst(const llvm::AllocaInst *alloca) {
     unsigned ar_num = bmc_ds_ptr->ary_to_int.at(alloca);
     bmc_ds_ptr->m.insert_term_map(alloca, get_expr_const(solver_ctx, ar_num));
     auto val_expr = bmc_ds_ptr->m.get_term(val);
+    // the count operand of an alloca is 32 bit, while an index is 64, and the
+    // bound check compares the two
+    if (o.bit_precise)
+      val_expr = convert_to_bv(val_expr, 64);
     std::vector<expr> ls;
     ls.push_back(val_expr);
     bmc_ds_ptr->set_array_length(alloca, ls);
