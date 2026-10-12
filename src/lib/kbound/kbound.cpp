@@ -779,7 +779,8 @@ void kbound::dump_CallAssert(unsigned bidx, const llvm::CallInst* call) {
 
 void kbound::dump_CallNondet(unsigned bidx, const llvm::CallInst* call) {
   assert(call);
-  auto term = get_reg( call->getArgOperand(0) );
+  // auto term = get_reg( call->getArgOperand(0) );
+  auto term = add_reg_map( call );
   dump_String("NONDET(" + term + ");");
 }
 

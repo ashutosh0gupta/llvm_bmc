@@ -1,7 +1,13 @@
 #include "llvm_utils.h"
 #include "lib/utils/graph_utils.h"
+#include "llvm/Linker/Linker.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Transforms/InstCombine/InstCombine.h"
+#include "llvm/Transforms/Scalar/InstSimplifyPass.h"
+#include "llvm/Transforms/Scalar/LoopDeletion.h"
+#include "llvm/Transforms/Scalar/LoopIdiomRecognize.h"
+#include "llvm/Transforms/Scalar/LoopPassManager.h"
+#include "llvm/Transforms/Scalar/LoopRotation.h"
 #include "llvm/Transforms/Scalar/SROA.h"
 #include "llvm/Transforms/Scalar/TailRecursionElimination.h"
 #include "llvm/Transforms/Utils/Mem2Reg.h"
@@ -532,10 +538,20 @@ std::unique_ptr<llvm::Module> c2ir(options &o, comments &cmts) {
   }
   // return nullptr;
 
+  std::string triple;
+  if (o.data_model == "ILP32")
+    triple = "i386-unknown-linux-gnu";
+  else if (o.data_model == "LP64")
+    triple = "x86_64-unknown-linux-gnu";
+
   // look in clang/include/clang/Driver/CC1Options.td
   // and clang/lib/Frontend/CompilerInvocation.cpp
   // to find right param names
   std::vector<const char *> args;
+  if (!triple.empty()) {
+    args.push_back("-triple");
+    args.push_back(triple.c_str());
+  }
   args.push_back("-emit-llvm");
   args.push_back("-disable-llvm-passes");
   args.push_back("-debug-info-kind=standalone");
@@ -652,9 +668,26 @@ void ada2bc(const std::string &fileName, const std::string &outName,
     llvm_bmc_error("ADA_PARSING", "gnat-llvm failed on " << fileName);
 }
 
-std::unique_ptr<llvm::Module> ada2ir(options &o, comments &cmts) {
-  const std::string filename = o.get_input_file();
+static void check_elaboration(const llvm::Module &module) {
+  for (auto &f : module) {
+    if (f.isDeclaration())
+      continue;
+    auto name = f.getName();
+    if (!name.ends_with("___elabs") && !name.ends_with("___elabb"))
+      continue;
+    llvm_bmc_error("ADA_PARSING",
+                   name.str()
+                       << " sets up package level state before the main unit "
+                          "runs, and nothing here calls it");
+  }
+}
 
+std::unique_ptr<llvm::Module> ada2ir(options &o, comments &cmts) {
+  // const std::string filename = o.get_input_file();
+  auto &llvm_ctx = o.get_llvm_context();
+  std::unique_ptr<llvm::Module> module;
+
+  for (auto &filename : o.get_input_files()) {
   if (!boost::filesystem::exists(filename)) {
     llvm_bmc_error("ADA_PARSING", "failed to find file " << filename);
     return nullptr;
@@ -669,17 +702,32 @@ std::unique_ptr<llvm::Module> ada2ir(options &o, comments &cmts) {
   dirs.push_back(src.parent_path().empty() ? "." : src.parent_path().string());
   ada2bc(filename, out.string(), dirs);
 
-  auto &llvm_ctx = o.get_llvm_context();
+  // auto &llvm_ctx = o.get_llvm_context();
   llvm::SMDiagnostic err;
-  auto module = llvm::parseIRFile(out.string(), err, llvm_ctx);
-  if (module == nullptr)
+  // auto module = llvm::parseIRFile(out.string(), err, llvm_ctx);
+  // if (module == nullptr)
+    auto unit = llvm::parseIRFile(out.string(), err, llvm_ctx);
+    if (unit == nullptr) {
     err.print("llvmbmc", llvm::errs());
+      return nullptr;
+    }
 
   // the W lines of the .ali name the units this one withs
   // boost::filesystem::path ali = out;
   // ali.replace_extension(".ali");
   // boost::system::error_code ec;
   // boost::filesystem::remove(ali, ec);
+    if (module == nullptr) {
+      module = std::move(unit);
+    } else if (llvm::Linker::linkModules(*module, std::move(unit))) {
+      llvm_bmc_error("ADA_PARSING",
+                     "failed to link " << filename << " with the units before it");
+      return nullptr;
+    }
+  }
+
+
+  check_elaboration(*module);
 
   return module;
 }
@@ -1916,22 +1964,46 @@ bool has_name(llvm::StringRef str, std::vector<std::string> &names) {
 }
 
 
+llvm::Function *get_callee(const llvm::CallInst *call) {
+  assert(call);
+  if (auto *f = call->getCalledFunction())
+    return f;
+  auto *val = call->getCalledOperand();
+  if (auto *f = llvm::dyn_cast<llvm::Function>(val))
+    return f;
+  if (auto *ce = llvm::dyn_cast<llvm::ConstantExpr>(val))
+    if (ce->isCast())
+      return llvm::dyn_cast<llvm::Function>(ce->getOperand(0));
+  return nullptr;
+}
+
+bool is_heap_alloc(const llvm::CallInst *call) {
+  if (!call)
+    return false;
+  llvm::Function *fp = get_callee(call);
+  if (!fp)
+    return false;
+  return fp->getName().starts_with("_Znwm") || fp->getName() == "malloc";
+}
+
 bool match_function_names(const llvm::CallInst *call,
                           std::vector<std::string> &names) {
   assert(call);
 
-  llvm::Function *fp = call->getCalledFunction();
-  if (fp != NULL && has_name(fp->getName(), names)) {
-    return true;
-  } else if (fp == NULL) {
-    const llvm::Value *val = call->getCalledOperand();
-    if (auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val)) {
-      if (CE->isCast() && has_name(CE->getOperand(0)->getName(), names)) {
-        return true;
-      }
-    }
-  }
-  return false;
+  // llvm::Function *fp = call->getCalledFunction();
+  // if (fp != NULL && has_name(fp->getName(), names)) {
+  //   return true;
+  // } else if (fp == NULL) {
+  //   const llvm::Value *val = call->getCalledOperand();
+  //   if (auto CE = llvm::dyn_cast<llvm::ConstantExpr>(val)) {
+  //     if (CE->isCast() && has_name(CE->getOperand(0)->getName(), names)) {
+  //       return true;
+  //     }
+  //   }
+  // }
+  // return false;
+  llvm::Function *fp = get_callee(call);
+  return fp != NULL && has_name(fp->getName(), names);
 }
 
 bool is_assert(const llvm::CallInst *call) {
@@ -1950,7 +2022,11 @@ bool is_nondet(const llvm::CallInst *call) {
       "_Z22__VERIFIER_nondet_charv",
       "_Z21__VERIFIER_nondet_intv",
   };
-  return match_function_names(call, names);
+  // return match_function_names(call, names);
+  if (match_function_names(call, names))
+    return true;
+  llvm::Function *fp = get_callee(call);
+  return fp != NULL && fp->getName().starts_with("__VERIFIER_nondet_");
 }
 
 bool is_assume(const llvm::CallInst *call) {
@@ -2367,7 +2443,12 @@ expr read_const(options &o, const llvm::Value *op) {
     }
     // expr e(ctx);
     // return e; // contains no expression;
-    llvm_bmc_error("llvm_utils", "non int constants are not implemented!!");
+    // llvm_bmc_error("llvm_utils", "non int constants are not implemented!!");
+    std::string s;
+    llvm::raw_string_ostream os(s);
+    c->printAsOperand(os, true);
+    llvm_bmc_error("llvm_utils", "this constant has no value in the model: "
+                   << s);
     // std::cerr << "un recognized constant!";
     //     // int i = readInt(c);
     //     // return eHandler->mkIntVal( i );
@@ -2509,10 +2590,26 @@ void bounded_unroll_pass(options &o, std::unique_ptr<llvm::Module> &module) {
       uint64_t size = 0;
       for (llvm::BasicBlock *b : l->blocks())
         size += b->size();
-      bool exact_tc = tc != 0 && (uint64_t)tc * size <= 30000;
+      // bool exact_tc = tc != 0 && (uint64_t)tc * size <= 30000;
+      bool exact_tc = tc != 0 && (uint64_t)tc * size <= o.unroll_budget;
       unsigned count = exact_tc ? tc : o.loop_unroll_count;
-      if (!exact_tc && count < 2)
+      // if (!exact_tc && count < 2)
+      unsigned line = l->getStartLoc() ? l->getStartLoc().getLine() : 0;
+      if (!exact_tc && count < 2) {
+        if (tc != 0) {
+          llvm_bmc_warning("llvm_utils", "the loop at line " << line
+                           << " runs " << tc << " times and its body is "
+                           << size << " instructions, past the "
+                           << o.unroll_budget << " the unroller will expand;"
+                              " only one iteration is modelled; raise"
+                              " --unroll-budget to take it");
+        } else {
+          llvm_bmc_warning("llvm_utils", "the trip count of the loop at line "
+                           << line << " is not a constant and -u is 1; only"
+                              " one iteration is modelled");
+        }
         continue;
+      }
       llvm::UnrollLoopOptions ulo;
       ulo.Count = count;
       ulo.Force = true;
@@ -2521,7 +2618,7 @@ void bounded_unroll_pass(options &o, std::unique_ptr<llvm::Module> &module) {
       ulo.UnrollRemainder = false;
       ulo.ForgetAllSCEV = true;
       ulo.SCEVExpansionBudget = 0;
-      unsigned line = l->getStartLoc() ? l->getStartLoc().getLine() : 0;
+      // unsigned line = l->getStartLoc() ? l->getStartLoc().getLine() : 0;
       auto res = llvm::UnrollLoop(l, ulo, &li, &se, &dt, &ac, &tti, &ore, true);
       if (res == llvm::LoopUnrollResult::Unmodified)
         llvm_bmc_warning("llvm_utils", "could not unroll the loop at line "
@@ -2566,7 +2663,125 @@ void cleanup_after_inline_pass(std::unique_ptr<llvm::Module> &module) {
   MPM.run(*module.get(), MAM);
 }
 
+//
+void fold_readonly_globals(options &o, std::unique_ptr<llvm::Module> &module) {
+  std::vector<std::string> folded;
+  std::vector<llvm::GlobalVariable *> dead;
+  for (auto &g : module->globals()) {
+    if (!g.hasInitializer() || g.isExternallyInitialized())
+      continue;
+    llvm::Constant *init = g.getInitializer();
+    llvm::Type *ty = init->getType();
+    if (!ty->isIntegerTy() && !ty->isFloatingPointTy() &&
+        !(ty->isPointerTy() && llvm::isa<llvm::Function>(init)))
+      continue;
+    std::vector<llvm::LoadInst *> loads;
+    bool only_loads = true;
+    for (auto u : g.users()) {
+      auto l = llvm::dyn_cast<llvm::LoadInst>(u);
+      if (!l || l->getType() != ty) {
+        only_loads = false;
+        break;
+      }
+      loads.push_back(l);
+    }
+    if (!only_loads || loads.empty())
+      continue;
+    for (auto l : loads) {
+      l->replaceAllUsesWith(init);
+      l->eraseFromParent();
+    }
+    folded.push_back(g.getName().str() + " (" + std::to_string(loads.size()) +
+                     " loads)");
+    if (g.use_empty())
+      dead.push_back(&g);
+  }
+  for (auto g : dead)
+    g->eraseFromParent();
+  if (folded.empty()) {
+    llvm_bmc_warning("llvm_utils", "--fold-readonly-globals found no global "
+                     "that is only ever read");
+    return;
+  }
+  std::string names;
+  for (auto &f : folded)
+    names += (names.empty() ? "" : ", ") + f;
+  llvm_bmc_warning("llvm_utils", "reading these globals off their initialiser, "
+                   "they are never written: " << names);
+}
+
+void simplify_after_fold_pass(std::unique_ptr<llvm::Module> &module) {
+  llvm::PassBuilder PB;
+  llvm::LoopAnalysisManager LAM;
+  llvm::FunctionAnalysisManager FAM;
+  llvm::CGSCCAnalysisManager CGAM;
+  llvm::ModuleAnalysisManager MAM;
+  PB.registerModuleAnalyses(MAM);
+  PB.registerCGSCCAnalyses(CGAM);
+  PB.registerFunctionAnalyses(FAM);
+  PB.registerLoopAnalyses(LAM);
+  PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+  llvm::ModulePassManager MPM;
+  llvm::FunctionPassManager FPM;
+  FPM.addPass(llvm::InstSimplifyPass());
+  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM)));
+  MPM.run(*module.get(), MAM);
+}
+
+//
+void rewrite_mem_loops_pass(std::unique_ptr<llvm::Module> &module) {
+  unsigned dropped = 0;
+  for (auto &f : *module) {
+    if (f.hasFnAttribute("no-builtins")) {
+      f.removeFnAttr("no-builtins");
+      dropped++;
+    }
+  }
+
+  llvm::PassBuilder PB;
+  llvm::LoopAnalysisManager LAM;
+  llvm::FunctionAnalysisManager FAM;
+  llvm::CGSCCAnalysisManager CGAM;
+  llvm::ModuleAnalysisManager MAM;
+  PB.registerModuleAnalyses(MAM);
+  PB.registerCGSCCAnalyses(CGAM);
+  PB.registerFunctionAnalyses(FAM);
+  PB.registerLoopAnalyses(LAM);
+  PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+  llvm::FunctionPassManager FPM;
+  FPM.addPass(llvm::LoopSimplifyPass());
+  FPM.addPass(llvm::LCSSAPass());
+  llvm::LoopPassManager rotate;
+  rotate.addPass(llvm::LoopRotatePass());
+  FPM.addPass(llvm::createFunctionToLoopPassAdaptor(std::move(rotate)));
+  llvm::LoopPassManager idiom;
+  idiom.addPass(llvm::LoopIdiomRecognizePass());
+  FPM.addPass(llvm::createFunctionToLoopPassAdaptor(std::move(idiom)));
+  FPM.addPass(llvm::LoopSimplifyPass());
+  FPM.addPass(llvm::LCSSAPass());
+  llvm::LoopPassManager del;
+  del.addPass(llvm::LoopDeletionPass());
+  FPM.addPass(llvm::createFunctionToLoopPassAdaptor(std::move(del)));
+
+  llvm::ModulePassManager MPM;
+  MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM)));
+  MPM.run(*module.get(), MAM);
+
+  unsigned formed = 0;
+  for (auto &f : *module)
+    for (auto &b : f)
+      for (auto &i : b)
+        if (auto c = llvm::dyn_cast<llvm::MemIntrinsic>(&i))
+          (void)c, formed++;
+  llvm_bmc_warning("llvm_utils", "dropped no-builtins on " << dropped
+                   << " functions and the module now holds " << formed
+                   << " memset/memcpy intrinsics");
+}
+
 void prepare_module(std::unique_ptr<llvm::Module> &module) {
+  set_module_layout( &module->getDataLayout() );
   llvm::legacy::PassManager passMan;
   passMan.add(llvm::createPromoteMemoryToRegisterPass());
   // passMan.add( llvm::createLoopRotatePass() // deprecated in LLVM 20 ); //
@@ -2708,13 +2923,29 @@ void collect_debug_info(
   }
 }
 
+static const llvm::DataLayout* module_layout = nullptr;
+
+void set_module_layout( const llvm::DataLayout* dl ) { module_layout = dl; }
+
+static bool struct_counts_more_slots_than_bytes( const llvm::StructType* st,
+                                                 const std::vector<uint64_t>& sd,
+                                                 uint64_t& bytes ) {
+  if( !module_layout || st->isOpaque() ) return false;
+  uint64_t slots = 1;
+  for( auto d : sd ) slots *= d;
+  bytes = module_layout->getTypeAllocSize( const_cast<llvm::StructType*>(st) );
+  return slots > bytes && bytes > 0;
+}
+
 void get_type_dims( const llvm::Type* ty, std::vector<uint64_t>& dims ) {
   while( auto at = llvm::dyn_cast<const llvm::ArrayType>(ty) ) {
     dims.push_back( at->getNumElements() );
     ty = at->getElementType();
   }
   if( auto st = llvm::dyn_cast<const llvm::StructType>(ty) ) {
-    dims.push_back( st->getNumElements() );
+    // dims.push_back( st->getNumElements() );
+    std::vector<uint64_t> sd;
+    sd.push_back( st->getNumElements() );
     std::vector<uint64_t> mx;
     for( unsigned k = 0; k < st->getNumElements(); k++ ) {
       std::vector<uint64_t> fd;
@@ -2724,7 +2955,14 @@ void get_type_dims( const llvm::Type* ty, std::vector<uint64_t>& dims ) {
       for( unsigned j = 0; j < fd.size(); j++ )
         if( fd[j] > mx[j] ) mx[j] = fd[j];
     }
-    for( auto d : mx ) dims.push_back( d );
+    // for( auto d : mx ) dims.push_back( d );
+    for( auto d : mx ) sd.push_back( d );
+    uint64_t bytes = 0;
+    if( struct_counts_more_slots_than_bytes( st, sd, bytes ) ) {
+      dims.push_back( bytes );
+      return;
+    }
+    for( auto d : sd ) dims.push_back( d );
     return;
   }
   if( dims.empty() ) dims.push_back( 1 );
@@ -2738,6 +2976,14 @@ uint64_t get_type_flat_size( const llvm::Type* ty ) {
   return sz;
 }
 
+bool type_is_byte_run( const llvm::Type* ty ) {
+  auto st = llvm::dyn_cast<const llvm::StructType>(ty);
+  if( !st ) return false;
+  std::vector<uint64_t> dims;
+  get_type_dims( st, dims );
+  return dims.size() == 1 && dims[0] > st->getNumElements();
+}
+
 unsigned scalar_bits(const llvm::Type* ty) {
   if (ty->isIntegerTy()) return ty->getIntegerBitWidth();
   if (ty->isFloatingPointTy()) return ty->getPrimitiveSizeInBits();
@@ -2749,6 +2995,7 @@ unsigned max_leaf_bits(const llvm::Type* ty) {
   if (auto at = llvm::dyn_cast<const llvm::ArrayType>(ty))
     return max_leaf_bits(at->getElementType());
   if (auto st = llvm::dyn_cast<const llvm::StructType>(ty)) {
+    if( type_is_byte_run( st ) ) return 8;
     unsigned mx = 0;
     for (unsigned k = 0; k < st->getNumElements(); k++) {
       unsigned b = max_leaf_bits(st->getElementType(k));
@@ -2794,8 +3041,21 @@ bool has_leaf_of_bits(const llvm::Type* ty, unsigned bits) {
   return scalar_bits(ty) == bits;
 }
 
+static std::map<const llvm::Value *, std::pair<const llvm::Value *, uint64_t> >
+    ary_info_memo;
+
 const std::pair<const llvm::Value *, uint64_t>
 get_array_info(const llvm::Value *op) {
+  auto it = ary_info_memo.find( op );
+  if( it != ary_info_memo.end() ) return it->second;
+  std::set<const llvm::Value *> seen;
+  auto info = get_array_info(op, seen);
+  ary_info_memo[op] = info;
+  return info;
+}
+
+const std::pair<const llvm::Value *, uint64_t>
+get_array_info(const llvm::Value *op, std::set<const llvm::Value *> &seen) {
 
   while (true) {
     if (auto cast = llvm::dyn_cast<const llvm::BitCastInst>(op)) {
@@ -2855,10 +3115,12 @@ get_array_info(const llvm::Value *op) {
   } else if (auto cnst = llvm::dyn_cast<const llvm::ConstantExpr>(op)) {
     if (auto gep = llvm::dyn_cast<llvm::GEPOperator>(cnst)) {
       auto const_ptr = gep->getPointerOperand();
-      return get_array_info(const_ptr);
+      // return get_array_info(const_ptr);
+      return get_array_info(const_ptr, seen);
     }
     auto cistr = cnst->getAsInstruction();
-    return get_array_info(cistr);
+    // return get_array_info(cistr);
+    return get_array_info(cistr, seen);
     // cistr->dump();
     // llvm_bmc_error("bmc", "non GEP constant expression!");
   } else if (auto call = llvm::dyn_cast<const llvm::CallInst>(op)) {
@@ -2869,7 +3131,64 @@ get_array_info(const llvm::Value *op) {
       return std::make_pair(call, 0);
     } else if (fp != NULL && fp->getName().starts_with("__cxa_begin_catch")) {
       return std::make_pair(call, 0);
+    } else if (is_heap_alloc(call)) {
+      auto sz = llvm::dyn_cast<llvm::ConstantInt>(call->getArgOperand(0));
+      if (!sz)
+        llvm_bmc_error("llvm_utils", "the block from "
+                       << get_callee(call)->getName().str()
+                       << " has a size that is not a constant, so there is no"
+                          " extent to check an access against");
+      return std::make_pair(call, sz->getZExtValue());
     }
+  } else if (auto phi = llvm::dyn_cast<const llvm::PHINode>(op)) {
+    if (!seen.insert(phi).second)
+      return std::make_pair(nullptr, 0);
+    const llvm::Value *base = nullptr;
+    uint64_t size = 0;
+    for (unsigned i = 0; i < phi->getNumIncomingValues(); i++) {
+      auto info = get_array_info(phi->getIncomingValue(i), seen);
+      if (!info.first)
+        continue;
+      if (!base) {
+        base = info.first;
+        size = info.second;
+      } else if (info.first != base) {
+        return std::make_pair(nullptr, 0);
+      }
+    }
+    if (base)
+      return std::make_pair(base, size);
+  } else if (auto ld = llvm::dyn_cast<const llvm::LoadInst>(op)) {
+    if (!ld->getType()->isPointerTy())
+      return std::make_pair(nullptr, 0);
+    if (!seen.insert(ld).second)
+      return std::make_pair(nullptr, 0);
+    const llvm::Value *slot = ld->getPointerOperand()->stripPointerCasts();
+    const llvm::Value *base = nullptr;
+    uint64_t size = 0;
+    for (auto u : slot->users()) {
+      if (auto st = llvm::dyn_cast<const llvm::StoreInst>(u)) {
+        if (st->getPointerOperand()->stripPointerCasts() != slot)
+          return std::make_pair(nullptr, 0);
+        auto info = get_array_info(st->getValueOperand(), seen);
+        if (!info.first)
+          return std::make_pair(nullptr, 0);
+        if (!base) {
+          base = info.first;
+          size = info.second;
+        } else if (info.first != base) {
+          return std::make_pair(nullptr, 0);
+        }
+      } else if (auto ii = llvm::dyn_cast<const llvm::IntrinsicInst>(u)) {
+        if (ii->getIntrinsicID() != llvm::Intrinsic::lifetime_start &&
+            ii->getIntrinsicID() != llvm::Intrinsic::lifetime_end)
+          return std::make_pair(nullptr, 0);
+      } else if (!llvm::isa<const llvm::LoadInst>(u)) {
+        return std::make_pair(nullptr, 0);
+      }
+    }
+    if (base)
+      return std::make_pair(base, size);
   } else if (auto ev = llvm::dyn_cast<const llvm::ExtractValueInst>(op)) {
     // std::cout << "\nEXtract value instruction found\n";
     // llvm::errs() << *ev << "\n";

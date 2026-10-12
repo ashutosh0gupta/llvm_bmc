@@ -39,12 +39,16 @@ void options::get_description_cmd(po::options_description& config,
     // ("aggregation,a", po::bool_switch(&loop_aggr), "Run aggregation algorithm on loop")
     ("dump-solver-query", po::bool_switch(&dump_solver_query), "Dump the formulas generated")
     ("smt-only", po::bool_switch(&smt_only), "Do not solve and only give the smt output")
+    ("fold-readonly-globals", po::bool_switch(&fold_readonly_globals_opt), "Read a global that is never written off its initialiser, volatile loads included, so that loop bounds reaching the tool through one can be folded")
+    ("rewrite-mem-loops", po::bool_switch(&rewrite_mem_loops), "Rewrite a byte loop that fills or copies a buffer into a memset or memcpy before translating")
     ("dump-cfg,d", po::bool_switch(&dump_cfg), "Dump the llvm control flow graph")
     ("config,c", po::value<std::string>(), "Set config file")
     ("unwind,u", po::value<int>(&loop_unroll_count)->default_value(1), "Set loop unroll count")
+    ("unroll-budget", po::value<uint64_t>(&unroll_budget)->default_value(30000), "Instructions a fully unrolled loop may expand to")
     ("unwind-assertions", po::value<bool>(&unwind_assertions)->default_value(true), "Report loops that the unroll bound did not finish (set false to allow bounded-only results)")
     ("use-bv,b", po::bool_switch(&bit_precise), "Use bit-vectors to represent numbers!")
     ("memory-granularity", po::value<int>(&mem_cell_bits)->default_value(32), "Size of a memory cell in bits (8, 32 or 64); only used with -b")
+    ("data-model", po::value<std::string>(&data_model)->default_value(""), "Widths of the C types: ILP32 or LP64 (default: the host)")
     ("bounds-check,n", po::bool_switch(&include_out_of_bound_specs), "Enable array-index-out-of-bounds check")
     ("overflow-check,l", po::bool_switch(&include_overflow_specs), "Enable over/underflow check")
     ("unreach-check", po::bool_switch(&include_unreach_specs), "Enable unreachable instructions check")
@@ -62,7 +66,8 @@ void options::get_description_cmd(po::options_description& config,
     ("get-solver-model",  po::bool_switch(&get_solver_model), "Dump solver model (for debug)")
     ;
   hidden.add_options()
-    ("input,i", po::value(&filePath), "Set source files")
+    // ("input,i", po::value(&filePath), "Set source files")
+    ("input,i", po::value(&inputFiles), "Set source files")
     ;
   generic.add_options()
     ("version", "Print version string")
@@ -78,6 +83,7 @@ void options::get_description_cmd(po::options_description& config,
 
 void options::interpret_options(po::variables_map& vm) {
   if (vm.count("input")) {
+    filePath = inputFiles.at(0);
     boost::filesystem::path cf( filePath);
     fileName = cf.filename().string();
     if (is_input_ada() &&
@@ -86,6 +92,10 @@ void options::interpret_options(po::variables_map& vm) {
       std::transform(stem.begin(), stem.end(), stem.begin(),
                       [](unsigned char c){ return std::tolower(c); });
       funcName = "_ada_" + stem;
+    }
+    if( inputFiles.size() > 1 && !is_input_ada() ) {
+      llvm_bmc_error("config options", "more than one input file is only "
+                     "supported for ada sources.");
     }
   }
   if (vm.count("unwind")) {
@@ -112,6 +122,10 @@ void options::interpret_options(po::variables_map& vm) {
   }
   if( sc_threads.size() > 0 && arm_thread != "" ) {
     llvm_bmc_error("config options", "sc-thread and arm-thread options are incompatible.");
+  }
+  if( data_model != "" && data_model != "ILP32" && data_model != "LP64" ) {
+    llvm_bmc_error("config options", "data model " << data_model
+                   << " is not supported, use ILP32 or LP64.");
   }
   if (mem_cell_bits != 8 && mem_cell_bits != 32 && mem_cell_bits != 64) {
     llvm_bmc_error("config options", "memory granularity " << mem_cell_bits

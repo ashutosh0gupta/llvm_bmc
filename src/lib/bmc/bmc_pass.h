@@ -62,7 +62,15 @@ private:
                           const llvm::Value*);
   void translateAtan(unsigned, const llvm::CallInst*);
   void translateSqrt(unsigned, const llvm::CallInst*);
+  void need_bv_mode( const char* );
+  void translateFunnelShift( unsigned, const llvm::IntrinsicInst*, bool );
+  void translateMinMax( unsigned, const llvm::IntrinsicInst*, bool, bool );
+  void translateByteSwap( unsigned, const llvm::IntrinsicInst* );
   void translateMemIntrinsic(unsigned, const llvm::MemIntrinsic*);
+  void translateMemCall( unsigned, const llvm::CallInst*, llvm::StringRef );
+  void translateMemFill( unsigned, const llvm::Instruction*,
+                         const llvm::Value*, const llvm::Value*,
+                         const llvm::Value*, bool );
   void seed_global_arrays();
   void translateDebugInfo( unsigned, const llvm::DbgInfoIntrinsic* );
   void translateCastInst( unsigned, const llvm::CastInst*);
@@ -81,6 +89,18 @@ private:
   void init_path_exit_bit(bb_vec_t & //, const bb*
                           );
   void translateGEP( const llvm::GEPOperator* gep, exprs& );
+  unsigned gep_cell_scale( const llvm::GEPOperator* gep );
+  unsigned gep_step_units( const llvm::GEPOperator* gep );
+  bool ptr_object_shape( const llvm::Value*, std::vector<uint64_t>&,
+                         uint64_t& );
+  void split_numeral_idxs( exprs&, const std::vector<uint64_t>& );
+  std::vector<uint64_t> ptr_dims( const llvm::Value* );
+  void offset_to_idxs( expr, const std::vector<uint64_t>&, exprs& );
+  expr idxs_to_offset( const exprs&, const std::vector<uint64_t>& );
+  void add_bound_spec( unsigned, expr );
+  expr ptr_phi_offset( const llvm::PHINode* );
+  expr ptr_mem_offset( const llvm::LoadInst* );
+  bool run_offset_term( const llvm::Value*, expr&, const llvm::DataLayout& );
   void loadFromArrayHelper(unsigned, const llvm::LoadInst*, exprs&);
   void storeToArrayHelper(unsigned, const llvm::StoreInst*,
                           const llvm::Value*, exprs&);

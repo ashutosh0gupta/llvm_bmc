@@ -95,7 +95,10 @@ public:
   std::map< const llvm::Value*, unsigned >& ary_to_int;
   std::map< unsigned, unsigned > ary_to_base;
   std::map< unsigned, unsigned > ary_to_cells;
+  std::set< unsigned > ary_cell_indexed;
 
+  void scale_length_to_cells( unsigned, std::vector<expr>& );
+  void scale_index_to_cells( unsigned, exprs& );
   void set_array_length( const llvm::Value*, std::vector<expr>& );
   arr_write_expr array_write( unsigned, const llvm::StoreInst*,exprs&, expr& );
   arr_read_expr array_read( unsigned, const llvm::LoadInst*, exprs& );
@@ -103,6 +106,14 @@ public:
   arr_read_expr array_read( unsigned, const llvm::CallInst*, exprs&);
   arr_write_expr array_write_id(unsigned, unsigned, exprs&, expr&);
   arr_read_expr array_read_id(unsigned, unsigned, exprs&, const llvm::Type*);
+  bool has_bulk_update();
+  arr_write_expr array_fill_id( unsigned, unsigned, exprs&, exprs&, expr&,
+                                uint64_t );
+  arr_write_expr array_copy_id( unsigned, unsigned, exprs&, exprs&,
+                                unsigned, exprs&, exprs&, uint64_t );
+  arr_write_expr array_fill_cells( unsigned, unsigned, expr&, expr&, expr& );
+  arr_write_expr array_copy_cells( unsigned, unsigned, expr&, unsigned, expr&,
+                                   expr& );
   bool array_id(const llvm::Value*, unsigned&);
   expr join_array_state( std::vector<expr>&,
                          std::vector<unsigned>&, unsigned );

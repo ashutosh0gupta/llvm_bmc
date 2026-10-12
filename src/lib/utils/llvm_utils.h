@@ -69,6 +69,7 @@ std::string getVarName(const llvm::DbgValueInst* dbgVal );
 std::string getVarName(const llvm::DbgDeclareInst* dbgVal );
 
 
+llvm::Function* get_callee( const llvm::CallInst* );
 bool match_function_names( const llvm::CallInst* call,
                            std::vector<std::string>& names );
 
@@ -247,9 +248,15 @@ void prepare_module(std::unique_ptr<llvm::Module>& module );
 void forced_inliner_pass(std::unique_ptr<llvm::Module>& module);
 void cleanup_after_inline_pass(std::unique_ptr<llvm::Module>& module);
 void bounded_unroll_pass(options& o, std::unique_ptr<llvm::Module>& module);
+bool is_heap_alloc( const llvm::CallInst* call );
+void fold_readonly_globals(options& o, std::unique_ptr<llvm::Module>& module);
+void simplify_after_fold_pass(std::unique_ptr<llvm::Module>& module);
+void rewrite_mem_loops_pass(std::unique_ptr<llvm::Module>& module);
 
+void     set_module_layout( const llvm::DataLayout* );
 void get_type_dims(const llvm::Type*, std::vector<uint64_t>& dims);
 uint64_t get_type_flat_size(const llvm::Type*);
+bool     type_is_byte_run( const llvm::Type* );
 unsigned scalar_bits(const llvm::Type*);
 unsigned max_leaf_bits(const llvm::Type*);
 bool     has_leaf_of_bits(const llvm::Type*, unsigned bits);
@@ -258,6 +265,8 @@ bool     byte_offset_to_indices(const llvm::Type*, uint64_t off,
                                  std::vector<uint64_t>& idxs);
 
 const std::pair<const llvm::Value*, uint64_t>  get_array_info( const llvm::Value* op);
+const std::pair<const llvm::Value*, uint64_t>
+get_array_info( const llvm::Value* op, std::set<const llvm::Value*>& seen );
 const llvm::Value* identify_global_in_addr( const llvm::Value* op);
 std::pair<const llvm::Value*, uint64_t> identify_lpad_struct(const llvm::Value* , int);
 

@@ -329,7 +329,8 @@ std::string bmc_ds::print_array_ranges() {
 std::string bmc_ds::print_array_names() {
   std::ostringstream array_names;
   array_names<<"\n;; Initial_Memory "<<ar_model_full->initial_mem;
-  array_names<<"\n;; Final_Memory "<<ar_model_full->final_mem;
+  // array_names<<"\n;; Final_Memory "<<ar_model_full->final_mem;
+  array_names<<"\n;; Final_Memory "<<ar_model_full->final_mem();
   array_names<<"\n\n";
   return array_names.str();
 }
@@ -385,10 +386,15 @@ static void check_access_type(const llvm::Value* base,
   unsigned bits = scalar_bits(acc_ty);
   if (bits == 0) return;
   auto dec_ty = declared_type(base);
-  if (dec_ty && max_leaf_bits(dec_ty) > 0 && !has_leaf_of_bits(dec_ty, bits))
+  // if (dec_ty && max_leaf_bits(dec_ty) > 0 && !has_leaf_of_bits(dec_ty, bits))
+  if( !dec_ty ) return;
+  unsigned leaf = max_leaf_bits( dec_ty );
+  if( leaf > 0 && !has_leaf_of_bits( dec_ty, bits ) )
     llvm_bmc_error("bmc", "array " << base->getName().str()
                     << " is accessed as a " << bits
-                    << " bit value, which is not one of its element types");
+                    // << " bit value, which is not one of its element types");
+                    << " bit value, which is not one of its element types"
+                       " (the widest is " << leaf << " bits)" );
 }
 
 void bmc_ds::init_array_model( array_model_t ar_model_local,
@@ -410,17 +416,57 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
       order.push_back(id);
     }
     unsigned bits = 0;
-    if (auto dec_ty = declared_type(ary_info.first))
+    // if (auto dec_ty = declared_type(ary_info.first))
+    auto dec_ty = declared_type( ary_info.first );
+    if( dec_ty )
       bits = max_leaf_bits(dec_ty);
     if (acc_ty) {
+      unsigned a = scalar_bits( acc_ty );
+      if( dec_ty && bits > 0 && a > 0 && a < bits
+          && !has_leaf_of_bits( dec_ty, a ) ) {
+        if( cell_bits == 0 || a % cell_bits != 0 )
+          llvm_bmc_error( "bmc", "array " << ary_info.first->getName().str()
+                          << " is accessed " << a << " bits at a time, which is"
+                             " not a whole number of " << cell_bits
+                          << " bit cells; run with -b and"
+                             " --memory-granularity " << a );
+        std::vector<uint64_t> dims;
+        get_type_dims( dec_ty, dims );
+        if( dims.size() > 1 )
+          llvm_bmc_error( "bmc", "array " << ary_info.first->getName().str()
+                          << " is accessed " << a << " bits at a time and has "
+                             "more than one dimension, which is not supported" );
+        ary_cell_indexed.insert( id );
+      } else if( dec_ty && bits > 0 && a > bits && bits == cell_bits
+                 && a % cell_bits == 0 ) {
+      } else {
       check_access_type(ary_info.first, acc_ty);
-      unsigned a = scalar_bits(acc_ty);
+      // unsigned a = scalar_bits(acc_ty);
       if (a > bits) bits = a;
+      }
     }
     unsigned cells = 1;
     if (cell_bits > 0 && bits > cell_bits)
       cells = (bits + cell_bits - 1)/cell_bits;
     if (cells > ary_to_cells[id]) ary_to_cells[id] = cells;
+  };
+
+  auto note_gep = [&]( const llvm::GEPOperator* gep ) {
+    if( cell_bits == 0 || gep->getNumIndices() != 1 ) return;
+    auto ary_info = get_array_info( gep );
+    if( !ary_info.first || !exists( ary_to_int, ary_info.first ) ) return;
+    if( gep->getPointerOperand()->stripPointerCasts() == ary_info.first &&
+        llvm::isa<llvm::ConstantInt>( gep->getOperand(1) ) ) return;
+    auto dec_ty = declared_type( ary_info.first );
+    if( !dec_ty ) return;
+    unsigned bits = max_leaf_bits( dec_ty );
+    unsigned step = scalar_bits( gep->getResultElementType() );
+    if( bits == 0 || step == 0 || step >= bits ) return;
+    if( step % cell_bits != 0 ) return;
+    std::vector<uint64_t> dims;
+    get_type_dims( dec_ty, dims );
+    if( dims.size() > 1 ) return;
+    ary_cell_indexed.insert( ary_to_int.at( ary_info.first ) );
   };
 
   for( const bb* bb : bb_vec ) {
@@ -459,6 +505,19 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
             // ary_to_base[ary_to_int.at( ary_info.first )] = cnt;
             // cnt += ary_info.second;
         note(eval, nullptr, eval);
+      }
+      else if (auto gep = llvm::dyn_cast<const llvm::GetElementPtrInst>(I)) {
+        note_gep( llvm::cast<const llvm::GEPOperator>(gep) );
+      }
+      else if (auto call = llvm::dyn_cast<const llvm::CallInst>(I)) {
+        auto fp = call->getCalledFunction();
+        if( fp && call->arg_size() >= 3 &&
+            ( fp->getName() == "memset" || fp->getName() == "memcpy" ||
+              fp->getName() == "memmove" ) ) {
+          note( call->getArgOperand(0), nullptr, nullptr );
+          if( fp->getName() != "memset" )
+            note( call->getArgOperand(1), nullptr, nullptr );
+        }
         }
       }
       }
@@ -491,15 +550,26 @@ init_full_array_model(std::map< const llvm::Instruction*, unsigned >& map ) {
   ar_model_full->set_debug_map( debug_map );
   ar_model_full->set_array_info( ary_to_int);
   // ar_model_full->set_access_map( map, ary_to_base );
-  ar_model_full->set_access_map(map, ary_to_base, ary_to_cells);
+  // ar_model_full->set_access_map(map, ary_to_base, ary_to_cells);
+  ar_model_full->set_access_map( map, ary_to_base, ary_to_cells,
+                                 ary_cell_indexed );
+
+  for( unsigned id : ary_cell_indexed )
+    scale_length_to_cells( id, ar_model_full->lengths.at(id) );
 
   // This code is to print the mapping of arrays to global array
   std::string array_range_info=print_array_ranges();
   if(o.dump_solver_query || o.smt_only) {
-    std::string name="test.smt2",dump_path = o.outDirPath.string();
-    std::ofstream dump_file(dump_path+name);
+    // std::string name="test.smt2",dump_path = o.outDirPath.string();
+    // std::ofstream dump_file(dump_path+name);
+    auto path = dump_file_path( o.outDirPath.string(), "test.smt2" );
+    std::ofstream dump_file(path);
+    if( !dump_file )
+      llvm_bmc_error( "bmc", "can not open " << path << " for writing" );
     dump_file<<array_range_info;
     dump_file.close();
+    if( !dump_file )
+      llvm_bmc_error( "bmc", "failed to write " << path );
   }
 
 }
@@ -512,10 +582,21 @@ void bmc_ds::refresh_array_state( unsigned bidx,
   ar_model_full->update_name( bidx, ary_to_int[I] );
 }
 
+void bmc_ds::scale_length_to_cells( unsigned ar_num, std::vector<expr>& len ) {
+  if( ary_cell_indexed.count( ar_num ) == 0 ) return;
+  unsigned cells = exists( ary_to_cells, ar_num ) ? ary_to_cells.at(ar_num) : 1;
+  if( cells <= 1 ) return;
+  if( len.size() != 1 )
+    llvm_bmc_error( "bmc", "a cell indexed array has one dimension, but "
+                    << len.size() << " lengths were recorded for it" );
+  len[0] = ( len[0] * solver_ctx.bv_val( cells, 64 ) ).simplify();
+}
+
 void bmc_ds::
 set_array_length( const llvm::Value* arr, std::vector<expr>& len ) {
   assert(arr);
   unsigned ar_num = ary_to_int.at(arr);
+  scale_length_to_cells( ar_num, len );
   switch( ar_model_init ) {
   case FULL : return ar_model_full->set_array_length( ar_num, len ); break;
   default: llvm_bmc_error( "bmc", "array model incomplete implementation!!");
@@ -533,17 +614,74 @@ bmc_ds::array_write( unsigned bidx, const llvm::StoreInst* I,
   }
 }
 
+void bmc_ds::scale_index_to_cells( unsigned ar_num, exprs& idxs ) {
+  if( ary_cell_indexed.count( ar_num ) == 0 ) return;
+  unsigned cells = exists( ary_to_cells, ar_num ) ? ary_to_cells.at(ar_num) : 1;
+  if( cells <= 1 ) return;
+  if( idxs.size() != 1 )
+    llvm_bmc_error( "bmc", "a cell indexed array has one dimension, but "
+                    << idxs.size() << " indices were built for it" );
+  idxs[0] = ( idxs[0] * solver_ctx.bv_val( cells, 64 ) ).simplify();
+}
+
 arr_write_expr bmc_ds::array_write_id(unsigned bidx, unsigned ary,
                                        exprs& idxs, expr& val) {
   if (ar_model_init != FULL)
     llvm_bmc_error("bmc","array model incomplete implementation!!");
+  scale_index_to_cells( ary, idxs );
   return ar_model_full->array_write_id(bidx, ary, idxs, val);
+}
+
+bool bmc_ds::has_bulk_update() {
+  return ar_model_init == FULL && ar_model_full->has_bulk_update();
+}
+
+arr_write_expr bmc_ds::array_fill_id( unsigned bidx, unsigned ary,
+                                      exprs& first, exprs& last, expr& val,
+                                      uint64_t elems ) {
+  if( ar_model_init != FULL )
+    llvm_bmc_error( "bmc","array model incomplete implementation!!" );
+  scale_index_to_cells( ary, first );
+  scale_index_to_cells( ary, last );
+  return ar_model_full->array_fill_id( bidx, ary, first, last, val, elems );
+}
+
+arr_write_expr bmc_ds::array_copy_id( unsigned bidx,
+                                      unsigned dst, exprs& dfirst, exprs& dlast,
+                                      unsigned src, exprs& sfirst, exprs& slast,
+                                      uint64_t elems ) {
+  if( ar_model_init != FULL )
+    llvm_bmc_error( "bmc","array model incomplete implementation!!" );
+  scale_index_to_cells( dst, dfirst );
+  scale_index_to_cells( dst, dlast );
+  scale_index_to_cells( src, sfirst );
+  scale_index_to_cells( src, slast );
+  return ar_model_full->array_copy_id( bidx, dst, dfirst, dlast,
+                                       src, sfirst, slast, elems );
+}
+
+arr_write_expr bmc_ds::array_fill_cells( unsigned bidx, unsigned ary,
+                                         expr& off, expr& cells,
+                                         expr& cell_val ) {
+  if( ar_model_init != FULL )
+    llvm_bmc_error( "bmc","array model incomplete implementation!!" );
+  return ar_model_full->array_fill_cells( bidx, ary, off, cells, cell_val );
+}
+
+arr_write_expr bmc_ds::array_copy_cells( unsigned bidx,
+                                         unsigned dst, expr& doff,
+                                         unsigned src, expr& soff,
+                                         expr& cells ) {
+  if( ar_model_init != FULL )
+    llvm_bmc_error( "bmc","array model incomplete implementation!!" );
+  return ar_model_full->array_copy_cells( bidx, dst, doff, src, soff, cells );
 }
 
 arr_read_expr bmc_ds::array_read_id(unsigned bidx, unsigned ary, exprs& idxs,
                                      const llvm::Type* ty) {
   if (ar_model_init != FULL)
     llvm_bmc_error("bmc","array model incomplete implementation!!");
+  scale_index_to_cells( ary, idxs );
   return ar_model_full->array_read_id(bidx, ary, idxs, ty);
 }
 

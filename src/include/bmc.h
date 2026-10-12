@@ -73,6 +73,7 @@ public:
   // Checking Specs and Reporting results
   // void eliminate_vars(bmc_ds*);
   void check_all_spec(bmc_ds*);
+  void dump_smt_only(bmc_ds*);
   bool run_solver(spec &, bmc_ds*);
   void check_all_spec_con( );
   bool run_solver_con(spec &);

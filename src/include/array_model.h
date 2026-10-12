@@ -39,9 +39,11 @@ public:
   //anything else is needed???
   std::vector<expr>& get_name_vec() { return array_index_names; };
   std::vector<expr>& get_M_name() {return M_name; };
+  std::vector<expr>& get_MR_name() {return MR_name; };
 private:
   std::vector<expr> array_index_names;
   std::vector<expr> M_name;
+  std::vector<expr> MR_name;
 };
 
 class array_model_full;
@@ -85,12 +87,28 @@ public:
   
   //Virtuals
   // virtual void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access, std::map< unsigned, unsigned >& array_start_add ) = 0;
-  virtual void set_access_map(std::map< const llvm::Instruction*, unsigned >& array_access, std::map< unsigned, unsigned >& array_start_add, std::map< unsigned, unsigned >& array_slot_cells) = 0;
+  // virtual void set_access_map(std::map< const llvm::Instruction*, unsigned >& array_access, std::map< unsigned, unsigned >& array_start_add, std::map< unsigned, unsigned >& array_slot_cells) = 0;
+  virtual void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access, std::map< unsigned, unsigned >& array_start_add, std::map< unsigned, unsigned >& array_slot_cells, std::set< unsigned >& array_cell_indexed ) = 0;
   virtual arr_write_expr array_write( unsigned bidx, const llvm::StoreInst* I, exprs& idx, expr& val ) = 0;
   virtual arr_read_expr array_read( unsigned bidx, const llvm::LoadInst* I, exprs& ) = 0;
   virtual arr_read_expr array_read( unsigned bidx, const llvm::ExtractValueInst* I, exprs& ) = 0;
   virtual arr_write_expr array_write_id(unsigned bidx, unsigned ary, exprs& idx, expr& val) = 0;
   virtual arr_read_expr array_read_id(unsigned bidx, unsigned ary, exprs&, const llvm::Type* ty) = 0;
+  virtual bool has_bulk_update() { return false; }
+  virtual arr_write_expr array_fill_id( unsigned bidx, unsigned ary,
+                                        exprs& first, exprs& last, expr& val,
+                                        uint64_t elems );
+  virtual arr_write_expr array_copy_id( unsigned bidx,
+                                        unsigned dst, exprs& dfirst, exprs& dlast,
+                                        unsigned src, exprs& sfirst, exprs& slast,
+                                        uint64_t elems );
+  virtual arr_write_expr array_fill_cells( unsigned bidx, unsigned ary,
+                                           expr& off, expr& cells,
+                                           expr& cell_val );
+  virtual arr_write_expr array_copy_cells( unsigned bidx,
+                                           unsigned dst, expr& doff,
+                                           unsigned src, expr& soff,
+                                           expr& cells );
   virtual void init_state( unsigned ) = 0;
   virtual void init_state( unsigned eb, array_state& s ) = 0;
   virtual void copy_to_init_state( array_state& ) = 0;
@@ -108,6 +126,7 @@ public:
   unsigned get_accessed_array( const llvm::Instruction* I );
   sort get_address_sort();
   sort get_data_sort();
+  sort get_real_data_sort();
   sort get_solver_array_ty( const llvm::ArrayType* ty );
   sort get_solver_array_ty( const llvm::PointerType* ty );
   std::vector< std::vector<expr> > get_array_lengths();
@@ -131,7 +150,16 @@ public:
   std::vector< sort > ar_sorts;
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
   std::map<const llvm::Value*,const llvm::Instruction*>* debug_map;
-  std::string initial_mem="",final_mem="";
+  // std::string initial_mem="",final_mem="";
+  std::string initial_mem="";
+  std::vector<expr> final_mem_vec;
+  void set_final_mem( expr& e ) {
+    final_mem_vec.clear();
+    final_mem_vec.push_back( e );
+  }
+  std::string final_mem() {
+    return final_mem_vec.empty() ? "" : final_mem_vec.back().to_string();
+  }
   bool is_initial_mem=true;
 };
 
@@ -145,10 +173,13 @@ public:
   void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access,
    // std::map< unsigned, unsigned >& array_start_add ) {
    std::map< unsigned, unsigned >& array_start_add,
-   std::map< unsigned, unsigned >& array_slot_cells) {
+   // std::map< unsigned, unsigned >& array_slot_cells) {
+   std::map< unsigned, unsigned >& array_slot_cells,
+   std::set< unsigned >& array_cell_indexed ) {
     ary_access_to_index = array_access;
     ar_bases = array_start_add;
     ar_slot_cells = array_slot_cells;
+    ar_cell_indexed = array_cell_indexed;
   };
 
   //Virtual defined
@@ -166,7 +197,26 @@ public:
 
   //Misc
   unsigned get_slot_cells(unsigned ary);
+  bool cell_unit_index( unsigned ary );
   expr slot_address(unsigned ary, exprs& idxs, exprs& ls);
+  expr last_cell_in_bound( exprs& idxs, exprs& ls, unsigned n );
+  bool has_bulk_update();
+  arr_write_expr array_fill_id( unsigned bidx, unsigned ary, exprs& first,
+                                exprs& last, expr& val, uint64_t elems );
+  arr_write_expr array_copy_id( unsigned bidx,
+                                unsigned dst, exprs& dfirst, exprs& dlast,
+                                unsigned src, exprs& sfirst, exprs& slast,
+                                uint64_t elems );
+  arr_write_expr array_fill_cells( unsigned bidx, unsigned ary, expr& off,
+                                   expr& cells, expr& cell_val );
+  arr_write_expr array_copy_cells( unsigned bidx, unsigned dst, expr& doff,
+                                   unsigned src, expr& soff, expr& cells );
+  expr cell_run_address( unsigned ary, expr& off );
+  expr cell_run_in_bound( unsigned ary, expr& off, expr& cells );
+  expr in_cell_run( expr& k, expr& addr, uint64_t cells );
+  expr in_cell_run( expr& k, expr& addr, expr& cells );
+  expr uniform_cell( expr& val );
+  expr start_new_memory( unsigned bidx, expr& old_name );
   expr cell_address(expr& addr, unsigned k);
   expr value_to_bits(expr& val);
   expr bits_to_value(expr& bits, const llvm::Type* ty);
@@ -174,6 +224,7 @@ public:
   std::string M_array_name =  "M";
   std::map< unsigned, unsigned > ar_bases;
   std::map< unsigned, unsigned > ar_slot_cells;
+  std::set< unsigned > ar_cell_indexed;
 
 };
 
@@ -187,7 +238,9 @@ public:
   void set_access_map( std::map< const llvm::Instruction*, unsigned >& array_access,
    // std::map< unsigned, unsigned >& array_start_add ) {
    std::map< unsigned, unsigned >& array_start_add,
-   std::map< unsigned, unsigned >& array_slot_cells) {
+   // std::map< unsigned, unsigned >& array_slot_cells) {
+   std::map< unsigned, unsigned >& array_slot_cells,
+   std::set< unsigned >& array_cell_indexed ) {
     ary_access_to_index = array_access;
   };
 

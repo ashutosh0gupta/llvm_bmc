@@ -5,6 +5,7 @@
 #include "include/array_model.h"
 // #include <llvm-20/llvm/Support/raw_ostream.h>
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/IR/GetElementPtrTypeIterator.h>
 // #include "include/memory_event.h"
 //  #include "include/collect_globals.h"
 
@@ -77,6 +78,19 @@ static void warn_no_wraparound(const llvm::Instruction *I) {
   llvm_bmc_warning("bmc", "integer mode does not model wrap-around; "
                           "arithmetic that may wrap found at line "
                               << line << ", use -b for exact results");
+}
+
+static void warn_unbounded_nondet(const llvm::Instruction *I) {
+  static bool warned = false;
+  if (warned)
+    return;
+  warned = true;
+  unsigned line = I->getDebugLoc() ? I->getDebugLoc().getLine() : 0;
+  llvm_bmc_warning("bmc", "integer mode does not confine a nondet to its "
+                          "width; the one at line "
+                              << line
+                              << " can take any integer value, use -b to keep "
+                                 "it inside the type");
 }
 
 void bmc_pass::translateBinOp(unsigned bidx, const llvm::BinaryOperator *bop) {
@@ -172,7 +186,7 @@ void bmc_pass::translateBinOp(unsigned bidx, const llvm::BinaryOperator *bop) {
     case llvm::Instruction::Add:
     case llvm::Instruction::Sub:
     case llvm::Instruction::Mul:
-      if (!bop->hasNoSignedWrap())
+      // if (!bop->hasNoSignedWrap())
         warn_no_wraparound(bop);
       break;
     default:
@@ -383,6 +397,29 @@ void bmc_pass::translateCmpInst(unsigned bidx, const llvm::CmpInst *cmp) {
   // figure out which one is actually supported
   llvm::Value *lhs = cmp->getOperand(0), *rhs = cmp->getOperand(1);
   // lhs->print( llvm::outs() ); std::cout << "\n";
+
+  bool l_null = llvm::isa<llvm::ConstantPointerNull>(lhs);
+  bool r_null = llvm::isa<llvm::ConstantPointerNull>(rhs);
+  if (l_null || r_null) {
+    auto pred = cmp->getPredicate();
+    if (pred != llvm::CmpInst::ICMP_EQ && pred != llvm::CmpInst::ICMP_NE)
+      llvm_bmc_error("bmc", "a pointer is compared against null with an"
+                     " ordering, which says nothing in a model that carries"
+                     " offsets and not addresses");
+    bool both = l_null && r_null;
+    if (!both) {
+      llvm::Value *other = l_null ? rhs : lhs;
+      if (!get_array_info(other).first)
+        llvm_bmc_error("bmc", "the address " << toString(other)
+                       << " is compared against null but names no object, so"
+                          " there is nothing to say whether it is null");
+    }
+    bool eq = pred == llvm::CmpInst::ICMP_EQ;
+    expr res = solver_ctx.bool_val(both ? eq : !eq);
+    bmc_ds_ptr->m.insert_term_map(cmp, bidx, res);
+    return;
+  }
+
   expr l = bmc_ds_ptr->m.get_term(lhs);
   expr r = bmc_ds_ptr->m.get_term(rhs);
 
@@ -519,6 +556,12 @@ void bmc_pass::translatePhiNode(unsigned bidx, const llvm::PHINode *phi) {
   //   bmc_ds_ptr->quant_elim_vars.push_back(new_var);
   // }
 
+  if (phi->getType()->isPointerTy() && !get_array_info(phi).first)
+    llvm_bmc_error("bmc", "the address " << toString(phi)
+                   << " reaches a different object on different paths; a"
+                      " pointer here carries an offset into its object and not"
+                      " the object, so the two cannot be joined");
+
   std::vector<expr> phi_cons;
   for (unsigned i = 0; i < num; i++) {
     const bb *prev = phi->getIncomingBlock(i);
@@ -531,9 +574,23 @@ void bmc_pass::translatePhiNode(unsigned bidx, const llvm::PHINode *phi) {
         pre_bidxes.push_back(pre_b_local);
       }
     }
+    bool ptr_global = phi->getType()->isPointerTy() &&
+                      llvm::isa<llvm::GlobalVariable>(v_);
+
+    if (phi->getType()->isPointerTy() && !pre_bidxes.empty() && !ptr_global &&
+        !bmc_ds_ptr->m.has_term(v_)) {
+      std::string in;
+      llvm::raw_string_ostream os(in);
+      v_->print(os);
+      llvm_bmc_error("bmc", "the address " << toString(phi)
+                     << " comes in as" << in << ", which carries no offset of"
+                        " its own, so there is nothing to join on");
+    }
     // todo: check if this works
     for (unsigned pre_bidx : pre_bidxes) {
-      expr prev_var = bmc_ds_ptr->m.get_earlier_term(v_, pre_bidx);
+      // expr prev_var = bmc_ds_ptr->m.get_earlier_term(v_, pre_bidx);
+      expr prev_var = ptr_global ? index_val(o, 0)
+                                 : bmc_ds_ptr->m.get_earlier_term(v_, pre_bidx);
       // expr prev_var = bmc_ds_ptr->m.get_term( v_ );
       expr path_cond = extend_path(bidx, pre_bidx);
       if (!z3::eq(prev_var.get_sort(), new_var.get_sort())) {
@@ -684,6 +741,7 @@ void bmc_pass::translateNondet(unsigned bidx, const llvm::CallInst *call) {
     // } else if (fp != NULL && (fp->getReturnType()->isIntegerTy(1))) {
       // expr nondet_bit = get_fresh_bool(solver_ctx, "nondet");
       // bmc_ds_ptr->m.insert_term_map(call, bidx, nondet_bit);
+    warn_unbounded_nondet(call);
     bmc_ds_ptr->m.insert_term_map(call, bidx,
                                   get_fresh_int(solver_ctx, "nondet"));
   }
@@ -725,9 +783,40 @@ void bmc_pass::translateDebugInfo(unsigned bidx,
   } // not possible
 }
 
-static llvm::Type *whole_array_elem(const llvm::Value *p,
-                                    std::vector<uint64_t> &dims) {
+// static llvm::Type *whole_array_elem(const llvm::Value *p,
+//                                     std::vector<uint64_t> &dims) {
+static bool run_const_offset(const llvm::Value *p, uint64_t &boff,
+                             const llvm::DataLayout &dl) {
   const llvm::Value *base = p->stripPointerCasts();
+  unsigned bits = dl.getIndexTypeSizeInBits(base->getType());
+  llvm::APInt off(bits, 0);
+  while (auto gep = llvm::dyn_cast<llvm::GEPOperator>(base)) {
+    llvm::APInt step(bits, 0);
+    if (!gep->accumulateConstantOffset(dl, step))
+      return false;
+    off += step;
+    base = gep->getPointerOperand()->stripPointerCasts();
+  }
+  if (!llvm::isa<llvm::AllocaInst>(base) &&
+      !llvm::isa<llvm::GlobalVariable>(base))
+    return false;
+  boff = off.getZExtValue();
+  return true;
+}
+
+static llvm::Type *array_run_elem(const llvm::Value *p,
+                                  std::vector<uint64_t> &dims,
+                                  const llvm::Value *&obj,
+                                  const llvm::DataLayout &dl) {
+  const llvm::Value *base = p->stripPointerCasts();
+  while (auto gep = llvm::dyn_cast<llvm::GEPOperator>(base))
+    base = gep->getPointerOperand()->stripPointerCasts();
+  if (!llvm::isa<llvm::AllocaInst>(base) &&
+      !llvm::isa<llvm::GlobalVariable>(base)) {
+    auto info = get_array_info(base);
+    if (info.first)
+      base = info.first;
+  }
   llvm::Type *ty = nullptr;
   if (auto a = llvm::dyn_cast<llvm::AllocaInst>(base))
     ty = a->getAllocatedType();
@@ -736,6 +825,11 @@ static llvm::Type *whole_array_elem(const llvm::Value *p,
   if (!ty)
     return nullptr;
   dims.clear();
+  if (type_is_byte_run(ty)) {
+    get_type_dims(ty, dims);
+    obj = base;
+    return llvm::Type::getInt8Ty(ty->getContext());
+  }
   while (auto at = llvm::dyn_cast<llvm::ArrayType>(ty)) {
     dims.push_back(at->getNumElements());
     ty = at->getElementType();
@@ -744,19 +838,100 @@ static llvm::Type *whole_array_elem(const llvm::Value *p,
     dims.push_back(1);
   if (!ty->isIntegerTy() && !ty->isFloatingPointTy())
     return nullptr;
+  if (dl.getTypeAllocSize(ty) == 0)
+    return nullptr;
+  obj = base;
   return ty;
 }
 
 void bmc_pass::translateMemIntrinsic(unsigned bidx,
                                      const llvm::MemIntrinsic *mi) {
-  auto len_c = llvm::dyn_cast<llvm::ConstantInt>(mi->getLength());
-  if (!len_c)
-    llvm_bmc_error("bmc", "memset/memcpy with a non-constant length is not supported");
-  if (llvm::isa<llvm::MemMoveInst>(mi))
-    llvm_bmc_error("bmc", "memmove is not supported");
-  const llvm::DataLayout &dl = mi->getModule()->getDataLayout();
+  // auto len_c = llvm::dyn_cast<llvm::ConstantInt>(mi->getLength());
+  // if (!len_c)
+  //   llvm_bmc_error("bmc", "memset/memcpy with a non-constant length is not supported");
+  // if (llvm::isa<llvm::MemMoveInst>(mi))
+  //   llvm_bmc_error("bmc", "memmove is not supported");
+  // const llvm::DataLayout &dl = mi->getModule()->getDataLayout();
+  bool is_set = llvm::isa<llvm::MemSetInst>(mi);
+  const llvm::Value *val_or_src =
+      is_set ? llvm::cast<llvm::MemSetInst>(mi)->getValue()
+             : llvm::cast<llvm::MemTransferInst>(mi)->getRawSource();
+  translateMemFill(bidx, mi, mi->getRawDest(), val_or_src, mi->getLength(),
+                   is_set);
+}
+
+void bmc_pass::translateMemCall(unsigned bidx, const llvm::CallInst *call,
+                                llvm::StringRef name) {
+  if (call->arg_size() < 3)
+    llvm_bmc_error("bmc", name.str() << " is called with "
+                   << call->arg_size()
+                   << " arguments, not the three it takes");
+  translateMemFill(bidx, call, call->getArgOperand(0), call->getArgOperand(1),
+                   call->getArgOperand(2), name == "memset");
+}
+
+bool bmc_pass::run_offset_term(const llvm::Value *p, expr &off,
+                               const llvm::DataLayout &dl) {
+  const llvm::Value *base = p->stripPointerCasts();
+  off = index_val(o, 0);
+  while (auto gep = llvm::dyn_cast<llvm::GEPOperator>(base)) {
+    llvm::APInt c(dl.getIndexTypeSizeInBits(gep->getType()), 0);
+    if (gep->accumulateConstantOffset(dl, c)) {
+      off = fold_add_num( off, c.getZExtValue() );
+    } else {
+      auto gti = llvm::gep_type_begin(gep);
+      for (unsigned k = 1; k < gep->getNumOperands(); k++, ++gti) {
+        auto iv = gep->getOperand(k);
+        if (auto sty = gti.getStructTypeOrNull()) {
+          auto f = llvm::dyn_cast<llvm::ConstantInt>(iv);
+          if (!f)
+            return false;
+          off = fold_add_num( off, dl.getStructLayout(sty)
+                                  ->getElementOffset(f->getZExtValue()) );
+          continue;
+        }
+        uint64_t step = dl.getTypeAllocSize(gti.getIndexedType());
+        if (auto c = llvm::dyn_cast<llvm::ConstantInt>(iv)) {
+          off = fold_add_num( off, c->getZExtValue()*step );
+          continue;
+        }
+        if (!bmc_ds_ptr->m.has_term(iv))
+          return false;
+        expr idx = bmc_ds_ptr->m.get_term(iv);
+        if (o.bit_precise)
+          idx = convert_to_bv(idx, 64);
+        off = (off + idx*index_val(o, step)).simplify();
+      }
+    }
+    base = gep->getPointerOperand()->stripPointerCasts();
+  }
+  if (!llvm::isa<llvm::AllocaInst>(base) &&
+      !llvm::isa<llvm::GlobalVariable>(base)) {
+    if (!llvm::isa<llvm::PHINode>(base) && !llvm::isa<llvm::LoadInst>(base))
+      return false;
+    if (!bmc_ds_ptr->m.has_term(base))
+      return false;
+    expr b = bmc_ds_ptr->m.get_term(base);
+    if (o.bit_precise)
+      b = convert_to_bv(b, 64);
+    off = fold_add(off, b);
+  }
+  return true;
+}
+
+void bmc_pass::translateMemFill(unsigned bidx, const llvm::Instruction *at,
+                                const llvm::Value *dest,
+                                const llvm::Value *val_or_src,
+                                const llvm::Value *length, bool is_set) {
+  auto len_c = llvm::dyn_cast<llvm::ConstantInt>(length);
+  const llvm::DataLayout &dl = at->getModule()->getDataLayout();
   std::vector<uint64_t> ddims, sdims;
-  llvm::Type *dty = whole_array_elem(mi->getRawDest(), ddims);
+  // llvm::Type *dty = whole_array_elem(mi->getRawDest(), ddims);
+  uint64_t dboff = 0, sboff = 0;
+  bool dboff_c = run_const_offset(dest, dboff, dl);
+  bool sboff_c = is_set || run_const_offset(val_or_src, sboff, dl);
+  const llvm::Value *dobj = nullptr, *sobj = nullptr;
+  llvm::Type *dty = array_run_elem(dest, ddims, dobj, dl);
   auto cell = [&](const std::vector<uint64_t> &dims, uint64_t k) {
     exprs idx(dims.size(), index_val(o, 0));
     for (size_t d = dims.size(); d-- > 0;) {
@@ -765,19 +940,148 @@ void bmc_pass::translateMemIntrinsic(unsigned bidx,
     }
     return idx;
   };
+  auto flat_of = [](const std::vector<uint64_t> &dims) {
+    uint64_t f = 1;
+    for (auto d : dims) f *= d;
+    return f;
+  };
   unsigned did;
-  if (!dty || !bmc_ds_ptr->array_id(mi->getRawDest()->stripPointerCasts(), did))
-    llvm_bmc_error("bmc", "memset/memcpy target must be a whole array of scalars");
+  // if (!dty || !bmc_ds_ptr->array_id(mi->getRawDest()->stripPointerCasts(), did))
+  //   llvm_bmc_error("bmc", "memset/memcpy target must be a whole array of scalars");
+  if (!dty)
+    llvm_bmc_error("bmc", "the target of this fill is not a run of scalars"
+                   " inside an alloca or a global, so there is no array to"
+                   " write into: " << toString(dest) << " in "
+                   << toString(at));
+  if (!bmc_ds_ptr->array_id(dobj, did))
+    llvm_bmc_error("bmc", "the object this fill writes into was never"
+                   " registered as an array: " << toString(dobj) << " in "
+                   << toString(at));
   uint64_t esz = dl.getTypeAllocSize(dty);
+
+  llvm::Type *sty = nullptr;
+  unsigned sid = 0;
+  bool by_cells = !len_c || !dboff_c || !sboff_c ||
+                  dboff % esz != 0 || len_c->getZExtValue() % esz != 0;
+  if (!is_set) {
+    sty = array_run_elem(val_or_src, sdims, sobj, dl);
+    if (sty && bmc_ds_ptr->array_id(sobj, sid) &&
+        (sty != dty || (sboff_c && sboff % esz != 0)))
+      by_cells = true;
+  }
+  if (by_cells) {
+    unsigned cb = o.mem_cell_bits;
+    if (!bmc_ds_ptr->has_bulk_update() || cb == 0 || cb % 8 != 0)
+      llvm_bmc_error("bmc", "this run of memory does not divide into the"
+                     " elements it lands on, so it has to go in as a run of"
+                     " cells, which needs -b and a cell of whole bytes");
+    uint64_t cw = cb/8;
+    bool all_const = len_c && dboff_c && sboff_c;
+    if (cw != 1 && !all_const)
+      llvm_bmc_error("bmc", "a run of memory whose start or length is not a"
+                     " constant goes in cell by cell, which needs a cell of one"
+                     " byte; run with --memory-granularity 8");
+    if (all_const && (len_c->getZExtValue() % cw != 0 || dboff % cw != 0 ||
+                      sboff % cw != 0))
+      llvm_bmc_error("bmc", "a run of " << len_c->getZExtValue() << " bytes at "
+                     << dboff << " does not divide into " << cw << " byte"
+                        " cells; run with --memory-granularity 8");
+    auto cells_of = [&](const llvm::Value *v) {
+      if (auto c = llvm::dyn_cast<llvm::ConstantInt>(v))
+        return index_val(o, c->getZExtValue()/cw);
+      if (!bmc_ds_ptr->m.has_term(v))
+        llvm_bmc_error("bmc", "the length of this run of memory is not a"
+                       " constant and carries no term, so how much it covers is"
+                       " not known");
+      expr t = bmc_ds_ptr->m.get_term(v);
+      return convert_to_bv(t, 64);
+    };
+    auto off_of = [&](const llvm::Value *p, bool is_const, uint64_t c) {
+      expr t(solver_ctx);
+      if (is_const) return index_val(o, c/cw);
+      if (!run_offset_term(p, t, dl))
+        llvm_bmc_error("bmc", "this run of memory starts at an offset the geps"
+                       " give no term for, so where it begins is not known");
+      return t;
+    };
+    expr ncells = cells_of(length);
+    expr doff = off_of(dest, dboff_c, dboff);
+    auto emit_cells = [&](arr_write_expr wr) {
+      bmc_ds_ptr->bmc_vec.push_back(wr.updated_expr);
+      add_bound_spec(bidx, wr.size_bound_guard);
+    };
+    if (is_set) {
+      auto byte = llvm::dyn_cast<llvm::ConstantInt>(val_or_src);
+      if (!byte)
+        llvm_bmc_error("bmc", "memset with a non-constant byte is not supported");
+      llvm::Type *bty = llvm::Type::getIntNTy(at->getContext(), cb);
+      expr v = read_const(o, llvm::ConstantInt::get(bty,
+                            byte->getZExtValue() & 0xff));
+      emit_cells(bmc_ds_ptr->array_fill_cells(bidx, did, doff, ncells, v));
+    } else {
+      if (!sty || !bmc_ds_ptr->array_id(sobj, sid))
+        llvm_bmc_error("bmc", "memcpy source must be a run inside an alloca or"
+                       " a global");
+      expr soff = off_of(val_or_src, sboff_c, sboff);
+      emit_cells(bmc_ds_ptr->array_copy_cells(bidx, did, doff, sid, soff,
+                                              ncells));
+    }
+    return;
+  }
+
   uint64_t len = len_c->getZExtValue();
-  if (len % esz != 0)
-    llvm_bmc_error("bmc", "memset/memcpy length is not a whole number of elements");
+  // if (len % esz != 0)
+  //   llvm_bmc_error("bmc", "memset/memcpy length is not a whole number of elements");
+  uint64_t dstart = dboff/esz;
   uint64_t n = len / esz;
-  expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+  // expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+  if (dstart + n > flat_of(ddims))
+    llvm_bmc_error("bmc", "memset/memcpy writes " << n << " elements of "
+                   << esz << " bytes from " << dstart << " in "
+                   << toString(dobj) << ", which holds " << flat_of(ddims)
+                   << " of them: " << toString(at));
+
+  const uint64_t bulk_from = 64;
+  if (n > bulk_from && bmc_ds_ptr->has_bulk_update()) {
+    exprs dfirst = cell(ddims, dstart), dlast = cell(ddims, dstart + n - 1);
+    auto emit = [&](arr_write_expr wr) {
+      bmc_ds_ptr->bmc_vec.push_back(wr.updated_expr);
+      add_bound_spec(bidx, wr.size_bound_guard);
+    };
+    if (is_set) {
+      auto byte = llvm::dyn_cast<llvm::ConstantInt>(val_or_src);
+      if (!byte)
+        llvm_bmc_error("bmc", "memset with a non-constant byte is not supported");
+      llvm::Constant *c = nullptr;
+      if (dty->isIntegerTy(8))
+        c = llvm::ConstantInt::get(dty, byte->getZExtValue());
+      else if (byte->isZero())
+        c = llvm::Constant::getNullValue(dty);
+      else
+        llvm_bmc_error("bmc", "memset of a non-zero byte into wider elements is not supported");
+      expr v = read_const(o, c);
+      emit(bmc_ds_ptr->array_fill_id(bidx, did, dfirst, dlast, v, n));
+    } else {
+      if (!sty || sty != dty || !bmc_ds_ptr->array_id(sobj, sid))
+        llvm_bmc_error("bmc", "memcpy needs runs of the same scalar type at"
+                       " both ends");
+      uint64_t sstart = sboff/esz;
+      if (sstart + n > flat_of(sdims))
+        llvm_bmc_error("bmc", "memcpy reads " << n << " elements from "
+                       << sstart << " in an array of " << flat_of(sdims)
+                       << ", so the run goes past its end");
+      exprs sfirst = cell(sdims, sstart), slast = cell(sdims, sstart + n - 1);
+      emit(bmc_ds_ptr->array_copy_id(bidx, did, dfirst, dlast,
+                                     sid, sfirst, slast, n));
+    }
+    return;
+  }
 
   std::vector<expr> vals;
-  if (auto ms = llvm::dyn_cast<llvm::MemSetInst>(mi)) {
-    auto byte = llvm::dyn_cast<llvm::ConstantInt>(ms->getValue());
+  // if (auto ms = llvm::dyn_cast<llvm::MemSetInst>(mi)) {
+  //   auto byte = llvm::dyn_cast<llvm::ConstantInt>(ms->getValue());
+  if (is_set) {
+    auto byte = llvm::dyn_cast<llvm::ConstantInt>(val_or_src);
     if (!byte)
       llvm_bmc_error("bmc", "memset with a non-constant byte is not supported");
     llvm::Constant *c = nullptr;
@@ -790,28 +1094,41 @@ void bmc_pass::translateMemIntrinsic(unsigned bidx,
     for (uint64_t k = 0; k < n; k++)
       vals.push_back(read_const(o, c));
   } else {
-    auto mt = llvm::cast<llvm::MemTransferInst>(mi);
-    llvm::Type *sty = whole_array_elem(mt->getRawSource(), sdims);
-    unsigned sid;
-    if (!sty || sty != dty ||
-        !bmc_ds_ptr->array_id(mt->getRawSource()->stripPointerCasts(), sid))
-      llvm_bmc_error("bmc", "memcpy needs whole arrays of the same scalar type");
+    // auto mt = llvm::cast<llvm::MemTransferInst>(mi);
+    // llvm::Type *sty = whole_array_elem(mt->getRawSource(), sdims);
+    // unsigned sid;
+    // if (!sty || sty != dty ||
+    //     !bmc_ds_ptr->array_id(mt->getRawSource()->stripPointerCasts(), sid))
+    //   llvm_bmc_error("bmc", "memcpy needs whole arrays of the same scalar type");
+    if (!sty || sty != dty || !bmc_ds_ptr->array_id(sobj, sid))
+      llvm_bmc_error("bmc", "memcpy needs runs of the same scalar type at both"
+                     " ends");
+    uint64_t sstart = sboff/esz;
+    if (sstart + n > flat_of(sdims))
+      llvm_bmc_error("bmc", "memcpy reads " << n << " elements of " << esz
+                     << " bytes from " << sstart << " in " << toString(sobj)
+                     << ", which holds " << flat_of(sdims) << " of them: "
+                     << toString(at));
     for (uint64_t k = 0; k < n; k++) {
-      exprs idx = cell(sdims, k);
+      // exprs idx = cell(sdims, k);
+      exprs idx = cell(sdims, sstart + k);
       auto rd = bmc_ds_ptr->array_read_id(bidx, sid, idx, sty);
-      if (o.include_out_of_bound_specs)
-        bmc_ds_ptr->add_spec(!path_bit || rd.size_bound_guard,
-                             spec_reason_t::OUT_OF_BOUND);
+      // if (o.include_out_of_bound_specs)
+      //   bmc_ds_ptr->add_spec(!path_bit || rd.size_bound_guard,
+      //                        spec_reason_t::OUT_OF_BOUND);
+      add_bound_spec(bidx, rd.size_bound_guard);
       vals.push_back(rd.return_val);
     }
   }
   for (uint64_t k = 0; k < n; k++) {
-    exprs idx = cell(ddims, k);
+    // exprs idx = cell(ddims, k);
+    exprs idx = cell(ddims, dstart + k);
     auto wr = bmc_ds_ptr->array_write_id(bidx, did, idx, vals[k]);
     bmc_ds_ptr->bmc_vec.push_back(wr.updated_expr);
-    if (o.include_out_of_bound_specs)
-      bmc_ds_ptr->add_spec(!path_bit || wr.size_bound_guard,
-                           spec_reason_t::OUT_OF_BOUND);
+    // if (o.include_out_of_bound_specs)
+    //   bmc_ds_ptr->add_spec(!path_bit || wr.size_bound_guard,
+    //                        spec_reason_t::OUT_OF_BOUND);
+    add_bound_spec(bidx, wr.size_bound_guard);
   }
 }
 
@@ -917,6 +1234,63 @@ void bmc_pass::translateSqrt(unsigned bidx, const llvm::CallInst *call) {
   bmc_ds_ptr->m.insert_term_map(call, bidx, r);
 }
 
+void bmc_pass::need_bv_mode(const char *what) {
+  if (!o.bit_precise)
+    llvm_bmc_error("bmc", what << " works on the bits of its argument, which "
+                   "integer mode does not model; use -b");
+}
+
+void bmc_pass::translateFunnelShift(unsigned bidx,
+                                    const llvm::IntrinsicInst *I, bool left) {
+  need_bv_mode(left ? "llvm.fshl" : "llvm.fshr");
+  expr a = bmc_ds_ptr->m.get_term(I->getArgOperand(0));
+  expr b = bmc_ds_ptr->m.get_term(I->getArgOperand(1));
+  expr c = bmc_ds_ptr->m.get_term(I->getArgOperand(2));
+  unsigned w = a.get_sort().bv_size();
+  if (b.get_sort().bv_size() != w || c.get_sort().bv_size() != w)
+    llvm_bmc_error("bmc", "a funnel shift wants all three arguments at one "
+                   "width, but they are " << w << ", "
+                   << b.get_sort().bv_size() << " and "
+                   << c.get_sort().bv_size());
+  expr wide = z3::concat(a, b);
+  expr rem = z3::urem(c, solver_ctx.bv_val(w, w));
+  expr sh = z3::zext(c.is_numeral() ? rem.simplify() : rem, w);
+  expr r = left ? z3::shl(wide, sh).extract(2 * w - 1, w)
+                : z3::lshr(wide, sh).extract(w - 1, 0);
+  if (a.is_numeral() && b.is_numeral() && c.is_numeral())
+    r = r.simplify();
+  bmc_ds_ptr->m.insert_term_map(I, bidx, r);
+}
+
+void bmc_pass::translateMinMax(unsigned bidx, const llvm::IntrinsicInst *I,
+                               bool is_max, bool is_signed) {
+  if (!is_signed)
+    need_bv_mode("an unsigned min/max intrinsic");
+  expr a = bmc_ds_ptr->m.get_term(I->getArgOperand(0));
+  expr b = bmc_ds_ptr->m.get_term(I->getArgOperand(1));
+  expr gt = is_signed ? (a > b) : z3::ugt(a, b);
+  expr r = ite(is_max ? gt : !gt, a, b);
+  if (a.is_numeral() && b.is_numeral())
+    r = r.simplify();
+  bmc_ds_ptr->m.insert_term_map(I, bidx, r);
+}
+
+void bmc_pass::translateByteSwap(unsigned bidx,
+                                 const llvm::IntrinsicInst *I) {
+  need_bv_mode("llvm.bswap");
+  expr x = bmc_ds_ptr->m.get_term(I->getArgOperand(0));
+  unsigned w = x.get_sort().bv_size();
+  if (w % 8 != 0 || w < 16)
+    llvm_bmc_error("bmc", "llvm.bswap on a " << w << " bit value, which is "
+                   "not a whole number of at least two bytes");
+  expr r = x.extract(7, 0);
+  for (unsigned k = 1; k < w / 8; k++)
+    r = z3::concat(r, x.extract(8 * k + 7, 8 * k));
+  if (x.is_numeral())
+    r = r.simplify();
+  bmc_ds_ptr->m.insert_term_map(I, bidx, r);
+}
+
 int bmc_pass::translateIntrinsicInst(unsigned bidx,
                                      const llvm::IntrinsicInst *I) {
   assert(I);
@@ -938,6 +1312,24 @@ int bmc_pass::translateIntrinsicInst(unsigned bidx,
     translateFloatAbs(bidx, I, I->getArgOperand(0));
   } else if (I->getIntrinsicID() == llvm::Intrinsic::copysign) {
     translateCopySign(bidx, I, I->getArgOperand(0), I->getArgOperand(1));
+  } else if (I->getIntrinsicID() == llvm::Intrinsic::sqrt) {
+    translateSqrt(bidx, I);
+  } else if (I->getIntrinsicID() == llvm::Intrinsic::atan) {
+    translateAtan(bidx, I);
+  } else if (I->getIntrinsicID() == llvm::Intrinsic::fshl) {
+    translateFunnelShift(bidx, I, true);
+  } else if (I->getIntrinsicID() == llvm::Intrinsic::fshr) {
+    translateFunnelShift(bidx, I, false);
+  } else if (I->getIntrinsicID() == llvm::Intrinsic::smax) {
+    translateMinMax(bidx, I, true, true);
+  } else if (I->getIntrinsicID() == llvm::Intrinsic::smin) {
+    translateMinMax(bidx, I, false, true);
+  } else if (I->getIntrinsicID() == llvm::Intrinsic::umax) {
+    translateMinMax(bidx, I, true, false);
+  } else if (I->getIntrinsicID() == llvm::Intrinsic::umin) {
+    translateMinMax(bidx, I, false, false);
+  } else if (I->getIntrinsicID() == llvm::Intrinsic::bswap) {
+    translateByteSwap(bidx, I);
   } else if (I->getIntrinsicID() == llvm::Intrinsic::eh_typeid_for) {
     // llvm::errs() << "\n\nMATCHED INTRINSIC ID " << *I << "\n\n";
     auto predecessor =
@@ -1033,7 +1425,8 @@ int bmc_pass::translateIntrinsicInst(unsigned bidx,
 int bmc_pass::translateCallInst(unsigned bidx, const llvm::CallInst *call) {
   assert(call);
 
-  llvm::Function *fp = call->getCalledFunction();
+  // llvm::Function *fp = call->getCalledFunction();
+  llvm::Function *fp = get_callee(call);
 
   if (auto dbg_val = llvm::dyn_cast<llvm::IntrinsicInst>(call)) {
     return translateIntrinsicInst(bidx, dbg_val);
@@ -1057,6 +1450,7 @@ int bmc_pass::translateCallInst(unsigned bidx, const llvm::CallInst *call) {
     // expr AbsArg = bmc_ds_ptr->m.get_term(arg);
     // bmc_ds_ptr->m.insert_term_map(call, bidx, AbsArg);
              fp->getName() == "system__assertions__raise_assert_failure") {
+    // not be translated.
     src_loc rf_loc = getLoc(call);
     bmc_ds_ptr->add_spec(!bmc_ds_ptr->get_path_bit(bidx),
                          spec_reason_t::ASSERT, rf_loc);
@@ -1078,7 +1472,10 @@ int bmc_pass::translateCallInst(unsigned bidx, const llvm::CallInst *call) {
     bmc_ds_ptr->add_spec(!bmc_ds_ptr->get_path_bit(bidx), spec_reason_t::ASSERT,
                          af_loc);
     bmc_ds_ptr->set_path_bit(bidx, solver_ctx.bool_val(false));
-  } else if (fp != NULL && fp->getName() == "abort") {
+  // } else if (fp != NULL && fp->getName() == "abort") {
+  } else if (fp != NULL && (fp->getName() == "abort" ||
+                            fp->getName() == "exit" ||
+                            fp->getName() == "_exit")) {
     // Execution does not continue past an abort, so the path is cut. No
     // property is attached: an abort is not by itself an error, and it is how
     // an assumption is written when there is no assume to call
@@ -1146,19 +1543,35 @@ int bmc_pass::translateCallInst(unsigned bidx, const llvm::CallInst *call) {
 
   } else if (fp != NULL && fp->getName().starts_with("__cxa_end_catch")) {
     // llvm::errs() << "\n\n\n\n\n CATCH ENDDDDDDD \n\n\n";
-  } else if (fp != NULL && fp->getName().starts_with("_Znwm")) {
+  // } else if (fp != NULL && fp->getName().starts_with("_Znwm")) {
+  } else if (fp != NULL && (fp->getName() == "memset" ||
+                            fp->getName() == "memcpy" ||
+                            fp->getName() == "memmove")) {
+    translateMemCall(bidx, call, fp->getName());
+  } else if (is_heap_alloc(call)) {
     auto val = call->getOperand(0);
-    unsigned ar_num = bmc_ds_ptr->ary_to_int.at(call);
-    bmc_ds_ptr->m.insert_term_map(call, get_expr_const(solver_ctx, ar_num));
+    // unsigned ar_num = bmc_ds_ptr->ary_to_int.at(call);
+    // bmc_ds_ptr->m.insert_term_map(call, get_expr_const(solver_ctx, ar_num));
+    bmc_ds_ptr->m.insert_term_map(call, index_val(o, 0));
     auto val_expr = bmc_ds_ptr->m.get_term(val);
+    if (o.bit_precise)
+      val_expr = convert_to_bv(val_expr, 64);
     std::vector<expr> ls;
     ls.push_back(val_expr);
     bmc_ds_ptr->set_array_length(call, ls);
+  } else if (fp != NULL && fp->getName() == "free") {
+    static bool warned = false;
+    if (!warned) {
+      warned = true;
+      llvm_bmc_warning("bmc", "free is ignored, so a use after free is not "
+                              "detected");
+    }
   } else {
     call->print(llvm::outs());
     std::cout << "\n";
     // llvm_bmc_error("bmc", "function call is not recognized !!");
-    llvm::Function *fn = call->getCalledFunction();
+    // llvm::Function *fn = call->getCalledFunction();
+    llvm::Function *fn = get_callee(call);
     std::string what = fn ? fn->getName().str() : "an indirect call";
     if (fn && fn->isDeclaration())
       what += " with no body";
@@ -1325,9 +1738,9 @@ void bmc_pass::translateCastInst(unsigned bidx, const llvm::CastInst *cast) {
       bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v);
   } else if (llvm::isa<llvm::PtrToIntInst>(cast) ||
              llvm::isa<llvm::IntToPtrInst>(cast)) {
-    if (bmc_ds_ptr->m.has_term(v)) {
-      bmc_ds_ptr->m.insert_term_map(cast, bidx, bmc_ds_ptr->m.get_term(v));
-    } else {
+  //   if (bmc_ds_ptr->m.has_term(v)) {
+  //     bmc_ds_ptr->m.insert_term_map(cast, bidx, bmc_ds_ptr->m.get_term(v));
+  //   } else {
       // expr ex_v_int = bv2int(ex_v_u16, false);
       // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_int);
   // } else if (llvm::isa<llvm::FPToSIInst>(cast)) {
@@ -1348,9 +1761,12 @@ void bmc_pass::translateCastInst(unsigned bidx, const llvm::CastInst *cast) {
       // expr ex_v_real = to_real(ex_v_int);
       // bmc_ds_ptr->m.insert_term_map(cast, bidx, ex_v_real);
       LLVM_DUMP(cast);
-      llvm_bmc_error("bmc", "pointer<->integer cast on a value with no address "
-                            "term; needs the linear-address pointer model");
-    }
+    //   llvm_bmc_error("bmc", "pointer<->integer cast on a value with no address "
+    //                         "term; needs the linear-address pointer model");
+    // }
+    llvm_bmc_error("bmc", "a pointer is cast to or from an integer, which wants"
+                   " its numeric address; a pointer here carries only its"
+                   " offset inside its own object");
   } else {
     // BMC_UNSUPPORTED_INSTRUCTIONS( FPTruncInst,       cast);
     // BMC_UNSUPPORTED_INSTRUCTIONS( FPExtInst,         cast);
@@ -1390,8 +1806,9 @@ void bmc_pass::translateAllocaInst(const llvm::AllocaInst *alloca) {
         ls.push_back(get_expr_const(solver_ctx, constIntValue));
       bmc_ds_ptr->set_array_length(alloca, ls);
 
-      unsigned ar_num = bmc_ds_ptr->ary_to_int.at(alloca);
-      bmc_ds_ptr->m.insert_term_map(alloca, get_expr_const(solver_ctx, ar_num));
+      // unsigned ar_num = bmc_ds_ptr->ary_to_int.at(alloca);
+      // bmc_ds_ptr->m.insert_term_map(alloca, get_expr_const(solver_ctx, ar_num));
+      bmc_ds_ptr->m.insert_term_map(alloca, index_val(o, 0));
 
       // array_lengths.push_back(const_expr);
     } else {
@@ -1418,10 +1835,11 @@ void bmc_pass::translateAllocaInst(const llvm::AllocaInst *alloca) {
 
     bmc_ds_ptr->set_array_length(alloca, ls);
 
-    if (llvm::isa<const llvm::StructType>(typ)) {
-      unsigned ar_num = bmc_ds_ptr->ary_to_int.at(alloca);
-      bmc_ds_ptr->m.insert_term_map(alloca, get_expr_const(solver_ctx, ar_num));
-    }
+    // if (llvm::isa<const llvm::StructType>(typ)) {
+    //   unsigned ar_num = bmc_ds_ptr->ary_to_int.at(alloca);
+    //   bmc_ds_ptr->m.insert_term_map(alloca, get_expr_const(solver_ctx, ar_num));
+    // }
+    bmc_ds_ptr->m.insert_term_map(alloca, index_val(o, 0));
     // expr const_expr = get_expr_const(solver_ctx,siz);
     // std::vector<expr> ls; ls.push_back( const_expr);
     // array_lengths.push_back(const_expr);
@@ -1429,8 +1847,9 @@ void bmc_pass::translateAllocaInst(const llvm::AllocaInst *alloca) {
     // todo : why this else is not implemented?
     //  what is the default return value
     auto val = alloca->getOperand(0);
-    unsigned ar_num = bmc_ds_ptr->ary_to_int.at(alloca);
-    bmc_ds_ptr->m.insert_term_map(alloca, get_expr_const(solver_ctx, ar_num));
+    // unsigned ar_num = bmc_ds_ptr->ary_to_int.at(alloca);
+    // bmc_ds_ptr->m.insert_term_map(alloca, get_expr_const(solver_ctx, ar_num));
+    bmc_ds_ptr->m.insert_term_map(alloca, index_val(o, 0));
     auto val_expr = bmc_ds_ptr->m.get_term(val);
     // the count operand of an alloca is 32 bit, while an index is 64, and the
     // bound check compares the two
@@ -1453,27 +1872,197 @@ void bmc_pass::loadFromArrayHelper(unsigned bidx, const llvm::LoadInst *load,
   }
   
   auto arr_rd = bmc_ds_ptr->array_read(bidx, load, idx_exprs);
-  if (o.include_out_of_bound_specs) {
-    expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
-    bmc_ds_ptr->add_spec(!path_bit || arr_rd.size_bound_guard,
-                         spec_reason_t::OUT_OF_BOUND);
-  }
+  // if (o.include_out_of_bound_specs) {
+  //   expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+  //   bmc_ds_ptr->add_spec(!path_bit || arr_rd.size_bound_guard,
+  //                        spec_reason_t::OUT_OF_BOUND);
+  // }
+  add_bound_spec(bidx, arr_rd.size_bound_guard);
   bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd.return_val);
 }
 
 void bmc_pass::extractValFromArrayHelper(
     unsigned bidx, const llvm::ExtractValueInst *extractVal, exprs &idx_exprs) {
   auto arr_rd = bmc_ds_ptr->array_read(bidx, extractVal, idx_exprs);
-  if (o.include_out_of_bound_specs) {
-    expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
-    bmc_ds_ptr->add_spec(!path_bit || arr_rd.size_bound_guard,
-                         spec_reason_t::OUT_OF_BOUND);
-  }
+  // if (o.include_out_of_bound_specs) {
+  add_bound_spec(bidx, arr_rd.size_bound_guard);
   bmc_ds_ptr->m.insert_term_map(extractVal, bidx, arr_rd.return_val);
+}
+
+unsigned bmc_pass::gep_cell_scale(const llvm::GEPOperator *gep) {
+  if (!o.bit_precise)
+    return 0;
+  auto ary_info = get_array_info(gep);
+  if (!ary_info.first)
+    return 0;
+  auto it = bmc_ds_ptr->ary_to_int.find(ary_info.first);
+  if (it == bmc_ds_ptr->ary_to_int.end())
+    return 0;
+  if (bmc_ds_ptr->ary_cell_indexed.count(it->second) == 0)
+    return 0;
+  const llvm::DataLayout &dl =
+      bmc_ds_ptr->bb_vec[0]->getModule()->getDataLayout();
+  uint64_t bits = dl.getTypeAllocSize(gep->getResultElementType()) * 8;
+  if (bits == 0 || bits % o.mem_cell_bits != 0)
+    llvm_bmc_error("bmc", "a gep steps over " << bits << " bits on an array "
+                   "indexed in " << o.mem_cell_bits << " bit cells");
+  return bits / o.mem_cell_bits;
+}
+
+bool bmc_pass::ptr_object_shape( const llvm::Value *ptr,
+                                 std::vector<uint64_t>& dims, uint64_t& esz ) {
+  auto info = get_array_info( ptr );
+  if( !info.first ) return false;
+  llvm::Type *ty = nullptr;
+  if( auto al = llvm::dyn_cast<const llvm::AllocaInst>(info.first) )
+    ty = al->getAllocatedType();
+  else if( auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(info.first) )
+    ty = gv->getValueType();
+  if( !ty ) {
+    auto call = llvm::dyn_cast<const llvm::CallInst>(info.first);
+    if( !call || !is_heap_alloc( call ) || info.second == 0 ) return false;
+    dims.push_back( info.second );
+    esz = 1;
+    return true;
+  }
+  get_type_dims( ty, dims );
+  const llvm::DataLayout &dl =
+      bmc_ds_ptr->bb_vec[0]->getModule()->getDataLayout();
+  uint64_t flat = get_type_flat_size( ty );
+  uint64_t bytes = dl.getTypeAllocSize( ty );
+  if( flat > 0 && bytes/flat == 0 )
+    llvm_bmc_error( "bmc", "the object this pointer walks is laid out as "
+                    << flat << " slots over " << bytes << " bytes, so one"
+                       " index steps over less than a byte; a struct of members"
+                       " of different shapes has no one index unit" );
+  esz = flat == 0 ? 0 : bytes/flat;
+  return esz > 0;
+}
+
+static bool all_numerals( const exprs& idxs ) {
+  for( auto& e : idxs ) if( !e.is_numeral() ) return false;
+  return true;
+}
+
+static uint64_t linear_value( const exprs& idxs,
+                              const std::vector<uint64_t>& dims ) {
+  uint64_t lin = idxs[0].get_numeral_uint64();
+  for( unsigned k = 1; k < idxs.size(); k++ )
+    lin = lin*dims[k] + idxs[k].get_numeral_uint64();
+  return lin;
+}
+
+void bmc_pass::split_numeral_idxs( exprs& idxs,
+                                   const std::vector<uint64_t>& dims ) {
+  if( idxs.size() != dims.size() ) return;   // nothing to split against
+  if( dims.size() < 2 || !all_numerals( idxs ) ) return;
+  uint64_t flat = 1;
+  for( auto d : dims ) flat *= d;
+  uint64_t lin = linear_value( idxs, dims );
+  if( lin >= flat ) return;
+  for( unsigned k = dims.size(); k-- > 0; ) {
+    idxs[k] = index_val( o, lin%dims[k] );
+    lin /= dims[k];
+  }
+}
+
+std::vector<uint64_t> bmc_pass::ptr_dims( const llvm::Value *ptr ) {
+  std::vector<uint64_t> dims;
+  uint64_t esz = 0;
+  if( !ptr_object_shape( ptr, dims, esz ) ) dims.clear();
+  return dims;
+}
+
+void bmc_pass::offset_to_idxs( expr off, const std::vector<uint64_t>& dims,
+                               exprs& idxs ) {
+  if( dims.empty() ) {
+    idxs.push_back( off );
+    return;
+  }
+  for( unsigned k = 0; k+1 < dims.size(); k++ ) idxs.push_back( index_val(o,0) );
+  idxs.push_back( off );
+  split_numeral_idxs( idxs, dims );
+}
+
+void bmc_pass::add_bound_spec( unsigned bidx, expr guard ) {
+  if( !o.include_out_of_bound_specs ) return;
+  if( guard.is_true() ) return;
+    expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+    // bmc_ds_ptr->add_spec(!path_bit || arr_rd.size_bound_guard,
+    //                      spec_reason_t::OUT_OF_BOUND);
+  bmc_ds_ptr->add_spec( !path_bit || guard, spec_reason_t::OUT_OF_BOUND );
+  }
+  // bmc_ds_ptr->m.insert_term_map(extractVal, bidx, arr_rd.return_val);
+
+expr bmc_pass::ptr_phi_offset( const llvm::PHINode *phi ) {
+  if( !bmc_ds_ptr->m.has_term( phi ) )
+    llvm_bmc_error("bmc", "the address " << toString(phi) << " is a"
+                   " different pointer on different paths and the join left it"
+                   " no offset, so where it points is not known");
+  return bmc_ds_ptr->m.get_term( phi );
+}
+
+expr bmc_pass::ptr_mem_offset( const llvm::LoadInst *ld ) {
+  if( !get_array_info( ld ).first )
+    llvm_bmc_error("bmc", "the address " << toString(ld) << " came out of"
+                   " the memory and the stores that reach that cell do not"
+                   " agree on one object, so what it points into is not known");
+  if( !bmc_ds_ptr->m.has_term( ld ) )
+    llvm_bmc_error("bmc", "the address " << toString(ld) << " came out of"
+                   " the memory and the read left it no offset, so where it"
+                   " points is not known");
+  return bmc_ds_ptr->m.get_term( ld );
+}
+
+expr bmc_pass::idxs_to_offset( const exprs& idxs,
+                               const std::vector<uint64_t>& dims ) {
+  if( idxs.size() > dims.size() )
+    llvm_bmc_error("bmc", "a pointer stands at " << idxs.size() << " indices in"
+                   " an object of " << dims.size() << " dimensions, so it has"
+                   " no one offset");
+  expr lin = idxs[0];
+  for( unsigned k = 1; k < dims.size(); k++ ) {
+    expr step = k < idxs.size() ? idxs[k] : index_val(o, 0);
+    lin = fold_mul_add( lin, index_val(o, dims[k]), step );
+  }
+  return fold_simplify( lin );
+}
+
+unsigned bmc_pass::gep_step_units( const llvm::GEPOperator *gep ) {
+  unsigned cscale = gep_cell_scale( gep );
+  if( cscale > 0 ) return cscale;
+  std::vector<uint64_t> dims;
+  uint64_t esz = 0;
+  if( !ptr_object_shape( gep, dims, esz ) )
+    llvm_bmc_error("bmc", "a gep walks a pointer into an object of no known"
+                   " shape, so the width of its step is not known");
+  const llvm::DataLayout &dl =
+      bmc_ds_ptr->bb_vec[0]->getModule()->getDataLayout();
+  uint64_t step = dl.getTypeAllocSize( gep->getSourceElementType() );
+  if( esz == 0 || step == 0 || step % esz != 0 )
+    llvm_bmc_error("bmc", "a gep steps over " << step << " bytes on an array"
+                   " whose index unit is " << esz << " bytes, so the step is"
+                   " not a whole number of indices");
+  return step/esz;
 }
 
 void bmc_pass::translateGEP(const llvm::GEPOperator *gep, exprs &idxs) {
   // todo: what is the meaning of the second operand in GEP operator?
+
+  {
+    std::vector<uint64_t> odims;
+    uint64_t oesz = 0;
+    if (idxs.empty() && ptr_object_shape(gep, odims, oesz) &&
+        odims.size() == 1 && oesz == 1) {
+      const llvm::DataLayout &dl =
+          bmc_ds_ptr->bb_vec[0]->getModule()->getDataLayout();
+      expr off(solver_ctx);
+      if (run_offset_term(gep, off, dl)) {
+        idxs.push_back(off);
+        return;
+      }
+    }
+  }
 
   auto op_gep_ptr = gep->getPointerOperand();
   // todo: bit cast bug here
@@ -1482,14 +2071,39 @@ void bmc_pass::translateGEP(const llvm::GEPOperator *gep, exprs &idxs) {
   }
   if (auto sub_gep = llvm::dyn_cast<llvm::GEPOperator>(op_gep_ptr)) {
     translateGEP(sub_gep, idxs);
+  } else if (auto in_phi = llvm::dyn_cast<llvm::PHINode>(op_gep_ptr)) {
+    if (bmc_ds_ptr->m.has_term(in_phi))
+      offset_to_idxs(bmc_ds_ptr->m.get_term(in_phi), ptr_dims(gep), idxs);
   }
+
+  if( gep->getNumIndices() == 1 && !idxs.empty() ) {
+    auto dims = ptr_dims( gep );
+    if( dims.empty() )
+      llvm_bmc_error("bmc", "a pointer is walked into an object of no known"
+                     " shape, so it has no dimensions to walk");
+    if( idxs.size() > dims.size() )
+      llvm_bmc_error("bmc", "a pointer is walked with " << idxs.size() << " "
+                     "indices on an object of " << dims.size() << " dimensions");
+    while( idxs.size() < dims.size() ) idxs.push_back( index_val(o, 0) );
+    unsigned units = gep_step_units( gep );
+    auto step = bmc_ds_ptr->m.get_term( gep->getOperand(1) );
+    if( o.bit_precise ) step = convert_to_bv( step, 64 );
+    if( units > 1 ) step = fold_mul_num( step, units );
+    idxs.back() = fold_add( idxs.back(), step );
+    split_numeral_idxs( idxs, dims );
+    return;
+  }
+
+  unsigned cscale = gep_cell_scale(gep);
 
   const llvm::Type *base_ty = nullptr;
   if (auto al = llvm::dyn_cast<const llvm::AllocaInst>(op_gep_ptr))
     base_ty = al->getAllocatedType();
   else if (auto gv = llvm::dyn_cast<const llvm::GlobalVariable>(op_gep_ptr))
     base_ty = gv->getValueType();
-  if (base_ty && base_ty->isAggregateType() && gep->getNumIndices() == 1 &&
+  // if (base_ty && base_ty->isAggregateType() && gep->getNumIndices() == 1 &&
+  if (cscale == 0 && base_ty && base_ty->isAggregateType() &&
+      gep->getNumIndices() == 1 &&
       scalar_bits(gep->getSourceElementType()) > 0) {
     const llvm::DataLayout &dl =
         bmc_ds_ptr->bb_vec[0]->getModule()->getDataLayout();
@@ -1502,10 +2116,21 @@ void bmc_pass::translateGEP(const llvm::GEPOperator *gep, exprs &idxs) {
     if (!by_element) {
       auto off_c = llvm::dyn_cast<llvm::ConstantInt>(gep->getOperand(1));
       std::vector<uint64_t> flat;
-      if (!off_c ||
-          !byte_offset_to_indices(base_ty, off_c->getZExtValue()*esz, dl, flat))
-        llvm_bmc_error("bmc", "byte offset into an array can not be turned into "
-                              "an element index");
+      // if (!off_c ||
+      //     !byte_offset_to_indices(base_ty, off_c->getZExtValue()*esz, dl, flat))
+      //   llvm_bmc_error("bmc", "byte offset into an array can not be turned into "
+      //                         "an element index");
+      if (!off_c)
+        llvm_bmc_error("bmc", "a gep steps " << esz << " bytes at a time into an"
+                       " object of " << dims.size() << " dimensions and its"
+                       " index is not a constant, so the byte offset can not be"
+                       " turned into one index per dimension: "
+                       << toString(gep));
+      if (!byte_offset_to_indices(base_ty, off_c->getZExtValue()*esz, dl, flat))
+        llvm_bmc_error("bmc", "byte offset "
+                       << off_c->getZExtValue()*esz << " does not land on an"
+                       " element of the object this gep steps into: "
+                       << toString(gep));
       for (auto k : flat)
         idxs.push_back(index_val(o, k));
       return;
@@ -1531,6 +2156,8 @@ void bmc_pass::translateGEP(const llvm::GEPOperator *gep, exprs &idxs) {
     if (o.bit_precise) {
       idx_expr = convert_to_bv(idx_expr, 64);
     }
+    if (cscale > 1)
+      idx_expr = fold_mul_num( idx_expr, cscale );
     idxs.push_back(idx_expr);
   }
 }
@@ -1709,9 +2336,14 @@ void bmc_pass::translateLoadInst(unsigned bidx, const llvm::LoadInst *load) {
       bmc_ds_ptr->m.insert_term_map(load, bidx, glb_rd);
     }
     // } else if( auto alloc = llvm::dyn_cast<const llvm::AllocaInst>(addr) ) {
+  } else if (auto phi = llvm::dyn_cast<const llvm::PHINode>(addr)) {
+    exprs idxs;
+    offset_to_idxs(ptr_phi_offset(phi), ptr_dims(addr), idxs);
+    loadFromArrayHelper(bidx, load, idxs);
   } else if (llvm::isa<const llvm::AllocaInst>(addr) ||
-             llvm::isa<const llvm::Argument>(addr) ||
-             llvm::isa<const llvm::PHINode>(addr)) {
+             // llvm::isa<const llvm::Argument>(addr) ||
+             // llvm::isa<const llvm::PHINode>(addr)) {
+             llvm::isa<const llvm::Argument>(addr)) {
     // llvm::errs() << "\n3\n";
     // To handle a[0] when a is dynamic sized array or phi pointer into an array
     exprs idxs;
@@ -1759,13 +2391,15 @@ void bmc_pass::translateLoadInst(unsigned bidx, const llvm::LoadInst *load) {
       }
       loadFromArrayHelper(bidx, load, idxs);
     }
-  } else if (llvm::isa<llvm::LoadInst>(addr)) {
+  // } else if (llvm::isa<llvm::LoadInst>(addr)) {
+  } else if (auto ld = llvm::dyn_cast<llvm::LoadInst>(addr)) {
     exprs idxs;
-    if (o.bit_precise)
-      idxs.push_back(get_expr_bv_const(solver_ctx, 0, 64));
-    else
-      idxs.push_back(get_expr_const(solver_ctx, 0));
-    idxs.push_back(bmc_ds_ptr->m.get_term(addr));
+    // if (o.bit_precise)
+    //   idxs.push_back(get_expr_bv_const(solver_ctx, 0, 64));
+    // else
+    //   idxs.push_back(get_expr_const(solver_ctx, 0));
+    // idxs.push_back(bmc_ds_ptr->m.get_term(addr));
+    offset_to_idxs(ptr_mem_offset(ld), ptr_dims(addr), idxs);
     loadFromArrayHelper(bidx, load, idxs);
   } else {
     // llvm::errs() << "\n5\n";
@@ -1895,6 +2529,12 @@ void bmc_pass::translateUnaryInst(unsigned bidx,
 
 void bmc_pass::storeToArrayHelper(unsigned bidx, const llvm::StoreInst *store,
                                   const llvm::Value *val, exprs &idxs) {
+  if (val->getType()->isPointerTy() && !get_array_info(val).first) {
+    llvm_bmc_error("bmc", "the address " << toString(val) << " is"
+                   " written into the memory and does not name an object, so"
+                   " nothing could say what it points into when it is read"
+                   " back");
+  }
   auto val_expr = bmc_ds_ptr->m.get_term(val);
   // std::cout<<idxs[0].to_string()<<" "<<bmc_ds_ptr->m.get_term(store->getOperand(1)).to_string()<<"\n";
   // idxs.insert(idxs.begin(),bmc_ds_ptr->m.get_term(store->getOperand(1)));
@@ -1904,6 +2544,7 @@ void bmc_pass::storeToArrayHelper(unsigned bidx, const llvm::StoreInst *store,
     addr = bcast->getOperand(0);
   }
 
+  // if(o.bit_precise) {
   // }
   // }
   if(idxs.empty()) {
@@ -1913,11 +2554,12 @@ void bmc_pass::storeToArrayHelper(unsigned bidx, const llvm::StoreInst *store,
 
   auto arr_wrt = bmc_ds_ptr->array_write(bidx, store, idxs, val_expr);
   bmc_ds_ptr->bmc_vec.push_back(arr_wrt.updated_expr);
-  if (o.include_out_of_bound_specs) {
-    expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
-    bmc_ds_ptr->add_spec(!path_bit || arr_wrt.size_bound_guard,
-                         spec_reason_t::OUT_OF_BOUND);
-  }
+  // if (o.include_out_of_bound_specs) {
+  //   expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+  //   bmc_ds_ptr->add_spec(!path_bit || arr_wrt.size_bound_guard,
+  //                        spec_reason_t::OUT_OF_BOUND);
+  // }
+  add_bound_spec(bidx, arr_wrt.size_bound_guard);
   bmc_ds_ptr->m.insert_term_map(store, bidx, arr_wrt.new_name);
 }
 
@@ -1926,6 +2568,9 @@ bool isLocallyAllocatedAddress(llvm::Value *addr) {
   if (auto call = llvm::dyn_cast<const llvm::CallInst>(addr)) {
     llvm::Function *fp = call->getCalledFunction();
     if (fp != NULL && fp->getName().starts_with("__cxa_allocate")) {
+      return true;
+    }
+    if (is_heap_alloc(call)) {
       return true;
     }
   }
@@ -1983,8 +2628,13 @@ void bmc_pass::translateStoreInst(unsigned bidx, const llvm::StoreInst *store) {
       bmc_ds_ptr->bmc_vec.push_back(glb_wrt.first);
       bmc_ds_ptr->m.insert_term_map(store, bidx, glb_wrt.second);
     }
-  } else if (isLocallyAllocatedAddress(addr) ||
-             llvm::isa<llvm::PHINode>(addr)) {
+  // } else if (isLocallyAllocatedAddress(addr) ||
+  //            llvm::isa<llvm::PHINode>(addr)) {
+  } else if (auto phi = llvm::dyn_cast<const llvm::PHINode>(addr)) {
+    exprs idxs;
+    offset_to_idxs(ptr_phi_offset(phi), ptr_dims(addr), idxs);
+    storeToArrayHelper(bidx, store, val, idxs);
+  } else if (isLocallyAllocatedAddress(addr)) {
     exprs idxs;
     if (o.bit_precise)
       idxs.push_back(get_expr_bv_const(solver_ctx, 0, 64));
@@ -1994,14 +2644,16 @@ void bmc_pass::translateStoreInst(unsigned bidx, const llvm::StoreInst *store) {
   } else if (llvm::isa<llvm::Constant>(addr)) {
     // } else if( auto cons = llvm::dyn_cast<llvm::Constant>(addr) ) {
     llvm_bmc_error("bmc", "constant access to the memory!");
-  } else if (llvm::dyn_cast<llvm::LoadInst>(addr)) {
+  // } else if (llvm::dyn_cast<llvm::LoadInst>(addr)) {
     // std::cout << "new dump";
-    auto v1 = bmc_ds_ptr->m.get_term(addr);
+  //   auto v1 = bmc_ds_ptr->m.get_term(addr);
+  } else if (auto ld = llvm::dyn_cast<llvm::LoadInst>(addr)) {
     exprs idxs;
-    if (o.bit_precise)
-      idxs.push_back(get_expr_bv_const(solver_ctx, 0, 64));
-    else
-      idxs.push_back(get_expr_const(solver_ctx, 0));
+    // if (o.bit_precise)
+    //   idxs.push_back(get_expr_bv_const(solver_ctx, 0, 64));
+    // else
+    //   idxs.push_back(get_expr_const(solver_ctx, 0));
+    offset_to_idxs(ptr_mem_offset(ld), ptr_dims(addr), idxs);
     storeToArrayHelper(bidx, store, val, idxs);
   } else {
     LLVM_DUMP(store);
@@ -2014,21 +2666,33 @@ void bmc_pass::translateGetElementPtrInst(unsigned bidx,
   assert(gep);
   // GEP processed inside load and store inst
   // as gep is always there before the inst
-  unsigned num_ops = gep->getNumOperands();
-  auto index = gep->getOperand(num_ops - 1);
-  auto constantIndex = llvm::dyn_cast<const llvm::ConstantInt>(index);
-  if (!constantIndex)
+  // unsigned num_ops = gep->getNumOperands();
+  // auto index = gep->getOperand(num_ops - 1);
+  // auto constantIndex = llvm::dyn_cast<const llvm::ConstantInt>(index);
+  // if (!constantIndex)
     // llvm_bmc_error("bmc", "Non-constant indexing!");
-    return; // Or handle non-constant index
-  int indexValue = constantIndex->getSExtValue();
-
-  auto st = gep->getOperand(0);
-  if (bmc_ds_ptr->ary_to_int.find(st) == bmc_ds_ptr->ary_to_int.end())
+  //   return; // Or handle non-constant index
+  // int indexValue = constantIndex->getSExtValue();
+  // auto st = gep->getOperand(0);
+  // if (bmc_ds_ptr->ary_to_int.find(st) == bmc_ds_ptr->ary_to_int.end())
+  bool wanted = false;
+  for (auto u : gep->users())
+    if (llvm::isa<llvm::PHINode>(u) || llvm::isa<llvm::PtrToIntInst>(u) ||
+        llvm::isa<llvm::IntToPtrInst>(u))
+      wanted = true;
+  if (!wanted)
     return;
-  unsigned ar_num = bmc_ds_ptr->ary_to_int.at(st);
-  bmc_ds_ptr->m.insert_term_map(
-      gep, bidx, get_expr_const(solver_ctx, ar_num + indexValue));
-
+  // unsigned ar_num = bmc_ds_ptr->ary_to_int.at(st);
+  // bmc_ds_ptr->m.insert_term_map(
+  //     gep, bidx, get_expr_const(solver_ctx, ar_num + indexValue));
+  auto dims = ptr_dims(gep);
+  if (dims.empty())
+    return;
+  exprs idxs;
+  translateGEP(llvm::cast<llvm::GEPOperator>(gep), idxs);
+  if (idxs.empty())
+    return;
+  bmc_ds_ptr->m.insert_term_map(gep, bidx, idxs_to_offset(idxs, dims));
 }
 
 //--------------------------------------
@@ -2812,7 +3476,8 @@ void bmc_pass::populate_array_name_map(llvm::Function *f) {
           ary_to_int[I] = arrCntr++;
           // I->print(llvm::outs());
           // std::cout << "\nCOLLECTED EXCEPTION PTR AS ARRAY\n\n";
-        } else if (fp != NULL && fp->getName().starts_with("_Znwm")) {
+        // } else if (fp != NULL && fp->getName().starts_with("_Znwm")) {
+        } else if (is_heap_alloc(llvm::dyn_cast<llvm::CallInst>(I))) {
           ary_to_int[I] = arrCntr++;
         }
       } else {

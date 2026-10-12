@@ -2,6 +2,7 @@
 
 #include "solver_utils.h"
 #include "include/options.h"
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -157,18 +158,48 @@ void dump(std::map<unsigned, expr> &es) {
   }
 }
 
+std::string dump_file_path( std::string dump_path, std::string name ) {
+  boost::filesystem::path dir( dump_path );
+  boost::system::error_code ec;
+  if( !dir.empty() && !boost::filesystem::exists( dir ) ) {
+    boost::filesystem::create_directories( dir, ec );
+    if( ec )
+      llvm_bmc_error( "solver", "can not make the output directory "
+                      << dump_path << ": " << ec.message() );
+  }
+  return ( dir / name ).string();
+}
+
+static void close_dump_file( std::ofstream& f, const std::string& path ) {
+  f.close();
+  if( !f )
+    llvm_bmc_error( "solver", "failed to write " << path );
+}
+
 void dump(std::string dump_path, std::string name, solver &s) {
-  std::cerr << "dumping solver query in:" << dump_path + name << "\n";
-  std::ofstream dump_file(dump_path + name,std::ios::app);
+  // std::cerr << "dumping solver query in:" << dump_path + name << "\n";
+  // std::ofstream dump_file(dump_path + name,std::ios::app);
+  auto path = dump_file_path( dump_path, name );
+  std::cerr << "dumping solver query in:" << path << "\n";
+  std::ofstream dump_file(path,std::ios::app);
+  if( !dump_file )
+    llvm_bmc_error( "solver", "can not open " << path << " for writing" );
+  dump_file << "(reset)\n";
   dump_file << s;
   dump_file << "(check-sat)\n";
-  dump_file.close();
+  // dump_file.close();
+  close_dump_file( dump_file, path );
 }
 
 void dump_array_names(std::string dump_path, std::string name, std::string output) {
-  std::ofstream dump_file(dump_path + name,std::ios::app);
+  // std::ofstream dump_file(dump_path + name,std::ios::app);
+  auto path = dump_file_path( dump_path, name );
+  std::ofstream dump_file(path,std::ios::app);
+  if( !dump_file )
+    llvm_bmc_error( "solver", "can not open " << path << " for writing" );
   dump_file << output;
-  dump_file.close();
+  // dump_file.close();
+  close_dump_file( dump_file, path );
 }
 
 std::string display(expr e) {
@@ -619,6 +650,112 @@ expr _and(std::vector<expr> &vec, solver_context &sol_ctx) {
 expr _and(std::vector<expr> &vec) {
   assert(!vec.empty());
   return _and(vec, vec.at(0).ctx());
+}
+
+static bool num_val(expr const &e, uint64_t &v) {
+  if (!e.is_numeral())
+    return false;
+  if (e.is_bv())
+    return e.get_sort().bv_size() <= 64 && e.is_numeral_u64(v);
+  if (e.is_int()) {
+    int64_t i;
+    if (!e.is_numeral_i64(i) || i < 0)
+      return false;
+    v = (uint64_t)i;
+    return true;
+  }
+  return false;
+}
+
+static expr num_like(expr const &e, uint64_t v) {
+  if (e.is_bv()) {
+    unsigned w = e.get_sort().bv_size();
+    if (w < 64)
+      v &= (((uint64_t)1 << w) - 1);
+    return e.ctx().bv_val(v, w);
+  }
+  return e.ctx().int_val((int64_t)v);
+}
+
+static bool holds_sum(expr const &e, uint64_t v, bool over) {
+  if (e.is_bv())
+    return !over;
+  return !over && v <= (uint64_t)INT64_MAX;
+}
+
+expr fold_mul_add(expr const &a, expr const &b, expr const &c) {
+  uint64_t x, y, z;
+  if (num_val(a, x) && num_val(b, y) && num_val(c, z)) {
+    uint64_t p = 0;
+    bool over = __builtin_mul_overflow(x, y, &p);
+    over |= __builtin_add_overflow(p, z, &p);
+    if (holds_sum(a, p, over))
+      return num_like(a, p);
+  }
+  return (a * b + c).simplify();
+}
+
+expr fold_add_num(expr const &a, uint64_t k) {
+  uint64_t x, v = 0;
+  if (num_val(a, x) && holds_sum(a, v, __builtin_add_overflow(x, k, &v)))
+    return num_like(a, v);
+  return (a + num_like(a, k)).simplify();
+}
+
+expr fold_add(expr const &a, expr const &b) {
+  uint64_t x, y, v = 0;
+  if (num_val(a, x) && num_val(b, y) &&
+      holds_sum(a, v, __builtin_add_overflow(x, y, &v)))
+    return num_like(a, v);
+  return (a + b).simplify();
+}
+
+bool numeral_sval(expr const &e, int64_t &v) {
+  if (!e.is_numeral())
+    return false;
+  if (e.is_bv())
+    return e.get_sort().bv_size() <= 64 && e.is_numeral_i64(v);
+  if (e.is_int())
+    return e.is_numeral_i64(v);
+  return false;
+}
+
+expr fold_sge(expr const &a, expr const &b) {
+  int64_t x, y;
+  if (numeral_sval(a, x) && numeral_sval(b, y))
+    return a.ctx().bool_val(x >= y);
+  return a >= b;
+}
+
+expr fold_not(expr const &a) {
+  if (a.is_true())
+    return a.ctx().bool_val(false);
+  if (a.is_false())
+    return a.ctx().bool_val(true);
+  return !a;
+}
+
+expr fold_and(expr const &a, expr const &b) {
+  if (a.is_true())
+    return b;
+  if (b.is_true())
+    return a;
+  if (a.is_false() || b.is_false())
+    return a.ctx().bool_val(false);
+  return a && b;
+}
+
+expr fold_simplify(expr const &a) {
+  if (a.is_numeral())
+    return a;
+  return a.simplify();
+}
+
+expr fold_mul_num(expr const &a, uint64_t k) {
+  uint64_t x, v = 0;
+  if (num_val(a, x) && holds_sum(a, v, __builtin_mul_overflow(x, k, &v)))
+    return num_like(a, v);
+  return (a * num_like(a, k)).simplify();
 }
 
 // we need this xor, since the default xor in c++ interface is for bvxor

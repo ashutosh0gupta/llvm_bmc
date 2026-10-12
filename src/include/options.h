@@ -38,6 +38,7 @@ class options
 public:
   options( solver_context& sol_ctx_);
   std::string get_input_file() { return filePath; }
+  const std::vector<std::string>& get_input_files() { return inputFiles; }
   const std::vector<std::string>& get_include_dirs() { return include_dirs; }
   llvm::LLVMContext& get_llvm_context() { return globalContext; }
   solver_context& get_solver_context() { return solver_ctx; }
@@ -62,6 +63,7 @@ public:
   //tiler options
   std::string fileName;
   std::string filePath;
+  std::vector<std::string> inputFiles;
   std::string funcName;
   std::string use_solver = "z3";
   std::string specFileName;
@@ -92,6 +94,8 @@ public:
   bool get_solver_model = 0;
   bool witness = 0;
   bool smt_only = 0;
+  bool fold_readonly_globals_opt = 0;
+  bool rewrite_mem_loops = 0;
   std::string var_suffix = ""; // suffix for generated variable names (correct/faulty)
 
   //----------------------------------------
@@ -99,6 +103,7 @@ public:
   int verbosity = 0;
   std::string llvm_bmc_version = "1.0";
   int loop_unroll_count = 1;
+  uint64_t unroll_budget = 30000;
   bool unwind=false;
   bool llvm_unroll=true; // selects between llvm_unroll or native
 
@@ -109,7 +114,9 @@ public:
   bool include_unreach_specs=false;
   array_model_t ar_model = FULL;
   bool bit_precise = false; // model integers as true "int" or bit vectors
-  int mem_cell_bits = 32;
+  // int mem_cell_bits = 32;
+  int mem_cell_bits = 32;   // size of a memory cell in bits
+  std::string data_model;   // widths of the C types: ILP32 or LP64
   bool check_spec = false;
   bool abstract_floats = false; //abstract away floating point computations
   //----------------------------------------

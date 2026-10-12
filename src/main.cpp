@@ -91,6 +91,16 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
 
   //transform code
   if( !o.psystems ) {
+    if( o.rewrite_mem_loops )
+      rewrite_mem_loops_pass( module );
+    if( o.fold_readonly_globals_opt )
+      fold_readonly_globals( o, module );
+    forced_inliner_pass( module );
+    if( o.fold_readonly_globals_opt ) {
+      simplify_after_fold_pass( module );
+      if( o.rewrite_mem_loops )
+        rewrite_mem_loops_pass( module );
+    }
     forced_unroll_pass( o, module );
   }
   estimate_comment_location( module, cmts, bb_cmt_map );
@@ -127,6 +137,7 @@ void run_bmc( std::unique_ptr<llvm::Module>& module,
 }
 
 int main(int argc, char** argv) {
+  z3::set_param( "rewriter.elim_sign_ext", false );
   z3::context solver_ctx;
   options o(solver_ctx);
   boost::filesystem::path def_config("default.conf");

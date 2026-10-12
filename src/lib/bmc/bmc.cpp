@@ -262,7 +262,13 @@ memory_state bmc::populate_mem_state() {
 void bmc::check_all_spec( bmc_ds* bmc_ds_ptr ) {
   std::ostream& os = std::cout;
   bool solved;
-  if( bmc_ds_ptr->spec_vec.empty() && o.dump_solver_query ) {
+  // if( bmc_ds_ptr->spec_vec.empty() && o.dump_solver_query ) {
+  if( o.smt_only ) {
+    dump_smt_only( bmc_ds_ptr );
+    os << "\n\nLLVM_BMC_TRANSLATION_SUCCESSFUL\n\n";
+    return;
+  }
+  if( bmc_ds_ptr->spec_vec.empty() && ( o.dump_solver_query || o.smt_only ) ) {
     src_loc loc;
     spec s(o.solver_ctx.bool_val(true), spec_reason_t::UNKNOWN, loc);
     solved = run_solver( s, bmc_ds_ptr);
@@ -278,8 +284,53 @@ void bmc::check_all_spec( bmc_ds* bmc_ds_ptr ) {
       return;
     } else { } // contine with other specifications
   }
+  if( o.smt_only ) {
+    os << "\n\nLLVM_BMC_TRANSLATION_SUCCESSFUL\n\n";
+    return;
+  }
   // if(solved)
     os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
+}
+
+void bmc::dump_smt_only( bmc_ds* bmc_ds_ptr ) {
+  std::vector<Z3_ast> fmls;
+  for( auto& pre : bmc_ds_ptr->pre_cond_vec )
+    fmls.push_back( pre.get_formula() );
+  for( expr& e : bmc_ds_ptr->bmc_vec )
+    fmls.push_back( e );
+  std::vector<expr> defs;
+  std::vector<std::string> names;
+  defs.reserve( bmc_ds_ptr->spec_vec.size() );
+  for( spec& sp : bmc_ds_ptr->spec_vec ) {
+    if( !o.include_unreach_specs && sp.is_unreach() ) continue;
+    names.push_back( "spec_" + std::to_string( names.size() + 1 ) );
+    defs.push_back( o.solver_ctx.bool_const( names.back().c_str() )
+                    == !sp.get_formula() );
+    fmls.push_back( defs.back() );
+  }
+
+  expr last = o.solver_ctx.bool_val( true );
+  if( !fmls.empty() ) {
+    last = to_expr( o.solver_ctx, fmls.back() );
+    fmls.pop_back();
+  }
+
+  auto path = dump_file_path( o.outDirPath.string(), "test.smt2" );
+  std::ofstream f( path, std::ios::app );
+  if( !f )
+    llvm_bmc_error( "bmc", "can not open " << path << " for writing" );
+  f << Z3_benchmark_to_smtlib_string( o.solver_ctx, "llvm_bmc", "", "unknown",
+                                      "", fmls.size(), fmls.data(), last );
+  for( auto& nm : names )
+    f << "(push)\n(assert " << nm << ")\n(check-sat)\n(pop)\n";
+  unsigned n = names.size();
+  if( n == 0 ) f << "(check-sat)\n";
+  f << bmc_ds_ptr->print_array_names();
+  f.close();
+  if( !f )
+    llvm_bmc_error( "bmc", "failed to write " << path );
+  std::cout << "wrote " << n << " queries over one formula to " << path
+            << "\n";
 }
 
 bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
@@ -375,7 +426,8 @@ void bmc::check_all_spec_con( ) {
   for( auto& it : func_formula_map ) {
     if( !it.second->spec_vec.empty() ) no_spec = false;
   }
-  if( no_spec && o.dump_solver_query ) {
+  // if( no_spec && o.dump_solver_query ) {
+  if( no_spec && ( o.dump_solver_query || o.smt_only ) ) {
     src_loc loc;
     spec s(o.solver_ctx.bool_val(true), spec_reason_t::UNKNOWN, loc);
     run_solver_con( s );
@@ -387,6 +439,10 @@ void bmc::check_all_spec_con( ) {
     	  return;
         } else { } // contine with other specifications
     }
+  }
+  if( o.smt_only ) {
+    os << "\n\nLLVM_BMC_TRANSLATION_SUCCESSFUL\n\n";
+    return;
   }
   os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
 }
