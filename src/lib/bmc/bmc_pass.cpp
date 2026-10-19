@@ -804,6 +804,10 @@ static bool run_const_offset(const llvm::Value *p, uint64_t &boff,
   return true;
 }
 
+static bool is_heap_run(const llvm::Value *v) {
+  return v && is_heap_alloc(llvm::dyn_cast<const llvm::CallInst>(v));
+}
+
 static llvm::Type *array_run_elem(const llvm::Value *p,
                                   std::vector<uint64_t> &dims,
                                   const llvm::Value *&obj,
@@ -822,6 +826,16 @@ static llvm::Type *array_run_elem(const llvm::Value *p,
     ty = a->getAllocatedType();
   else if (auto g = llvm::dyn_cast<llvm::GlobalVariable>(base))
     ty = g->getValueType();
+  else if (is_heap_run(base)) {
+    auto call = llvm::cast<llvm::CallInst>(base);
+    auto sz = llvm::dyn_cast<llvm::ConstantInt>(call->getArgOperand(0));
+    if (!sz)
+      return nullptr;
+    dims.clear();
+    dims.push_back(sz->getZExtValue());
+    obj = base;
+    return llvm::Type::getInt8Ty(call->getContext());
+  }
   if (!ty)
     return nullptr;
   dims.clear();
@@ -959,14 +973,57 @@ void bmc_pass::translateMemFill(unsigned bidx, const llvm::Instruction *at,
                    << toString(at));
   uint64_t esz = dl.getTypeAllocSize(dty);
 
+  auto byte_c = llvm::dyn_cast<llvm::ConstantInt>(val_or_src);
+  expr byte_term(solver_ctx);
+  if (is_set && !byte_c) {
+    if (!o.bit_precise)
+      llvm_bmc_error("bmc", "the byte of this memset is not a constant, so it"
+                     " goes in as a term, which needs -b: " << toString(at));
+    if (llvm::isa<llvm::UndefValue>(val_or_src))
+      byte_term = read_const(o, val_or_src);
+    else if (bmc_ds_ptr->m.has_term(val_or_src))
+      byte_term = bmc_ds_ptr->m.get_term(val_or_src);
+    else
+      llvm_bmc_error("bmc", "the byte of this memset carries no term: "
+                     << toString(val_or_src) << " in " << toString(at));
+    if (!byte_term.is_bv() || byte_term.get_sort().bv_size() < 8)
+      llvm_bmc_error("bmc", "the byte of this memset has no bits to spread: "
+                     << toString(val_or_src) << " in " << toString(at));
+    if (byte_term.get_sort().bv_size() > 8)
+      byte_term = byte_term.extract(7, 0);
+  }
+  auto fill_val = [&](llvm::Type *ty) {
+    unsigned bits = ty->isIntegerTy() ? ty->getIntegerBitWidth() : 0;
+    if (byte_c) {
+      uint64_t b = byte_c->getZExtValue() & 0xff;
+      llvm::Constant *c = nullptr;
+      if (bits > 0 && bits % 8 == 0)
+        c = llvm::ConstantInt::get(ty, llvm::APInt::getSplat(bits,
+                                         llvm::APInt(8, b)));
+      else if (b == 0)
+        c = llvm::Constant::getNullValue(ty);
+      else
+        llvm_bmc_error("bmc", "memset of the byte " << b << " into elements of"
+                       " this type is not supported: " << toString(at));
+      return read_const(o, c);
+    }
+    if (bits == 0 || bits % 8 != 0)
+      llvm_bmc_error("bmc", "a memset whose byte is not a constant needs"
+                     " elements of whole bytes: " << toString(at));
+    expr v = byte_term;
+    for (unsigned w = 8; w < bits; w += 8)
+      v = z3::concat(byte_term, v);
+    return v;
+  };
+
   llvm::Type *sty = nullptr;
   unsigned sid = 0;
-  bool by_cells = !len_c || !dboff_c || !sboff_c ||
+  bool by_cells = !len_c || !dboff_c || !sboff_c || is_heap_run(dobj) ||
                   dboff % esz != 0 || len_c->getZExtValue() % esz != 0;
   if (!is_set) {
     sty = array_run_elem(val_or_src, sdims, sobj, dl);
     if (sty && bmc_ds_ptr->array_id(sobj, sid) &&
-        (sty != dty || (sboff_c && sboff % esz != 0)))
+        (sty != dty || is_heap_run(sobj) || (sboff_c && sboff % esz != 0)))
       by_cells = true;
   }
   if (by_cells) {
@@ -1011,12 +1068,7 @@ void bmc_pass::translateMemFill(unsigned bidx, const llvm::Instruction *at,
       add_bound_spec(bidx, wr.size_bound_guard);
     };
     if (is_set) {
-      auto byte = llvm::dyn_cast<llvm::ConstantInt>(val_or_src);
-      if (!byte)
-        llvm_bmc_error("bmc", "memset with a non-constant byte is not supported");
-      llvm::Type *bty = llvm::Type::getIntNTy(at->getContext(), cb);
-      expr v = read_const(o, llvm::ConstantInt::get(bty,
-                            byte->getZExtValue() & 0xff));
+      expr v = fill_val(llvm::Type::getIntNTy(at->getContext(), cb));
       emit_cells(bmc_ds_ptr->array_fill_cells(bidx, did, doff, ncells, v));
     } else {
       if (!sty || !bmc_ds_ptr->array_id(sobj, sid))
@@ -1049,17 +1101,7 @@ void bmc_pass::translateMemFill(unsigned bidx, const llvm::Instruction *at,
       add_bound_spec(bidx, wr.size_bound_guard);
     };
     if (is_set) {
-      auto byte = llvm::dyn_cast<llvm::ConstantInt>(val_or_src);
-      if (!byte)
-        llvm_bmc_error("bmc", "memset with a non-constant byte is not supported");
-      llvm::Constant *c = nullptr;
-      if (dty->isIntegerTy(8))
-        c = llvm::ConstantInt::get(dty, byte->getZExtValue());
-      else if (byte->isZero())
-        c = llvm::Constant::getNullValue(dty);
-      else
-        llvm_bmc_error("bmc", "memset of a non-zero byte into wider elements is not supported");
-      expr v = read_const(o, c);
+      expr v = fill_val(dty);
       emit(bmc_ds_ptr->array_fill_id(bidx, did, dfirst, dlast, v, n));
     } else {
       if (!sty || sty != dty || !bmc_ds_ptr->array_id(sobj, sid))
@@ -1081,18 +1123,9 @@ void bmc_pass::translateMemFill(unsigned bidx, const llvm::Instruction *at,
   // if (auto ms = llvm::dyn_cast<llvm::MemSetInst>(mi)) {
   //   auto byte = llvm::dyn_cast<llvm::ConstantInt>(ms->getValue());
   if (is_set) {
-    auto byte = llvm::dyn_cast<llvm::ConstantInt>(val_or_src);
-    if (!byte)
-      llvm_bmc_error("bmc", "memset with a non-constant byte is not supported");
-    llvm::Constant *c = nullptr;
-    if (dty->isIntegerTy(8))
-      c = llvm::ConstantInt::get(dty, byte->getZExtValue());
-    else if (byte->isZero())
-      c = llvm::Constant::getNullValue(dty);
-    else
-      llvm_bmc_error("bmc", "memset of a non-zero byte into wider elements is not supported");
+    expr v = fill_val(dty);
     for (uint64_t k = 0; k < n; k++)
-      vals.push_back(read_const(o, c));
+      vals.push_back(v);
   } else {
     // auto mt = llvm::cast<llvm::MemTransferInst>(mi);
     // llvm::Type *sty = whole_array_elem(mt->getRawSource(), sdims);
