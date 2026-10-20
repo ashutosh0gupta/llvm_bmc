@@ -236,9 +236,15 @@ do_patch() {
   sed -i 's/^   Common_Switches := ("-g", "-gnatg");/   Common_Switches := ("-g", "-gnatg", "-gnatwU", "-gnatws");/' tools.gpr
 
   # a conda environment has libclang-cpp.so and none of the per component
-  # archives the stock file asks for, and the rpath keeps the compiler working
-  # from a shell that has not activated the environment
-  sed -i 's#for Switches ("Ada") use ("-static-libstdc++", "-lclangBasic");#for Switches ("Ada") use ("--driver-mode=g++", "-static-libstdc++", "-lclang-cpp", "-Wl,-rpath,'"$LLVM_LIBDIR"'");#' gnat_llvm.gpr
+  # archives the stock file asks for. The -L goes in the list rather than being
+  # left to the Makefile's -largs, because ld resolves a -l against the -L it
+  # has read so far, and the rpath keeps the compiler working from a shell that
+  # has not activated the environment.
+  #
+  # The link driver is the bootstrap g++, since that is what this script puts
+  # first on PATH, so no --driver-mode: that is a clang option and g++ rejects
+  # it outright.
+  sed -i 's#for Switches ("Ada") use ("-static-libstdc++", "-lclangBasic");#for Switches ("Ada") use ("-static-libstdc++", "-L'"$LLVM_LIBDIR"'", "-lclang-cpp", "-Wl,-rpath,'"$LLVM_LIBDIR"'");#' gnat_llvm.gpr
 
   # the runtime rule runs sed -f gnat_src/xsintnam.sed, which FSF GCC does not
   # ship at all. It is the one rename.
@@ -258,7 +264,7 @@ do_patch() {
 #---------------------------------------------------------------------------
 do_compiler() {
   load_env
-  [ -f "$STAMPS/patch" ] || do_patch
+  do_patch
   say "building the compiler on $JOBS cores; this takes a while"
   make -C "$SRC" clean >/dev/null 2>&1
   make -C "$SRC" build LLVM_CONFIG="$LLVM_CONFIG" -j"$JOBS" 2>&1 \
