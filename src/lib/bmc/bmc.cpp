@@ -261,7 +261,6 @@ memory_state bmc::populate_mem_state() {
 
 void bmc::check_all_spec( bmc_ds* bmc_ds_ptr ) {
   std::ostream& os = std::cout;
-  bool solved;
   // if( bmc_ds_ptr->spec_vec.empty() && o.dump_solver_query ) {
   if( o.smt_only ) {
     dump_smt_only( bmc_ds_ptr );
@@ -271,25 +270,46 @@ void bmc::check_all_spec( bmc_ds* bmc_ds_ptr ) {
   if( bmc_ds_ptr->spec_vec.empty() && ( o.dump_solver_query || o.smt_only ) ) {
     src_loc loc;
     spec s(o.solver_ctx.bool_val(true), spec_reason_t::UNKNOWN, loc);
-    solved = run_solver( s, bmc_ds_ptr);
+    run_solver( s, bmc_ds_ptr);
   }
+  unsigned checked = 0;
+  for( spec& s : bmc_ds_ptr->spec_vec )
+    if( o.include_unreach_specs || !s.is_unreach() ) checked++;
+  if( checked == 0 ) {
+    llvm_bmc_warning( "bmc", "no specification was checked, so the result "
+                      "below says only that the program was translated" );
+  } else {
+    os << "\nchecking " << checked << " specifications\n";
+  }
+  unsigned no_answer = 0;
   for(spec s : bmc_ds_ptr->spec_vec) {
     if( o.verbosity > 3 ) {
       os << "Solving for specification\n";
       s.print( os );
     }
     // expr prop = s.get_formula();
-    solved = run_solver( s, bmc_ds_ptr);
-    if( solved ) {
+    check_result result = run_solver( s, bmc_ds_ptr);
+    if( result == z3::sat ) {
       return;
+    } else if( result == z3::unknown ) {
+      // with a time limit the run goes on and says at the end how much of the
+      // program it got through
+      if( o.solver_timeout == 0 ) return;
+      no_answer++;
     } else { } // contine with other specifications
   }
   if( o.smt_only ) {
     os << "\n\nLLVM_BMC_TRANSLATION_SUCCESSFUL\n\n";
     return;
   }
-  // if(solved)
-    os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
+  if( no_answer > 0 ) {
+    os << "\n" << checked - no_answer << " of " << checked
+       << " specifications hold and " << no_answer
+       << " got no answer\n";
+    os << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
+    return;
+  }
+  os << "\n\nLLVM_BMC_VERIFICATION_SUCCESSFUL\n\n";
 }
 
 void bmc::dump_smt_only( bmc_ds* bmc_ds_ptr ) {
@@ -333,15 +353,21 @@ void bmc::dump_smt_only( bmc_ds* bmc_ds_ptr ) {
             << "\n";
 }
 
-bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
+check_result bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
   std::ostream& os = std::cout;
 
   // skipping specifications due to unreachable instructions
   if( !o.include_unreach_specs &&  spec.is_unreach() )
-    return false;
+    return z3::unsat;
  
   // setup solver
   solver s(o.solver_ctx);
+
+  if( o.solver_timeout > 0 ) {
+    params p(o.solver_ctx);
+    p.set( "timeout", (unsigned)(o.solver_timeout * 1000) );
+    s.set( p );
+  }
 
   // adding pre conditions
   for(auto& pre : bmc_ds_ptr->pre_cond_vec) {
@@ -367,7 +393,7 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
 
   if(o.smt_only) {
     std::cout << "Exiting without solving\n\n"; 
-    return false; // Complement this by also ensuring LLVM BMC successful is replaced with translation successful
+    return z3::unsat; // Complement this by also ensuring LLVM BMC successful is replaced with translation successful
   }
 
   check_result result;
@@ -382,7 +408,7 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
     result = z3compObj.check_boolector( s, o.outDirPath.string(), o.get_solver_model );
   }else{
     llvm_bmc_error( "bmc", "no solver identified!!" );
-    return false;// dummy return
+    return z3::unsat;// dummy return
   }
   if( result == z3::sat && o.witness == 1 ) {
     model m(o.solver_ctx);
@@ -409,13 +435,14 @@ bool bmc::run_solver(spec &spec, bmc_ds* bmc_ds_ptr) {
     os << "\nSpecification that failed the check : \n";
     spec.print( os );
     os << "\n\nLLVM_BMC_VERIFICATION_FAILED\n\n";
-    return true;
+  } else if( result == z3::unknown && o.solver_timeout > 0 ) {
+    os << "\nno answer for the specification at ";
+    spec.get_location().print_short( os );
+    os << " (" << s.reason_unknown() << ")\n";
   } else if( result == z3::unknown ){
     os << "\n\nLLVM_BMC_VERIFICATION_INCONCLUSIVE\n\n";
-    return true;
-  }else {
-    return false;
   }
+  return result;
 
 }
 

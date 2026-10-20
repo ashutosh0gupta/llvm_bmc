@@ -41,13 +41,15 @@ void options::get_description_cmd(po::options_description& config,
     ("smt-only", po::bool_switch(&smt_only), "Do not solve and only give the smt output")
     ("fold-readonly-globals", po::bool_switch(&fold_readonly_globals_opt), "Read a global that is never written off its initialiser, volatile loads included, so that loop bounds reaching the tool through one can be folded")
     ("rewrite-mem-loops", po::bool_switch(&rewrite_mem_loops), "Rewrite a byte loop that fills or copies a buffer into a memset or memcpy before translating")
+    ("ada-runtime-checks", po::bool_switch(&ada_runtime_checks), "Keep the runtime checks gnat would compile into an Ada program instead of suppressing them, so an index or range check becomes a property (needs --unreach-check to be solved)")
     ("dump-cfg,d", po::bool_switch(&dump_cfg), "Dump the llvm control flow graph")
     ("config,c", po::value<std::string>(), "Set config file")
     ("unwind,u", po::value<int>(&loop_unroll_count)->default_value(1), "Set loop unroll count")
     ("unroll-budget", po::value<uint64_t>(&unroll_budget)->default_value(30000), "Instructions a fully unrolled loop may expand to")
     ("unwind-assertions", po::value<bool>(&unwind_assertions)->default_value(true), "Report loops that the unroll bound did not finish (set false to allow bounded-only results)")
     ("use-bv,b", po::bool_switch(&bit_precise), "Use bit-vectors to represent numbers!")
-    ("memory-granularity", po::value<int>(&mem_cell_bits)->default_value(32), "Size of a memory cell in bits (8, 32 or 64); only used with -b")
+    ("memory-granularity", po::value<int>(&mem_cell_bits)->default_value(32), "Size of a memory cell in bits (8, 16, 32 or 64); only used with -b")
+    ("solver-timeout", po::value<int>(&solver_timeout)->default_value(0), "Seconds the solver gets for one property before the property is given up on and reported as inconclusive (0: no limit)")
     ("data-model", po::value<std::string>(&data_model)->default_value(""), "Widths of the C types: ILP32 or LP64 (default: the host)")
     ("bounds-check,n", po::bool_switch(&include_out_of_bound_specs), "Enable array-index-out-of-bounds check")
     ("overflow-check,l", po::bool_switch(&include_overflow_specs), "Enable over/underflow check")
@@ -127,9 +129,17 @@ void options::interpret_options(po::variables_map& vm) {
     llvm_bmc_error("config options", "data model " << data_model
                    << " is not supported, use ILP32 or LP64.");
   }
-  if (mem_cell_bits != 8 && mem_cell_bits != 32 && mem_cell_bits != 64) {
+  if( solver_timeout < 0 ) {
+    llvm_bmc_error("config options", "solver timeout can not be negative.");
+  }
+  if( solver_timeout > 0 && use_solver != "z3" ) {
+    llvm_bmc_error("config options", "a solver timeout is only passed on to z3,"
+                   " not to " << use_solver << ".");
+  }
+  if (mem_cell_bits != 8 && mem_cell_bits != 16 && mem_cell_bits != 32
+      && mem_cell_bits != 64) {
     llvm_bmc_error("config options", "memory granularity " << mem_cell_bits
-                   << " is not supported, use 8, 32 or 64.");
+                   << " is not supported, use 8, 16, 32 or 64.");
   }
   if (vm.count("memory-granularity") && !vm["memory-granularity"].defaulted()
       && !bit_precise) {

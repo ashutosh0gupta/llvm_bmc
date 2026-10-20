@@ -96,6 +96,7 @@ public:
   bool smt_only = 0;
   bool fold_readonly_globals_opt = 0;
   bool rewrite_mem_loops = 0;
+  bool ada_runtime_checks = 0;
   std::string var_suffix = ""; // suffix for generated variable names (correct/faulty)
 
   //----------------------------------------
@@ -116,6 +117,7 @@ public:
   bool bit_precise = false; // model integers as true "int" or bit vectors
   // int mem_cell_bits = 32;
   int mem_cell_bits = 32;   // size of a memory cell in bits
+  int solver_timeout = 0;   // seconds the solver gets for one property
   std::string data_model;   // widths of the C types: ILP32 or LP64
   bool check_spec = false;
   bool abstract_floats = false; //abstract away floating point computations

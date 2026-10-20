@@ -92,6 +92,7 @@ public:
   std::map<const llvm::Value*,const llvm::Instruction*>* debug_map = NULL;
 
   std::map< const llvm::Instruction*, unsigned > ary_access_to_index;
+  std::map< const llvm::Instruction*, std::vector<unsigned> > ary_access_to_ids;
   std::map< const llvm::Value*, unsigned >& ary_to_int;
   std::map< unsigned, unsigned > ary_to_base;
   std::map< unsigned, unsigned > ary_to_cells;
@@ -106,6 +107,10 @@ public:
   arr_read_expr array_read( unsigned, const llvm::CallInst*, exprs&);
   arr_write_expr array_write_id(unsigned, unsigned, exprs&, expr&);
   arr_read_expr array_read_id(unsigned, unsigned, exprs&, const llvm::Type*);
+  arr_read_expr array_read_base( unsigned, std::vector<unsigned>&, exprs&,
+                                 const llvm::Type*, expr& );
+  bool array_ids( const llvm::Instruction*, std::vector<unsigned>& );
+  unsigned object_base( unsigned ary );
   bool has_bulk_update();
   arr_write_expr array_fill_id( unsigned, unsigned, exprs&, exprs&, expr&,
                                 uint64_t );

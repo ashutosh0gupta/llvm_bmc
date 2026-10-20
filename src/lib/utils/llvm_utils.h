@@ -69,7 +69,7 @@ std::string getVarName(const llvm::DbgValueInst* dbgVal );
 std::string getVarName(const llvm::DbgDeclareInst* dbgVal );
 
 
-llvm::Function* get_callee( const llvm::CallInst* );
+llvm::Function* get_callee( const llvm::CallBase* );
 bool match_function_names( const llvm::CallInst* call,
                            std::vector<std::string>& names );
 
@@ -218,9 +218,6 @@ z3::func_decl struct_ctor(options&, const llvm::StructType*);
 expr read_const( options&, const llvm::Value*);
 std::string read_const_str( options& o, const llvm::Value* op );
 
-expr llvm_min_val( solver_context&, const llvm::Value*);
-expr llvm_max_val( solver_context&, const llvm::Value*);
-
 
 class set_unroll_counts : public llvm::LoopPass {
 
@@ -267,6 +264,8 @@ bool     byte_offset_to_indices(const llvm::Type*, uint64_t off,
 const std::pair<const llvm::Value*, uint64_t>  get_array_info( const llvm::Value* op);
 const std::pair<const llvm::Value*, uint64_t>
 get_array_info( const llvm::Value* op, std::set<const llvm::Value*>& seen );
+void get_array_candidates( const llvm::Value* op,
+                           std::vector<std::pair<const llvm::Value*,uint64_t>>& );
 const llvm::Value* identify_global_in_addr( const llvm::Value* op);
 std::pair<const llvm::Value*, uint64_t> identify_lpad_struct(const llvm::Value* , int);
 

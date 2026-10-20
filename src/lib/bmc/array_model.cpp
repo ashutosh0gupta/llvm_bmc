@@ -551,6 +551,17 @@ single_array_model::array_write_id(unsigned bidx, unsigned i,
   return arr_write_expr((new_ar == M), bound_guard, new_ar);
 }
 
+unsigned array_model_full::object_base( unsigned ) {
+  llvm_bmc_error( "array_model", "this array model has no object addresses" );
+}
+
+arr_read_expr
+array_model_full::array_read_base( unsigned, std::vector<unsigned>&, exprs&,
+                                   const llvm::Type*, expr& ) {
+  llvm_bmc_error( "array_model", "this array model can not read at an"
+                  " address that is not tied to one object" );
+}
+
 arr_write_expr
 array_model_full::array_fill_id( unsigned, unsigned, exprs&, exprs&, expr&,
                                  uint64_t ) {
@@ -748,6 +759,15 @@ single_array_model::array_read_id(unsigned bidx, unsigned i, exprs& idxs,
     return arr_read_expr(v, bound_guard);
   }
 
+  return read_at( bidx, i, addr, ty, idxs, ls, bound_guard );
+}
+
+arr_read_expr
+single_array_model::read_at( unsigned bidx, unsigned i, expr& addr,
+                             const llvm::Type* ty, exprs& idxs, exprs& ls,
+                             expr bound_guard ) {
+  array_state& ar_st = get_state( bidx );
+  expr ar_name = ar_st.get_M_name().back();
   unsigned w = get_data_sort().bv_size();
   unsigned bits = ty ? scalar_bits(ty) : w;
   if (bits == 0)
@@ -762,6 +782,56 @@ single_array_model::array_read_id(unsigned bidx, unsigned i, exprs& idxs,
   for (unsigned k = 1; k < n; k++)
     cells = concat(select(ar_name, cell_address(addr,k)), cells);
   return arr_read_expr(bits_to_value(cells, ty), bound_guard);
+}
+
+unsigned single_array_model::object_base( unsigned i ) {
+  if( ar_bases.count(i) == 0 )
+    llvm_bmc_error( "array_model", "array " << ar_names.at(i) << " is reached"
+                    " through a pointer but no base was handed out for it" );
+  return ar_bases.at(i);
+}
+
+unsigned single_array_model::common_shape( std::vector<unsigned>& ids ) {
+  unsigned i0 = ids.at(0);
+  for( unsigned i : ids ) {
+    bool same = get_slot_cells(i) == get_slot_cells(i0) &&
+                cell_unit_index(i) == cell_unit_index(i0) &&
+                lengths.at(i).size() == lengths.at(i0).size();
+    for( unsigned k = 0; same && k < lengths.at(i).size(); k++ )
+      same = z3::eq( lengths.at(i)[k].simplify(), lengths.at(i0)[k].simplify() );
+    if( !same )
+      llvm_bmc_error( "array_model", "the address reaches " << ar_names.at(i0)
+                      << " and " << ar_names.at(i) << ", which do not have the"
+                      " same shape, so one access can not stand for both" );
+  }
+  return i0;
+}
+
+expr single_array_model::slot_address( unsigned i, exprs& idxs, exprs& ls,
+                                       expr& base ) {
+  expr lin = idxs[0];
+  for (std::size_t k = 1; k < idxs.size(); k++) {
+    if( k >= ls.size() )
+      llvm_bmc_error("array_model", "array " << ar_names.at(i) << " is accessed"
+                     " with " << idxs.size() << " indices and no length is"
+                     " recorded for dimension " << k );
+    lin = fold_mul_add( lin, ls[k], idxs[k] );
+  }
+  unsigned cells = get_slot_cells(i);
+  if( cells > 1 && ar_cell_indexed.count(i) == 0 )
+    lin = fold_mul_num( lin, cells );
+  return fold_add( lin, base );
+}
+
+arr_read_expr
+single_array_model::array_read_base( unsigned bidx, std::vector<unsigned>& ids,
+                                     exprs& idxs, const llvm::Type* ty,
+                                     expr& base ) {
+  unsigned i = common_shape( ids );
+  auto& ls = lengths.at(i);
+  auto bound_guard = access_bound_cons( idxs, ls );
+  expr addr = slot_address( i, idxs, ls, base );
+  return read_at( bidx, i, addr, ty, idxs, ls, bound_guard );
 }
 
 arr_read_expr

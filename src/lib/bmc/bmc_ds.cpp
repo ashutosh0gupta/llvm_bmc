@@ -405,12 +405,9 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
   std::vector< unsigned > order;
   std::map< unsigned, uint64_t > sizes;
 
-  auto note = [&](const llvm::Value* ptr, const llvm::Type* acc_ty,
-                   const llvm::Instruction* I) {
-    auto ary_info = get_array_info(ptr);
-    if (!ary_info.first || !exists(ary_to_int, ary_info.first)) return;
+  auto note_obj = [&]( std::pair<const llvm::Value*,uint64_t> ary_info,
+                       const llvm::Type* acc_ty ) {
     unsigned id = ary_to_int.at(ary_info.first);
-    if (I) ary_access_to_index[I] = id;
     if (!exists(ary_to_base, id) && !exists(sizes, id)) {
       sizes[id] = ary_info.second;
       order.push_back(id);
@@ -424,12 +421,19 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
       unsigned a = scalar_bits( acc_ty );
       if( dec_ty && bits > 0 && a > 0 && a < bits
           && !has_leaf_of_bits( dec_ty, a ) ) {
-        if( cell_bits == 0 || a % cell_bits != 0 )
+        if( cell_bits == 0 || a % cell_bits != 0 ) {
+          // the same array may be reached at more than one width, and a byte
+          // divides all of them, so 8 is the only size worth naming here
+          if( a % 8 != 0 )
+            llvm_bmc_error( "bmc", "array " << ary_info.first->getName().str()
+                            << " is accessed " << a << " bits at a time, which"
+                               " no memory cell size divides" );
           llvm_bmc_error( "bmc", "array " << ary_info.first->getName().str()
                           << " is accessed " << a << " bits at a time, which is"
                              " not a whole number of " << cell_bits
                           << " bit cells; run with -b and"
-                             " --memory-granularity " << a );
+                             " --memory-granularity 8" );
+        }
         std::vector<uint64_t> dims;
         get_type_dims( dec_ty, dims );
         if( dims.size() > 1 )
@@ -449,6 +453,23 @@ void bmc_ds::init_array_model( array_model_t ar_model_local,
     if (cell_bits > 0 && bits > cell_bits)
       cells = (bits + cell_bits - 1)/cell_bits;
     if (cells > ary_to_cells[id]) ary_to_cells[id] = cells;
+    return id;
+  };
+
+  auto note = [&]( const llvm::Value* ptr, const llvm::Type* acc_ty,
+                   const llvm::Instruction* I ) {
+    std::vector< std::pair<const llvm::Value*,uint64_t> > cands;
+    get_array_candidates( ptr, cands );
+    for( auto& c : cands )
+      if( !exists( ary_to_int, c.first ) ) return;
+    std::vector<unsigned> ids;
+    for( auto& c : cands )
+      ids.push_back( note_obj( c, acc_ty ) );
+    if( ids.empty() || !I ) return;
+    if( ids.size() == 1 )
+      ary_access_to_index[I] = ids[0];
+    else
+      ary_access_to_ids[I] = ids;
   };
 
   auto note_gep = [&]( const llvm::GEPOperator* gep ) {
@@ -675,6 +696,30 @@ arr_write_expr bmc_ds::array_copy_cells( unsigned bidx,
   if( ar_model_init != FULL )
     llvm_bmc_error( "bmc","array model incomplete implementation!!" );
   return ar_model_full->array_copy_cells( bidx, dst, doff, src, soff, cells );
+}
+
+unsigned bmc_ds::object_base( unsigned ary ) {
+  if( ar_model_init != FULL )
+    llvm_bmc_error( "bmc","array model incomplete implementation!!" );
+  return ar_model_full->object_base( ary );
+}
+
+bool bmc_ds::array_ids( const llvm::Instruction* I,
+                        std::vector<unsigned>& ids ) {
+  auto it = ary_access_to_ids.find( I );
+  if( it == ary_access_to_ids.end() ) return false;
+  ids = it->second;
+  return true;
+}
+
+arr_read_expr bmc_ds::array_read_base( unsigned bidx,
+                                       std::vector<unsigned>& ids,
+                                       exprs& idxs, const llvm::Type* ty,
+                                       expr& base ) {
+  if( ar_model_init != FULL )
+    llvm_bmc_error( "bmc","array model incomplete implementation!!" );
+  scale_index_to_cells( ids.at(0), idxs );
+  return ar_model_full->array_read_base( bidx, ids, idxs, ty, base );
 }
 
 arr_read_expr bmc_ds::array_read_id(unsigned bidx, unsigned ary, exprs& idxs,

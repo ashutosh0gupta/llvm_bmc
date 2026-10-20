@@ -95,6 +95,11 @@ public:
   virtual arr_write_expr array_write_id(unsigned bidx, unsigned ary, exprs& idx, expr& val) = 0;
   virtual arr_read_expr array_read_id(unsigned bidx, unsigned ary, exprs&, const llvm::Type* ty) = 0;
   virtual bool has_bulk_update() { return false; }
+  virtual unsigned object_base( unsigned ary );
+  virtual arr_read_expr array_read_base( unsigned bidx,
+                                         std::vector<unsigned>& ids,
+                                         exprs& idxs, const llvm::Type* ty,
+                                         expr& base );
   virtual arr_write_expr array_fill_id( unsigned bidx, unsigned ary,
                                         exprs& first, exprs& last, expr& val,
                                         uint64_t elems );
@@ -199,6 +204,15 @@ public:
   unsigned get_slot_cells(unsigned ary);
   bool cell_unit_index( unsigned ary );
   expr slot_address(unsigned ary, exprs& idxs, exprs& ls);
+  expr slot_address( unsigned ary, exprs& idxs, exprs& ls, expr& base );
+  unsigned object_base( unsigned ary );
+  unsigned common_shape( std::vector<unsigned>& ids );
+  arr_read_expr array_read_base( unsigned bidx, std::vector<unsigned>& ids,
+                                 exprs& idxs, const llvm::Type* ty,
+                                 expr& base );
+  arr_read_expr read_at( unsigned bidx, unsigned ary, expr& addr,
+                         const llvm::Type* ty, exprs& idxs, exprs& ls,
+                         expr bound_guard );
   expr last_cell_in_bound( exprs& idxs, exprs& ls, unsigned n );
   bool has_bulk_update();
   arr_write_expr array_fill_id( unsigned bidx, unsigned ary, exprs& first,

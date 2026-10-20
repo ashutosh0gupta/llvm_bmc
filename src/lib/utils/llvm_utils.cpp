@@ -654,18 +654,122 @@ std::unique_ptr<llvm::Module> ir2ir(options &o, comments &cmts) {
   return llvm::parseIRFile(filename, err, llvm_ctx);
 }
 
-// void ada2bc(const std::string &fileName, const std::string &outName) {
-void ada2bc(const std::string &fileName, const std::string &outName,
-            const std::vector<std::string> &dirs) {
+static std::string gnat_tool(const char *name) {
   const char *gnat_bin = getenv("GNAT_LLVM_BIN");
+  return std::string(gnat_bin ? gnat_bin : GNAT_LLVM_BIN) + "/" + name;
+}
+
+void ada2bc(options &o, const std::string &fileName, const std::string &outName,
+            const std::vector<std::string> &dirs, bool runtime_unit) {
   std::ostringstream cmd;
-  cmd << (gnat_bin ? gnat_bin : GNAT_LLVM_BIN)
-      << "/llvm-gcc -S -emit-llvm -gnatp -gnata -c";
+  cmd << gnat_tool("llvm-gcc") << " -S -emit-llvm -gnata -c";
+  // -gnatp drops the index, range and overflow checks gnat would otherwise
+  // compile in, and those are the only properties an Ada source carries of
+  // its own. It stays the default so no existing result moves
+  if (!o.ada_runtime_checks)
+    cmd << " -gnatp";
+  if (runtime_unit)
+    cmd << " -gnatg";
   for (auto &d : dirs)
     cmd << " -I" << d;
   cmd << " " << fileName << " -o " << outName;
   if (system(cmd.str().c_str()) != 0)
     llvm_bmc_error("ADA_PARSING", "gnat-llvm failed on " << fileName);
+}
+
+static std::vector<std::pair<std::string, std::string>>
+ali_dependencies(const std::string &ali) {
+  std::vector<std::pair<std::string, std::string>> deps;
+  boost::filesystem::path ali_path(ali);
+  boost::filesystem::ifstream f(ali_path);
+  std::string line;
+  while (std::getline(f, line)) {
+    if (line.compare(0, 2, "W ") != 0 && line.compare(0, 2, "Z ") != 0)
+      continue;
+    std::istringstream ls(line.substr(2));
+    std::string unit, src, ali_name;
+    if (!(ls >> unit >> src >> ali_name))
+      continue;
+    deps.emplace_back(unit, src);
+  }
+  return deps;
+}
+
+static std::string unit_symbol_prefix(std::string unit) {
+  auto pc = unit.find('%');
+  if (pc != std::string::npos)
+    unit.resize(pc);
+  std::string out;
+  for (char c : unit) {
+    if (c == '.')
+      out += "__";
+    else
+      out += (char)std::tolower((unsigned char)c);
+  }
+  return out + "__";
+}
+
+static const std::vector<std::string> &rts_source_dirs() {
+  static std::vector<std::string> dirs;
+  static bool asked = false;
+  if (asked)
+    return dirs;
+  asked = true;
+  std::string cmd = gnat_tool("llvm-gnatls") + " -v 2>/dev/null";
+  FILE *p = popen(cmd.c_str(), "r");
+  if (p == nullptr)
+    return dirs;
+  char buf[1024];
+  bool in_sources = false;
+  while (fgets(buf, sizeof buf, p) != nullptr) {
+    std::string l(buf);
+    while (!l.empty() && (l.back() == '\n' || l.back() == '\r'))
+      l.pop_back();
+    if (l.find("Source Search Path") != std::string::npos) {
+      in_sources = true;
+      continue;
+    }
+    if (!in_sources)
+      continue;
+    if (l.find("Search Path") != std::string::npos)
+      break;
+    auto a = l.find_first_not_of(" \t");
+    if (a == std::string::npos)
+      continue;
+    std::string d = l.substr(a);
+    if (d != "<Current_Directory>")
+      dirs.push_back(d);
+  }
+  pclose(p);
+  return dirs;
+}
+
+static bool find_source(const std::string &name,
+                        const std::vector<std::string> &dirs,
+                        std::string &path) {
+  for (auto &d : dirs) {
+    auto p = boost::filesystem::path(d) / name;
+    if (boost::filesystem::exists(p)) {
+      path = p.string();
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool elab_only_registers_exceptions(const llvm::Function &f) {
+  for (auto &bb : f) {
+    for (auto &i : bb) {
+      if (llvm::isa<llvm::ReturnInst>(&i))
+        continue;
+      auto call = llvm::dyn_cast<llvm::CallInst>(&i);
+      auto callee = call ? call->getCalledFunction() : nullptr;
+      if (callee == nullptr ||
+          callee->getName() != "system__exception_table__register_exception")
+        return false;
+    }
+  }
+  return true;
 }
 
 static void check_elaboration(const llvm::Module &module) {
@@ -674,6 +778,8 @@ static void check_elaboration(const llvm::Module &module) {
       continue;
     auto name = f.getName();
     if (!name.ends_with("___elabs") && !name.ends_with("___elabb"))
+      continue;
+    if (elab_only_registers_exceptions(f))
       continue;
     llvm_bmc_error("ADA_PARSING",
                    name.str()
@@ -687,20 +793,17 @@ std::unique_ptr<llvm::Module> ada2ir(options &o, comments &cmts) {
   auto &llvm_ctx = o.get_llvm_context();
   std::unique_ptr<llvm::Module> module;
 
-  for (auto &filename : o.get_input_files()) {
-  if (!boost::filesystem::exists(filename)) {
-    llvm_bmc_error("ADA_PARSING", "failed to find file " << filename);
-    return nullptr;
-  }
+  std::vector<std::string> dirs = o.get_include_dirs();
+  std::set<std::string> linked;
+  std::vector<std::pair<std::string, std::string>> deps;
 
+  auto compile_and_link = [&](const std::string &filename,
+                              bool runtime_unit) -> bool {
   boost::filesystem::path src(filename);
   boost::filesystem::path out = o.outDirPath;
   out /= src.stem().string() + ".ll";
-
-  // ada2bc(filename, out.string());
-  std::vector<std::string> dirs = o.get_include_dirs();
-  dirs.push_back(src.parent_path().empty() ? "." : src.parent_path().string());
-  ada2bc(filename, out.string(), dirs);
+    ada2bc(o, filename, out.string(), dirs, runtime_unit);
+    linked.insert(src.filename().string());
 
   // auto &llvm_ctx = o.get_llvm_context();
   llvm::SMDiagnostic err;
@@ -709,23 +812,93 @@ std::unique_ptr<llvm::Module> ada2ir(options &o, comments &cmts) {
     auto unit = llvm::parseIRFile(out.string(), err, llvm_ctx);
     if (unit == nullptr) {
     err.print("llvmbmc", llvm::errs());
-      return nullptr;
+      return false;
     }
-
-  // the W lines of the .ali name the units this one withs
-  // boost::filesystem::path ali = out;
-  // ali.replace_extension(".ali");
-  // boost::system::error_code ec;
-  // boost::filesystem::remove(ali, ec);
     if (module == nullptr) {
       module = std::move(unit);
     } else if (llvm::Linker::linkModules(*module, std::move(unit))) {
       llvm_bmc_error("ADA_PARSING",
                      "failed to link " << filename << " with the units before it");
+      return false;
+    }
+    auto ali = out.parent_path() / (src.stem().string() + ".ali");
+    for (auto &d : ali_dependencies(ali.string()))
+      deps.push_back(d);
+    return true;
+  };
+
+  for (auto &filename : o.get_input_files()) {
+    if (!boost::filesystem::exists(filename)) {
+      llvm_bmc_error("ADA_PARSING", "failed to find file " << filename);
       return nullptr;
+    }
+    boost::filesystem::path src(filename);
+    dirs.push_back(src.parent_path().empty() ? "." : src.parent_path().string());
+  }
+  for (auto &filename : o.get_input_files())
+    if (!compile_and_link(filename, false))
+      return nullptr;
+
+  for (bool progress = true; progress;) {
+    progress = false;
+
+    std::vector<std::string> missing;
+    for (auto &f : *module) {
+      if (!f.isDeclaration() || f.isIntrinsic())
+        continue;
+      if (is_modelled_call(f.getName()))
+        continue;
+      for (auto u : f.users()) {
+        auto use = llvm::dyn_cast<llvm::Instruction>(u);
+        if (use == nullptr)
+          continue;
+        auto owner = use->getFunction()->getName();
+        if (owner.ends_with("___elabs") || owner.ends_with("___elabb"))
+          continue;
+        missing.push_back(f.getName().str());
+        break;
     }
   }
 
+    unsigned take = deps.size();
+    for (auto &m : missing) {
+      unsigned best = deps.size();
+      size_t best_len = 0;
+      for (unsigned i = 0; i < deps.size(); i++) {
+        if (deps[i].second.empty())
+          continue;
+        std::string prefix = unit_symbol_prefix(deps[i].first);
+        if (m.compare(0, prefix.size(), prefix) != 0)
+          continue;
+        if (prefix.size() > best_len) {
+          best = i;
+          best_len = prefix.size();
+        }
+      }
+      if (best != deps.size() && !linked.count(deps[best].second)) {
+        take = best;
+        break;
+      }
+    }
+    if (take == deps.size())
+      break;
+
+    std::string path;
+    bool runtime_unit = false;
+    if (!find_source(deps[take].second, dirs, path)) {
+      if (!find_source(deps[take].second, rts_source_dirs(), path)) {
+        linked.insert(deps[take].second);
+        progress = true;
+        continue;
+      }
+      runtime_unit = true;
+    }
+    llvm_bmc_warning("ADA_PARSING", "taking " << deps[take].first << " from "
+                                              << path << " for its bodies");
+    if (!compile_and_link(path, runtime_unit))
+      return nullptr;
+    progress = true;
+  }
 
   check_elaboration(*module);
 
@@ -1964,7 +2137,7 @@ bool has_name(llvm::StringRef str, std::vector<std::string> &names) {
 }
 
 
-llvm::Function *get_callee(const llvm::CallInst *call) {
+llvm::Function *get_callee(const llvm::CallBase *call) {
   assert(call);
   if (auto *f = call->getCalledFunction())
     return f;
@@ -2296,8 +2469,14 @@ expr read_const(options &o, const llvm::Value *op) {
       }
     } else if (ty->isStructTy()) {
       return get_fresh_int(ctx);
+    } else if (auto a_ty = llvm::dyn_cast<llvm::ArrayType>(ty)) {
+      expr elem = read_const(o, llvm::Constant::getNullValue(
+                                    a_ty->getElementType()));
+      return get_fresh_const(ctx,
+                             ctx.array_sort(index_sort(o), elem.get_sort()));
     }
-    llvm_bmc_error("llvm_utils", "unsupported type: " << ty << "!!");
+    llvm_bmc_error("llvm_utils", "no model for this undefined value: "
+                   << toString(op));
   } // else if( llvm::isa<llvm::ConstantFP>(op) ) {
     // const llvm::APFloat& n = c->getValueAPF();
   if (const llvm::ConstantFP *c = llvm::dyn_cast<llvm::ConstantFP>(op)) {
@@ -2457,18 +2636,6 @@ expr read_const(options &o, const llvm::Value *op) {
   return e; // contains no expression;
 }
 
-expr llvm_min_val(solver_context &ctx, const llvm::Value *v) {
-  // todo : find max val
-  assert(false);
-  return ctx.bool_val(true);
-}
-
-expr llvm_max_val(solver_context &ctx, const llvm::Value *v) {
-  // todo : find min val
-  assert(false);
-  return ctx.bool_val(true);
-}
-
 char set_unroll_counts::ID = 0;
 
 set_unroll_counts::set_unroll_counts(options &o_) : llvm::LoopPass(ID), o(o_) {}
@@ -2540,9 +2707,14 @@ void forced_inliner_pass(std::unique_ptr<llvm::Module> &module) {
       // function has a body available
       fit->addFnAttr(llvm::Attribute::AlwaysInline);
       // To ensure all functions are inlined even if the personalities do not
-      // match
-      llvm::Constant *FnPersonality = nullptr;
-      fit->setPersonalityFn(FnPersonality);
+      bool has_eh_pad = false;
+      for (auto &bb : *fit)
+        if (bb.isEHPad()) {
+          has_eh_pad = true;
+          break;
+        }
+      if (!has_eh_pad)
+        fit->setPersonalityFn(nullptr);
     }
   }
 
@@ -2657,7 +2829,8 @@ void cleanup_after_inline_pass(std::unique_ptr<llvm::Module> &module) {
   llvm::ModulePassManager MPM;
   llvm::FunctionPassManager FPM;
   FPM.addPass(llvm::SROAPass(llvm::SROAOptions::ModifyCFG));
-  FPM.addPass(llvm::InstCombinePass());
+  FPM.addPass(llvm::InstCombinePass(
+      llvm::InstCombineOptions().setVerifyFixpoint(false)));
   FPM.addPass(llvm::PromotePass());
   MPM.addPass(llvm::createModuleToFunctionPassAdaptor(std::move(FPM)));
   MPM.run(*module.get(), MAM);
@@ -3043,6 +3216,34 @@ bool has_leaf_of_bits(const llvm::Type* ty, unsigned bits) {
 
 static std::map<const llvm::Value *, std::pair<const llvm::Value *, uint64_t> >
     ary_info_memo;
+
+void get_array_candidates(
+    const llvm::Value *op,
+    std::vector<std::pair<const llvm::Value *, uint64_t>> &out) {
+  out.clear();
+  auto one = get_array_info(op);
+  if (one.first) {
+    out.push_back(one);
+    return;
+  }
+  const llvm::Value *v = op->stripPointerCasts();
+  if (auto gep = llvm::dyn_cast<const llvm::GEPOperator>(v)) {
+    get_array_candidates(gep->getPointerOperand(), out);
+    return;
+  }
+  auto phi = llvm::dyn_cast<const llvm::PHINode>(v);
+  if (!phi)
+    return;
+  for (unsigned i = 0; i < phi->getNumIncomingValues(); i++) {
+    auto in = get_array_info(phi->getIncomingValue(i));
+    if (!in.first) {
+      out.clear();
+      return;
+    }
+    if (std::find(out.begin(), out.end(), in) == out.end())
+      out.push_back(in);
+  }
+}
 
 const std::pair<const llvm::Value *, uint64_t>
 get_array_info(const llvm::Value *op) {

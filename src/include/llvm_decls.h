@@ -60,8 +60,10 @@ std::unique_ptr<llvm::Module> ir2ir( options&,  comments& );
 void c2bc( const std::string&, const std::string& );
 // void ada2bc(const std::string&, const std::string&);
 // void ada2bc( const std::string&, const std::string& );
-void ada2bc(const std::string&, const std::string&,
-             const std::vector<std::string>&);
+void ada2bc( options&, const std::string&, const std::string&,
+             const std::vector<std::string>&, bool runtime_unit = false );
+
+bool is_modelled_call( llvm::StringRef );
 
 void generateAssemblyARM( std::unique_ptr<llvm::Module>& module );
 

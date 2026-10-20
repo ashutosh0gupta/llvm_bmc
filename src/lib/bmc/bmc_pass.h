@@ -60,8 +60,10 @@ private:
   void translateFloatAbs(unsigned, const llvm::Instruction*, const llvm::Value*);
   void translateCopySign(unsigned, const llvm::Instruction*, const llvm::Value*,
                           const llvm::Value*);
-  void translateAtan(unsigned, const llvm::CallInst*);
-  void translateSqrt(unsigned, const llvm::CallInst*);
+  void translateAtan( unsigned, const llvm::CallBase* );
+  void translateLibmCall( unsigned, const llvm::CallBase* );
+  void translateInsertValueInst( unsigned, const llvm::InsertValueInst* );
+  void translateSqrt( unsigned, const llvm::CallBase* );
   void need_bv_mode( const char* );
   void translateFunnelShift( unsigned, const llvm::IntrinsicInst*, bool );
   void translateMinMax( unsigned, const llvm::IntrinsicInst*, bool, bool );
@@ -99,6 +101,9 @@ private:
   expr idxs_to_offset( const exprs&, const std::vector<uint64_t>& );
   void add_bound_spec( unsigned, expr );
   expr ptr_phi_offset( const llvm::PHINode* );
+  uint64_t const_ptr_offset( const llvm::Value* );
+  expr* find_ptr_base( const llvm::Value* );
+  std::map< const llvm::Value*, expr > ptr_base;
   expr ptr_mem_offset( const llvm::LoadInst* );
   bool run_offset_term( const llvm::Value*, expr&, const llvm::DataLayout& );
   void loadFromArrayHelper(unsigned, const llvm::LoadInst*, exprs&);

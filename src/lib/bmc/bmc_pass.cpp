@@ -30,6 +30,10 @@ bmc_pass::~bmc_pass() {
 //----------------------------------------------------------------------------
 // translate parts of functions
 
+static expr float_is_finite(expr const &x) {
+  return !x.mk_is_nan() && !x.mk_is_inf();
+}
+
 void bmc_pass::translateParams(llvm::Function &f) {
   //  for (auto& f_arg : f.getArgumentList()) {
   for (auto ab = f.arg_begin(), ae = f.arg_end(); ab != ae; ab++) {
@@ -37,7 +41,12 @@ void bmc_pass::translateParams(llvm::Function &f) {
     auto ty = a->getType();
 
     if (!ty->isPointerTy()) { // input pointers are viewed as arrays
-      bmc_ds_ptr->m.get_term(a);
+      expr t = bmc_ds_ptr->m.get_term(a);
+      // an Ada in parameter carries a value of its subtype, and the range of a
+      // floating point subtype runs from First to Last, so it holds neither a
+      // nan nor an infinity
+      if (o.is_input_ada() && t.is_fpa())
+        bmc_ds_ptr->add_pre_cond(float_is_finite(t), spec_reason_t::ASSUME);
     } else { // array case
 
       // Nothing is needs to be done here
@@ -383,10 +392,7 @@ void bmc_pass::translateBinOp(unsigned bidx, const llvm::BinaryOperator *bop) {
       // std::cout << "underflow_cons2 " << underflow_cons2 << "\n";
 
     } else {
-      expr lb = llvm_min_val(solver_ctx, bop);
-      expr ub = llvm_max_val(solver_ctx, bop);
-      bmc_ds_ptr->add_spec(!path_bit || (v <= ub && v >= lb),
-                           spec_reason_t::OUT_OF_RANGE);
+      need_bv_mode("--overflow-check");
     }
   }
 }
@@ -556,11 +562,18 @@ void bmc_pass::translatePhiNode(unsigned bidx, const llvm::PHINode *phi) {
   //   bmc_ds_ptr->quant_elim_vars.push_back(new_var);
   // }
 
-  if (phi->getType()->isPointerTy() && !get_array_info(phi).first)
+  std::vector< std::pair<const llvm::Value*,uint64_t> > cands;
+  if (phi->getType()->isPointerTy()) {
+    get_array_candidates(phi, cands);
+    if (cands.empty())
     llvm_bmc_error("bmc", "the address " << toString(phi)
-                   << " reaches a different object on different paths; a"
-                      " pointer here carries an offset into its object and not"
-                      " the object, so the two cannot be joined");
+                     << " reaches a different object on different paths and"
+                        " not every one of them could be named");
+  }
+  bool many_objs = cands.size() > 1;
+  expr obj_base = solver_ctx.bool_val(true);
+  if (many_objs)
+    obj_base = bmc_ds_ptr->m_model.get_fresh_name(index_sort(o), "ptr_base");
 
   std::vector<expr> phi_cons;
   for (unsigned i = 0; i < num; i++) {
@@ -574,8 +587,11 @@ void bmc_pass::translatePhiNode(unsigned bidx, const llvm::PHINode *phi) {
         pre_bidxes.push_back(pre_b_local);
       }
     }
+    bool ptr_const = phi->getType()->isPointerTy() &&
+                     llvm::isa<llvm::Constant>(v_) &&
+                     get_array_info(v_).first != nullptr;
     bool ptr_global = phi->getType()->isPointerTy() &&
-                      llvm::isa<llvm::GlobalVariable>(v_);
+                      ( llvm::isa<llvm::GlobalVariable>(v_) || ptr_const );
 
     if (phi->getType()->isPointerTy() && !pre_bidxes.empty() && !ptr_global &&
         !bmc_ds_ptr->m.has_term(v_)) {
@@ -589,8 +605,14 @@ void bmc_pass::translatePhiNode(unsigned bidx, const llvm::PHINode *phi) {
     // todo: check if this works
     for (unsigned pre_bidx : pre_bidxes) {
       // expr prev_var = bmc_ds_ptr->m.get_earlier_term(v_, pre_bidx);
-      expr prev_var = ptr_global ? index_val(o, 0)
+      expr prev_var = ptr_global ? index_val(o, const_ptr_offset(v_))
                                  : bmc_ds_ptr->m.get_earlier_term(v_, pre_bidx);
+      if (many_objs) {
+        auto id = bmc_ds_ptr->ary_to_int.at(get_array_info(v_).first);
+        phi_cons.push_back(implies(extend_path(bidx, pre_bidx),
+                                   obj_base == index_val(o,
+                                     bmc_ds_ptr->object_base(id))));
+      }
       // expr prev_var = bmc_ds_ptr->m.get_term( v_ );
       expr path_cond = extend_path(bidx, pre_bidx);
       if (!z3::eq(prev_var.get_sort(), new_var.get_sort())) {
@@ -607,6 +629,31 @@ void bmc_pass::translatePhiNode(unsigned bidx, const llvm::PHINode *phi) {
   }
 
   bmc_ds_ptr->bmc_vec.push_back(_and(phi_cons, solver_ctx));
+  if (many_objs)
+    ptr_base.insert_or_assign(phi, obj_base);
+}
+
+uint64_t bmc_pass::const_ptr_offset(const llvm::Value *v) {
+  auto gep = llvm::dyn_cast<llvm::GEPOperator>(v);
+  if (!gep)
+    return 0;
+  const llvm::DataLayout &dl =
+      bmc_ds_ptr->bb_vec[0]->getModule()->getDataLayout();
+  llvm::APInt c(dl.getIndexTypeSizeInBits(gep->getType()), 0);
+  if (!gep->accumulateConstantOffset(dl, c))
+    llvm_bmc_error("bmc", "the address " << toString(v) << " comes in on a path"
+                   " of a join and its offset is not a constant");
+  std::vector<uint64_t> dims;
+  uint64_t esz = 0;
+  if (!ptr_object_shape(v, dims, esz) || esz == 0)
+    llvm_bmc_error("bmc", "the address " << toString(v) << " comes in on a path"
+                   " of a join and the object it points into has no index unit");
+  uint64_t off = c.getZExtValue();
+  if (off % esz != 0)
+    llvm_bmc_error("bmc", "the address " << toString(v) << " comes in on a path"
+                   " of a join at byte " << off << ", which is not a whole"
+                   " number of " << esz << " byte elements");
+  return off/esz;
 }
 
 void bmc_pass::translateSelectInst(unsigned bidx, const llvm::SelectInst *sel) {
@@ -1189,6 +1236,46 @@ static bool is_atan_name(llvm::StringRef n) {
          n == "ada__numerics__aux_long_long_float__atan";
 }
 
+struct libm_model {
+  const char *name;
+  bool has_lo, has_hi;
+  double lo, hi;
+  bool has_domain;
+  double dom_lo, dom_hi;
+  bool nan_free;
+};
+
+static const libm_model libm_models[] = {
+    {"sin", true, true, -1.0, 1.0, false, 0, 0, true},
+    {"cos", true, true, -1.0, 1.0, false, 0, 0, true},
+    {"tan", false, false, 0, 0, false, 0, 0, true},
+    {"asin", true, true, -1.5707963267948966, 1.5707963267948966, true, -1.0,
+     1.0, true},
+    {"acos", true, true, 0.0, 3.141592653589793, true, -1.0, 1.0, true},
+    {"exp", true, false, 0.0, 0, false, 0, 0, true},
+    {"log", false, false, 0, 0, false, 0, 0, false},
+    {"sinh", false, false, 0, 0, false, 0, 0, true},
+    {"cosh", true, false, 1.0, 0, false, 0, 0, true},
+    {"tanh", true, true, -1.0, 1.0, false, 0, 0, true},
+    {"pow", false, false, 0, 0, false, 0, 0, false},
+};
+
+static const libm_model *libm_model_for(llvm::StringRef n) {
+  if (n.ends_with("f") || n.ends_with("l"))
+    n = n.drop_back();
+  for (auto &m : libm_models)
+    if (n == m.name)
+      return &m;
+  return nullptr;
+}
+
+bool is_modelled_call(llvm::StringRef n) {
+  return is_fabs_name(n) || is_copysign_name(n) || is_sqrt_name(n) ||
+         is_atan_name(n) || n.starts_with("__gnat") ||
+         n == "system__assertions__raise_assert_failure" ||
+         libm_model_for(n) != nullptr;
+}
+
 static expr float_is_negative(expr const &x) {
   if (x.is_fpa())
     return to_expr(x.ctx(), Z3_mk_fpa_is_negative(x.ctx(), x));
@@ -1219,7 +1306,7 @@ void bmc_pass::translateCopySign(unsigned bidx, const llvm::Instruction *I,
   bmc_ds_ptr->m.insert_term_map(I, bidx, ite(float_is_negative(sg), -a, a));
 }
 
-void bmc_pass::translateAtan(unsigned bidx, const llvm::CallInst *call) {
+void bmc_pass::translateAtan(unsigned bidx, const llvm::CallBase *call) {
   llvm_bmc_warning("bmc", "atan is over-approximated at line "
                               << (call->getDebugLoc()
                                       ? call->getDebugLoc().getLine()
@@ -1251,7 +1338,54 @@ void bmc_pass::translateAtan(unsigned bidx, const llvm::CallInst *call) {
   bmc_ds_ptr->m.insert_term_map(call, bidx, r);
 }
 
-void bmc_pass::translateSqrt(unsigned bidx, const llvm::CallInst *call) {
+static expr float_num(const expr &like, double v) {
+  solver_context &c = like.ctx();
+  if (like.is_fpa())
+    return like.get_sort().fpa_sbits() == 24 ? c.fpa_val((float)v)
+                                             : c.fpa_val(v);
+  char buf[32];
+  snprintf(buf, sizeof buf, "%.17g", v);
+  return c.real_val(buf);
+}
+
+void bmc_pass::translateLibmCall(unsigned bidx, const llvm::CallBase *call) {
+  auto fn = get_callee(call);
+  auto m = libm_model_for(fn->getName());
+  llvm_bmc_warning("bmc", fn->getName().str()
+                              << " is over-approximated at line "
+                              << (call->getDebugLoc()
+                                      ? call->getDebugLoc().getLine()
+                                      : 0)
+                              << ", a FAILED result may be spurious");
+  expr x = bmc_ds_ptr->m.get_term(call->getArgOperand(0));
+  expr r = bmc_ds_ptr->m_model.get_fresh_name(x.get_sort(), m->name);
+  bmc_ds_ptr->m.insert_term_map(call, bidx, r);
+  expr in_domain = solver_ctx.bool_val(true);
+  if (m->has_domain)
+    in_domain = x >= float_num(x, m->dom_lo) && x <= float_num(x, m->dom_hi);
+  exprs facts;
+  if (m->has_lo || m->has_hi) {
+    exprs bounds;
+    if (m->has_lo)
+      bounds.push_back(r >= float_num(r, m->lo));
+    if (m->has_hi)
+      bounds.push_back(r <= float_num(r, m->hi));
+    expr b = _and(bounds);
+    if (r.is_fpa())
+      b = implies(!r.mk_is_nan(), b);
+    else if (m->has_domain)
+      b = implies(in_domain, b);
+    facts.push_back(b);
+  }
+  if (m->nan_free && x.is_fpa())
+    facts.push_back(implies(float_is_finite(x) && in_domain, !r.mk_is_nan()));
+  if (facts.empty())
+    return;
+  expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
+  bmc_ds_ptr->bmc_vec.push_back(implies(path_bit, _and(facts)));
+}
+
+void bmc_pass::translateSqrt(unsigned bidx, const llvm::CallBase *call) {
   expr x = bmc_ds_ptr->m.get_term(call->getArgOperand(0));
   if (x.is_fpa()) {
     expr rm = to_expr(solver_ctx, Z3_mk_fpa_rne(solver_ctx));
@@ -1478,6 +1612,9 @@ int bmc_pass::translateCallInst(unsigned bidx, const llvm::CallInst *call) {
     translateSqrt(bidx, call);
   } else if (fp != NULL && is_atan_name(fp->getName())) {
     translateAtan(bidx, call);
+  } else if (fp != NULL && fp->isDeclaration() &&
+             libm_model_for(fp->getName()) != nullptr) {
+    translateLibmCall(bidx, call);
   } else if (fp != NULL &&
              // ((fp->getName() == "fabsf") || (fp->getName() == "fabs"))) {
     // expr AbsArg = bmc_ds_ptr->m.get_term(arg);
@@ -1904,6 +2041,18 @@ void bmc_pass::loadFromArrayHelper(unsigned bidx, const llvm::LoadInst *load,
     idx_exprs.insert(idx_exprs.begin(),o.bit_precise?get_expr_bv_const(solver_ctx,0,64):get_expr_const(solver_ctx,0));
   }
   
+  std::vector<unsigned> ids;
+  if (bmc_ds_ptr->array_ids(load, ids)) {
+    auto base = find_ptr_base(load->getPointerOperand());
+    if (!base)
+      llvm_bmc_error("bmc", "the address of " << toString(load) << " may name"
+                     " several objects and no base was recorded for it");
+    auto arr_rd = bmc_ds_ptr->array_read_base(bidx, ids, idx_exprs,
+                                              load->getType(), *base);
+    add_bound_spec(bidx, arr_rd.size_bound_guard);
+    bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd.return_val);
+    return;
+  }
   auto arr_rd = bmc_ds_ptr->array_read(bidx, load, idx_exprs);
   // if (o.include_out_of_bound_specs) {
   //   expr path_bit = bmc_ds_ptr->get_path_bit(bidx);
@@ -1912,6 +2061,20 @@ void bmc_pass::loadFromArrayHelper(unsigned bidx, const llvm::LoadInst *load,
   // }
   add_bound_spec(bidx, arr_rd.size_bound_guard);
   bmc_ds_ptr->m.insert_term_map(load, bidx, arr_rd.return_val);
+}
+
+expr* bmc_pass::find_ptr_base( const llvm::Value* p ) {
+  while (p) {
+    p = p->stripPointerCasts();
+    auto it = ptr_base.find(p);
+    if (it != ptr_base.end())
+      return &it->second;
+    auto gep = llvm::dyn_cast<const llvm::GEPOperator>(p);
+    if (!gep)
+      return nullptr;
+    p = gep->getPointerOperand();
+  }
+  return nullptr;
 }
 
 void bmc_pass::extractValFromArrayHelper(
@@ -1945,7 +2108,12 @@ unsigned bmc_pass::gep_cell_scale(const llvm::GEPOperator *gep) {
 bool bmc_pass::ptr_object_shape( const llvm::Value *ptr,
                                  std::vector<uint64_t>& dims, uint64_t& esz ) {
   auto info = get_array_info( ptr );
-  if( !info.first ) return false;
+  if( !info.first ) {
+    std::vector< std::pair<const llvm::Value*,uint64_t> > cands;
+    get_array_candidates( ptr, cands );
+    if( cands.empty() ) return false;
+    info = cands[0];
+  }
   llvm::Type *ty = nullptr;
   if( auto al = llvm::dyn_cast<const llvm::AllocaInst>(info.first) )
     ty = al->getAllocatedType();
@@ -2447,11 +2615,9 @@ void bmc_pass::addEVIExprs(const llvm::ExtractValueInst *evi, exprs &idxs) {
   // "\n\n";
   auto lpi =
       llvm::dyn_cast<const llvm::LandingPadInst>(evi->getAggregateOperand());
-  auto predecessor = lpi->getParent()->getSinglePredecessor();
-  auto terminator = predecessor->getTerminator();
-  // llvm::errs() << "\n\nGOT PREDECESSOR " << *predecessor << "===========";
-  // llvm::errs() << "\n\nGOT TERMINATOR " << *terminator << "\n===========";
-  if (auto invoke = llvm::dyn_cast<const llvm::InvokeInst>(terminator)) {
+  auto predecessor = lpi ? lpi->getParent()->getSinglePredecessor() : nullptr;
+  auto terminator = predecessor ? predecessor->getTerminator() : nullptr;
+  if (auto invoke = llvm::dyn_cast_or_null<const llvm::InvokeInst>(terminator)) {
     // llvm::errs() << "\n\nIN IF";
     llvm::Function *fp = invoke->getCalledFunction();
     // llvm::errs() << "\n called function is " << *fp;
@@ -2474,9 +2640,28 @@ void bmc_pass::addEVIExprs(const llvm::ExtractValueInst *evi, exprs &idxs) {
   } else {
     // llvm::errs() << "\n\nIN ELSE";
   }
+  if (idxs.empty())
+    llvm_bmc_error("bmc", "the pointer " << toString(evi)
+                   << " is taken out of an aggregate that is not a landing"
+                      " pad, so there is no object and offset behind it");
 }
 
 // todo : implement concurrency support
+
+void bmc_pass::translateInsertValueInst(unsigned bidx,
+                                        const llvm::InsertValueInst *ivi) {
+  assert(ivi);
+  if (ivi->getIndices().size() != 1)
+    llvm_bmc_error("bmc", "an insertvalue into a nested aggregate is not"
+                   " modelled: " << toString(ivi));
+  if (!ivi->getAggregateOperand()->getType()->isArrayTy())
+    llvm_bmc_error("bmc", "an insertvalue into something other than an array"
+                   " is not modelled: " << toString(ivi));
+  expr agg = bmc_ds_ptr->m.get_term(ivi->getAggregateOperand());
+  expr val = bmc_ds_ptr->m.get_term(ivi->getInsertedValueOperand());
+  bmc_ds_ptr->m.insert_term_map(
+      ivi, bidx, z3::store(agg, index_val(o, ivi->getIndices()[0]), val));
+}
 
 void bmc_pass::translateExtractValueInst(unsigned bidx,
                                          const llvm::ExtractValueInst *eval) {
@@ -2494,10 +2679,16 @@ void bmc_pass::translateExtractValueInst(unsigned bidx,
     addEVIExprs(eval, indices);
     extractValFromArrayHelper(bidx, eval, indices);
     // return identify_lpad_struct(evi_op, 0);
+  } else if (eval->getAggregateOperand()->getType()->isArrayTy()) {
+    if (eval->getIndices().size() != 1)
+      llvm_bmc_error("bmc", "an extractvalue out of a nested aggregate is not"
+                     " modelled: " << toString(eval));
+    expr agg = bmc_ds_ptr->m.get_term(eval->getAggregateOperand());
+    bmc_ds_ptr->m.insert_term_map(
+        eval, bidx, z3::select(agg, index_val(o, eval->getIndices()[0])));
   } else {
-    // return identify_lpad_struct(evi_op, 1);
-    // llvm::errs() << "\n\n\nEXTRACTVALUE_CONSTANT_EXPR\n\n\n";
-    // return evi_op;
+    llvm_bmc_error("bmc", "an extractvalue out of something other than an"
+                   " array is not modelled: " << toString(eval));
   }
   // extract_exception_info(bidx, eval);
 }
@@ -2585,6 +2776,11 @@ void bmc_pass::storeToArrayHelper(unsigned bidx, const llvm::StoreInst *store,
   }
 
 
+  std::vector<unsigned> wids;
+  if (bmc_ds_ptr->array_ids(store, wids))
+    llvm_bmc_error("bmc", "the address of " << toString(store) << " may name"
+                   " several objects; only reading through such an address is"
+                   " supported");
   auto arr_wrt = bmc_ds_ptr->array_write(bidx, store, idxs, val_expr);
   bmc_ds_ptr->bmc_vec.push_back(arr_wrt.updated_expr);
   // if (o.include_out_of_bound_specs) {
@@ -2863,17 +3059,17 @@ void bmc_pass::translateInvokeInst(unsigned bidx,
     // Do nothing - throws exception
     //  unwind is the second bit in the exit bits??
     bmc_ds_ptr->bmc_vec.push_back(exit_bits[1]);
-  } else if (fp != NULL &&
-             fp->getName().starts_with("ada__numerics__elementary_functions")) {
-    // To be decided - what to do
-    auto arg = fp->getArg(0);
-    expr NumArg = bmc_ds_ptr->m.get_term(arg);
-    bmc_ds_ptr->m.insert_term_map(invoke, bidx, NumArg);
+  } else if (fp != NULL && is_sqrt_name(fp->getName())) {
+    translateSqrt(bidx, invoke);
+  } else if (fp != NULL && is_atan_name(fp->getName())) {
+    translateAtan(bidx, invoke);
+  } else if (fp != NULL && libm_model_for(fp->getName()) != nullptr) {
+    translateLibmCall(bidx, invoke);
   } else if (fp != NULL && fp->getName().starts_with("__cxa_throw")) {
     // std::cout << "\nExit bit for invoke is : " << exit_bits[1] <<"\n";
     bmc_ds_ptr->bmc_vec.push_back(exit_bits[1]);
   } else {
-    llvm_bmc_error("bmc", "invoke is not recognized !!");
+    llvm_bmc_error("bmc", "invoke of " << name << " is not recognized !!");
   }
   /*
     auto& exit_bits = bmc_ds_ptr->get_exit_bits( bidx );
@@ -3032,6 +3228,8 @@ void bmc_pass::translateBlock(unsigned bidx, const bb *b) {
       translateSwitchInst(bidx, swch);
     } else if (auto sel = llvm::dyn_cast<llvm::SelectInst>(I)) {
       translateSelectInst(bidx, sel);
+    } else if (auto ivi = llvm::dyn_cast<llvm::InsertValueInst>(I)) {
+      translateInsertValueInst(bidx, ivi);
     } else if (auto unreach = llvm::dyn_cast<llvm::UnreachableInst>(I)) {
       translateUnreachableInst(bidx, unreach);
     } else if (auto lpad = llvm::dyn_cast<llvm::LandingPadInst>(I)) {
@@ -3061,7 +3259,6 @@ void bmc_pass::translateBlock(unsigned bidx, const bb *b) {
       BMC_UNSUPPORTED_INSTRUCTIONS(ExtractElementInst, I);
       BMC_UNSUPPORTED_INSTRUCTIONS(InsertElementInst, I);
       BMC_UNSUPPORTED_INSTRUCTIONS(ShuffleVectorInst, I);
-      BMC_UNSUPPORTED_INSTRUCTIONS(InsertValueInst, I);
       // BMC_UNSUPPORTED_INSTRUCTIONS( LandingPadInst,     I); // allocates
       // exception object
       LLVM_DUMP(I);
