@@ -4,6 +4,7 @@ LLVMBMC=llvmbmc
 HOME_INSTALLED=~/installed
 BUILDDIR = $(PWD)/build
 SRCDIR = $(PWD)/src
+Z3_PATCH = $(PWD)/patches/z3-feadfbf.patch
 LLVM_VERSION=20
 # LLVM_VERSION=21
 # LLVM_VERSION=3.6.2
@@ -76,7 +77,18 @@ $(BUILDDIR)/z3/README.md :
 	cd $(BUILDDIR);$(git) clone https://github.com/Z3Prover/z3.git
 	cd $(BUILDDIR)/z3;$(git) checkout feadfbf
 
-$(BUILDDIR)/z3/buildr/libz3.so : $(BUILDDIR)/z3/README.md
+# z3 4.8.13 is from 2021 and does not compile on gcc 15 or clang 19, which
+# check a template body before instantiation. Five lines: a cmake minimum
+# below the 3.5 that cmake 4 still accepts, three members named wrongly in
+# bodies nothing instantiates, and one that reaches a base class the release
+# build compiles out. The files are restored to the pinned revision before the
+# patch goes on, which is what makes re-running this harmless.
+$(BUILDDIR)/z3/.patched : $(BUILDDIR)/z3/README.md
+	cd $(BUILDDIR)/z3;$(git) checkout -- .
+	cd $(BUILDDIR)/z3;$(git) apply $(Z3_PATCH)
+	touch $@
+
+$(BUILDDIR)/z3/buildr/libz3.so : $(BUILDDIR)/z3/README.md | $(BUILDDIR)/z3/.patched
 	rm -rf $(BUILDDIR)/z3/buildr
 	mkdir -p $(BUILDDIR)/z3/buildr
 	cd $(BUILDDIR)/z3/buildr; cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=/usr/bin/python3 ../
@@ -84,7 +96,7 @@ $(BUILDDIR)/z3/buildr/libz3.so : $(BUILDDIR)/z3/README.md
 
 $(BUILDDIR)/z3/buildr/libz3.a : $(BUILDDIR)/z3/buildr/libz3.so
 
-$(BUILDDIR)/z3/buildd/libz3.so : $(BUILDDIR)/z3/README.md
+$(BUILDDIR)/z3/buildd/libz3.so : $(BUILDDIR)/z3/README.md | $(BUILDDIR)/z3/.patched
 	rm -rf $(BUILDDIR)/z3/buildd
 	mkdir -p $(BUILDDIR)/z3/buildd
 	cd $(BUILDDIR)/z3/buildd; cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug ../
