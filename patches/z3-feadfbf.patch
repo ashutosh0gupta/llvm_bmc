@@ -1,0 +1,69 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 46cb84d..2513ad2 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,5 +1,5 @@
+ # Enforce some CMake policies
+-cmake_minimum_required(VERSION 3.4)
++cmake_minimum_required(VERSION 3.5)
+ 
+ set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX "${CMAKE_CURRENT_SOURCE_DIR}/cmake/cxx_compiler_flags_overrides.cmake")
+ project(Z3 VERSION 4.8.13.0 LANGUAGES CXX)
+diff --git a/src/math/lp/column_info.h b/src/math/lp/column_info.h
+index 1dc0c60..9cbeea6 100644
+--- a/src/math/lp/column_info.h
++++ b/src/math/lp/column_info.h
+@@ -47,7 +47,7 @@ public:
+             m_lower_bound_is_strict == c.m_lower_bound_is_strict &&
+             m_upper_bound_is_set == c.m_upper_bound_is_set&&
+             m_upper_bound_is_strict == c.m_upper_bound_is_strict&&
+-            (!m_lower_bound_is_set || m_lower_bound == c.m_low_bound) &&
++            (!m_lower_bound_is_set || m_lower_bound == c.m_lower_bound) &&
+             (!m_upper_bound_is_set || m_upper_bound == c.m_upper_bound) &&
+             m_cost == c.m_cost &&
+             m_is_fixed == c.m_is_fixed &&
+diff --git a/src/math/lp/static_matrix.h b/src/math/lp/static_matrix.h
+index a429268..9f4df5d 100644
+--- a/src/math/lp/static_matrix.h
++++ b/src/math/lp/static_matrix.h
+@@ -80,7 +80,7 @@ public:
+         ref(static_matrix & m, unsigned row, unsigned col):m_matrix(m), m_row(row), m_col(col) {}
+         ref & operator=(T const & v) { m_matrix.set( m_row, m_col, v); return *this; }
+ 
+-        ref operator=(ref & v) { m_matrix.set(m_row, m_col, v.m_matrix.get(v.m_row, v.m_col)); return *this; }
++        ref operator=(ref & v) { m_matrix.set(m_row, m_col, v.m_matrix.get_elem(v.m_row, v.m_col)); return *this; }
+ 
+         operator T () const { return m_matrix.get_elem(m_row, m_col); }
+     };
+diff --git a/src/math/lp/static_matrix_def.h b/src/math/lp/static_matrix_def.h
+index 45d5d6d..3381824 100644
+--- a/src/math/lp/static_matrix_def.h
++++ b/src/math/lp/static_matrix_def.h
+@@ -90,7 +90,7 @@ static_matrix<T, X>::static_matrix(static_matrix const &A, unsigned * /* basis *
+     init_row_columns(m, m);
+     for (; m-- > 0; ) 
+         for (auto & col : A.m_columns[m]) 
+-            set(col.var(), m, A.get_value_of_column_cell(col));
++            set(col.var(), m, A.get_column_cell(col));
+ }
+ 
+ template <typename T, typename X> void static_matrix<T, X>::clear() {
+diff --git a/src/math/lp/tail_matrix.h b/src/math/lp/tail_matrix.h
+index 2047e8c..3ff7fcf 100644
+--- a/src/math/lp/tail_matrix.h
++++ b/src/math/lp/tail_matrix.h
+@@ -39,6 +39,7 @@ public:
+     virtual void apply_from_right(indexed_vector<T> & w) = 0;
+     virtual ~tail_matrix() {}
+     virtual bool is_dense() const = 0;
++#ifdef Z3DEBUG
+     struct ref_row {
+         const tail_matrix & m_A;
+         unsigned m_row;
+@@ -46,5 +47,6 @@ public:
+         T operator[](unsigned j) const { return m_A.get_elem(m_row, j);}
+     };
+     ref_row operator[](unsigned i) const { return ref_row(*this, i);}
++#endif
+ };
+ }
