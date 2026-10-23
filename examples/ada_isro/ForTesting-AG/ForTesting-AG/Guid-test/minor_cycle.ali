@@ -1,0 +1,80 @@
+V "GNAT Lib v8"
+P ZX
+
+RN
+RV NO_FLOATING_POINT
+RV SPARK_05
+
+U minor_cycle%b		minor_cycle.adb		5065c91a NE OO PK
+W library%s		library.adb		library.ali
+W lookup%s		lookup.adb		lookup.ali
+W main%s		main.adb		main.ali
+W major_cycle%s		major_cycle.adb		major_cycle.ali
+
+U minor_cycle%s		minor_cycle.ads		692a588f EE NE OO PK
+W library%s		library.adb		library.ali
+W math%s		math.adb		math.ali
+
+D library.ads		20261004142249 3d6fb513 library%s
+D lookup.ads		20261004130024 fcf74fe8 lookup%s
+D main.ads		20261004130423 dc9552ed main%s
+D major_cycle.ads	20261004130452 1bc14855 major_cycle%s
+D math.ads		20261004130005 f95530e1 math%s
+D minor_cycle.ads	20261004130520 ad10dd7d minor_cycle%s
+D minor_cycle.adb	20190330044218 fbb9f424 minor_cycle%b
+D system.ads		20200304083000 4635ec04 system%s
+X 1 library.ads
+2K9*library 46e12 6|1w6 2r5 7|4w6
+5M11*Unsigned_16 6|9r51 10r51 11r65 18r40
+6M11*Unsigned_32
+9F11*float32<short_float> 6|13r40 14r40
+X 2 lookup.ads
+6K9*Lookup 14e11 7|2w6 20r10 27r10
+8a2*Quaternion_Prev{5|12A6} 7|20m17
+12U12*Output_Lookup 7|27s17
+X 3 main.ads
+6K9*Main 56e9 7|3w6 16r16 22r10 26r11 27r31 30r6 40r11 45r21 46r29 56r41
+. 71r11 76r21 77r29 85r37 87r41 102r11 107r11 123r29 129r6
+11a4*QC{5|12A6} 7|16r21 30m11 129m11
+14f4*AltitudeInfo{1|9F11} 7|27r36
+25f16*Apogee{1|9F11} 7|85r42
+29m4*Step2{1|5M11} 7|26r16
+29m39*Step8{1|5M11} 7|45r26
+29m62*Step12{1|5M11} 7|76r26
+31m4*OffStage2{1|5M11} 7|56m46
+31m15*OffStage3{1|5M11} 7|87m46
+35m4*CycleCount{1|6M11} 7|40r16 46r34 71r16 77r34 102r16 107r16 123r34
+54U14*FirstInit 7|22s15
+X 4 major_cycle.ads
+6K9*Major_Cycle 52e16 7|1w6 47r53 48r44 78r53 79r44 108r20
+9m7*MinorFlag_Stage2{1|5M11} 7|47r65
+9m25*MinorFlag_Stage3{1|5M11} 7|78r65
+23a7*Q_Minor{5|6A6} 7|48r56 79r56 108r32
+X 5 math.ads
+4K9*Math 35e9 6|4w6 15r40 7|8r15 13r17
+6A6*F32Array25by4(1|9F11)<short_integer><short_integer> 6|15r45
+12A6*Quaternion(1|9F11)<short_integer> 7|8r20 13r22
+X 6 minor_cycle.ads
+6K9*Minor_Cycle 28l5 28e16 7|6b14 134l5 134t16
+9m7*OffStage2{1|5M11} 7|45r45 55m41 56r59
+9m18*OffStage3{1|5M11} 7|76r46 86m41 87r59
+10m7*MinorFlag_Stage2{1|5M11} 7|47m33 53r29
+10m25*MinorFlag_Stage3{1|5M11} 7|78m33 84r29
+11m7*FirstCycle_Stage1{1|5M11} 7|18r11 21m10
+11m26*FirstCycle_Stage2{1|5M11} 7|39r6 41m9
+11m45*FirstCycle_Stage3{1|5M11} 7|70r9 72m9
+13f7*VelocityCoeff{1|9F11} 7|54r37
+14f7*VelocityIncrMn{1|9F11}
+15a7*Q_Minor{5|6A6} 7|48m33 79m33 108m9 126r26
+18m7*FirstCycle_Mnvre{1|5M11} 7|101r9 103m9
+20U17*Manoeuvre 7|98b11 114l5 114t14
+22U17*Stage1_Minor 7|11b11 32l5 32t17
+23U17*Stage2_Minor 7|36b11 63l5 63t17
+24U17*Stage3_Minor 7|67b11 94l5 94t17
+26U17*Post_Output 7|51s25 82s25 111s7 118b11 131l5 131t16
+X 7 minor_cycle.adb
+8a1 PrevCycle_Q{5|12A6} 126m8 129r17
+13a7 LocalQ{5|12A6} 16m7 20r36 27m50 30r21
+119i4 Count{short_integer} 123m6 126r34
+125i10 j{short_integer} 126r20 126r40
+

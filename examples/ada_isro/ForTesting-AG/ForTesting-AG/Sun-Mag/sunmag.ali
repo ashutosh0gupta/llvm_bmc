@@ -1,0 +1,131 @@
+V "GNAT Lib v8"
+P ZX
+
+RN
+RV NO_FLOATING_POINT
+RV SPARK_05
+
+U sunmag%b		sunmag.adb		a444e7cb NE OO PK
+W library%s		library.adb		library.ali
+
+U sunmag%s		sunmag.ads		a6ffbf44 EE NE OO PK
+W library%s		library.adb		library.ali
+
+D library.ads		20261004142249 3d6fb513 library%s
+D sunmag.ads		20261004143455 9b900a57 sunmag%s
+D sunmag.adb		20261004143443 02bb588f sunmag%b
+D system.ads		20200304083000 4635ec04 system%s
+X 1 library.ads
+2K9*library 46e12 2|1w6 2r5 3|1w6 2r5
+5M11*Unsigned_16 2|6r20 7r14 3|9r39 10r31 16r85 17r57 26r36 27r21 29r52 37r114
+. 42r21
+9F11*float32<short_float> 3|12r30 13r61 14r55 19r53 20r85 21r85 23r96 25r21
+10F11*float64<long_float> 3|31r39 32r38 33r29 34r35 35r46 38r48 39r20 40r35
+. 44r18
+28V15*Sin_f{10F11} 3|204s29 215s38
+29V15*Cos_f{10F11} 3|216s38 217s37
+31V15*atan2_f{10F11} 3|196s43
+32V15*sqrt_f{10F11} 3|177s21 182s31 239s19 245s30
+X 2 sunmag.ads
+4K9*SunMag 19l5 19e11 3|3b14 316l5 316t11
+6m4*SunMagComnSts{1|5M11} 3|54r11 292m9
+7m4*minorID{1|5M11} 3|82r11 109r13 135r11 150r13 286r13 287m17 287r28 289m17
+9U14*rSunMagDataAcq 3|50b14 73l8 73t22 294s9
+10U14*rSunDataProc 3|70s9 78b14 123l8 123t20
+11U14*rMagDataProc 3|71s9 129b14 159l8 159t20
+12U14*rMagFldCmptn 3|165b14 223l8 223t20 305s17
+13U14*rSunVctCmp 3|228b14 255l8 255t18 306s17
+14U14*rSunVctECItoBdy 3|260b14 279l8 279t23 307s17
+16U14*rMnrNav_driver 3|282b13 297l7 297t21
+17U14*rMjrNav_driver 3|300b13 313l7 313t21
+X 3 sunmag.adb
+5N4 AIDRLMT 179r24
+6N4 LEAST_F64 185r31 185r65 192r39 192r69 244r26
+9m4 SunMagUpdtCnt{1|5M11} 54r47
+9m19 prv_SunMagUpdtCnt{1|5M11} 54r64
+10m4 sun_dataval{1|5M11} 56m9 66m9 88r11
+10m17 mag_dataval{1|5M11} 57m9 67m9 133r10
+12f4 mag_fld_in{1|9F11} 59m9 140r29
+12f16 MagFieldBdy{1|9F11} 59r23
+13f4 sun_vinA_hrz{1|9F11} 60m9 90r44
+13f18 sun_vinB_hrz{1|9F11} 61m9 91r44
+13f32 sun_vinA_vrt{1|9F11} 62m9 92r44
+13f46 sun_vinB_vrt{1|9F11} 63m9 93r44
+14f4 VAHrzMcass{1|9F11} 60r25
+14f16 VBHrzMcass{1|9F11} 61r25
+14f28 VAVertMcass{1|9F11} 62r25
+14f41 VBVertMcass{1|9F11} 63r25
+16m4 sundata_accumstart{1|5M11} 82r21
+16m24 sun_data_lossCnt{1|5M11} 83m9 102m9 102r29 110r21
+16m42 sun_pres_cnt{1|5M11} 84m9 106m17 106r33 112r23
+16m56 sun_pres_flg{1|5M11} 85m9 96m17 98m17 105r13
+16m70 sun_availFlg{1|5M11} 113m25 115m25 119m25
+17m4 magdata_accumstart{1|5M11} 135r21
+17m24 magfldLossCnt{1|5M11} 136m9 145m9 145r26 151r21
+17m39 magFld_availFlg{1|5M11} 152m25 155m25
+19f4 vA_hrz_out{1|9F11} 90m9 95r14 95r27
+19f16 vB_hrz_out{1|9F11} 91m9
+19f28 vA_vrt_out{1|9F11} 92m9
+19f40 vB_vrt_out{1|9F11} 93m9
+20f4 sun_SF_ADC_vinAhrz{1|9F11} 90r23
+20f24 sun_SF_ADC_vinBhrz{1|9F11} 91r23
+20f44 sun_SF_ADC_vinAvrt{1|9F11} 92r23
+20f64 sun_SF_ADC_vinBvrt{1|9F11} 93r23
+21f4 sun_bias_ADC_vAhrz{1|9F11} 90r59
+21f24 sun_bias_ADC_vBhrz{1|9F11} 91r59
+21f44 sun_bias_ADC_vAvrt{1|9F11} 92r59
+21f64 sun_bias_ADC_vBvrt{1|9F11} 93r59
+23f4 mag_fld{1|9F11} 140m9 141r42
+23f13 mag_fld_out{1|9F11} 141m9 142m9 142r24 148r34
+23f26 sumMagFld{1|9F11} 137m9 148m9 148r22
+23f37 mag_SF{1|9F11} 140r20
+23f45 mag_bias_coeff{1|9F11} 140r42
+23f61 soft_iron_coeff{1|9F11} 141r24
+23f78 hard_iron_coeff{1|9F11} 142r38
+25f4 voltage_thresh{1|9F11} 95r41
+26m4 sunDataLossLmt{1|5M11} 110r40
+26m20 avgDur_Sunsnr{1|5M11} 112r38
+27m4 magDataLossLmt{1|5M11} 151r37
+29m4 lat_valdty_flg{1|5M11} 169m9 209m25 214m25
+29m20 magFld_readiness{1|5M11} 170m9 210m25 218m25
+29m38 MagComp_Err{1|5M11} 171m9 180m17 186m25 193m33 203r13 211m25
+31f4 RxECEF{1|10F11} 173m9 177r28 177r35 182r38 182r45 189r39 196r59
+31f12 RyECEF{1|10F11} 174m9 177r44 177r51 182r54 182r61 190r39 196r51
+31f20 RzECEF{1|10F11} 175m9 177r60 177r67 183r31
+31f28 rad_dist{1|10F11} 177m9 179r13
+32f4 pos_x{1|10F11} 173r19
+32f11 pos_y{1|10F11} 174r19
+32f18 pos_z{1|10F11} 175r19
+32f25 pos_mag_xy{1|10F11} 182m17 185r52
+33f4 abs_rx{1|10F11} 189m25 192r30
+33f12 abs_ry{1|10F11} 190m25 192r60
+33f20 abs_rz{1|10F11} 183m17 185r22
+34f4 lngtdw{1|10F11} 196m33 215r44 216r44
+34f12 sinlngtdw{1|10F11} 215m25
+34f23 coslngtdw{1|10F11} 216m25
+35f4 co_lat{1|10F11} 204r35 217r43
+35f12 sincolat{1|10F11} 204m17 205r36
+35f22 abssincolat{1|10F11} 205m17 207r21
+35f35 coscolat{1|10F11} 217m25
+37m4 Nvc_soln_frst_updt{1|5M11} 232r11
+37m24 sunVct_readiness{1|5M11} 241m9 264r49 271r47
+37m42 sunVct_pres_flg{1|5M11} 246m25 248m25 271r11
+37m59 quat_val_flgtoMjr{1|5M11} 264r11
+37m78 SunVctComptnSts{1|5M11} 266m17 268m17
+37m95 SunEclipseStsFlg{1|5M11} 273m17 275m17
+38f4 Rx{1|10F11} 234m9 238r19 239r27 239r32
+38f8 Ry{1|10F11} 235m9 238r32 239r39 239r44
+38f12 Rz{1|10F11} 236m9 238r45 239r51 239r56
+38f16 RdotS{1|10F11} 238m9 245r21
+38f23 radius{1|10F11} 239m9 242r23 242r30
+38f31 RsqrMReSqr{1|10F11} 242m9 244r13 245r37
+38f43 RE{1|10F11} 242r39 242r42
+39f4 Sxi{1|10F11} 238r24
+39f9 Syi{1|10F11} 238r37
+39f14 Szi{1|10F11} 238r50
+40f4 posx_eci{1|10F11} 234r15
+40f14 posy_eci{1|10F11} 235r15
+40f24 posz_eci{1|10F11} 236r15
+42m4 mjr_data_ready{1|5M11} 295m9 304r13 309m17
+44f4 sinCoLatLmt{1|10F11} 207r35
+

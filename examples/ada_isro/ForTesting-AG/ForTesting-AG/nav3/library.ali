@@ -1,0 +1,93 @@
+V "GNAT Lib v8"
+P ZX
+
+RN
+RV NO_FLOATING_POINT
+RV SPARK_05
+
+U library%b		library.adb		8e5a5a15 NE OO PK IL
+W ada%s			ada.ads			ada.ali
+W ada.numerics%s	a-numeri.ads		a-numeri.ali
+W ada.numerics.elementary_functions%s  a-nuelfu.ads  a-nuelfu.ali
+W ada.numerics.generic_elementary_functions%s
+W interfaces%s		interfac.ads		interfac.ali
+
+U library%s		library.ads		7ebf1811 EE NE OO PK IL
+
+D ada.ads		20200304083000 76789da1 ada%s
+D a-numeri.ads		20200304083000 bb51c45a ada.numerics%s
+D a-numaux.ads		20200304083000 243fe0b7 ada.numerics.aux%s
+D a-nuelfu.ads		20200304083000 03e83d1c ada.numerics.elementary_functions%s
+D a-ngelfu.ads		20200304083000 cb378f71 ada.numerics.generic_elementary_functions%s
+D a-ngelfu.adb		20200304083000 a9022048 ada.numerics.generic_elementary_functions%b
+D a-unccon.ads		20200304083000 0e9b276f ada.unchecked_conversion%s
+D interfac.ads		20200304083000 5ab55268 interfaces%s
+D library.ads		20260912060715 7ebf1811 library%s
+D library.adb		20260912060649 628fa201 library%b
+D system.ads		20200304083000 4635ec04 system%s
+D s-exctab.ads		20200304083000 54135002 system.exception_table%s
+D s-stalib.ads		20200304083000 09bd3940 system.standard_library%s
+X 1 ada.ads
+16K9*Ada 20e8 10|3r6 4r5 5r6
+X 2 a-numeri.ads
+16K13*Numerics 32e17 10|3r10 4r9 5r10
+X 4 a-nuelfu.ads
+18K22*Elementary_Functions[5|39] 10|3w19 4r18
+X 5 a-ngelfu.ads
+39k22*Generic_Elementary_Functions 205e46 10|5w19
+52V13*Sqrt{float} 10|17s27[4|18] 82s21[4|18]
+94V13*Sin{float} 10|67s22[4|18]
+103V13*Cos{float} 10|72s22[4|18]
+145V13*Arctan{float} 10|77s21[4|18]
+X 8 interfac.ads
+38K9*Interfaces 184e15 10|1w6 2r5
+X 9 library.ads
+1K9*library 20l5 20e12 10|7b14 132l5 132t12
+2M11*Unsigned_16 15r41 15r61 16r40 16r60 17r41 17r61 10|48r39 48r59 53r38
+. 53r58 58r39 58r59
+3M11*Unsigned_32
+4F11*float32<short_float> 7r26 7r42 8r35 8r51 9r27 9r43 18r31 10|9r29 9r45
+. 11r16 17r19 22r38 22r54 24r16 85r27 85r43 86r16 87r20 117r26
+5F11*float64<long_float> 10r23 10r39 11r28 11r44 12r25 12r41 12r62 13r29
+. 13r45 10|64r23 64r39 67r14 70r26 70r42 72r14 75r28 75r44 75r65 77r13 80r27
+. 80r43 82r13
+7V10*SQRT_SF{4F11} 7>18 10|9b13 20l8 20t15
+7f18 arg{4F11} 10|9b21 16r23
+8V10*FLTLIMIT{4F11} 8>19 8>25 10|22b13 46l8 46t16
+8f19 value{4F11} 10|22b22 28r19 30r18 32r17
+8f25 limit{4F11} 10|22b28 30r27 34r27 38r26
+9V10*Median_Sf{4F11} 9>20 9>22 9>24 10|85b10 115l5 115t14
+9f20 x{4F11} 10|85b20 89r12 90r16 94r16
+9f22 y{4F11} 10|85b22 89r15 91r16 93r16
+9f24 z{4F11} 10|85b24 97r16 98r25 99r25 102r24 107r15 110r16
+10V10*Sin_f{5F11} 10>16 10|64b10 68l10 68t15
+10f16 value{5F11} 10|64b16 67r32
+11V15*Cos_f{5F11} 11>21 10|70b13 73l10 73t15
+11f21 value{5F11} 10|70b19 72r32
+12V10*atan2_f{5F11} 12>18 12>33 10|75b13 78l10 78t17
+12f18 value1{5F11} 10|75b21 77r34
+12f33 value2{5F11} 10|75b36 77r48
+13V15*sqrt_f{5F11} 13>22 10|80b13 83l10 83t16
+13f22 value{5F11} 10|80b20 82r32
+15V15*Bit_AND{2M11} 15>24 15>32 10|48b13 51l7 51t14
+15m24 value1{2M11} 10|48b22 50r11
+15m32 value2{2M11} 10|48b30 50r22
+16V15*Bit_OR{2M11} 16>23 16>31 10|53b13 56l8 56t14
+16m23 value1{2M11} 10|53b21 55r13
+16m31 value2{2M11} 10|53b29 55r23
+17V15*Bit_XOR{2M11} 17>24 17>32 10|58b13 61l8 61t15
+17m24 value1{2M11} 10|58b22 60r13
+17m32 value2{2M11} 10|58b30 60r24
+18V15*F32TOS16{short_integer} 18>25 10|117b10 130l6 130t14
+18f25 Value{4F11} 10|117b20 120r8 123r11 127r29
+X 10 library.adb
+11f7 Result{9|4F11} 17m9 18r16
+12f7 temp{float} 16m9 17r32
+24f7 Result{9|4F11} 28m9 34m16 38m16 44r17
+86f11 t{9|4F11} 101m20 103r24 108m12 111r16
+86f13 tt{9|4F11} 109m12 112r16
+87f11 m1{9|4F11} 90m12 93m12 97r12 107r12 108r15 110m12
+87f14 m2{9|4F11} 91m12 94m12 98r21 101r23 102m20 109r16 111m12 114r11
+87f17 m3{9|4F11} 99m21 103m20 112m12
+118i4 Temp{short_integer} 121m7 124m8 127m8 129r12
+

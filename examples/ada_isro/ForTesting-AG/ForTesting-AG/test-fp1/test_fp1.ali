@@ -1,0 +1,40 @@
+V "GNAT Lib v8"
+P ZX
+
+RN
+RV NO_FLOATING_POINT
+RV SPARK_05
+
+U test_fp1%b		test_fp1.adb		d6f94d78 NE OO PK IL
+W library%s		library.adb		library.ali
+
+U test_fp1%s		test_fp1.ads		fbace817 EE NE OO PK IL
+W library%s		library.adb		library.ali
+
+D library.ads		20260912061355 7ebf1811 library%s
+D system.ads		20200304083000 4635ec04 system%s
+D test_fp1.ads		20260912061455 8513f006 test_fp1%s
+D test_fp1.adb		20260912061435 2d55a56f test_fp1%b
+X 1 library.ads
+1K9*library 21e12 3|1w6 2r5 4|1w6 2r5
+4F11*float32<short_float> 4|6r8 8r13 9r40 10r13 11r13
+5F11*float64<long_float> 4|12r13
+X 3 test_fp1.ads
+4K9*test_fp1 12l5 12e13 4|4b14 51l5 51t13
+6N9*PI 7r29
+7N4*TWO_PI
+10U28*fp1 4|16b11 38l5 38t8 47s7
+11U28*fp1_driver 4|40b11 49l8 49t18
+X 4 test_fp1.adb
+6f4 R{1|4F11}
+8f4 Area{1|4F11} 25r22 45m7
+9f4 Area1{1|4F11} 21m4
+9f11 Area2{1|4F11} 22m4 25r14
+9f18 Area3{1|4F11} 23m4 25r28
+9f25 Area4{1|4F11} 24m4
+9f32 Area5{1|4F11} 25m4
+10f4 Length{1|4F11} 21r13 22r13 23r13 24r13
+11f4 Factor{1|4F11} 21r22 22r22 23r22 24r22 44m7
+12f4 Cover{1|5F11}
+14i4 Index{short_integer}
+

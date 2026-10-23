@@ -1,0 +1,138 @@
+V "GNAT Lib v8"
+P ZX
+
+RN
+RV NO_FLOATING_POINT
+RV SPARK_05
+
+U main%b		main.adb		aa97a0af NE OO PK IL
+W lookup%s		lookup.adb		lookup.ali
+W major_cycle%s		major_cycle.adb		major_cycle.ali
+W minor_cycle%s		minor_cycle.adb		minor_cycle.ali
+
+U main%s		main.ads		18afd71f EE NE OO PK
+W library%s		library.adb		library.ali
+W math%s		math.adb		math.ali
+
+D library.ads		20261004142249 3d6fb513 library%s
+D lookup.ads		20261004130024 fcf74fe8 lookup%s
+D main.ads		20261004130423 dc9552ed main%s
+D main.adb		20190330045914 3c242882 main%b
+D major_cycle.ads	20261004130452 1bc14855 major_cycle%s
+D math.ads		20261004130005 f95530e1 math%s
+D minor_cycle.ads	20261004130520 ad10dd7d minor_cycle%s
+D system.ads		20200304083000 4635ec04 system%s
+X 1 library.ads
+2K9*library 46e12 3|1w6 2r5
+5M11*Unsigned_16 3|16r53 17r45 19r26 29r92 31r29 33r24 34r24 37r41 38r13
+6M11*Unsigned_32 3|35r24
+9F11*float32<short_float> 3|14r19 21r32 23r31 24r31 25r31 27r34 40r10 41r39
+. 43r26 44r26 45r26 47r53 48r79 4|13r22
+X 2 lookup.ads
+6K9*Lookup 14e11 4|3w6 212r3
+10i2*IterationCount{short_integer} 4|212m10
+X 3 main.ads
+6K9*Main 56l5 56e9 4|6b14 288l5 288t9
+8a4*BRate{6|8A6} 4|257m3 258m3 259m3
+11a4*QC{6|12A6}
+14f4*AltitudeInfo{1|9F11}
+16m4*StageFlg{1|5M11} 4|12r14 19r19
+16m14*StageFlgC{1|5M11} 4|12r25
+16m25*GuidOutFlag{1|5M11} 4|143m13 149m13 155m13 254m3
+16m38*GuidOutFlagC{1|5M11} 4|144m13 150m13 156m13 255m3
+17m4*OutFlag1{1|5M11} 4|142r36 145m13 246m3
+17m14*OutFlag2{1|5M11} 4|148r63 151m13 247m3
+17m24*OutFlag3{1|5M11} 4|154r40 157m13 248m3
+17m34*OutFlag4{1|5M11}
+19m4*CombinedErrorFlag{1|5M11} 4|131m13 253m3
+21f4*Time{1|9F11} 4|13m14 16r30 25r33 37r38 79r38
+21f10*Major_Time{1|9F11} 4|16m16
+21f22*Liftoff{1|9F11} 4|25m22
+23f4*PosX{1|9F11}
+23f10*PosY{1|9F11}
+23f16*PosZ{1|9F11}
+24f4*VelU{1|9F11}
+24f10*VelV{1|9F11}
+24f16*VelW{1|9F11}
+25f4*RadialDist{1|9F11}
+25f16*Apogee{1|9F11}
+27f4*Stage2_Start{1|9F11} 4|37m22
+27f18*Stage3_Start{1|9F11} 4|79m22
+29m4*Step2{1|5M11} 4|31m22 241m3
+29m11*Step4{1|5M11} 4|44m22 177r16 237m3
+29m18*Step5{1|5M11} 4|52m22 235m3
+29m25*Step6{1|5M11} 4|60m22 236m3
+29m32*Step7{1|5M11} 4|67m22 148r41 233m3
+29m39*Step8{1|5M11} 4|73m22 232m3
+29m46*Step10{1|5M11} 4|86m25 174r17 198r17 238m3
+29m54*Step11{1|5M11} 4|94m23 234m3
+29m62*Step12{1|5M11} 4|101m22 231m3
+29m70*Step13{1|5M11} 4|108m25 119m24 171r17 195r17 239m3
+29m78*Step14{1|5M11} 4|109m25 118m24 168r14 192r14 240m3
+31m4*OffStage2{1|5M11} 4|148r16 154r14 243m3
+31m15*OffStage3{1|5M11} 4|244m3
+33m4*MinorInMajor{1|5M11} 4|15r17 43r23 51r23 59r23 85r26 93r25 107r26 117r26
+. 213m3
+34m4*OutFlag{1|5M11} 4|24r23 26m22 30r23 32m22 36r23 38m22 42r22 45m22 50r22
+. 53m22 58r22 61m22 66r21 68m22 72r21 74m22 78r23 80m22 84r23 87m25 92r23
+. 95m23 100r23 102m22 106r24 111m25 116r23 121m24 230m3
+35m4*CycleCount{1|6M11} 4|13r30
+37m4*MinorFlag_Stage2{1|5M11} 4|250m3
+37m22*MinorFlag_Stage3{1|5M11} 4|251m3
+38m4*Event4{1|5M11} 4|142r14
+40f4*TTG{1|9F11} 4|280m3
+41f4*GuidVel_U{1|9F11} 4|265m3
+41f15*GuidVel_V{1|9F11} 4|266m3
+41f26*GuidVel_W{1|9F11} 4|267m3
+43f4*EffectiveGravity{1|9F11} 4|262m3
+44f4*Stage_Time{1|9F11} 4|261m3
+45f4*AngleR{1|9F11} 4|263m3
+45f12*AngleY{1|9F11} 4|264m3
+47f4*DefPos{1|9F11} 4|274m3
+47f12*DefVel{1|9F11} 4|275m3
+47f20*Matrix11{1|9F11} 4|276m3
+47f30*Matrix12{1|9F11} 4|277m3
+47f40*Matrix22{1|9F11} 4|278m3
+48f4*SteerCoeffA{1|9F11} 4|269m3
+48f17*SteerCoeffB{1|9F11} 4|270m3
+48f30*SteerCoeffC{1|9F11} 4|271m3
+48f43*SteerCoeffD{1|9F11} 4|272m3
+48f56*PosDefOutofPlane{1|9F11} 4|273m3
+50U14*StageFlags 4|9b11 134l5 134t15 166s10
+51U14*OutputFlags_Minor 4|136b11 160l5 160t22 179s13
+52U14*Guid_Minor 4|163b11 186l5 186t15
+53U14*Guid_Major 4|189b11 206l5 206t15
+54U14*FirstInit 4|209b11 284l5 284t14
+X 5 major_cycle.ads
+6K9*Major_Cycle 4|1w6 110r25 196r13 199r13 202r13 215r3 216r3 217r3 218r3
+. 219r3 220r3 221r3 222r3 5|52e16
+8m7*Event4{1|5M11} 4|220m15
+9m7*MinorFlag_Stage2{1|5M11} 4|217m15
+9m25*MinorFlag_Stage3{1|5M11} 4|218m15
+10m7*VelFlag{1|5M11} 4|221m15
+11m7*EnterStage2{1|5M11} 4|219m15
+11m20*EnterStage3{1|5M11} 4|222m15
+13f22*VelocityIncrMn{1|9F11} 4|216m15
+13f38*VelocityIncrMj{1|9F11} 4|215m15
+33f7*Duration{1|9F11} 4|110m37
+38U17*Stage2_Major 4|202s25
+39U23*Stage3_Major 4|199s25
+50U17*Manoeuvre 4|196s25
+X 6 math.ads
+4K9*Math 3|4w6 8r12 11r15 6|35e9
+8A6*F32Array1by3(1|9F11)<short_integer> 3|8r17
+12A6*Quaternion(1|9F11)<short_integer> 3|11r20
+X 7 minor_cycle.ads
+6K9*Minor_Cycle 4|2w6 120r24 172r13 175r13 178r13 182r13 224r3 225r3 226r3
+. 227r3 228r3 282r3 7|28e16
+9m7*OffStage2{1|5M11} 4|224m15
+9m18*OffStage3{1|5M11} 4|225m15
+11m7*FirstCycle_Stage1{1|5M11} 4|226m15
+11m26*FirstCycle_Stage2{1|5M11} 4|227m15
+11m45*FirstCycle_Stage3{1|5M11} 4|228m15
+18m7*FirstCycle_Mnvre{1|5M11} 4|120m36 282m15
+20U17*Manoeuvre 4|172s25
+22U17*Stage1_Minor 4|182s25
+23U17*Stage2_Minor 4|178s25
+24U17*Stage3_Minor 4|175s25
+

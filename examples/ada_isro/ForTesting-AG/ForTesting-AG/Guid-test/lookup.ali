@@ -1,0 +1,56 @@
+V "GNAT Lib v8"
+P ZX
+
+RN
+RV NO_FLOATING_POINT
+RV SPARK_05
+
+U lookup%b		lookup.adb		f05c0ea6 NE OO PK
+W library%s		library.adb		library.ali
+
+U lookup%s		lookup.ads		38cdca1a EE NE OO PK
+W library%s		library.adb		library.ali
+W math%s		math.adb		math.ali
+
+D library.ads		20261004142249 3d6fb513 library%s
+D lookup.ads		20261004130024 fcf74fe8 lookup%s
+D lookup.adb		20190330043927 31c4f45d lookup%b
+D math.ads		20261004130005 f95530e1 math%s
+D system.ads		20200304083000 4635ec04 system%s
+X 1 library.ads
+2K9*library 46e12 2|1w6 2r5 3|1w6 142r46 143r72 144r72 145r72
+9F11*float32<short_float> 2|9r19 12r49 3|5r58 117r56 119r39
+20V15*Sine{9F11} 3|143s80 144s80 145s80
+21V15*Cosine{9F11} 3|142s54
+X 2 lookup.ads
+6K9*Lookup 14l5 14e11 3|3b14 182l5 182t11
+8a2*Quaternion_Prev{4|12A6} 3|128r37 149r38 165m24 166m24 167m24 168m24 176m19
+9f2*Distance_Incr{1|9F11} 3|140r64 163m24
+10i2*IterationCount{short_integer} 3|136r55 136r110 140r46 143r54 144r54
+. 145r54 157r56 158m31 158r49 160m31 160r49 163r69 165r62 166r62 167r62 168r62
+12U12*Output_Lookup 12>27 12<58 3|117b19 180l9 180t22
+12f27 Distance_Current{1|9F11} 3|117b34 127r21 127r60 136r26 136r82 157r28
+. 163r41
+12a58 Quaternion_Out{4|12A6} 3|117b65 128m19 149m72 176r38
+X 3 lookup.adb
+5A6 LookupTable(1|9F11)<short_integer> 9r32 21r32 33r32 45r32 57r32 69r40
+. 81r40 93r40 105r40
+9a4 Distance{5A6} 127r40 127r79 136r46 136r101 157r47 163r60
+21a4 DirCosL{5A6} 143r46
+33a4 DirCosM{5A6} 144r46
+45a4 DirCosN{5A6} 145r46
+57a4 RotAngle{5A6} 140r37
+69a4 CmdQuaternion1{5A6} 165r47
+81a4 CmdQuaternion2{5A6} 166r47
+93a4 CmdQuaternion3{5A6} 167r47
+105a4 CmdQuaternion4{5A6} 168r47
+119f13 AngleIncr{1|9F11} 140m24 142r61 143r85 144r85 145r85
+120a13 Quaternion_Incr{4|12A6} 142m24 143m24 144m24 145m24 147m39 147r39
+. 149r55
+121b13 Present{boolean} 132m19 134r29 151m24
+X 4 math.ads
+4K9*Math 2|4w6 8r21 12r79 3|117r86 120r39 147r24 149r24 4|35e9
+12A6*Quaternion(1|9F11)<short_integer> 2|8r26 12r84 3|117r91 120r44
+18U11*Normalise 3|147s29
+22U11*Multiply 3|149s29
+

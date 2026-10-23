@@ -1,0 +1,51 @@
+V "GNAT Lib v8"
+P ZX
+
+RN
+RV NO_FLOATING_POINT
+RV SPARK_05
+
+U test_fp2%b		test_fp2.adb		144192b2 NE OO PK IL
+W library%s		library.adb		library.ali
+
+U test_fp2%s		test_fp2.ads		f7bf70d0 EE NE OO PK IL
+W library%s		library.adb		library.ali
+
+D library.ads		20260912061725 43c7ed12 library%s
+D system.ads		20200304083000 4635ec04 system%s
+D test_fp2.ads		20260912061547 b4789dc2 test_fp2%s
+D test_fp2.adb		20260912061532 e3fee262 test_fp2%b
+X 1 library.ads
+1K9*library 34e12 3|1w6 2r5 4|1w6 2r5
+4F11*float32<short_float> 4|6r37 7r35 8r11
+8V10*SQRT_SF{4F11} 4|15s10
+10V10*EXP_SF{4F11} 4|16s10
+11V10*SIN_Sf{4F11} 4|17s10
+12V10*COS_SF{4F11} 4|18s10
+13V10*ASIN_SF{4F11} 4|19s33
+14V10*Acos_SF{4F11} 4|19s19
+15V10*ATAN_SF{4F11} 4|21s10
+17V10*log_SF{4F11} 4|22s10
+18V10*Median_Sf{4F11} 4|23s12
+X 3 test_fp2.ads
+4K9*test_fp2 12l5 12e13 4|4b14 41l5 41t13
+6N9*PI 7r29 4|31r15
+7N4*TWO_PI 4|19r10
+10U28*fp2 4|10b11 25l5 25t8 37s7
+11U28*fp2_driver 4|27b11 39l8 39t18
+X 4 test_fp2.adb
+6f4 A1{1|4F11} 15m4 16r17
+6f8 A2{1|4F11} 16m4 22r17
+6f12 A3{1|4F11} 17m4 19r27 20r10
+6f16 A4{1|4F11} 18m4 19r41 20r13
+6f20 A5{1|4F11} 19m4
+6f24 A6{1|4F11} 20m4 21r18
+6f28 A7{1|4F11} 21m4
+6f32 A8{1|4F11} 22m4
+7f4 Inp1{1|4F11} 17r17 18r17 31m7
+7f10 Inp2{1|4F11} 15r18 32m7
+7f16 Inp3{1|4F11} 23r22 33m7
+7f22 Inp4{1|4F11} 23r28 34m7
+7f28 Inp5{1|4F11} 23r34 35m7
+8f4 Out1{1|4F11} 23m4
+

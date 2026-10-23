@@ -1,0 +1,75 @@
+V "GNAT Lib v8"
+P ZX
+
+RN
+RV NO_FLOATING_POINT
+RV SPARK_05
+
+U algorithm%b		algorithm.adb		b7215105 NE OO PK
+W library%s		library.adb		library.ali
+W main%s		main.adb		main.ali
+
+U algorithm%s		algorithm.ads		fd90a4db EE NE OO PK
+W library%s		library.adb		library.ali
+W math%s		math.adb		math.ali
+
+D algorithm.ads		20261004125953 39aa2129 algorithm%s
+D algorithm.adb		20261004125830 6f7197d2 algorithm%b
+D library.ads		20261004142249 3d6fb513 library%s
+D main.ads		20261004130423 dc9552ed main%s
+D math.ads		20261004130005 f95530e1 math%s
+D system.ads		20200304083000 4635ec04 system%s
+X 1 algorithm.ads
+6K9*Algorithm 21l5 21e14 2|4b14 70l5 70t14
+8f5*RD_Target{3|9F11} 2|16r22 21r46
+8f16*HV_Target{3|9F11} 2|21r34
+9f5*VelocityRadial{3|9F11} 2|16r111 17r34
+9f21*ExhaustVel{3|9F11} 2|22r52 24r21
+10f5*TimeConst{3|9F11} 2|22r39 23r32 23r44 24r45
+12f5*Matrix11{3|9F11} 2|22m9 23m9 23r21 28r46 28r100 29r61 36r26 57r56 57r106
+. 58r69
+12f15*Matrix12{3|9F11} 2|24m9 28r26 28r67 28r78 29r35 37r26 57r26 57r73 57r84
+. 58r45
+12f25*Matrix22{3|9F11} 2|21m9 23r56 24r57 28r89 38r26 57r95
+14U11*CompAngleR 14>23 15>25 15>36 15>53 15>56 16<25 2|6b11 43l5 43t15
+14a23 GuidVel{5|8A6} 2|6b23 16r94 17r21 21r21
+15f25 RadialDist{3|9F11} 2|7b25 16r34 21r57
+15f36 EffectiveGravity{3|9F11} 2|7b37 16r53 17r51
+15f53 TA{3|9F11} 2|7b55 16r73 16r84 16r128 17r71 22r29 22r66 24r35
+15f56 T{3|9F11} 2|7b59 16r78 16r89 16r107 17r76 22r34 22r71 24r40 31r62
+16f25 AngleR{3|9F11} 2|8b25 31m9
+18U11*CompAngleY 18>23 18>35 18>37 18<53 2|46b11 68l5 68t15
+18f23 DistVelAxis{3|9F11} 2|46b23 53r37
+18f35 V{3|9F11} 2|46b36 53r51 57r67
+18f37 T{3|9F11} 2|46b39 53r55 60r37
+18f53 AngleY{3|9F11} 2|46b55 61m9
+X 2 algorithm.adb
+10f4 DefPos{3|9F11} 16m9 28r37 29r26 33r25
+10f12 DefVel{3|9F11} 17m9 28r57 34r25
+10f20 SteerCoeffA{3|9F11} 29m9 31r48 40r29
+10f33 SteerCoeffB{3|9F11} 28m9 29r46 31r66 41r29
+48f5 PosDefOutofPlane{3|9F11} 53m17 57r37 58r26 66r36
+48f23 SteerCoeffD{3|9F11} 57m9 58r56 60r41 64r36
+48f36 SteerCoeffC{3|9F11} 58m9 60r23 63r36
+49f5 AngleY_Tan{3|9F11} 60m9 61r38
+X 3 library.ads
+2K9*library 1|1w6 2r5 2|2w6 31r29 61r19 3|46e12
+9F11*float32<short_float> 1|8r28 9r34 10r17 12r36 15r65 16r38 18r44 18r65
+. 2|7r68 8r38 10r47 46r46 46r67 48r50 49r21
+25V15*TanInverse{9F11} 2|31s37 61s27
+X 4 main.ads
+6K9*Main 2|1w6 33r9 34r9 36r9 37r9 38r9 40r9 41r9 63r9 64r9 66r9 4|56e9
+47f4*DefPos{3|9F11} 2|33m14
+47f12*DefVel{3|9F11} 2|34m14
+47f20*Matrix11{3|9F11} 2|36m14
+47f30*Matrix12{3|9F11} 2|37m14
+47f40*Matrix22{3|9F11} 2|38m14
+48f4*SteerCoeffA{3|9F11} 2|40m14
+48f17*SteerCoeffB{3|9F11} 2|41m14
+48f30*SteerCoeffC{3|9F11} 2|63m14
+48f43*SteerCoeffD{3|9F11} 2|64m14
+48f56*PosDefOutofPlane{3|9F11} 2|66m14
+X 5 math.ads
+4K9*Math 1|4w6 14r36 2|6r36 5|35e9
+8A6*F32Array1by3(3|9F11)<short_integer> 1|14r41 2|6r41
+
